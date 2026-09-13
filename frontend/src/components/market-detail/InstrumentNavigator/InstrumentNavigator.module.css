@@ -1,0 +1,27 @@
+.navigator { display: grid; min-width: 0; min-height: 0; grid-template-rows: 35px auto minmax(0, 1fr); border-right: 1px solid #202b38; background: #0a0f15; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 0 11px; border-bottom: 1px solid #1b2633; }
+.topbar button { padding: 0; border: 0; color: #71918e; background: transparent; cursor: pointer; font-size: 8px; }
+.topbar span { color: #465365; font: 7px ui-monospace, monospace; text-transform: uppercase; }
+.filters { display: grid; gap: 7px; padding: 10px; border-bottom: 1px solid #1b2633; }
+.filters label { display: flex; height: 29px; align-items: center; gap: 7px; padding: 0 8px; border: 1px solid #263341; color: #566578; background: #0d131b; }
+.filters input { width: 100%; border: 0; outline: 0; color: #c1c9d3; background: transparent; font-size: 8px; }
+.filters > button { height: 25px; border: 1px solid #202b38; color: #657286; background: #0d131b; cursor: pointer; font-size: 8px; text-align: left; }
+.filters > button.activeFilter { color: #c1a362; border-color: #534629; background: #17150f; }
+.list { min-height: 0; overflow: auto; }
+.group { border-bottom: 1px solid #1b2633; }
+.group h2 { display: flex; height: 28px; align-items: center; justify-content: space-between; margin: 0; padding: 0 11px; color: #536276; background: #0d131a; font-size: 7px; font-weight: 650; letter-spacing: .09em; text-transform: uppercase; }
+.group h2 span { font: 7px ui-monospace, monospace; }
+.instrument { display: grid; height: 44px; grid-template-columns: 25px minmax(0, 1fr); border-top: 1px solid #16202c; }
+.instrument:hover, .instrument.selected { background: #111a23; }
+.instrument.selected { box-shadow: inset 2px 0 #5b8d87; }
+.star { padding: 0; border: 0; color: #425064; background: transparent; cursor: pointer; }
+.star[aria-pressed="true"] { color: #b69a5e; }
+.instrumentButton { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 7px; padding: 0 9px 0 2px; border: 0; background: transparent; cursor: pointer; text-align: left; }
+.instrumentButton > span { display: grid; min-width: 0; }
+.instrumentButton > span:last-child { text-align: right; }
+.instrumentButton strong { overflow: hidden; color: #bdc6d1; font: 600 8px/1.2 ui-monospace, monospace; text-overflow: ellipsis; white-space: nowrap; }
+.instrumentButton small { margin-top: 3px; overflow: hidden; color: #4e5c70; font-size: 7px; text-overflow: ellipsis; white-space: nowrap; }
+.instrumentButton small.positive { color: #559a8b; }
+.instrumentButton small.negative { color: #a75f66; }
+.empty { padding: 20px 10px; color: #4b596b; font-size: 8px; text-align: center; }
+@media (min-width: 2200px) { .instrument { height: 50px; } .instrumentButton strong { font-size: 9px; } .instrumentButton small { font-size: 8px; } }

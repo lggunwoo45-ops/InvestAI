@@ -1,8 +1,8 @@
 # InvestAI frontend
 
 Production-oriented desktop workspace built with React 19, TypeScript, and
-Vite. Sprint 1 provides UI architecture only; market, AI, and trading services
-are deliberately not implemented.
+Vite. Sprint 3 adds a provider-backed mock market detail workstation while AI,
+trading, backend, API, and WebSocket capabilities remain deliberately unimplemented.
 
 ## Commands
 
@@ -22,8 +22,8 @@ a production build.
 - `components`: reusable, presentation-focused UI components
 - `layouts`: persistent desktop shell regions
 - `hooks`: reusable React behavior
-- `services`: implementation-free contracts for external capabilities
-- `store`: shared UI state and its provider
+- `services`: external capability contracts and the replaceable mock market service
+- `store`: shared UI state plus selected-market context for the AI Copilot
 - `types`: cross-feature domain and platform types
 - `utils`: framework-independent utilities
 - `assets`: global styles and future static assets
@@ -41,3 +41,7 @@ a production build.
 - Empty UI states are intentional until a backend capability is connected.
 - Market is the home workspace; Dashboard is a secondary operational summary.
 - AI recommendations must expose confidence and a human-readable `Why?`.
+- Market UI reads normalized data only from `services/market/marketDataService`.
+- A future live provider replaces that service without changing market components.
+- Chart, orderbook, and trade UI consume provider contracts from `services/market-detail`.
+- Live adapters are selected only in `marketDetailServices`; presentation code remains transport-agnostic.

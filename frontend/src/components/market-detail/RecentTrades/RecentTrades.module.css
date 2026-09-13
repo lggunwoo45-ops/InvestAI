@@ -1,0 +1,13 @@
+.trades { display: grid; min-height: 0; grid-template-rows: 34px 24px minmax(0, 1fr); }
+.trades header { display: flex; align-items: center; justify-content: space-between; padding: 0 10px; border-bottom: 1px solid #1b2633; background: #0d131a; }
+.trades h2 { margin: 0; color: #b8c2ce; font-size: 9px; font-weight: 650; }
+.trades header span { color: #4d5a6d; font: 6px ui-monospace, monospace; text-transform: uppercase; }
+.columns, .row { display: grid; grid-template-columns: .8fr 1.3fr .8fr; align-items: center; padding: 0 8px; text-align: right; }
+.columns { color: #475467; font-size: 6px; letter-spacing: .06em; text-transform: uppercase; }
+.columns span:first-child, .row span:first-child { text-align: left; }
+.rows { min-height: 0; overflow: hidden auto; }
+.row { min-height: 21px; border-top: 1px solid #141e29; color: #5e6c7f; font: 6px/1 ui-monospace, monospace; }
+.row strong { font-weight: 500; }
+.buy { color: #57a18f; }
+.sell { color: #ad646a; }
+@media (min-width: 2200px) { .row { min-height: 24px; font-size: 7px; } }

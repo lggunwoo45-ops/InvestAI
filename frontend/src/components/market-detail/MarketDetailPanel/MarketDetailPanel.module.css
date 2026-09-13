@@ -1,0 +1,18 @@
+.detail { display: grid; min-width: 0; min-height: 0; grid-template-rows: 76px 47px 34px minmax(0, 1fr); background: #090e14; }
+.header { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 18px; padding: 0 15px; border-bottom: 1px solid #202b38; background: #0b1017; }
+.identity { min-width: 0; }
+.identity > span { color: #587a76; font-size: 7px; font-weight: 650; letter-spacing: .1em; text-transform: uppercase; }
+.identity h1 { display: inline; margin: 0 0 0 8px; color: #e0e5eb; font: 650 18px ui-monospace, monospace; }
+.identity p { margin: 6px 0 0; color: #59677a; font-size: 8px; }
+.quote { display: grid; text-align: right; }
+.quote strong { color: #d9e0e7; font: 650 17px/1.1 ui-monospace, monospace; }
+.quote span { margin-top: 5px; font: 600 8px ui-monospace, monospace; }
+.positive { color: #5cab99; }
+.negative { color: #ba646c; }
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0; border-bottom: 1px solid #202b38; background: #0d131a; }
+.stats > div { display: grid; align-content: center; gap: 5px; padding: 0 10px; border-right: 1px solid #1d2835; }
+.stats > div:last-child { border-right: 0; }
+.stats dt { color: #4e5b6e; font-size: 6px; letter-spacing: .08em; text-transform: uppercase; }
+.stats dd { margin: 0; overflow: hidden; color: #9ca8b6; font: 500 7px ui-monospace, monospace; text-overflow: ellipsis; text-transform: capitalize; white-space: nowrap; }
+.chartArea { min-height: 0; }
+@media (min-width: 2200px) { .detail { grid-template-rows: 88px 55px 38px minmax(0, 1fr); } .identity h1, .quote strong { font-size: 20px; } .stats dd { font-size: 8px; } }

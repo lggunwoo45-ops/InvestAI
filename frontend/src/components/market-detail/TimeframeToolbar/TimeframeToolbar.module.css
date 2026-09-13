@@ -1,0 +1,7 @@
+.toolbar { display: flex; height: 34px; align-items: center; gap: 2px; padding: 0 10px; border-block: 1px solid #202b38; background: #0c1219; }
+.toolbar > span { margin-right: 7px; color: #4d5b6e; font-size: 7px; letter-spacing: .08em; text-transform: uppercase; }
+.toolbar > span:last-child { margin: 0 0 0 auto; }
+.toolbar button { min-width: 33px; height: 22px; padding: 0 7px; border: 1px solid transparent; color: #687689; background: transparent; cursor: pointer; font: 500 8px ui-monospace, monospace; }
+.toolbar button:hover { color: #a7b2bf; background: #131c26; }
+.toolbar button[aria-pressed="true"] { color: #9bc2ba; border-color: #344d4b; background: #13201f; }
+.toolbar i { width: 1px; height: 13px; margin: 0 5px; background: #25303e; }

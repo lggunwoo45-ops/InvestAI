@@ -1,0 +1,5 @@
+.search { display: flex; width: 154px; height: 28px; align-items: center; gap: 7px; padding: 0 9px; border: 1px solid #202b39; border-radius: 4px; color: #58677a; background: #0a0f16; }
+.search:focus-within { border-color: #3b5660; color: #8997a8; }
+.search input { width: 100%; min-width: 0; padding: 0; border: 0; outline: 0; color: #c9d0da; background: transparent; font-size: 9px; }
+.search input::placeholder { color: #465264; }
+@media (min-width: 2200px) { .search { width: 184px; height: 30px; } }
