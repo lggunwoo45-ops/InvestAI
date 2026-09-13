@@ -1,0 +1,16 @@
+.copilot { display: grid; min-width: 0; min-height: 0; grid-template-rows: 63px 42px minmax(0, 1fr) auto; border-left: 1px solid var(--color-border); background: #0a0f16; }
+.header { display: flex; align-items: center; justify-content: space-between; padding: 0 18px; border-bottom: 1px solid var(--color-border); }
+.header > button { width: 27px; height: 27px; padding: 0; border: 0; border-radius: 5px; color: var(--color-text-subtle); background: transparent; cursor: pointer; }
+.header > button:hover { color: var(--color-text); background: var(--color-surface-hover); }
+.titleGroup { display: flex; align-items: center; gap: 10px; }
+.titleGroup > div { display: grid; }
+.titleGroup strong { color: #d9dfe8; font-size: 11px; }
+.titleGroup span { margin-top: 2px; color: var(--color-text-subtle); font-size: 8px; }
+.aiIcon { display: grid; width: 29px; height: 29px; place-items: center; border: 1px solid rgba(93,228,199,.2); border-radius: 7px; color: var(--color-accent); background: var(--color-accent-soft); }
+.contextBar { display: flex; align-items: center; justify-content: space-between; padding: 0 18px; border-bottom: 1px solid var(--color-border); color: var(--color-text-subtle); font-size: 9px; }
+.contextBar strong { color: #677487; font-weight: 500; }
+.content { min-height: 0; padding: 16px; }
+.composer { padding: 14px 16px 16px; border-top: 1px solid var(--color-border); }
+.composerInput { display: flex; height: 48px; align-items: center; justify-content: space-between; padding: 0 9px 0 13px; border: 1px solid var(--color-border); border-radius: 8px; color: #505d70; background: var(--color-surface); font-size: 10px; }
+.composerInput button { display: grid; width: 28px; height: 28px; place-items: center; padding: 0; border: 1px solid var(--color-border); border-radius: 6px; color: #3f4c5e; background: #111721; }
+.composer p { margin: 8px 2px 0; color: #414c5d; font-size: 8px; text-align: center; }

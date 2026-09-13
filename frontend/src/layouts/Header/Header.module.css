@@ -1,0 +1,21 @@
+.header { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 24px; padding: 0 22px 0 26px; border-bottom: 1px solid var(--color-border); background: rgba(10, 14, 20, .96); }
+.search { display: flex; width: clamp(280px, 30vw, 490px); height: 36px; align-items: center; gap: 10px; padding: 0 10px 0 12px; border: 1px solid var(--color-border); border-radius: 7px; color: var(--color-text-subtle); background: #0b1017; transition: border-color .15s ease; }
+.search:focus-within { border-color: #345665; }
+.search input { width: 100%; border: 0; outline: 0; color: var(--color-text); background: transparent; font-size: 11px; }
+.search input::placeholder { color: #4e5a6c; }
+.search kbd { padding: 3px 6px; border: 1px solid var(--color-border); border-radius: 4px; color: #59667a; background: var(--color-surface); font: 9px/1.2 ui-monospace, monospace; white-space: nowrap; }
+.actions { display: flex; align-items: center; gap: 17px; }
+.statuses { display: flex; align-items: center; gap: 12px; }
+.divider { width: 1px; height: 15px; background: var(--color-border); }
+.clock { display: grid; min-width: 76px; text-align: right; }
+.clock strong { color: #c8d0db; font: 600 11px/1.2 ui-monospace, monospace; }
+.clock span { margin-top: 3px; color: var(--color-text-subtle); font-size: 9px; }
+.iconButton { display: grid; width: 34px; height: 34px; place-items: center; padding: 0; border: 1px solid var(--color-border); border-radius: 7px; color: var(--color-text-muted); background: var(--color-surface); cursor: pointer; }
+.iconButton:hover { color: var(--color-accent); border-color: #2c4950; }
+.userMenu { display: flex; align-items: center; gap: 9px; padding: 0; border: 0; color: var(--color-text-muted); background: transparent; cursor: pointer; }
+.avatar { display: grid; width: 32px; height: 32px; place-items: center; border: 1px solid #29434a; border-radius: 8px; color: var(--color-accent); background: var(--color-accent-soft); font-size: 10px; font-weight: 700; }
+.userText { display: grid; min-width: 82px; text-align: left; }
+.userText strong { color: #cbd2dc; font-size: 10px; font-weight: 600; }
+.userText small { margin-top: 2px; color: var(--color-text-subtle); font-size: 8px; }
+@media (max-width: 1500px) { .statuses { display: none; } .userText { display: none; } }
+@media (min-width: 2200px) { .header { padding-inline: 30px; } .search { width: 540px; } }

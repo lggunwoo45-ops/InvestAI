@@ -1,0 +1,4 @@
+.loading { display: grid; min-height: 100vh; place-content: center; justify-items: center; gap: 10px; color: var(--color-text-subtle); background: var(--color-bg); font-size: 10px; }
+.loading span { width: 22px; height: 22px; border: 2px solid var(--color-border); border-top-color: var(--color-accent); border-radius: 50%; animation: spin .8s linear infinite; }
+.loading p { margin: 0; }
+@keyframes spin { to { transform: rotate(360deg); } }

@@ -1,0 +1,4 @@
+.why, .compact { display: grid; gap: 3px; padding: 9px 10px; border-left: 2px solid #2b3a4c; background: rgba(255,255,255,.012); }
+.compact { padding-block: 6px; }
+.why strong, .compact strong { color: #6d7a8e; font-size: 9px; font-weight: 600; }
+.why span, .compact span { color: #465265; font-size: 8px; }

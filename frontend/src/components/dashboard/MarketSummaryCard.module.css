@@ -1,0 +1,6 @@
+.markets { display: grid; height: 100%; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.market { display: flex; min-width: 0; flex-direction: column; justify-content: center; padding: 18px; border-right: 1px solid var(--color-border); }
+.market:last-child { border-right: 0; }
+.market span { color: var(--color-text-muted); font-size: 9px; font-weight: 600; }
+.market strong { margin: 12px 0 8px; color: #5c697c; font: 500 26px/1 ui-monospace, monospace; }
+.market small { color: #465265; font-size: 8px; }

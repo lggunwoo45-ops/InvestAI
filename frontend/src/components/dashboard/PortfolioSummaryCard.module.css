@@ -1,0 +1,7 @@
+.summary { display: flex; height: 100%; flex-direction: column; justify-content: center; padding: 17px; }
+.summary span { color: #566377; font-size: 8px; text-transform: uppercase; }
+.summary strong { display: block; margin-top: 7px; color: #6b7789; font: 500 25px/1 ui-monospace, monospace; }
+.metrics { display: grid; margin-top: 18px; grid-template-columns: 1fr 1fr; gap: 12px; }
+.metrics p { display: grid; gap: 5px; margin: 0; }
+.metrics b { color: #657285; font: 500 12px ui-monospace, monospace; }
+.summary small { margin-top: 17px; color: #424e60; font-size: 8px; }

@@ -1,0 +1,7 @@
+.status { display: flex; align-items: center; gap: 7px; color: var(--color-text-muted); font-size: 11px; white-space: nowrap; }
+.dot { width: 6px; height: 6px; border-radius: 50%; background: var(--color-text-subtle); box-shadow: 0 0 0 3px rgba(88, 101, 121, .09); }
+.online { background: var(--color-positive); box-shadow: 0 0 0 3px rgba(65, 214, 163, .1); }
+.degraded { background: var(--color-warning); }
+.offline { background: var(--color-danger); }
+.unconfigured { background: var(--color-text-subtle); }
+.value { color: var(--color-text-subtle); text-transform: capitalize; }
