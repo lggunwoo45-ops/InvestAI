@@ -1,9 +1,11 @@
 # InvestAI frontend
 
 Production-oriented desktop workspace built with React 19, TypeScript, and
-Vite. Sprint 5 adds TradingView Lightweight Charts plus public real-time Upbit
-and Binance Futures market data. AI, trading, backend, and database capabilities
-remain deliberately unimplemented.
+Vite. Sprint 6 adds a daily smart dashboard, persistent multi-watchlists,
+cross-market discovery, market-aware news, global search, and session status on
+top of Sprint 5's TradingView charts and public real-time market data. AI,
+trading, backend, authentication, and database capabilities remain deliberately
+unimplemented.
 
 ## Commands
 
@@ -11,10 +13,16 @@ remain deliberately unimplemented.
 npm install
 npm run dev
 npm run check
+npm run build:windows-demo
 ```
 
 `npm run check` runs linting, strict TypeScript validation, UI smoke tests, and
 a production build.
+
+`npm run build:windows-demo` creates a single-file Windows demo launcher and a
+portable ZIP in `frontend/release`. The launcher serves the production bundle on
+a private loopback port and opens it in the default browser; LIVE mode requires
+internet access and MOCK mode remains available offline.
 
 ## Source boundaries
 
@@ -49,3 +57,5 @@ a production build.
 - `MarketDataService` is the sole facade for LIVE/MOCK routing and normalized subscriptions.
 - Upbit and Binance adapters own vendor REST/WebSocket translation; React never opens a socket.
 - Stream reconnect uses capped exponential backoff and exposes its state to the terminal UI.
+- Dashboard data is normalized behind `DashboardService`, so future remote news and discovery feeds replace one service boundary.
+- Watchlists are versioned local state today and can migrate behind a repository interface when accounts and a backend arrive.

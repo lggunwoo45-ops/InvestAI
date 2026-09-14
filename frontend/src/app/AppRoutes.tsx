@@ -6,6 +6,7 @@ import { AppShell } from '@/layouts/AppShell/AppShell'
 
 const AiAnalysisPage = lazy(() => import('@/pages/AiAnalysis/AiAnalysisPage').then((module) => ({ default: module.AiAnalysisPage })))
 const DashboardPage = lazy(() => import('@/pages/Dashboard/DashboardPage').then((module) => ({ default: module.DashboardPage })))
+const DiscoverPage = lazy(() => import('@/pages/Discover/DiscoverPage').then((module) => ({ default: module.DiscoverPage })))
 const MarketPage = lazy(() => import('@/pages/Market/MarketPage').then((module) => ({ default: module.MarketPage })))
 const NewsPage = lazy(() => import('@/pages/News/NewsPage').then((module) => ({ default: module.NewsPage })))
 const NotFoundPage = lazy(() => import('@/pages/NotFound/NotFoundPage').then((module) => ({ default: module.NotFoundPage })))
@@ -23,6 +24,7 @@ export function AppRoutes() {
           <Route path="market" element={<MarketPage />} />
           <Route path="markets" element={<Navigate to="/market" replace />} />
           <Route path="dashboard" element={<DashboardPage />} />
+          <Route path="discover" element={<DiscoverPage />} />
           <Route path="portfolio" element={<PortfolioPage />} />
           <Route path="trading" element={<TradingPage />} />
           <Route path="ai-analysis" element={<AiAnalysisPage />} />

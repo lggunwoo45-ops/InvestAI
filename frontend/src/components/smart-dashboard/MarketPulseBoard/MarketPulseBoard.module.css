@@ -1,0 +1,23 @@
+.board { border: 1px solid #1b2634; background: #0b1017; }
+.board > header { display: flex; align-items: end; justify-content: space-between; padding: 14px 16px 12px; border-bottom: 1px solid #192330; }
+.board header span { color: #5d7474; font-size: 7px; font-weight: 700; letter-spacing: .13em; }
+.board h2 { margin: 4px 0 0; color: #dce2e9; font-size: 15px; font-weight: 600; }
+.board header p { margin: 0; color: #526074; font-size: 8px; }
+.groups { display: grid; grid-template-columns: 1.25fr .8fr 1fr; min-width: 0; }
+.group { min-width: 0; padding: 12px 14px 14px; border-right: 1px solid #192330; }
+.group:last-child { border-right: 0; }
+.groupTitle { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.groupTitle strong { color: #8d99aa; font-size: 8px; letter-spacing: .08em; text-transform: uppercase; }
+.groupTitle span { display: flex; align-items: center; gap: 5px; color: #687588; font-size: 7px; }
+.groupTitle span::before { width: 5px; height: 5px; border-radius: 50%; background: #596475; content: ''; }
+.groupTitle span[data-status='open']::before, .groupTitle span[data-status='always-open']::before { background: #5c9e8f; }
+.items { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid #17212d; border-left: 1px solid #17212d; }
+.group:nth-child(2) .items { grid-template-columns: 1fr; }
+.item { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 9px; border-right: 1px solid #17212d; border-bottom: 1px solid #17212d; }
+.item > span { display: grid; min-width: 0; gap: 3px; }
+.item strong { color: #cbd2db; font: 600 9px/1 ui-monospace, monospace; white-space: nowrap; }
+.item small { overflow: hidden; color: #4e5b6e; font-size: 7px; text-overflow: ellipsis; white-space: nowrap; }
+.quote { text-align: right; }
+.quote .positive { color: #5c9e8f; }
+.quote .negative { color: #a96870; }
+@media (min-width: 2200px) { .board > header { padding: 17px 19px 14px; } .group { padding: 15px 17px 17px; } .item { padding: 10px 11px; } }

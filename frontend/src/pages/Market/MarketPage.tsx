@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback } from 'react'
 
 import { MarketDetailWorkspace } from '@/components/market-detail/MarketDetailWorkspace/MarketDetailWorkspace'
 import { DataModeControl } from '@/components/market-data/DataModeControl/DataModeControl'
@@ -7,23 +7,20 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { useMarketDetailData } from '@/hooks/useMarketDetailData'
 import { useMarketOverview } from '@/hooks/useMarketOverview'
 import { useMarketWorkspace } from '@/hooks/useMarketWorkspace'
+import { useWatchlists } from '@/hooks/useWatchlists'
+import type { MarketInstrument } from '@/types/market'
 import styles from './MarketPage.module.css'
 
 export function MarketPage() {
   useDocumentTitle('Market')
   const { sections, isLoading, error } = useMarketOverview()
   const { selectedInstrument, selectedTimeframe, marketDataMode, selectInstrument, clearInstrument, selectTimeframe, setMarketDataMode } = useMarketWorkspace()
+  const { favoriteIds, toggleFavorite, trackRecentlyViewed } = useWatchlists()
   const detailState = useMarketDetailData(selectedInstrument, selectedTimeframe)
-  const [favoriteIds, setFavoriteIds] = useState<ReadonlySet<string>>(() => new Set(['upbit-btc', 'us-nvda']))
-
-  const toggleFavorite = useCallback((instrumentId: string) => {
-    setFavoriteIds((current) => {
-      const next = new Set(current)
-      if (next.has(instrumentId)) next.delete(instrumentId)
-      else next.add(instrumentId)
-      return next
-    })
-  }, [])
+  const openInstrument = useCallback((instrument: MarketInstrument) => {
+    trackRecentlyViewed(instrument.id)
+    selectInstrument(instrument)
+  }, [selectInstrument, trackRecentlyViewed])
 
   const snapshot = detailState.state?.snapshot
   const hasCurrentSnapshot = snapshot
@@ -41,7 +38,7 @@ export function MarketPage() {
         connection={detailState.state!.connection}
         favoriteIds={favoriteIds}
         selectedTimeframe={selectedTimeframe}
-        onSelectInstrument={selectInstrument}
+        onSelectInstrument={openInstrument}
         onSelectTimeframe={selectTimeframe}
         marketDataMode={marketDataMode}
         onMarketDataModeChange={setMarketDataMode}
@@ -76,7 +73,7 @@ export function MarketPage() {
               section={section}
               favoriteIds={favoriteIds}
               selectedInstrumentId={selectedInstrument?.id ?? null}
-              onSelect={selectInstrument}
+              onSelect={openInstrument}
               onToggleFavorite={toggleFavorite}
             />
           ))}

@@ -40,7 +40,7 @@ export function Sidebar() {
           <div className={styles.environment}>
             <span className={styles.environmentDot} />
             <span>Local environment</span>
-            <span className={styles.version}>v0.3</span>
+            <span className={styles.version}>v0.6</span>
           </div>
         )}
       </div>

@@ -1,0 +1,11 @@
+.page { min-height: 100%; padding: 20px 22px 28px; }
+.heading { display: flex; align-items: end; justify-content: space-between; margin-bottom: 16px; }
+.heading span { color: #58706f; font-size: 7px; font-weight: 700; letter-spacing: .14em; }
+.heading h1 { margin: 5px 0 3px; color: #dfe4eb; font-size: 21px; font-weight: 600; }
+.heading p { margin: 0; color: #5b687a; font-size: 9px; }
+.heading > div:last-child { display: grid; gap: 5px; text-align: right; }
+.heading strong { color: #718094; font-size: 8px; font-weight: 500; }
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.recent { grid-column: 1 / -1; }
+.loading { display: grid; height: 100%; place-items: center; color: #5b687a; font-size: 9px; }
+@media (min-width: 2200px) { .page { padding: 28px 30px 36px; } .grid { gap: 16px; } }

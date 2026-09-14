@@ -4,7 +4,10 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { App } from './App'
 
 describe('InvestAI application shell', () => {
-  beforeEach(() => window.history.pushState({}, '', '/'))
+  beforeEach(() => {
+    window.localStorage.clear()
+    window.history.pushState({}, '', '/')
+  })
 
   it('opens the market workspace as the home page', async () => {
     render(<App />)
@@ -58,14 +61,55 @@ describe('InvestAI application shell', () => {
     render(<App />)
 
     const upbitSearch = await screen.findByRole('searchbox', { name: 'Search Upbit' })
-    fireEvent.change(upbitSearch, { target: { value: 'Ethereum' } })
+    fireEvent.change(upbitSearch, { target: { value: 'XRP' } })
 
     const upbitSection = screen.getByRole('region', { name: 'Upbit' })
     expect(within(upbitSection).queryByText('Bitcoin')).toBeNull()
-    expect(within(upbitSection).getByText('Ethereum')).toBeTruthy()
+    expect(within(upbitSection).getByText('XRP')).toBeTruthy()
 
-    const favoriteButton = screen.getByRole('button', { name: 'Add ETH/KRW favorite' })
+    const favoriteButton = screen.getByRole('button', { name: 'Add XRP/KRW favorite' })
     fireEvent.click(favoriteButton)
     expect(favoriteButton.getAttribute('aria-pressed')).toBe('true')
+  })
+
+  it('provides persisted multi-watchlist dashboard controls', async () => {
+    window.history.pushState({}, '', '/dashboard')
+    render(<App />)
+
+    expect(await screen.findByRole('heading', { name: 'Smart Market Dashboard' })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: /Crypto/ })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: /Korea/ })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: /US/ })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: /Custom/ })).toBeTruthy()
+    expect(screen.getByText('Saved locally')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('tab', { name: /Custom/ }))
+    const symbolSelect = screen.getByRole('combobox', { name: 'Symbol to add' })
+    const nvidiaOption = await screen.findByRole('option', { name: /NVDA/ })
+    fireEvent.change(symbolSelect, { target: { value: nvidiaOption.getAttribute('value') } })
+    fireEvent.click(screen.getByRole('button', { name: 'Add symbol' }))
+
+    expect(screen.getByRole('button', { name: 'Remove NVDA' })).toBeTruthy()
+    expect(window.localStorage.getItem('investai.watchlists.v2')).toContain('us-nvda')
+  })
+
+  it('searches stocks globally and opens their market context', async () => {
+    render(<App />)
+    const globalSearch = screen.getByRole('searchbox', { name: 'Global search' })
+    fireEvent.change(globalSearch, { target: { value: 'NVDA' } })
+    fireEvent.click(await screen.findByRole('button', { name: 'Open NVDA from global search' }))
+
+    expect(await screen.findByRole('img', { name: /NVDA 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
+  })
+
+  it('filters the News Center by the active symbol', async () => {
+    render(<App />)
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Global search' }), { target: { value: 'NVDA' } })
+    fireEvent.click(await screen.findByRole('button', { name: 'Open NVDA from global search' }))
+    fireEvent.click(screen.getByRole('link', { name: 'News' }))
+
+    expect(await screen.findByRole('heading', { name: 'News Center' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'NVDA ON' })).toBeTruthy()
+    expect(screen.getByText(/NVIDIA outlines/)).toBeTruthy()
   })
 })

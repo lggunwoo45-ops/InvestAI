@@ -1,4 +1,6 @@
+import { GlobalSearch } from '@/components/GlobalSearch/GlobalSearch'
 import { Icon } from '@/components/Icon/Icon'
+import { MarketStatusStrip } from '@/components/MarketStatusStrip/MarketStatusStrip'
 import { StatusBadge } from '@/components/StatusBadge/StatusBadge'
 import { useCurrentTime } from '@/hooks/useCurrentTime'
 import { useMarketWorkspace } from '@/hooks/useMarketWorkspace'
@@ -21,11 +23,7 @@ export function Header() {
 
   return (
     <header className={styles.header}>
-      <label className={styles.search}>
-        <Icon name="search" size={17} />
-        <input type="search" placeholder="Search markets, assets, or commands" aria-label="Global search" />
-        <kbd>⌘ K</kbd>
-      </label>
+      <GlobalSearch />
 
       <div className={styles.actions}>
         <div className={styles.statuses}>
@@ -33,6 +31,7 @@ export function Header() {
           <span className={styles.divider} />
           <StatusBadge label="Public API" health={activeMarketState?.snapshot ? 'online' : 'unconfigured'} />
         </div>
+        <MarketStatusStrip now={now} />
         <div className={styles.clock}>
           <strong>{formatTime(now)}</strong>
           <span>{formatDate(now)}</span>
