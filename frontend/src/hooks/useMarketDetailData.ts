@@ -1,49 +1,47 @@
 import { useEffect, useState } from 'react'
 
-import { marketDetailServices } from '@/services/market-detail/marketDetailServices'
+import { useMarketWorkspace } from '@/hooks/useMarketWorkspace'
+import { marketDataService } from '@/services/market/marketDataService'
 import type { MarketInstrument } from '@/types/market'
-import type { ChartTimeframe, MarketDetailSnapshot } from '@/types/marketDetail'
+import type { ChartTimeframe, RealtimeMarketState } from '@/types/marketDetail'
 
 interface MarketDetailDataState {
-  snapshot: MarketDetailSnapshot | null
+  state: RealtimeMarketState | null
   isLoading: boolean
   error: string | null
 }
 
 export function useMarketDetailData(instrument: MarketInstrument | null, timeframe: ChartTimeframe): MarketDetailDataState {
-  const requestKey = instrument ? `${instrument.id}:${timeframe}` : null
+  const { marketDataMode, setActiveMarketState } = useMarketWorkspace()
+  const requestKey = instrument ? `${instrument.id}:${timeframe}:${marketDataMode}` : null
   const [resolved, setResolved] = useState<{
     requestKey: string | null
-    snapshot: MarketDetailSnapshot | null
+    state: RealtimeMarketState | null
     error: string | null
-  }>({ requestKey: null, snapshot: null, error: null })
+  }>({ requestKey: null, state: null, error: null })
 
   useEffect(() => {
-    let isActive = true
-    if (!instrument) return () => { isActive = false }
+    if (!instrument) {
+      setActiveMarketState(null)
+      return undefined
+    }
 
-    Promise.all([
-      marketDetailServices.chartProvider.getCandles(instrument, timeframe),
-      marketDetailServices.orderbookProvider.getOrderbook(instrument),
-      marketDetailServices.tradeProvider.getRecentTrades(instrument),
-    ])
-      .then(([candles, orderbook, recentTrades]) => {
-        if (isActive) {
-          setResolved({
-            requestKey,
-            snapshot: { instrument, timeframe, candles, orderbook, recentTrades },
-            error: null,
-          })
-        }
-      })
-      .catch(() => {
-        if (isActive) setResolved({ requestKey, snapshot: null, error: 'Market detail data is unavailable.' })
-      })
+    return marketDataService.subscribe({
+      instrument,
+      timeframe,
+      mode: marketDataMode,
+      onState: (state) => {
+        setResolved({ requestKey, state, error: null })
+        setActiveMarketState(state)
+      },
+    })
+  }, [instrument, marketDataMode, requestKey, setActiveMarketState, timeframe])
 
-    return () => { isActive = false }
-  }, [instrument, requestKey, timeframe])
-
-  if (!instrument) return { snapshot: null, isLoading: false, error: null }
-  if (resolved.requestKey !== requestKey) return { snapshot: null, isLoading: true, error: null }
-  return { snapshot: resolved.snapshot, isLoading: false, error: resolved.error }
+  if (!instrument) return { state: null, isLoading: false, error: null }
+  if (resolved.requestKey !== requestKey) return { state: null, isLoading: true, error: null }
+  return {
+    state: resolved.state,
+    isLoading: resolved.state?.snapshot === null,
+    error: resolved.error,
+  }
 }

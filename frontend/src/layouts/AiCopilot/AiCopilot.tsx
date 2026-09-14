@@ -7,7 +7,8 @@ import styles from './AiCopilot.module.css'
 
 export function AiCopilot() {
   const { toggleAiCopilot } = useUiStore()
-  const { selectedInstrument, selectedTimeframe } = useMarketWorkspace()
+  const { selectedInstrument, selectedTimeframe, activeMarketState } = useMarketWorkspace()
+  const displayedInstrument = activeMarketState?.snapshot?.instrument ?? selectedInstrument
   const mockConfidence = selectedInstrument
     ? 72 + ((selectedInstrument.symbol.length + selectedTimeframe.length) % 12)
     : null
@@ -24,26 +25,26 @@ export function AiCopilot() {
 
       <div className={styles.contextBar}>
         <span>Context</span>
-        <strong>{selectedInstrument ? `${selectedInstrument.symbol} · ${selectedInstrument.marketId}` : 'No market selected'}</strong>
+        <strong>{displayedInstrument ? `${displayedInstrument.symbol} · ${displayedInstrument.marketId}` : 'No market selected'}</strong>
       </div>
 
       <div className={styles.content}>
         {selectedInstrument ? (
           <div className={styles.analysis}>
             <div className={styles.instrumentHeader}>
-              <span>{selectedInstrument.marketId.replace('-', ' ')}</span>
-              <h2>{selectedInstrument.symbol}</h2>
-              <p>{selectedInstrument.name}</p>
+              <span>{displayedInstrument!.marketId.replace('-', ' ')}</span>
+              <h2>{displayedInstrument!.symbol}</h2>
+              <p>{displayedInstrument!.name}</p>
             </div>
 
             <dl className={styles.marketFacts}>
-              <div><dt>Market</dt><dd>{selectedInstrument.marketId.replace('-', ' ')}</dd></div>
+              <div><dt>Market</dt><dd>{displayedInstrument!.marketId.replace('-', ' ')}</dd></div>
               <div><dt>Timeframe</dt><dd>{selectedTimeframe}</dd></div>
-              <div><dt>Current Price</dt><dd>{formatMarketPrice(selectedInstrument)}</dd></div>
+              <div><dt>Current Price</dt><dd>{formatMarketPrice(displayedInstrument!)}</dd></div>
               <div>
                 <dt>24H Change</dt>
-                <dd className={selectedInstrument.change24hPercent >= 0 ? styles.positive : styles.negative}>
-                  {formatMarketChange(selectedInstrument.change24hPercent)}
+                <dd className={displayedInstrument!.change24hPercent >= 0 ? styles.positive : styles.negative}>
+                  {formatMarketChange(displayedInstrument!.change24hPercent)}
                 </dd>
               </div>
             </dl>

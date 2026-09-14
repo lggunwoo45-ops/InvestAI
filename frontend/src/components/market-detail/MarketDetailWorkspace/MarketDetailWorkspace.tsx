@@ -1,4 +1,4 @@
-import type { MarketInstrument, MarketSectionData } from '@/types/market'
+import type { MarketConnectionState, MarketDataMode, MarketInstrument, MarketSectionData } from '@/types/market'
 import type { ChartTimeframe, MarketDetailSnapshot } from '@/types/marketDetail'
 import { InstrumentNavigator } from '../InstrumentNavigator/InstrumentNavigator'
 import { MarketDetailPanel } from '../MarketDetailPanel/MarketDetailPanel'
@@ -8,15 +8,18 @@ import styles from './MarketDetailWorkspace.module.css'
 interface MarketDetailWorkspaceProps {
   sections: readonly MarketSectionData[]
   snapshot: MarketDetailSnapshot
+  connection: MarketConnectionState
   favoriteIds: ReadonlySet<string>
   selectedTimeframe: ChartTimeframe
   onSelectInstrument: (instrument: MarketInstrument) => void
   onSelectTimeframe: (timeframe: ChartTimeframe) => void
+  marketDataMode: MarketDataMode
+  onMarketDataModeChange: (mode: MarketDataMode) => void
   onToggleFavorite: (instrumentId: string) => void
   onBack: () => void
 }
 
-export function MarketDetailWorkspace({ sections, snapshot, favoriteIds, selectedTimeframe, onSelectInstrument, onSelectTimeframe, onToggleFavorite, onBack }: MarketDetailWorkspaceProps) {
+export function MarketDetailWorkspace({ sections, snapshot, connection, favoriteIds, selectedTimeframe, marketDataMode, onSelectInstrument, onSelectTimeframe, onMarketDataModeChange, onToggleFavorite, onBack }: MarketDetailWorkspaceProps) {
   return (
     <div className={styles.workspace}>
       <InstrumentNavigator
@@ -27,8 +30,8 @@ export function MarketDetailWorkspace({ sections, snapshot, favoriteIds, selecte
         onToggleFavorite={onToggleFavorite}
         onBack={onBack}
       />
-      <MarketDetailPanel snapshot={snapshot} selectedTimeframe={selectedTimeframe} onSelectTimeframe={onSelectTimeframe} />
-      <TradingInformation snapshot={snapshot} />
+      <MarketDetailPanel snapshot={snapshot} connection={connection} selectedTimeframe={selectedTimeframe} marketDataMode={marketDataMode} onSelectTimeframe={onSelectTimeframe} onMarketDataModeChange={onMarketDataModeChange} />
+      <TradingInformation snapshot={snapshot} connection={connection} />
     </div>
   )
 }

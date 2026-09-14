@@ -1,6 +1,17 @@
-import { memo, useMemo } from 'react'
+import { memo, useEffect, useMemo, useRef } from 'react'
+import {
+  CandlestickSeries,
+  ColorType,
+  createChart,
+  HistogramSeries,
+  type CandlestickData,
+  type HistogramData,
+  type IChartApi,
+  type ISeriesApi,
+  type UTCTimestamp,
+} from 'lightweight-charts'
 
-import type { MarketInstrument } from '@/types/market'
+import type { MarketDataMode, MarketInstrument } from '@/types/market'
 import type { Candle, ChartTimeframe } from '@/types/marketDetail'
 import styles from './CandlestickChart.module.css'
 
@@ -8,84 +19,106 @@ interface CandlestickChartProps {
   candles: readonly Candle[]
   instrument: MarketInstrument
   timeframe: ChartTimeframe
+  mode: MarketDataMode
 }
 
-const width = 1000
-const priceTop = 20
-const priceBottom = 320
-const volumeTop = 346
-const volumeBottom = 405
+export const CandlestickChart = memo(function CandlestickChart({ candles, instrument, timeframe, mode }: CandlestickChartProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const chartRef = useRef<IChartApi | null>(null)
+  const candleSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null)
+  const volumeSeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null)
+  const dataKeyRef = useRef<string | null>(null)
+  const initialPriceRef = useRef(instrument.lastPrice)
+  const latest = candles.at(-1)
+  const priceLabel = useMemo(() => new Intl.NumberFormat('en-US', {
+    maximumFractionDigits: instrument.quoteCurrency === 'KRW' ? 0 : instrument.lastPrice < 1 ? 4 : 2,
+  }), [instrument.lastPrice, instrument.quoteCurrency])
 
-export const CandlestickChart = memo(function CandlestickChart({ candles, instrument, timeframe }: CandlestickChartProps) {
-  const geometry = useMemo(() => {
-    const lowest = Math.min(...candles.map((candle) => candle.low))
-    const highest = Math.max(...candles.map((candle) => candle.high))
-    const padding = Math.max((highest - lowest) * 0.08, instrument.lastPrice * 0.001)
-    const minPrice = lowest - padding
-    const maxPrice = highest + padding
-    const priceRange = maxPrice - minPrice
-    const maxVolume = Math.max(...candles.map((candle) => candle.volume))
-    const slotWidth = width / candles.length
-    const mapPrice = (price: number) => priceTop + ((maxPrice - price) / priceRange) * (priceBottom - priceTop)
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container || typeof ResizeObserver === 'undefined') return undefined
 
-    return {
-      minPrice,
-      maxPrice,
-      slotWidth,
-      mapPrice,
-      items: candles.map((candle, index) => ({
-        candle,
-        x: index * slotWidth + slotWidth / 2,
-        openY: mapPrice(candle.open),
-        closeY: mapPrice(candle.close),
-        highY: mapPrice(candle.high),
-        lowY: mapPrice(candle.low),
-        volumeHeight: (candle.volume / maxVolume) * (volumeBottom - volumeTop),
-        rising: candle.close >= candle.open,
-      })),
+    const precision = instrument.quoteCurrency === 'KRW' ? 0 : initialPriceRef.current < 1 ? 4 : 2
+    const minimumMove = precision === 0 ? 1 : precision === 4 ? 0.0001 : 0.01
+    const chart = createChart(container, {
+      width: container.clientWidth,
+      height: container.clientHeight,
+      attributionLogo: true,
+      layout: {
+        background: { type: ColorType.Solid, color: '#090e14' },
+        textColor: '#526074',
+        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+        fontSize: 10,
+      },
+      grid: { vertLines: { color: '#17212c' }, horzLines: { color: '#17212c' } },
+      crosshair: { vertLine: { color: '#526b6a', labelBackgroundColor: '#263737' }, horzLine: { color: '#526b6a', labelBackgroundColor: '#263737' } },
+      rightPriceScale: { borderColor: '#26313e', scaleMargins: { top: 0.08, bottom: 0.24 } },
+      timeScale: { borderColor: '#26313e', timeVisible: timeframe !== '1D', secondsVisible: false, rightOffset: 4, barSpacing: 7 },
+      handleScale: true,
+      handleScroll: true,
+    })
+    const candleSeries = chart.addSeries(CandlestickSeries, {
+      upColor: '#5cae9b', downColor: '#b9636b', wickUpColor: '#5cae9b', wickDownColor: '#b9636b', borderVisible: false,
+      priceFormat: { type: 'price', precision, minMove: minimumMove },
+    })
+    const volumeSeries = chart.addSeries(HistogramSeries, {
+      priceFormat: { type: 'volume' }, priceScaleId: '', lastValueVisible: false, priceLineVisible: false,
+    })
+    volumeSeries.priceScale().applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } })
+    chartRef.current = chart
+    candleSeriesRef.current = candleSeries
+    volumeSeriesRef.current = volumeSeries
+
+    const resizeObserver = new ResizeObserver(([entry]) => {
+      chart.applyOptions({ width: Math.floor(entry.contentRect.width), height: Math.floor(entry.contentRect.height) })
+    })
+    resizeObserver.observe(container)
+    return () => {
+      resizeObserver.disconnect()
+      chart.remove()
+      chartRef.current = null
+      candleSeriesRef.current = null
+      volumeSeriesRef.current = null
+      dataKeyRef.current = null
     }
-  }, [candles, instrument.lastPrice])
+  }, [instrument.id, instrument.quoteCurrency, timeframe])
 
-  const priceLabel = (value: number) => new Intl.NumberFormat('en-US', {
-    maximumFractionDigits: instrument.quoteCurrency === 'KRW' ? 0 : value < 1 ? 4 : 2,
-  }).format(value)
+  useEffect(() => {
+    const candleData: CandlestickData<UTCTimestamp>[] = candles.map((candle) => ({
+      time: Math.floor(candle.timestamp / 1_000) as UTCTimestamp,
+      open: candle.open,
+      high: candle.high,
+      low: candle.low,
+      close: candle.close,
+    }))
+    const volumeData: HistogramData<UTCTimestamp>[] = candles.map((candle) => ({
+      time: Math.floor(candle.timestamp / 1_000) as UTCTimestamp,
+      value: candle.volume,
+      color: candle.close >= candle.open ? 'rgba(92, 174, 155, .22)' : 'rgba(185, 99, 107, .22)',
+    }))
+    const dataKey = `${instrument.id}:${timeframe}`
+    if (dataKeyRef.current !== dataKey) {
+      candleSeriesRef.current?.setData(candleData)
+      volumeSeriesRef.current?.setData(volumeData)
+      if (candleData.length > 0) chartRef.current?.timeScale().fitContent()
+      dataKeyRef.current = dataKey
+      return
+    }
+    const latestCandle = candleData.at(-1)
+    const latestVolume = volumeData.at(-1)
+    if (latestCandle) candleSeriesRef.current?.update(latestCandle)
+    if (latestVolume) volumeSeriesRef.current?.update(latestVolume)
+  }, [candles, instrument.id, timeframe])
 
   return (
-    <figure className={styles.chart} aria-label={`${instrument.symbol} ${timeframe} candlestick chart`}>
+    <figure className={styles.chart} role="img" aria-label={`${instrument.symbol} ${timeframe} TradingView candlestick chart in ${mode} mode`}>
       <div className={styles.legend}>
-        <span>{instrument.symbol}</span>
-        <span>{timeframe}</span>
-        <span>O {priceLabel(candles.at(-1)?.open ?? 0)}</span>
-        <span>H {priceLabel(candles.at(-1)?.high ?? 0)}</span>
-        <span>L {priceLabel(candles.at(-1)?.low ?? 0)}</span>
-        <span>C {priceLabel(candles.at(-1)?.close ?? 0)}</span>
+        <span>{instrument.symbol}</span><span>{timeframe}</span>
+        <span>O {priceLabel.format(latest?.open ?? 0)}</span><span>H {priceLabel.format(latest?.high ?? 0)}</span>
+        <span>L {priceLabel.format(latest?.low ?? 0)}</span><span>C {priceLabel.format(latest?.close ?? 0)}</span>
       </div>
-      <svg viewBox="0 0 1000 420" preserveAspectRatio="none" role="img">
-        <title>{instrument.symbol} mock candlestick chart at {timeframe}</title>
-        {[0, 1, 2, 3, 4].map((line) => {
-          const y = priceTop + (line / 4) * (priceBottom - priceTop)
-          const price = geometry.maxPrice - (line / 4) * (geometry.maxPrice - geometry.minPrice)
-          return <g key={line}><line className={styles.gridLine} x1="0" x2="1000" y1={y} y2={y} /><text className={styles.axisLabel} x="991" y={y - 5} textAnchor="end">{priceLabel(price)}</text></g>
-        })}
-        {[0, 12, 24, 36, 47].map((index) => {
-          const x = index * geometry.slotWidth + geometry.slotWidth / 2
-          return <line key={index} className={styles.verticalLine} x1={x} x2={x} y1={priceTop} y2={volumeBottom} />
-        })}
-        {geometry.items.map(({ candle, x, openY, closeY, highY, lowY, volumeHeight, rising }) => {
-          const bodyTop = Math.min(openY, closeY)
-          const bodyHeight = Math.max(Math.abs(closeY - openY), 1.4)
-          const className = rising ? styles.rising : styles.falling
-          return (
-            <g key={candle.timestamp} className={className}>
-              <line className={styles.wick} x1={x} x2={x} y1={highY} y2={lowY} />
-              <rect className={styles.body} x={x - geometry.slotWidth * .27} y={bodyTop} width={geometry.slotWidth * .54} height={bodyHeight} />
-              <rect className={styles.volumeBar} x={x - geometry.slotWidth * .3} y={volumeBottom - volumeHeight} width={geometry.slotWidth * .6} height={volumeHeight} />
-            </g>
-          )
-        })}
-        <line className={styles.lastPriceLine} x1="0" x2="1000" y1={geometry.mapPrice(instrument.lastPrice)} y2={geometry.mapPrice(instrument.lastPrice)} />
-      </svg>
-      <div className={styles.watermark}>INVESTAI · SIMULATED DATA</div>
+      <div ref={containerRef} className={styles.canvas} aria-hidden="true" />
+      <div className={styles.watermark}>TRADINGVIEW LIGHTWEIGHT CHARTS · {mode.toUpperCase()}</div>
     </figure>
   )
 })

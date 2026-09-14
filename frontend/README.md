@@ -1,8 +1,9 @@
 # InvestAI frontend
 
 Production-oriented desktop workspace built with React 19, TypeScript, and
-Vite. Sprint 3 adds a provider-backed mock market detail workstation while AI,
-trading, backend, API, and WebSocket capabilities remain deliberately unimplemented.
+Vite. Sprint 5 adds TradingView Lightweight Charts plus public real-time Upbit
+and Binance Futures market data. AI, trading, backend, and database capabilities
+remain deliberately unimplemented.
 
 ## Commands
 
@@ -42,6 +43,9 @@ a production build.
 - Market is the home workspace; Dashboard is a secondary operational summary.
 - AI recommendations must expose confidence and a human-readable `Why?`.
 - Market UI reads normalized data only from `services/market/marketDataService`.
-- A future live provider replaces that service without changing market components.
-- Chart, orderbook, and trade UI consume provider contracts from `services/market-detail`.
-- Live adapters are selected only in `marketDetailServices`; presentation code remains transport-agnostic.
+- New live venues implement `RealtimeMarketProvider` without changing market components.
+- Legacy chart, orderbook, and trade contracts remain the MOCK compatibility layer.
+- Live adapters are selected only inside `MarketDataService`; presentation code remains transport-agnostic.
+- `MarketDataService` is the sole facade for LIVE/MOCK routing and normalized subscriptions.
+- Upbit and Binance adapters own vendor REST/WebSocket translation; React never opens a socket.
+- Stream reconnect uses capped exponential backoff and exposes its state to the terminal UI.

@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react'
 
 import { MarketDetailWorkspace } from '@/components/market-detail/MarketDetailWorkspace/MarketDetailWorkspace'
+import { DataModeControl } from '@/components/market-data/DataModeControl/DataModeControl'
 import { MarketSection } from '@/components/market/MarketSection/MarketSection'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { useMarketDetailData } from '@/hooks/useMarketDetailData'
@@ -11,7 +12,7 @@ import styles from './MarketPage.module.css'
 export function MarketPage() {
   useDocumentTitle('Market')
   const { sections, isLoading, error } = useMarketOverview()
-  const { selectedInstrument, selectedTimeframe, selectInstrument, clearInstrument, selectTimeframe } = useMarketWorkspace()
+  const { selectedInstrument, selectedTimeframe, marketDataMode, selectInstrument, clearInstrument, selectTimeframe, setMarketDataMode } = useMarketWorkspace()
   const detailState = useMarketDetailData(selectedInstrument, selectedTimeframe)
   const [favoriteIds, setFavoriteIds] = useState<ReadonlySet<string>>(() => new Set(['upbit-btc', 'us-nvda']))
 
@@ -24,22 +25,26 @@ export function MarketPage() {
     })
   }, [])
 
-  const hasCurrentSnapshot = detailState.snapshot
-    && detailState.snapshot.instrument.id === selectedInstrument?.id
-    && detailState.snapshot.timeframe === selectedTimeframe
+  const snapshot = detailState.state?.snapshot
+  const hasCurrentSnapshot = snapshot
+    && snapshot.instrument.id === selectedInstrument?.id
+    && snapshot.timeframe === selectedTimeframe
 
   if (selectedInstrument) {
     if (detailState.error) return <div className={styles.detailState}>{detailState.error}</div>
-    if (!hasCurrentSnapshot) return <div className={styles.detailState}>Preparing {selectedInstrument.symbol} workspace…</div>
+    if (!hasCurrentSnapshot) return <div className={styles.detailState}>Connecting {selectedInstrument.symbol} · {detailState.state?.connection.message ?? 'Preparing market workspace…'}</div>
 
     return (
       <MarketDetailWorkspace
         sections={sections}
-        snapshot={detailState.snapshot!}
+        snapshot={snapshot!}
+        connection={detailState.state!.connection}
         favoriteIds={favoriteIds}
         selectedTimeframe={selectedTimeframe}
         onSelectInstrument={selectInstrument}
         onSelectTimeframe={selectTimeframe}
+        marketDataMode={marketDataMode}
+        onMarketDataModeChange={setMarketDataMode}
         onToggleFavorite={toggleFavorite}
         onBack={clearInstrument}
       />
@@ -56,7 +61,8 @@ export function MarketPage() {
         </div>
         <div className={styles.snapshot}>
           <span>Data source</span>
-          <strong><i /> Simulated market feed</strong>
+          <DataModeControl value={marketDataMode} onChange={setMarketDataMode} />
+          <strong><i className={marketDataMode === 'live' ? styles.liveDot : undefined} /> {marketDataMode === 'live' ? 'Live for Upbit & Binance' : 'Simulated market feed'}</strong>
         </div>
       </header>
 

@@ -1,6 +1,7 @@
 import { Icon } from '@/components/Icon/Icon'
 import { StatusBadge } from '@/components/StatusBadge/StatusBadge'
 import { useCurrentTime } from '@/hooks/useCurrentTime'
+import { useMarketWorkspace } from '@/hooks/useMarketWorkspace'
 import { useUiStore } from '@/hooks/useUiStore'
 import { formatDate, formatTime } from '@/utils/formatDateTime'
 import styles from './Header.module.css'
@@ -8,6 +9,15 @@ import styles from './Header.module.css'
 export function Header() {
   const now = useCurrentTime()
   const { isAiCopilotOpen, toggleAiCopilot } = useUiStore()
+  const { activeMarketState } = useMarketWorkspace()
+  const connectionStatus = activeMarketState?.connection.status
+  const connectionHealth = connectionStatus === 'live' || connectionStatus === 'mock'
+    ? 'online'
+    : connectionStatus === 'connecting' || connectionStatus === 'reconnecting'
+      ? 'degraded'
+      : connectionStatus === 'disconnected'
+        ? 'offline'
+        : 'unconfigured'
 
   return (
     <header className={styles.header}>
@@ -19,9 +29,9 @@ export function Header() {
 
       <div className={styles.actions}>
         <div className={styles.statuses}>
-          <StatusBadge label="Connection" health="unconfigured" />
+          <StatusBadge label="Market" health={connectionHealth} />
           <span className={styles.divider} />
-          <StatusBadge label="API" health="unconfigured" />
+          <StatusBadge label="Public API" health={activeMarketState?.snapshot ? 'online' : 'unconfigured'} />
         </div>
         <div className={styles.clock}>
           <strong>{formatTime(now)}</strong>

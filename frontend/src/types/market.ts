@@ -2,6 +2,17 @@ export type MarketId = 'upbit' | 'binance-futures' | 'korea-stock' | 'us-stock'
 
 export type QuoteCurrency = 'KRW' | 'USDT' | 'USD'
 
+export type MarketDataMode = 'live' | 'mock'
+
+export type MarketConnectionStatus =
+  | 'idle'
+  | 'connecting'
+  | 'live'
+  | 'reconnecting'
+  | 'disconnected'
+  | 'mock'
+  | 'unsupported'
+
 export interface MarketInstrument {
   id: string
   marketId: MarketId
@@ -19,4 +30,14 @@ export interface MarketSectionData {
   description: string
   sessionLabel: string
   instruments: readonly MarketInstrument[]
+}
+
+export interface MarketConnectionState {
+  requestedMode: MarketDataMode
+  effectiveMode: MarketDataMode
+  status: MarketConnectionStatus
+  provider: string
+  reconnectAttempt: number
+  lastUpdatedAt: number | null
+  message: string
 }

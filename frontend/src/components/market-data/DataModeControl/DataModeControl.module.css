@@ -1,0 +1,6 @@
+.control { display: inline-flex; height: 24px; border: 1px solid #25303c; background: #090e14; }
+.control button { min-width: 46px; border: 0; border-right: 1px solid #25303c; color: #536174; background: transparent; font: 650 7px ui-monospace, monospace; letter-spacing: .08em; cursor: pointer; }
+.control button:last-child { border-right: 0; }
+.control button:hover { color: #aab4c0; background: #111923; }
+.control button:focus-visible { outline: 1px solid #769e98; outline-offset: -2px; }
+.control .active { color: #c2cbc9; background: #17221f; }

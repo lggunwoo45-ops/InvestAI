@@ -1,14 +1,16 @@
 import { memo } from 'react'
 
+import type { MarketDataMode } from '@/types/market'
 import { chartTimeframes, type ChartTimeframe } from '@/types/marketDetail'
 import styles from './TimeframeToolbar.module.css'
 
 interface TimeframeToolbarProps {
   selected: ChartTimeframe
+  mode: MarketDataMode
   onSelect: (timeframe: ChartTimeframe) => void
 }
 
-export const TimeframeToolbar = memo(function TimeframeToolbar({ selected, onSelect }: TimeframeToolbarProps) {
+export const TimeframeToolbar = memo(function TimeframeToolbar({ selected, mode, onSelect }: TimeframeToolbarProps) {
   return (
     <div className={styles.toolbar} aria-label="Chart timeframe">
       <span>Interval</span>
@@ -23,7 +25,7 @@ export const TimeframeToolbar = memo(function TimeframeToolbar({ selected, onSel
         </button>
       ))}
       <i />
-      <span>Mock OHLCV</span>
+      <span>{mode === 'live' ? 'Streaming OHLCV' : 'Mock OHLCV'}</span>
     </div>
   )
 })

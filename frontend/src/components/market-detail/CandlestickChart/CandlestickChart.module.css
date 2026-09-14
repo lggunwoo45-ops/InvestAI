@@ -1,15 +1,6 @@
-.chart { position: relative; min-width: 0; min-height: 0; height: 100%; margin: 0; overflow: hidden; background: #090e14; }
-.chart svg { display: block; width: 100%; height: calc(100% - 25px); min-height: 280px; }
-.legend { display: flex; height: 25px; align-items: center; gap: 11px; padding: 0 10px; color: #59677a; font: 7px ui-monospace, monospace; }
+.chart { position: relative; display: grid; min-width: 0; min-height: 0; height: 100%; grid-template-rows: 25px minmax(0, 1fr); margin: 0; overflow: hidden; background: #090e14; }
+.canvas { min-width: 0; min-height: 280px; }
+.legend { display: flex; height: 25px; align-items: center; gap: 11px; padding: 0 10px; color: #59677a; background: #090e14; font: 7px ui-monospace, monospace; }
 .legend span:first-child { color: #b8c2cd; font-weight: 700; }
 .legend span:nth-child(2) { color: #789b96; }
-.gridLine, .verticalLine { stroke: #1a2531; stroke-width: 1; vector-effect: non-scaling-stroke; }
-.verticalLine { stroke-dasharray: 2 4; opacity: .65; }
-.axisLabel { fill: #435164; font: 9px ui-monospace, monospace; }
-.wick { stroke: currentColor; stroke-width: 1; vector-effect: non-scaling-stroke; }
-.body { fill: currentColor; }
-.volumeBar { fill: currentColor; opacity: .18; }
-.rising { color: #5cae9b; }
-.falling { color: #b9636b; }
-.lastPriceLine { stroke: #668f89; stroke-width: 1; stroke-dasharray: 4 4; opacity: .65; vector-effect: non-scaling-stroke; }
-.watermark { position: absolute; right: 12px; bottom: 9px; color: #293544; font: 7px ui-monospace, monospace; letter-spacing: .1em; }
+.watermark { position: absolute; left: 12px; bottom: 9px; z-index: 2; pointer-events: none; color: #354252; font: 6px ui-monospace, monospace; letter-spacing: .08em; }

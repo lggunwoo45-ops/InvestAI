@@ -1,6 +1,7 @@
 import { memo } from 'react'
 
 import type { MarketInstrument } from '@/types/market'
+import type { MarketDataMode } from '@/types/market'
 import type { OrderbookSnapshot } from '@/types/marketDetail'
 import { formatMarketPrice } from '@/utils/formatMarketValue'
 import styles from './Orderbook.module.css'
@@ -8,15 +9,16 @@ import styles from './Orderbook.module.css'
 interface OrderbookProps {
   instrument: MarketInstrument
   snapshot: OrderbookSnapshot
+  mode: MarketDataMode
 }
 
-export const Orderbook = memo(function Orderbook({ instrument, snapshot }: OrderbookProps) {
+export const Orderbook = memo(function Orderbook({ instrument, snapshot, mode }: OrderbookProps) {
   const formatPrice = (price: number) => formatMarketPrice({ ...instrument, lastPrice: price })
-  const maximumAmount = Math.max(...snapshot.asks.map((level) => level.amount), ...snapshot.bids.map((level) => level.amount))
+  const maximumAmount = Math.max(1, ...snapshot.asks.map((level) => level.amount), ...snapshot.bids.map((level) => level.amount))
 
   return (
     <section className={styles.orderbook} aria-labelledby="orderbook-title">
-      <header><h2 id="orderbook-title">Orderbook</h2><span>Top 10 · Mock</span></header>
+      <header><h2 id="orderbook-title">Orderbook</h2><span>Top 10 · {mode.toUpperCase()}</span></header>
       <div className={styles.columns}><span>Price</span><span>Amount</span><span>Total</span></div>
       <div className={styles.levels}>
         {snapshot.asks.map((level) => (

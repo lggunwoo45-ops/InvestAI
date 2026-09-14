@@ -26,13 +26,13 @@ describe('InvestAI application shell', () => {
     expect(samsungRowButton).toBeTruthy()
     fireEvent.click(samsungRowButton!)
 
-    expect(await screen.findByRole('img', { name: /005930 mock candlestick chart at 1H/i })).toBeTruthy()
+    expect(await screen.findByRole('img', { name: /005930 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
     expect(screen.getByRole('complementary', { name: 'Trading information' })).toBeTruthy()
-    expect(screen.getByText('Top 10 · Mock')).toBeTruthy()
+    expect(screen.getByText('Top 10 · MOCK')).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Recent Trades' })).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: '4H' }))
-    expect(await screen.findByRole('img', { name: /005930 mock candlestick chart at 4H/i })).toBeTruthy()
+    expect(await screen.findByRole('img', { name: /005930 4H TradingView candlestick chart in mock mode/i })).toBeTruthy()
 
     const copilot = screen.getByRole('complementary', { name: 'AI Copilot' })
     expect(copilot.textContent).toContain('005930')
@@ -41,6 +41,17 @@ describe('InvestAI application shell', () => {
     expect(copilot.textContent).toContain('AI Confidence')
     expect(copilot.textContent).toContain('Why?')
     expect(copilot.textContent).toContain('Trend continuation')
+  })
+
+  it('keeps an explicit mock mode for supported live markets', async () => {
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'MOCK' }))
+    const bitcoinRowButton = (await screen.findByText('Bitcoin')).closest('button')
+    fireEvent.click(bitcoinRowButton!)
+
+    expect(await screen.findByRole('img', { name: /BTC\/KRW 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
+    expect(screen.getAllByText('MOCK').length).toBeGreaterThan(1)
   })
 
   it('filters symbols and toggles favorites inside a market section', async () => {

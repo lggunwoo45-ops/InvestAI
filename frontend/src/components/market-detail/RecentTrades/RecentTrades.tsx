@@ -1,6 +1,7 @@
 import { memo } from 'react'
 
 import type { MarketInstrument } from '@/types/market'
+import type { MarketDataMode } from '@/types/market'
 import type { RecentTrade } from '@/types/marketDetail'
 import { formatMarketPrice } from '@/utils/formatMarketValue'
 import styles from './RecentTrades.module.css'
@@ -8,12 +9,13 @@ import styles from './RecentTrades.module.css'
 interface RecentTradesProps {
   instrument: MarketInstrument
   trades: readonly RecentTrade[]
+  mode: MarketDataMode
 }
 
-export const RecentTrades = memo(function RecentTrades({ instrument, trades }: RecentTradesProps) {
+export const RecentTrades = memo(function RecentTrades({ instrument, trades, mode }: RecentTradesProps) {
   return (
     <section className={styles.trades} aria-labelledby="recent-trades-title">
-      <header><h2 id="recent-trades-title">Recent Trades</h2><span>Simulated</span></header>
+      <header><h2 id="recent-trades-title">Recent Trades</h2><span>{mode === 'live' ? 'Real-time' : 'Simulated'}</span></header>
       <div className={styles.columns}><span>Time</span><span>Price</span><span>Amount</span></div>
       <div className={styles.rows}>
         {trades.map((trade) => (

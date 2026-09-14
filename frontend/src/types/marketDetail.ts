@@ -1,4 +1,4 @@
-import type { MarketInstrument } from './market'
+import type { MarketConnectionState, MarketInstrument } from './market'
 
 export type ChartTimeframe = '1m' | '5m' | '15m' | '1H' | '4H' | '1D'
 
@@ -40,4 +40,9 @@ export interface MarketDetailSnapshot {
   candles: readonly Candle[]
   orderbook: OrderbookSnapshot
   recentTrades: readonly RecentTrade[]
+}
+
+export interface RealtimeMarketState {
+  snapshot: MarketDetailSnapshot | null
+  connection: MarketConnectionState
 }

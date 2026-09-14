@@ -1,7 +1,19 @@
-import type { MarketSectionData } from '@/types/market'
+import { binanceMarketDataProvider } from '@/services/market/providers/BinanceMarketDataProvider'
+import { mockMarketDataProvider } from '@/services/market/providers/MockMarketDataProvider'
+import { upbitMarketDataProvider } from '@/services/market/providers/UpbitMarketDataProvider'
+import type { RealtimeMarketProvider } from '@/services/market/contracts/RealtimeMarketProvider'
+import type { MarketDataMode, MarketInstrument, MarketSectionData } from '@/types/market'
+import type { ChartTimeframe, RealtimeMarketState } from '@/types/marketDetail'
 
 export interface MarketOverviewService {
   getMarketOverview(): Promise<readonly MarketSectionData[]>
+}
+
+export interface MarketStreamOptions {
+  instrument: MarketInstrument
+  timeframe: ChartTimeframe
+  mode: MarketDataMode
+  onState: (state: RealtimeMarketState) => void
 }
 
 const mockMarketSections: readonly MarketSectionData[] = [
@@ -59,12 +71,124 @@ const mockMarketSections: readonly MarketSectionData[] = [
   },
 ]
 
+const liveProviders: readonly RealtimeMarketProvider[] = [upbitMarketDataProvider, binanceMarketDataProvider]
+
 /**
- * UI code depends only on this service contract. Sprint 3 can replace this mock
- * implementation with provider adapters without changing the market components.
+ * Single market-data facade. UI code never selects an exchange adapter or owns a
+ * WebSocket; future providers register here and continue emitting normalized data.
  */
-export const marketDataService: MarketOverviewService = {
+export class MarketDataService implements MarketOverviewService {
+  constructor(
+    private readonly providers: readonly RealtimeMarketProvider[] = liveProviders,
+    private readonly mockProvider: RealtimeMarketProvider = mockMarketDataProvider,
+  ) {}
+
   async getMarketOverview() {
     return Promise.resolve(mockMarketSections)
-  },
+  }
+
+  subscribe({ instrument, timeframe, mode, onState }: MarketStreamOptions): () => void {
+    const liveProvider = this.providers.find((provider) => provider.supports(instrument))
+    const provider = mode === 'live' && liveProvider ? liveProvider : this.mockProvider
+    const effectiveMode: MarketDataMode = provider === this.mockProvider ? 'mock' : 'live'
+    const isFallback = mode === 'live' && effectiveMode === 'mock'
+    let disposed = false
+    let stopProvider: (() => void) | null = null
+    let retryTimer: ReturnType<typeof setTimeout> | null = null
+    let retryAttempt = 0
+    let currentState: RealtimeMarketState = {
+      snapshot: null,
+      connection: {
+        requestedMode: mode,
+        effectiveMode,
+        status: effectiveMode === 'mock' ? 'mock' : 'connecting',
+        provider: provider.id,
+        reconnectAttempt: 0,
+        lastUpdatedAt: null,
+        message: isFallback ? 'Live data is unavailable for this market. Showing mock data.' : effectiveMode === 'mock' ? 'Deterministic simulation is active.' : 'Connecting to real-time market data…',
+      },
+    }
+
+    const emit = (nextState: RealtimeMarketState) => {
+      if (disposed) return
+      currentState = nextState
+      onState(nextState)
+    }
+
+    const start = () => {
+      emit({
+        ...currentState,
+        connection: {
+          ...currentState.connection,
+          status: effectiveMode === 'mock' ? 'mock' : retryAttempt > 0 ? 'reconnecting' : 'connecting',
+          reconnectAttempt: retryAttempt,
+        },
+      })
+
+      provider.loadSnapshot(instrument, timeframe)
+        .then((snapshot) => {
+          if (disposed) return
+          retryAttempt = 0
+          emit({
+            snapshot,
+            connection: {
+              ...currentState.connection,
+              status: effectiveMode === 'mock' ? 'mock' : 'connecting',
+              reconnectAttempt: 0,
+              lastUpdatedAt: Date.now(),
+              message: isFallback ? 'Live data is unavailable for this market. Showing mock data.' : effectiveMode === 'mock' ? 'Deterministic simulation is active.' : 'Snapshot loaded. Opening live stream…',
+            },
+          })
+          stopProvider = provider.subscribe(instrument, timeframe, snapshot, (event) => {
+            const nextStatus = event.status ?? currentState.connection.status
+            emit({
+              snapshot: event.snapshot ?? currentState.snapshot,
+              connection: {
+                ...currentState.connection,
+                status: effectiveMode === 'mock' ? 'mock' : nextStatus,
+                reconnectAttempt: event.reconnectAttempt ?? currentState.connection.reconnectAttempt,
+                lastUpdatedAt: event.snapshot ? Date.now() : currentState.connection.lastUpdatedAt,
+                message: isFallback
+                  ? 'Live data is unavailable for this market. Showing mock data.'
+                  : event.message ?? this.statusMessage(nextStatus, event.reconnectAttempt ?? 0),
+              },
+            })
+          })
+        })
+        .catch(() => {
+          if (disposed) return
+          retryAttempt += 1
+          const delay = Math.min(1_000 * (2 ** (retryAttempt - 1)), 30_000)
+          emit({
+            ...currentState,
+            connection: {
+              ...currentState.connection,
+              status: effectiveMode === 'live' ? 'reconnecting' : 'disconnected',
+              reconnectAttempt: retryAttempt,
+              message: effectiveMode === 'live' ? `Snapshot unavailable. Retrying in ${Math.round(delay / 1_000)}s…` : 'Mock market data is unavailable.',
+            },
+          })
+          if (effectiveMode === 'live') retryTimer = setTimeout(start, delay)
+        })
+    }
+
+    onState(currentState)
+    start()
+
+    return () => {
+      disposed = true
+      if (retryTimer) clearTimeout(retryTimer)
+      stopProvider?.()
+    }
+  }
+
+  private statusMessage(status: RealtimeMarketState['connection']['status'], attempt: number): string {
+    if (status === 'live') return 'Real-time synchronization active.'
+    if (status === 'reconnecting') return `Connection interrupted. Reconnect attempt ${attempt}…`
+    if (status === 'disconnected') return 'Market stream disconnected.'
+    if (status === 'mock') return 'Deterministic simulation is active.'
+    return 'Connecting to real-time market data…'
+  }
 }
+
+export const marketDataService = new MarketDataService()
