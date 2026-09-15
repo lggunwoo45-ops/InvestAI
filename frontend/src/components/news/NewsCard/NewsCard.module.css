@@ -6,7 +6,7 @@
 .thumbnail span { color: #70888c; font: 600 15px ui-monospace, monospace; letter-spacing: .08em; }
 .content { display: grid; align-content: space-between; min-width: 0; padding: 11px 13px; }
 .category { color: #5f7d7b; font-size: 7px; font-weight: 700; letter-spacing: .11em; text-transform: uppercase; }
-.article h2 { margin: 7px 0; color: #c7ced8; font-size: 10px; font-weight: 500; line-height: 1.4; }
+.article h2 { margin: 7px 0; overflow-wrap: anywhere; color: #c7ced8; font-size: 10px; font-weight: 500; line-height: 1.4; }
 .article footer { display: flex; justify-content: space-between; color: #4b586a; font-size: 7px; }
 .article footer strong { color: #687588; font-weight: 500; }
 @media (min-width: 2200px) { .article { min-height: 112px; grid-template-columns: 102px minmax(0, 1fr); } .content { padding: 14px 16px; } .article h2 { font-size: 11px; } }

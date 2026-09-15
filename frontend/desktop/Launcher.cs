@@ -11,8 +11,8 @@ using System.Threading;
 [assembly: AssemblyTitle("InvestAI Demo")]
 [assembly: AssemblyProduct("InvestAI")]
 [assembly: AssemblyCompany("InvestAI")]
-[assembly: AssemblyVersion("0.6.0.0")]
-[assembly: AssemblyFileVersion("0.6.0.0")]
+[assembly: AssemblyVersion("0.6.2.0")]
+[assembly: AssemblyFileVersion("0.6.2.0")]
 
 internal static class Launcher
 {
@@ -23,7 +23,7 @@ internal static class Launcher
     [STAThread]
     private static void Main()
     {
-        siteRoot = Path.Combine(Path.GetTempPath(), "InvestAI-v0.6.0-" + Guid.NewGuid().ToString("N"));
+        siteRoot = Path.Combine(Path.GetTempPath(), "InvestAI-v0.6.2-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(siteRoot);
         ExtractSite(siteRoot);
 

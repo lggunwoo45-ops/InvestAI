@@ -1,9 +1,10 @@
-.board { border: 1px solid #1b2634; background: #0b1017; }
+.board { min-width: 0; overflow-x: auto; border: 1px solid #1b2634; background: #0b1017; scrollbar-gutter: stable; }
 .board > header { display: flex; align-items: end; justify-content: space-between; padding: 14px 16px 12px; border-bottom: 1px solid #192330; }
 .board header span { color: #5d7474; font-size: 7px; font-weight: 700; letter-spacing: .13em; }
 .board h2 { margin: 4px 0 0; color: #dce2e9; font-size: 15px; font-weight: 600; }
 .board header p { margin: 0; color: #526074; font-size: 8px; }
-.groups { display: grid; grid-template-columns: 1.25fr .8fr 1fr; min-width: 0; }
+.groups { display: grid; grid-template-columns: 1.25fr .8fr 1fr; min-width: 720px; }
+@media (max-width: 1400px) { .board > header { min-width: 720px; } }
 .group { min-width: 0; padding: 12px 14px 14px; border-right: 1px solid #192330; }
 .group:last-child { border-right: 0; }
 .groupTitle { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }

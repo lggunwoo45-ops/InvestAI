@@ -6,11 +6,11 @@ $ErrorActionPreference = 'Stop'
 $frontendRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $outputRoot = [IO.Path]::GetFullPath($OutputDirectory)
 $systemTempRoot = [IO.Path]::GetFullPath([IO.Path]::GetTempPath())
-$stagingRoot = Join-Path $systemTempRoot ('InvestAI-v0.6.0-build-' + [Guid]::NewGuid().ToString('N'))
+$stagingRoot = Join-Path $systemTempRoot ('InvestAI-v0.6.2-build-' + [Guid]::NewGuid().ToString('N'))
 $siteArchive = Join-Path $stagingRoot 'site.zip'
-$demoExe = Join-Path $outputRoot 'InvestAI_v0.6.0_demo.exe'
-$portableRoot = Join-Path $stagingRoot 'InvestAI_v0.6.0_portable'
-$portableZip = Join-Path $outputRoot 'InvestAI_v0.6.0_portable.zip'
+$demoExe = Join-Path $outputRoot 'InvestAI_v0.6.2_demo.exe'
+$portableRoot = Join-Path $stagingRoot 'InvestAI_v0.6.2_portable'
+$portableZip = Join-Path $outputRoot 'InvestAI_v0.6.2_portable.zip'
 $compiler = 'C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe'
 
 if (-not (Test-Path -LiteralPath $compiler)) {
@@ -27,22 +27,15 @@ try {
   & $compiler /nologo /target:winexe /optimize+ /out:$demoExe /resource:"$siteArchive,InvestAI.Site" /reference:System.IO.Compression.dll /reference:System.IO.Compression.FileSystem.dll (Join-Path $frontendRoot 'desktop\Launcher.cs')
   if ($LASTEXITCODE -ne 0) { throw 'Windows demo compilation failed.' }
 
-  Copy-Item -LiteralPath $demoExe -Destination (Join-Path $portableRoot 'InvestAI_v0.6.0_demo.exe')
-  @(
-    'InvestAI v0.6.0 Portable Demo'
-    ''
-    'Run InvestAI_v0.6.0_demo.exe. The demo starts a private local web server and opens InvestAI in your default browser.'
-    'The stable origin uses port 18460, with 18461-18463 as fallbacks when the preferred port is occupied.'
-    'Close the InvestAI demo process from Task Manager when finished.'
-    'LIVE market data requires an internet connection. MOCK mode remains available offline.'
-  ) | Set-Content -LiteralPath (Join-Path $portableRoot 'README.txt') -Encoding UTF8
+  Copy-Item -LiteralPath $demoExe -Destination (Join-Path $portableRoot 'InvestAI_v0.6.2_demo.exe')
+  Copy-Item -LiteralPath (Join-Path $frontendRoot 'desktop\README.demo.txt') -Destination (Join-Path $portableRoot 'README.txt')
   Compress-Archive -Path (Join-Path $portableRoot '*') -DestinationPath $portableZip -CompressionLevel Optimal -Force
 
   Get-Item -LiteralPath $demoExe, $portableZip | Select-Object FullName, Length, LastWriteTime
 }
 finally {
   $resolvedStagingRoot = [IO.Path]::GetFullPath($stagingRoot)
-  if ($resolvedStagingRoot.StartsWith($systemTempRoot, [StringComparison]::OrdinalIgnoreCase) -and (Split-Path $resolvedStagingRoot -Leaf).StartsWith('InvestAI-v0.6.0-build-') -and (Test-Path -LiteralPath $resolvedStagingRoot)) {
+  if ($resolvedStagingRoot.StartsWith($systemTempRoot, [StringComparison]::OrdinalIgnoreCase) -and (Split-Path $resolvedStagingRoot -Leaf).StartsWith('InvestAI-v0.6.2-build-') -and (Test-Path -LiteralPath $resolvedStagingRoot)) {
     Remove-Item -LiteralPath $resolvedStagingRoot -Recurse -Force
   }
 }

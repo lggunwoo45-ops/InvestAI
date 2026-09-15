@@ -1,7 +1,7 @@
 # InvestAI frontend
 
 Production-oriented desktop workspace built with React 19, TypeScript, and
-Vite. Sprint 6 adds a daily smart dashboard, persistent multi-watchlists,
+Vite. Sprint 6.2 polishes the daily smart dashboard, persistent multi-watchlists,
 cross-market discovery, market-aware news, global search, and session status on
 top of Sprint 5's TradingView charts and public real-time market data. AI,
 trading, backend, authentication, and database capabilities remain deliberately
@@ -19,8 +19,8 @@ npm run build:windows-demo
 `npm run check` runs linting, strict TypeScript validation, UI smoke tests, and
 a production build.
 
-`npm run build:windows-demo` creates a single-file Windows demo launcher and a
-portable ZIP in `frontend/release`. The launcher serves the production bundle on
+`npm run build:windows-demo` creates `InvestAI_v0.6.2_demo.exe` and
+`InvestAI_v0.6.2_portable.zip` in `frontend/release`. The launcher serves the production bundle on
 a private loopback port and opens it in the default browser; LIVE mode requires
 internet access and MOCK mode remains available offline.
 

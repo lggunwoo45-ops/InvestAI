@@ -2,4 +2,4 @@
 .title { display: flex; align-items: center; justify-content: space-between; padding: 0 10px; border-bottom: 1px solid #202b38; background: #0b1017; }
 .title strong { color: #b8c1cc; font-size: 8px; }
 .title span { color: #58677a; font: 6px ui-monospace, monospace; letter-spacing: .07em; text-transform: uppercase; }
-.content { display: grid; min-height: 0; grid-template-rows: minmax(455px, 3fr) minmax(250px, 2fr); overflow: hidden; }
+.content { display: grid; min-height: 0; grid-template-rows: minmax(300px, 3fr) minmax(180px, 2fr); overflow: hidden; }

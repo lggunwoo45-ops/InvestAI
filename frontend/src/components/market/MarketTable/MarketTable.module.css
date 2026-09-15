@@ -1,5 +1,5 @@
-.scroller { min-height: 0; overflow: auto; }
-.table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.scroller { min-width: 0; min-height: 0; overflow: auto; scrollbar-gutter: stable; }
+.table { width: 100%; min-width: 430px; border-collapse: collapse; table-layout: fixed; }
 .table thead { position: sticky; z-index: 1; top: 0; background: #0d131b; }
 .table thead tr { height: 31px; }
 .table thead th { padding: 0 9px; color: #4f5d70; font-size: 7px; font-weight: 600; letter-spacing: .08em; text-align: right; text-transform: uppercase; white-space: nowrap; }

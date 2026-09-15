@@ -8,8 +8,11 @@ and every recommendation must remain explainable to the user.
 
 ## Current foundation
 
-Sprint 1 establishes the production frontend shell and extension contracts. It
-does not connect to market APIs, execute trades, or run AI analysis yet.
+Sprint 6.2 provides a polished desktop-first market workspace, a smart daily
+dashboard, persistent multi-watchlists, discovery and news workspaces, and a
+Windows demonstration package. Public Upbit and Binance market streams are
+available through the provider layer; trading and real AI remain intentionally
+unimplemented.
 
 - `frontend`: React 19, TypeScript, Vite, and a route-based desktop workspace
 - `docs`: architecture, security, API, UI, and roadmap documentation

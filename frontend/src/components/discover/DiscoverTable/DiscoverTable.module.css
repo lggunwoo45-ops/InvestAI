@@ -1,10 +1,13 @@
-.panel { min-width: 0; border: 1px solid #1b2634; background: #0b1017; }
+.panel { display: grid; min-width: 0; min-height: 0; grid-template-rows: auto minmax(0, 1fr); border: 1px solid #1b2634; background: #0b1017; }
 .panel header { display: flex; align-items: center; justify-content: space-between; padding: 13px 14px 11px; border-bottom: 1px solid #192330; }
 .panel h2 { margin: 0; color: #cdd4dd; font-size: 11px; font-weight: 600; }
 .panel p { margin: 3px 0 0; color: #4c596c; font-size: 7px; }
 .panel header > span { color: #556276; font: 7px ui-monospace, monospace; }
+.scroller { min-width: 0; min-height: 0; overflow: auto; scrollbar-gutter: stable; }
+.scroller:focus-visible { outline: 1px solid #345665; outline-offset: -1px; }
+.table { min-width: 335px; }
 .head, .row { display: grid; grid-template-columns: minmax(125px, 1.3fr) minmax(70px, .8fr) 52px 56px; align-items: center; gap: 8px; }
-.head { padding: 7px 11px; border-bottom: 1px solid #17212d; color: #445064; font-size: 7px; letter-spacing: .08em; text-transform: uppercase; }
+.head { position: sticky; z-index: 1; top: 0; padding: 7px 11px; border-bottom: 1px solid #17212d; color: #445064; background: #0b1017; font-size: 7px; letter-spacing: .08em; text-transform: uppercase; }
 .head span:not(:first-child) { text-align: right; }
 .row { width: 100%; min-height: 43px; padding: 6px 11px; border: 0; border-bottom: 1px solid #151e29; color: #788597; background: transparent; text-align: right; font: 8px ui-monospace, monospace; cursor: pointer; }
 .row:hover { background: #101721; }

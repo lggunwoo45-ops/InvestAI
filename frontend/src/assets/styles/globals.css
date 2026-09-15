@@ -77,7 +77,7 @@ a {
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: #0a0f16;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -85,6 +85,19 @@ a {
   border-radius: 8px;
   background: #253144;
   background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #35445a;
+  background-clip: padding-box;
+}
+
+@media (max-width: 1500px) {
+  :root {
+    --sidebar-width: 220px;
+    --ai-copilot-width: 320px;
+    --header-height: 66px;
+  }
 }
 
 @media (min-width: 2200px) {

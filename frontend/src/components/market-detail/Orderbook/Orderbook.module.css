@@ -5,7 +5,8 @@
 .columns, .level { display: grid; grid-template-columns: 1.3fr .8fr .8fr; align-items: center; }
 .columns { padding: 0 8px; color: #475467; font-size: 6px; letter-spacing: .06em; text-align: right; text-transform: uppercase; }
 .columns span:first-child { text-align: left; }
-.levels { min-height: 0; overflow: hidden auto; }
+.levels { min-width: 0; min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
+.levels > * { min-width: 215px; }
 .level { position: relative; min-height: 19px; padding: 0 8px; border-top: 1px solid #141e29; font: 6px/1 ui-monospace, monospace; text-align: right; }
 .level span { position: relative; z-index: 1; color: #647286; }
 .level span:first-of-type { text-align: left; }

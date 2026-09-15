@@ -1,4 +1,4 @@
-.copilot { display: grid; min-width: 0; min-height: 0; grid-template-rows: 63px 42px minmax(0, 1fr) auto; border-left: 1px solid var(--color-border); background: #0a0f16; }
+.copilot { display: grid; min-width: 0; min-height: 0; grid-template-rows: 63px 42px minmax(0, 1fr) auto; overflow: hidden; border-left: 1px solid var(--color-border); background: #0a0f16; }
 .header { display: flex; align-items: center; justify-content: space-between; padding: 0 18px; border-bottom: 1px solid var(--color-border); }
 .header > button { width: 27px; height: 27px; padding: 0; border: 0; border-radius: 5px; color: var(--color-text-subtle); background: transparent; cursor: pointer; }
 .header > button:hover { color: var(--color-text); background: var(--color-surface-hover); }
@@ -9,7 +9,7 @@
 .aiIcon { display: grid; width: 29px; height: 29px; place-items: center; border: 1px solid rgba(93,228,199,.2); border-radius: 7px; color: var(--color-accent); background: var(--color-accent-soft); }
 .contextBar { display: flex; align-items: center; justify-content: space-between; padding: 0 18px; border-bottom: 1px solid var(--color-border); color: var(--color-text-subtle); font-size: 9px; }
 .contextBar strong { color: #677487; font-weight: 500; }
-.content { min-height: 0; padding: 16px; overflow: auto; }
+.content { min-height: 0; padding: 16px; overflow: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
 .analysis { display: grid; gap: 12px; }
 .instrumentHeader { padding: 3px 2px 13px; border-bottom: 1px solid var(--color-border); }
 .instrumentHeader > span { color: #607e7a; font-size: 7px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
@@ -42,3 +42,4 @@
 .composerInput { display: flex; height: 48px; align-items: center; justify-content: space-between; padding: 0 9px 0 13px; border: 1px solid var(--color-border); border-radius: 8px; color: #505d70; background: var(--color-surface); font-size: 10px; }
 .composerInput button { display: grid; width: 28px; height: 28px; place-items: center; padding: 0; border: 1px solid var(--color-border); border-radius: 6px; color: #3f4c5e; background: #111721; }
 .composer p { margin: 8px 2px 0; color: #414c5d; font-size: 8px; text-align: center; }
+@media (max-height: 760px) { .copilot { grid-template-rows: 54px 36px minmax(0, 1fr) auto; } .content { padding: 12px; } .analysis { gap: 9px; } .composer { padding: 10px 12px; } .composerInput { height: 40px; } }
