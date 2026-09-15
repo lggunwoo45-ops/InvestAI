@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type PropsWithChildren } from 'react'
 
 import { WatchlistContext, type WatchlistValue } from '@/store/watchlistContext'
+import type { Watchlist } from '@/types/dashboard'
 import {
   MAX_CUSTOM_WATCHLISTS,
   reorderIds,

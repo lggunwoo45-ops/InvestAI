@@ -43,7 +43,6 @@ export const CandlestickChart = memo(function CandlestickChart({ candles, instru
     const chart = createChart(container, {
       width: container.clientWidth,
       height: container.clientHeight,
-      attributionLogo: true,
       layout: {
         background: { type: ColorType.Solid, color: '#090e14' },
         textColor: '#526074',

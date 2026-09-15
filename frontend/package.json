@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --build --force",
     "test": "vitest run",
     "check": "npm run lint && npm run typecheck && npm run test && npm run build",
     "build:windows-demo": "powershell -ExecutionPolicy Bypass -File ./scripts/build-windows-demo.ps1",
@@ -21,6 +21,7 @@
   },
   "devDependencies": {
     "@testing-library/react": "^16.3.3",
+    "@types/node": "^24.13.4",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",

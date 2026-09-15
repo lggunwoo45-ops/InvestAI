@@ -72,7 +72,7 @@ export function MarketPage() {
               key={section.id}
               section={section}
               favoriteIds={favoriteIds}
-              selectedInstrumentId={selectedInstrument?.id ?? null}
+              selectedInstrumentId={null}
               onSelect={openInstrument}
               onToggleFavorite={toggleFavorite}
             />
