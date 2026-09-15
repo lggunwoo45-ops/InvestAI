@@ -1,20 +1,17 @@
 import { useCallback, useEffect, useMemo, useState, type PropsWithChildren } from 'react'
 
-import type { Watchlist } from '@/types/dashboard'
 import { WatchlistContext, type WatchlistValue } from '@/store/watchlistContext'
-import { defaultWatchlists, reorderIds } from '@/utils/watchlists'
-
-const STORAGE_KEY = 'investai.watchlists.v2'
-const RECENT_KEY = 'investai.recently-viewed.v1'
-
-function readStored<T>(key: string, fallback: T): T {
-  try {
-    const value = window.localStorage.getItem(key)
-    return value ? JSON.parse(value) as T : fallback
-  } catch {
-    return fallback
-  }
-}
+import {
+  MAX_CUSTOM_WATCHLISTS,
+  reorderIds,
+  WATCHLIST_SCHEMA_VERSION,
+} from '@/utils/watchlists'
+import {
+  loadStoredRecentlyViewed,
+  loadStoredWatchlists,
+  RECENTLY_VIEWED_STORAGE_KEY,
+  WATCHLIST_STORAGE_KEY,
+} from '@/utils/watchlistStorage'
 
 function targetListId(instrumentId: string) {
   if (instrumentId.startsWith('krx-')) return 'korea'
@@ -23,12 +20,16 @@ function targetListId(instrumentId: string) {
 }
 
 export function WatchlistProvider({ children }: PropsWithChildren) {
-  const [watchlists, setWatchlists] = useState<readonly Watchlist[]>(() => readStored(STORAGE_KEY, defaultWatchlists))
+  const [watchlists, setWatchlists] = useState<readonly Watchlist[]>(() => loadStoredWatchlists())
   const [activeWatchlistId, setActiveWatchlistId] = useState('crypto')
-  const [recentlyViewedIds, setRecentlyViewedIds] = useState<readonly string[]>(() => readStored(RECENT_KEY, []))
+  const [recentlyViewedIds, setRecentlyViewedIds] = useState<readonly string[]>(() => loadStoredRecentlyViewed())
 
-  useEffect(() => { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(watchlists)) }, [watchlists])
-  useEffect(() => { window.localStorage.setItem(RECENT_KEY, JSON.stringify(recentlyViewedIds)) }, [recentlyViewedIds])
+  useEffect(() => {
+    try { window.localStorage.setItem(WATCHLIST_STORAGE_KEY, JSON.stringify({ schemaVersion: WATCHLIST_SCHEMA_VERSION, watchlists })) } catch { /* Keep in-memory state usable. */ }
+  }, [watchlists])
+  useEffect(() => {
+    try { window.localStorage.setItem(RECENTLY_VIEWED_STORAGE_KEY, JSON.stringify({ schemaVersion: WATCHLIST_SCHEMA_VERSION, recentlyViewedIds })) } catch { /* Keep in-memory state usable. */ }
+  }, [recentlyViewedIds])
 
   const updateItems = useCallback((watchlistId: string, update: (ids: readonly string[]) => readonly string[]) => {
     setWatchlists((current) => current.map((list) => list.id === watchlistId ? { ...list, instrumentIds: update(list.instrumentIds) } : list))
@@ -50,10 +51,19 @@ export function WatchlistProvider({ children }: PropsWithChildren) {
   const createWatchlist = useCallback((name: string) => {
     const trimmed = name.trim()
     if (!trimmed) return
-    const id = `list-${Date.now().toString(36)}`
+    const isDuplicate = watchlists.some((list) => list.name.toLocaleLowerCase() === trimmed.toLocaleLowerCase())
+    const customCount = watchlists.filter((list) => !list.isDefault).length
+    if (isDuplicate || customCount >= MAX_CUSTOM_WATCHLISTS) return
+    const id = `list-${globalThis.crypto.randomUUID()}`
     setWatchlists((current) => [...current, { id, name: trimmed, instrumentIds: [], isDefault: false }])
     setActiveWatchlistId(id)
-  }, [])
+  }, [watchlists])
+
+  const deleteWatchlist = useCallback((id: string) => {
+    if (!watchlists.some((list) => list.id === id && !list.isDefault)) return
+    setWatchlists((current) => current.filter((list) => list.id !== id))
+    setActiveWatchlistId((current) => current === id ? 'crypto' : current)
+  }, [watchlists])
 
   const removeFromWatchlist = useCallback((watchlistId: string, instrumentId: string) => {
     updateItems(watchlistId, (ids) => ids.filter((id) => id !== instrumentId))
@@ -75,12 +85,13 @@ export function WatchlistProvider({ children }: PropsWithChildren) {
     recentlyViewedIds,
     setActiveWatchlistId,
     createWatchlist,
+    deleteWatchlist,
     toggleFavorite,
     toggleInWatchlist,
     removeFromWatchlist,
     reorderWatchlist,
     trackRecentlyViewed,
-  }), [activeWatchlistId, createWatchlist, favoriteIds, recentlyViewedIds, removeFromWatchlist, reorderWatchlist, toggleFavorite, toggleInWatchlist, trackRecentlyViewed, watchlists])
+  }), [activeWatchlistId, createWatchlist, deleteWatchlist, favoriteIds, recentlyViewedIds, removeFromWatchlist, reorderWatchlist, toggleFavorite, toggleInWatchlist, trackRecentlyViewed, watchlists])
 
   return <WatchlistContext value={value}>{children}</WatchlistContext>
 }

@@ -3,6 +3,8 @@
 .panel header span { color: #5d7474; font-size: 7px; font-weight: 700; letter-spacing: .13em; }
 .panel h2 { margin: 4px 0 0; color: #dce2e9; font-size: 15px; font-weight: 600; }
 .panel header small { color: #536174; font-size: 7px; }
+.headerActions { display: flex; align-items: center; gap: 8px; }
+.headerActions button { border: 0; color: #7f5960; background: transparent; font-size: 7px; cursor: pointer; }
 .tabs { display: flex; overflow-x: auto; border-bottom: 1px solid #192330; }
 .tabs button { display: flex; align-items: center; gap: 6px; padding: 9px 11px; border: 0; border-right: 1px solid #192330; color: #596679; background: transparent; font-size: 8px; cursor: pointer; white-space: nowrap; }
 .tabs button[aria-selected='true'] { color: #a9b3c0; background: #111923; box-shadow: inset 0 -1px #5c9e8f; }
@@ -15,6 +17,11 @@
 .row:hover { background: #0f161f; }
 .asset { display: flex; min-width: 0; align-items: center; gap: 7px; padding: 0; border: 0; text-align: left; background: transparent; cursor: pointer; }
 .asset i { color: #384455; font-style: normal; cursor: grab; }
+.unavailable { display: flex; min-width: 0; align-items: center; gap: 7px; color: #7f5960; }
+.unavailable i { color: #384455; font-style: normal; cursor: grab; }
+.unavailable span { display: grid; min-width: 0; gap: 3px; }
+.unavailable strong { font: 600 9px ui-monospace, monospace; }
+.unavailable small { overflow: hidden; color: #4d5a6c; font-size: 7px; text-overflow: ellipsis; white-space: nowrap; }
 .asset span { display: grid; min-width: 0; gap: 3px; }
 .asset strong { color: #c8d0da; font: 600 9px ui-monospace, monospace; }
 .asset small { overflow: hidden; color: #4d5a6c; font-size: 7px; text-overflow: ellipsis; white-space: nowrap; }

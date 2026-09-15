@@ -32,6 +32,7 @@ try {
     'InvestAI v0.6.0 Portable Demo'
     ''
     'Run InvestAI_v0.6.0_demo.exe. The demo starts a private local web server and opens InvestAI in your default browser.'
+    'The stable origin uses port 18460, with 18461-18463 as fallbacks when the preferred port is occupied.'
     'Close the InvestAI demo process from Task Manager when finished.'
     'LIVE market data requires an internet connection. MOCK mode remains available offline.'
   ) | Set-Content -LiteralPath (Join-Path $portableRoot 'README.txt') -Encoding UTF8

@@ -13,13 +13,13 @@ interface WatchlistManagerProps { sections: readonly MarketSectionData[] }
 export const WatchlistManager = memo(function WatchlistManager({ sections }: WatchlistManagerProps) {
   const navigate = useNavigate()
   const { selectInstrument } = useMarketWorkspace()
-  const { watchlists, activeWatchlistId, setActiveWatchlistId, createWatchlist, toggleInWatchlist, removeFromWatchlist, reorderWatchlist } = useWatchlists()
+  const { watchlists, activeWatchlistId, setActiveWatchlistId, createWatchlist, deleteWatchlist, toggleInWatchlist, removeFromWatchlist, reorderWatchlist } = useWatchlists()
   const [newListName, setNewListName] = useState('')
   const [selectedAssetId, setSelectedAssetId] = useState('')
   const [dragIndex, setDragIndex] = useState<number | null>(null)
   const catalog = useMemo(() => new Map(sections.flatMap((section) => section.instruments).map((instrument) => [instrument.id, instrument])), [sections])
   const activeList = watchlists.find((list) => list.id === activeWatchlistId) ?? watchlists[0]
-  const instruments = (activeList?.instrumentIds ?? []).map((id) => catalog.get(id)).filter((item): item is MarketInstrument => Boolean(item))
+  const entries = (activeList?.instrumentIds ?? []).map((id) => ({ id, instrument: catalog.get(id) ?? null }))
   const availableInstruments = [...catalog.values()].filter((instrument) => !activeList?.instrumentIds.includes(instrument.id))
 
   const openInstrument = (instrument: MarketInstrument) => {
@@ -28,8 +28,9 @@ export const WatchlistManager = memo(function WatchlistManager({ sections }: Wat
   }
 
   const handleDrop = (event: DragEvent, targetIndex: number) => {
+    if (!activeList || event.dataTransfer.getData('application/x-investai-watchlist') !== activeList.id) return
     event.preventDefault()
-    if (activeList && dragIndex !== null) reorderWatchlist(activeList.id, dragIndex, targetIndex)
+    if (dragIndex !== null) reorderWatchlist(activeList.id, dragIndex, targetIndex)
     setDragIndex(null)
   }
 
@@ -41,28 +42,31 @@ export const WatchlistManager = memo(function WatchlistManager({ sections }: Wat
 
   return (
     <section className={styles.panel} aria-labelledby="watchlist-title">
-      <header><div><span>PERSONAL MARKET BOARD</span><h2 id="watchlist-title">Watchlist 2.0</h2></div><small>Saved locally</small></header>
+      <header><div><span>PERSONAL MARKET BOARD</span><h2 id="watchlist-title">Watchlist 2.0</h2></div><div className={styles.headerActions}><small>Saved locally</small>{activeList && !activeList.isDefault && <button type="button" onClick={() => deleteWatchlist(activeList.id)} aria-label={`Delete ${activeList.name} watchlist`}>Delete list</button>}</div></header>
       <div className={styles.tabs} role="tablist" aria-label="Watchlists">
         {watchlists.map((list) => <button key={list.id} type="button" role="tab" aria-selected={list.id === activeList?.id} onClick={() => setActiveWatchlistId(list.id)}>{list.name}<span>{list.instrumentIds.length}</span></button>)}
       </div>
       <div className={styles.list}>
         <div className={styles.tableHead}><span>Symbol</span><span>Last</span><span>Change</span><span /></div>
-        {instruments.map((instrument, index) => (
+        {entries.map(({ id, instrument }, index) => (
           <div
-            key={instrument.id}
+            key={id}
             className={styles.row}
             draggable
-            onDragStart={() => setDragIndex(index)}
-            onDragOver={(event) => event.preventDefault()}
+            onDragStart={(event) => { if (!activeList) return; event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setData('application/x-investai-watchlist', activeList.id); setDragIndex(index) }}
+            onDragEnd={() => setDragIndex(null)}
+            onDragOver={(event) => { if (event.dataTransfer.types.includes('application/x-investai-watchlist')) event.preventDefault() }}
             onDrop={(event) => handleDrop(event, index)}
           >
-            <button type="button" className={styles.asset} onClick={() => openInstrument(instrument)}><i>⋮⋮</i><span><strong>{instrument.symbol}</strong><small>{instrument.name}</small></span></button>
-            <span className={styles.price}>{formatMarketPrice(instrument)}</span>
-            <span className={instrument.change24hPercent >= 0 ? styles.positive : styles.negative}>{formatMarketChange(instrument.change24hPercent)}</span>
-            <button type="button" className={styles.remove} onClick={() => activeList && removeFromWatchlist(activeList.id, instrument.id)} aria-label={`Remove ${instrument.symbol}`}>×</button>
+            {instrument ? <>
+              <button type="button" className={styles.asset} onClick={() => openInstrument(instrument)}><i>⋮⋮</i><span><strong>{instrument.symbol}</strong><small>{instrument.name}</small></span></button>
+              <span className={styles.price}>{formatMarketPrice(instrument)}</span>
+              <span className={instrument.change24hPercent >= 0 ? styles.positive : styles.negative}>{formatMarketChange(instrument.change24hPercent)}</span>
+            </> : <><span className={styles.unavailable}><i>⋮⋮</i><span><strong>Unavailable</strong><small>{id}</small></span></span><span className={styles.price}>—</span><span className={styles.price}>—</span></>}
+            <button type="button" className={styles.remove} onClick={() => activeList && removeFromWatchlist(activeList.id, id)} aria-label={`Remove ${instrument?.symbol ?? id}`}>×</button>
           </div>
         ))}
-        {instruments.length === 0 && <div className={styles.empty}>Use a market star to add instruments to this list.</div>}
+        {entries.length === 0 && <div className={styles.empty}>Use a market star to add instruments to this list.</div>}
       </div>
       <div className={styles.addAsset}>
         <select value={selectedAssetId} onChange={(event) => setSelectedAssetId(event.target.value)} aria-label="Symbol to add">

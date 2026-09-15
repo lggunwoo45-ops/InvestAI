@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 
 [assembly: AssemblyTitle("InvestAI Demo")]
 [assembly: AssemblyProduct("InvestAI")]
@@ -15,6 +16,8 @@ using System.Text;
 
 internal static class Launcher
 {
+    private static readonly int[] Ports = { 18460, 18461, 18462, 18463 };
+    private const int ClientTimeoutMilliseconds = 5000;
     private static string siteRoot = string.Empty;
 
     [STAThread]
@@ -25,17 +28,49 @@ internal static class Launcher
         ExtractSite(siteRoot);
 
         AppDomain.CurrentDomain.ProcessExit += delegate { TryDelete(siteRoot); };
-        TcpListener listener = new TcpListener(IPAddress.Loopback, 0);
-        listener.Start();
+        TcpListener listener = StartListener();
         int port = ((IPEndPoint)listener.LocalEndpoint).Port;
         Process.Start("http://127.0.0.1:" + port + "/market");
 
         while (true)
         {
-            using (TcpClient client = listener.AcceptTcpClient())
+            try
             {
-                Serve(client);
+                TcpClient client = listener.AcceptTcpClient();
+                client.ReceiveTimeout = ClientTimeoutMilliseconds;
+                client.SendTimeout = ClientTimeoutMilliseconds;
+                ThreadPool.QueueUserWorkItem(delegate { HandleClient(client); });
             }
+            catch (SocketException) { Thread.Sleep(100); }
+            catch (ObjectDisposedException) { return; }
+        }
+    }
+
+    private static TcpListener StartListener()
+    {
+        foreach (int port in Ports)
+        {
+            TcpListener listener = new TcpListener(IPAddress.Loopback, port);
+            try
+            {
+                listener.Start();
+                return listener;
+            }
+            catch (SocketException) { listener.Stop(); }
+        }
+        throw new InvalidOperationException("InvestAI demo ports 18460-18463 are unavailable.");
+    }
+
+    private static void HandleClient(TcpClient client)
+    {
+        using (client)
+        {
+            try { Serve(client); }
+            catch (IOException) { }
+            catch (SocketException) { }
+            catch (ObjectDisposedException) { }
+            catch (InvalidOperationException) { }
+            catch (Exception) { }
         }
     }
 
@@ -64,6 +99,8 @@ internal static class Launcher
     private static void Serve(TcpClient client)
     {
         NetworkStream stream = client.GetStream();
+        stream.ReadTimeout = ClientTimeoutMilliseconds;
+        stream.WriteTimeout = ClientTimeoutMilliseconds;
         StreamReader reader = new StreamReader(stream, Encoding.ASCII, false, 4096, true);
         string request = reader.ReadLine();
         if (string.IsNullOrEmpty(request)) return;

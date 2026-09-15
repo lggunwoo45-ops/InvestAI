@@ -24,6 +24,10 @@ portable ZIP in `frontend/release`. The launcher serves the production bundle on
 a private loopback port and opens it in the default browser; LIVE mode requires
 internet access and MOCK mode remains available offline.
 
+The demo uses `http://127.0.0.1:18460` as its stable origin so Local Storage
+watchlists survive normal restarts. If that port is occupied, it tries ports
+`18461`, `18462`, and `18463` in order.
+
 ## Source boundaries
 
 - `app`: application composition, providers, navigation, and routes

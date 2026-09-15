@@ -112,4 +112,15 @@ describe('InvestAI application shell', () => {
     expect(screen.getByRole('button', { name: 'NVDA ON' })).toBeTruthy()
     expect(screen.getByText(/NVIDIA outlines/)).toBeTruthy()
   })
+
+  it('clears the Header market status after leaving Market', async () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'MOCK' }))
+    const bitcoinRowButton = (await screen.findByText('Bitcoin')).closest('button')
+    fireEvent.click(bitcoinRowButton!)
+    expect(await screen.findByTitle('Market: online')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('link', { name: 'Dashboard' }))
+    expect(await screen.findByTitle('Market: unconfigured')).toBeTruthy()
+  })
 })

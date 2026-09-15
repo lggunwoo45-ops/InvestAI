@@ -26,7 +26,7 @@ export function useMarketDetailData(instrument: MarketInstrument | null, timefra
       return undefined
     }
 
-    return marketDataService.subscribe({
+    const unsubscribe = marketDataService.subscribe({
       instrument,
       timeframe,
       mode: marketDataMode,
@@ -35,6 +35,11 @@ export function useMarketDetailData(instrument: MarketInstrument | null, timefra
         setActiveMarketState(state)
       },
     })
+
+    return () => {
+      unsubscribe()
+      setActiveMarketState(null)
+    }
   }, [instrument, marketDataMode, requestKey, setActiveMarketState, timeframe])
 
   if (!instrument) return { state: null, isLoading: false, error: null }

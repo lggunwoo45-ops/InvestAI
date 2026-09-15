@@ -9,6 +9,7 @@ export interface WatchlistValue {
   recentlyViewedIds: readonly string[]
   setActiveWatchlistId: (id: string) => void
   createWatchlist: (name: string) => void
+  deleteWatchlist: (id: string) => void
   toggleFavorite: (instrumentId: string) => void
   toggleInWatchlist: (watchlistId: string, instrumentId: string) => void
   removeFromWatchlist: (watchlistId: string, instrumentId: string) => void
