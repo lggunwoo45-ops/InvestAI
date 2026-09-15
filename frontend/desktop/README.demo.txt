@@ -1,6 +1,12 @@
 InvestAI v0.6.2 Portable Demo
 ============================
 
+Launcher log
+%LOCALAPPDATA%\InvestAI\demo-launcher.log
+
+The log records process startup, the selected port, listener and browser launch
+results, the local health check, shutdown requests, and launcher exceptions.
+
 How to start
 1. If this file came from the ZIP, extract every file before starting.
 2. Double-click InvestAI_v0.6.2_demo.exe.
