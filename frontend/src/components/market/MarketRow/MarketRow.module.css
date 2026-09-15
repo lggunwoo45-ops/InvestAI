@@ -1,0 +1,17 @@
+.row { height: 46px; border-top: 1px solid #192330; color: #8d99a9; cursor: pointer; transition: background .12s ease; }
+.row:hover, .selected { background: #111a24; }
+.selected { box-shadow: inset 2px 0 #5a9188; }
+.row td, .row th { padding: 0 9px; font-weight: 400; text-align: right; white-space: nowrap; }
+.row th { width: 35%; text-align: left; }
+.favoriteCell { width: 32px; padding-right: 0 !important; text-align: center !important; }
+.favorite { padding: 3px; border: 0; color: #465467; background: transparent; cursor: pointer; font-size: 14px; line-height: 1; }
+.favorite:hover, .favoriteActive { color: #b99a59; }
+.symbolButton { display: grid; width: 100%; padding: 5px 0; border: 0; background: transparent; cursor: pointer; text-align: left; }
+.symbolButton strong { color: #d6dce5; font: 600 10px/1.2 ui-monospace, monospace; letter-spacing: .01em; }
+.symbolButton span { max-width: 140px; margin-top: 3px; overflow: hidden; color: #526073; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
+.price, .change, .volume { font: 500 9px/1.2 ui-monospace, monospace; }
+.price { color: #b8c1cd; }
+.positive { color: #65b8a2; }
+.negative { color: #bf7379; }
+.volume { color: #69778a; }
+@media (min-width: 2200px) { .row { height: 50px; } .symbolButton strong, .price, .change, .volume { font-size: 10px; } }

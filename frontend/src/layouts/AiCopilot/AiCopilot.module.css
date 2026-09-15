@@ -1,0 +1,45 @@
+.copilot { display: grid; min-width: 0; min-height: 0; grid-template-rows: 63px 42px minmax(0, 1fr) auto; overflow: hidden; border-left: 1px solid var(--color-border); background: #0a0f16; }
+.header { display: flex; align-items: center; justify-content: space-between; padding: 0 18px; border-bottom: 1px solid var(--color-border); }
+.header > button { width: 27px; height: 27px; padding: 0; border: 0; border-radius: 5px; color: var(--color-text-subtle); background: transparent; cursor: pointer; }
+.header > button:hover { color: var(--color-text); background: var(--color-surface-hover); }
+.titleGroup { display: flex; align-items: center; gap: 10px; }
+.titleGroup > div { display: grid; }
+.titleGroup strong { color: #d9dfe8; font-size: 11px; }
+.titleGroup span { margin-top: 2px; color: var(--color-text-subtle); font-size: 8px; }
+.aiIcon { display: grid; width: 29px; height: 29px; place-items: center; border: 1px solid rgba(93,228,199,.2); border-radius: 7px; color: var(--color-accent); background: var(--color-accent-soft); }
+.contextBar { display: flex; align-items: center; justify-content: space-between; padding: 0 18px; border-bottom: 1px solid var(--color-border); color: var(--color-text-subtle); font-size: 9px; }
+.contextBar strong { color: #677487; font-weight: 500; }
+.content { min-height: 0; padding: 16px; overflow: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
+.analysis { display: grid; gap: 12px; }
+.instrumentHeader { padding: 3px 2px 13px; border-bottom: 1px solid var(--color-border); }
+.instrumentHeader > span { color: #607e7a; font-size: 7px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.instrumentHeader h2 { margin: 7px 0 0; color: #e0e5ec; font: 650 19px/1 ui-monospace, monospace; }
+.instrumentHeader p { margin: 6px 0 0; color: #59677a; font-size: 9px; }
+.marketFacts { display: grid; margin: 0; border: 1px solid #1b2634; border-radius: 5px; background: #0d131b; }
+.marketFacts > div { display: flex; min-height: 39px; align-items: center; justify-content: space-between; gap: 12px; padding: 0 11px; border-bottom: 1px solid #192330; }
+.marketFacts > div:last-child { border-bottom: 0; }
+.marketFacts dt { color: #59677a; font-size: 8px; }
+.marketFacts dd { margin: 0; color: #bbc4cf; font: 500 9px/1.2 ui-monospace, monospace; text-transform: capitalize; }
+.marketFacts dd.positive { color: #65b8a2; }
+.marketFacts dd.negative { color: #bf7379; }
+.confidence { padding: 12px; border: 1px solid #1d2a38; border-radius: 5px; background: linear-gradient(145deg, #101821, #0d131b); }
+.confidence > div:first-child { display: flex; align-items: center; justify-content: space-between; }
+.confidence span { color: #7d8b9d; font-size: 9px; }
+.confidence strong { color: #687689; font: 500 18px/1 ui-monospace, monospace; }
+.confidence p { margin: 6px 0 10px; color: #4b586a; font-size: 8px; }
+.confidenceTrack { height: 3px; overflow: hidden; border-radius: 2px; background: #1a2532; }
+.confidenceTrack span { display: block; width: 0; height: 100%; background: #577e78; }
+.why { border-left: 2px solid #3d5554; background: #0d141b; }
+.why > div { display: flex; align-items: center; justify-content: space-between; padding: 9px 10px; border-bottom: 1px solid #1b2733; }
+.why strong { color: #8aa19f; font-size: 9px; }
+.why > div span { color: #485568; font-size: 7px; text-transform: uppercase; }
+.why ul { display: grid; gap: 8px; margin: 0; padding: 10px 12px 11px 25px; color: #748195; font-size: 8px; }
+.why li::marker { color: #567f79; }
+.boundaryNote { display: flex; align-items: flex-start; gap: 8px; padding: 10px; color: #516377; background: rgba(93, 228, 199, .025); }
+.boundaryNote svg { flex: 0 0 auto; color: #50736f; }
+.boundaryNote p { margin: 0; font-size: 8px; line-height: 1.5; }
+.composer { padding: 14px 16px 16px; border-top: 1px solid var(--color-border); }
+.composerInput { display: flex; height: 48px; align-items: center; justify-content: space-between; padding: 0 9px 0 13px; border: 1px solid var(--color-border); border-radius: 8px; color: #505d70; background: var(--color-surface); font-size: 10px; }
+.composerInput button { display: grid; width: 28px; height: 28px; place-items: center; padding: 0; border: 1px solid var(--color-border); border-radius: 6px; color: #3f4c5e; background: #111721; }
+.composer p { margin: 8px 2px 0; color: #414c5d; font-size: 8px; text-align: center; }
+@media (max-height: 760px) { .copilot { grid-template-rows: 54px 36px minmax(0, 1fr) auto; } .content { padding: 12px; } .analysis { gap: 9px; } .composer { padding: 10px 12px; } .composerInput { height: 40px; } }

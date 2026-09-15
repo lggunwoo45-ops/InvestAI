@@ -1,0 +1,11 @@
+.indicator { display: flex; min-width: 0; align-items: center; gap: 7px; color: #69778a; }
+.indicator i { flex: 0 0 auto; width: 6px; height: 6px; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 14%, transparent); }
+.indicator > div { display: grid; min-width: 0; gap: 2px; }
+.indicator strong { font: 700 7px ui-monospace, monospace; letter-spacing: .08em; }
+.indicator span { overflow: hidden; color: #4e5b6e; font: 6px ui-monospace, monospace; text-overflow: ellipsis; white-space: nowrap; }
+.live { color: #67a797; }
+.pending { color: #b08d57; }
+.passive { color: #7a6570; }
+.pending i { animation: pulse 1.3s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .pending i { animation: none; } }

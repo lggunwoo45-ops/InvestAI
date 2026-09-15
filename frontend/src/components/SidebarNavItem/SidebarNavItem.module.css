@@ -1,0 +1,4 @@
+.link { position: relative; display: flex; height: 40px; align-items: center; gap: 12px; padding: 0 13px; border-radius: 7px; color: #758195; font-size: 12px; font-weight: 500; text-decoration: none; transition: color .16s ease, background .16s ease; }
+.link:hover { color: #cdd4df; background: rgba(255, 255, 255, .025); }
+.active { color: var(--color-accent); background: var(--color-accent-soft); }
+.active::before { position: absolute; left: -8px; width: 2px; height: 18px; border-radius: 2px; background: var(--color-accent); content: ''; }

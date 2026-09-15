@@ -1,0 +1,5 @@
+.page { display: grid; min-height: 100%; place-content: center; text-align: center; }
+.page > span { color: var(--color-accent); font: 500 11px ui-monospace, monospace; }
+.page h1 { margin: 9px 0 6px; color: #dce2ea; font-size: 23px; }
+.page p { margin: 0; color: var(--color-text-muted); font-size: 10px; }
+.page a { margin-top: 18px; color: var(--color-accent); font-size: 10px; text-decoration: none; }

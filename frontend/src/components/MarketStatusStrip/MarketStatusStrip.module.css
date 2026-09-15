@@ -1,0 +1,6 @@
+.strip { display: flex; align-items: center; gap: 10px; }
+.strip > span { display: flex; align-items: center; gap: 4px; color: #59677a; font-size: 7px; white-space: nowrap; }
+.strip i { width: 4px; height: 4px; border-radius: 50%; background: #586475; }
+.strip span[data-status='open'] i, .strip span[data-status='always-open'] i { background: #5c9e8f; }
+.strip strong { color: #788698; font-weight: 500; }
+@media (max-width: 1600px) { .strip { display: none; } }

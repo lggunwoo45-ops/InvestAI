@@ -1,0 +1,6 @@
+.content { display: grid; height: 100%; grid-template-rows: 1fr auto; padding: 13px 17px 14px; }
+.summary { display: flex; align-items: center; gap: 16px; }
+.ring { display: grid; width: 68px; height: 68px; flex: 0 0 auto; place-content: center; border: 1px solid #243345; border-radius: 50%; background: radial-gradient(circle, rgba(93,228,199,.04), transparent 68%); text-align: center; }
+.ring strong { color: #657286; font: 500 23px/1 ui-monospace, monospace; }
+.ring span { margin-top: 5px; color: #465367; font-size: 7px; text-transform: uppercase; }
+.summary p { max-width: 160px; margin: 0; color: #4d5a6d; font-size: 9px; line-height: 1.6; }

@@ -1,0 +1,6 @@
+.chart { position: relative; display: grid; min-width: 0; min-height: 0; height: 100%; grid-template-rows: 25px minmax(0, 1fr); margin: 0; overflow: hidden; background: #090e14; }
+.canvas { min-width: 0; min-height: 280px; }
+.legend { display: flex; height: 25px; align-items: center; gap: 11px; padding: 0 10px; color: #59677a; background: #090e14; font: 7px ui-monospace, monospace; }
+.legend span:first-child { color: #b8c2cd; font-weight: 700; }
+.legend span:nth-child(2) { color: #789b96; }
+.watermark { position: absolute; left: 12px; bottom: 9px; z-index: 2; pointer-events: none; color: #354252; font: 6px ui-monospace, monospace; letter-spacing: .08em; }
