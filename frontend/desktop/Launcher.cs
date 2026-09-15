@@ -7,6 +7,7 @@ using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
 using System.Threading;
+using System.Windows.Forms;
 
 [assembly: AssemblyTitle("InvestAI Demo")]
 [assembly: AssemblyProduct("InvestAI")]
@@ -23,15 +24,43 @@ internal static class Launcher
     [STAThread]
     private static void Main()
     {
-        siteRoot = Path.Combine(Path.GetTempPath(), "InvestAI-v0.6.2-" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(siteRoot);
-        ExtractSite(siteRoot);
+        try
+        {
+            siteRoot = Path.Combine(Path.GetTempPath(), "InvestAI-v0.6.2-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(siteRoot);
+            ExtractSite(siteRoot);
 
-        AppDomain.CurrentDomain.ProcessExit += delegate { TryDelete(siteRoot); };
-        TcpListener listener = StartListener();
-        int port = ((IPEndPoint)listener.LocalEndpoint).Port;
-        Process.Start("http://127.0.0.1:" + port + "/market");
+            AppDomain.CurrentDomain.ProcessExit += delegate { TryDelete(siteRoot); };
+            TcpListener listener = StartListener();
+            int port = ((IPEndPoint)listener.LocalEndpoint).Port;
+            string localUrl = "http://127.0.0.1:" + port + "/market";
+            Thread serverThread = new Thread(new ThreadStart(delegate { RunServer(listener); }));
+            serverThread.IsBackground = false;
+            serverThread.Start();
+            OpenBrowser(localUrl);
+            ShowStartupMessage(localUrl);
+            serverThread.Join();
+        }
+        catch (InvalidOperationException)
+        {
+            MessageBox.Show(
+                "InvestAI may already be running.\r\n\r\nTry opening:\r\nhttp://127.0.0.1:18460/market\r\n\r\nOr close existing InvestAI demo processes from Task Manager.",
+                "InvestAI Demo",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
+        }
+        catch (Exception exception)
+        {
+            MessageBox.Show(
+                "InvestAI demo could not start.\r\n\r\n" + exception.Message,
+                "InvestAI Demo",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error);
+        }
+    }
 
+    private static void RunServer(TcpListener listener)
+    {
         while (true)
         {
             try
@@ -44,6 +73,28 @@ internal static class Launcher
             catch (SocketException) { Thread.Sleep(100); }
             catch (ObjectDisposedException) { return; }
         }
+    }
+
+    private static void OpenBrowser(string localUrl)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = localUrl,
+                UseShellExecute = true
+            });
+        }
+        catch (Exception) { }
+    }
+
+    private static void ShowStartupMessage(string localUrl)
+    {
+        MessageBox.Show(
+            "InvestAI demo is running.\r\n\r\nOpen:\r\n" + localUrl + "\r\n\r\nIf your browser did not open automatically, copy and paste the URL into your browser.",
+            "InvestAI Demo",
+            MessageBoxButtons.OK,
+            MessageBoxIcon.Information);
     }
 
     private static TcpListener StartListener()

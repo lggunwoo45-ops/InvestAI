@@ -24,7 +24,7 @@ try {
   try { npm run build } finally { Pop-Location }
 
   Compress-Archive -Path (Join-Path $frontendRoot 'dist\*') -DestinationPath $siteArchive -CompressionLevel Optimal
-  & $compiler /nologo /target:winexe /optimize+ /out:$demoExe /resource:"$siteArchive,InvestAI.Site" /reference:System.IO.Compression.dll /reference:System.IO.Compression.FileSystem.dll (Join-Path $frontendRoot 'desktop\Launcher.cs')
+  & $compiler /nologo /target:winexe /optimize+ /out:$demoExe /resource:"$siteArchive,InvestAI.Site" /reference:System.IO.Compression.dll /reference:System.IO.Compression.FileSystem.dll /reference:System.Windows.Forms.dll (Join-Path $frontendRoot 'desktop\Launcher.cs')
   if ($LASTEXITCODE -ne 0) { throw 'Windows demo compilation failed.' }
 
   Copy-Item -LiteralPath $demoExe -Destination (Join-Path $portableRoot 'InvestAI_v0.6.2_demo.exe')
