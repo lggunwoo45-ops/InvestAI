@@ -1,4 +1,4 @@
-import type { MarketId } from '@/types/market'
+import type { MarketId, MarketInstrument } from '@/types/market'
 
 export type MarketRegion = 'crypto' | 'korea' | 'us'
 export type MarketSessionStatus = 'always-open' | 'open' | 'closed'
@@ -34,7 +34,9 @@ export interface DiscoverAsset {
   price: number
   changePercent: number
   volume: number
-  quote: 'KRW' | 'USDT' | 'USD'
+  quote: string
+  instrument?: MarketInstrument
+  unavailable?: boolean
 }
 
 export interface Watchlist {

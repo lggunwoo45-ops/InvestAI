@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 
 import { DataModeControl } from '@/components/market-data/DataModeControl/DataModeControl'
 import { marketExplorerText, groupForVenue, venuesByGroup } from '@/pages/Market/marketExplorerConfig'
-import { queryMarketInstruments, type ExplorerSortDirection, type ExplorerSortField } from '@/pages/Market/marketExplorerQuery'
+import { queryMarketInstruments, type BinanceSpotQuoteFilter, type ExplorerSortDirection, type ExplorerSortField } from '@/pages/Market/marketExplorerQuery'
 import type { MarketCatalog, MarketDataMode, MarketGroup, MarketInstrument, MarketVenue } from '@/types/market'
 import { formatMarketChange, formatMarketPrice, formatMarketVolume } from '@/utils/formatMarketValue'
 import styles from './MarketExplorer.module.css'
@@ -22,6 +22,8 @@ interface MarketExplorerProps {
   sortField: ExplorerSortField
   onSortFieldChange: (value: ExplorerSortField) => void
   sortDirection: ExplorerSortDirection
+  spotQuoteFilter: BinanceSpotQuoteFilter
+  onSpotQuoteFilterChange: (value: BinanceSpotQuoteFilter) => void
   onSortDirectionChange: (value: ExplorerSortDirection) => void
   favoriteIds: ReadonlySet<string>
   onVenueChange: (venue: MarketVenue) => void
@@ -36,23 +38,27 @@ interface MarketExplorerProps {
 const text = marketExplorerText.en
 const groups: readonly MarketGroup[] = ['crypto', 'korea', 'us']
 const sortFields: readonly ExplorerSortField[] = ['alphabet', 'price', 'change', 'volume']
+const spotQuotes: readonly BinanceSpotQuoteFilter[] = ['USDT', 'FDUSD', 'BTC', 'ETH', 'Other']
 
 export function MarketExplorer({
   venue, mode, catalog, loading, error, selectedInstrumentId,
   search, onSearchChange, favoritesOnly, onFavoritesOnlyChange,
   sortField, onSortFieldChange, sortDirection, onSortDirectionChange,
+  spotQuoteFilter, onSpotQuoteFilterChange,
   favoriteIds, onVenueChange, onModeChange,
   onSelect, onToggleFavorite, onRetry, onBack, compact = false,
 }: MarketExplorerProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
+  const deferredSearch = useDeferredValue(search)
   const group = groupForVenue(venue)
   const cryptoProvider = venue.startsWith('binance-') ? 'binance' : 'upbit'
   const venues = group === 'crypto'
     ? venuesByGroup.crypto.filter((item) => item.startsWith(cryptoProvider))
     : venuesByGroup[group]
   const instruments = useMemo(() => queryMarketInstruments(catalog?.instruments ?? [], {
-    search, favoritesOnly, favoriteIds, sortField, sortDirection,
-  }), [catalog, favoriteIds, favoritesOnly, search, sortDirection, sortField])
+    search: deferredSearch, favoritesOnly, favoriteIds, sortField, sortDirection,
+    spotQuoteFilter: venue === 'binance-spot' ? spotQuoteFilter : undefined,
+  }), [catalog, deferredSearch, favoriteIds, favoritesOnly, sortDirection, sortField, spotQuoteFilter, venue])
   const providerLabel = group === 'crypto' ? text.provider[cryptoProvider] : text.provider.stock
   const source = catalog?.source ?? (group === 'crypto' && mode === 'live' ? 'live' : 'mock')
   const sortLabel = sortField === 'change' ? text.change : text[sortField]
@@ -74,7 +80,7 @@ export function MarketExplorer({
     ? measuredItems
     : instruments.slice(0, 20).map((instrument, index) => ({ key: instrument.id, index, start: index * rowHeight }))
 
-  useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = 0 }, [venue, search, favoritesOnly, sortField, sortDirection])
+  useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = 0 }, [venue, search, favoritesOnly, sortField, sortDirection, spotQuoteFilter])
 
   const changeGroup = (next: MarketGroup) => onVenueChange(venuesByGroup[next][0])
   const changeProvider = (provider: 'upbit' | 'binance') =>
@@ -98,6 +104,9 @@ export function MarketExplorer({
         <div className={styles.venueTabs} role="tablist" aria-label={text.marketVenue}>
           {venues.map((item) => <button key={item} type="button" role="tab" aria-selected={venue === item} onClick={() => onVenueChange(item)}>{text.venue[item].split(' · ').at(-1)}</button>)}
         </div>
+        {venue === 'binance-spot' && <div className={styles.quoteTabs} role="tablist" aria-label="Binance Spot quote asset">
+          {spotQuotes.map((quote) => <button key={quote} type="button" role="tab" aria-selected={spotQuoteFilter === quote} onClick={() => onSpotQuoteFilterChange(quote)}>{quote}</button>)}
+        </div>}
       </div>
 
       <div className={styles.controls}>
@@ -113,7 +122,7 @@ export function MarketExplorer({
       </div>
 
       <div className={styles.meta}>
-        <span className={styles.marketPath}>{text.group[group]} <b>/</b> {providerLabel} <b>/</b> {text.venue[venue].split(' · ').at(-1)}</span>
+        <span className={styles.marketPath}>{text.group[group]} <b>/</b> {providerLabel} <b>/</b> {text.venue[venue].split(' · ').at(-1)}{venue === 'binance-spot' ? ` / ${spotQuoteFilter}` : ''}</span>
         <span className={source === 'live' ? styles.live : styles.mock}>{source === 'live' ? text.realPublicApi : text.mockData}</span>
       </div>
       <div className={styles.sortStatus} role="status">{text.sortedBy} <strong>{sortLabel} {sortDirection === 'asc' ? '↑' : '↓'}</strong><span>{directionLabel} · {instruments.length.toLocaleString()} {text.results}</span></div>

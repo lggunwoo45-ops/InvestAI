@@ -7,8 +7,10 @@ import { useMarketCatalog } from '@/hooks/useMarketCatalog'
 import { useMarketDetailData } from '@/hooks/useMarketDetailData'
 import { useMarketWorkspace } from '@/hooks/useMarketWorkspace'
 import { useWatchlists } from '@/hooks/useWatchlists'
+import { marketDataService } from '@/services/market/marketDataService'
+import { venueForStockId } from '@/services/market/explorer/StockCatalogProvider'
 import type { MarketInstrument, MarketVenue } from '@/types/market'
-import { nextExplorerSort, type ExplorerSortDirection, type ExplorerSortField } from './marketExplorerQuery'
+import { nextExplorerSort, type BinanceSpotQuoteFilter, type ExplorerSortDirection, type ExplorerSortField } from './marketExplorerQuery'
 import styles from './MarketPage.module.css'
 
 function initialVenue(instrument: MarketInstrument): MarketVenue {
@@ -16,6 +18,8 @@ function initialVenue(instrument: MarketInstrument): MarketVenue {
   if (instrument.marketId === 'upbit') return 'upbit-krw'
   if (instrument.marketId === 'binance-spot') return 'binance-spot'
   if (instrument.marketId === 'binance-futures') return 'binance-futures'
+  const stockVenue = venueForStockId(instrument.id)
+  if (stockVenue) return stockVenue
   return instrument.marketId === 'korea-stock' ? 'kospi' : 'nasdaq'
 }
 
@@ -30,15 +34,22 @@ export function MarketPage() {
   const [favoritesOnly, setFavoritesOnly] = useState(false)
   const [sortField, setSortField] = useState<ExplorerSortField>('volume')
   const [sortDirection, setSortDirection] = useState<ExplorerSortDirection>('desc')
+  const [spotQuoteFilter, setSpotQuoteFilter] = useState<BinanceSpotQuoteFilter>('USDT')
   const activeVenue = selectedInstrument ? initialVenue(selectedInstrument) : venue
   const catalogState = useMarketCatalog(activeVenue, marketDataMode, retry)
   const detailState = useMarketDetailData(selectedInstrument, selectedTimeframe)
 
   const openInstrument = useCallback((instrument: MarketInstrument) => {
     setVenue(initialVenue(instrument))
+    marketDataService.rememberInstrument(instrument)
     trackRecentlyViewed(instrument.id)
     selectInstrument(instrument)
   }, [selectInstrument, trackRecentlyViewed])
+  const changeFavorite = useCallback((id: string) => {
+    const instrument = catalogState.catalog?.instruments.find((item) => item.id === id)
+    if (instrument) marketDataService.rememberInstrument(instrument)
+    toggleFavorite(id)
+  }, [catalogState.catalog, toggleFavorite])
   const changeVenue = useCallback((next: MarketVenue) => {
     setVenue(next)
     setSearch('')
@@ -69,12 +80,14 @@ export function MarketPage() {
       sortField={sortField}
       onSortFieldChange={changeSortField}
       sortDirection={sortDirection}
+      spotQuoteFilter={spotQuoteFilter}
+      onSpotQuoteFilterChange={setSpotQuoteFilter}
       onSortDirectionChange={setSortDirection}
       favoriteIds={favoriteIds}
       onVenueChange={changeVenue}
       onModeChange={setMarketDataMode}
       onSelect={openInstrument}
-      onToggleFavorite={toggleFavorite}
+      onToggleFavorite={changeFavorite}
       onRetry={() => setRetry((value) => value + 1)}
       onBack={returnToExplorer}
       compact={Boolean(selectedInstrument)}

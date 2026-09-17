@@ -17,6 +17,19 @@ function ids(field: ExplorerSortField, direction: ExplorerSortDirection, search 
 }
 
 describe('Market Explorer sorting', () => {
+  it('keeps Binance Spot quotes isolated while searching and sorting', () => {
+    const spot: MarketInstrument[] = [
+      { ...fixtures[0], id: 'usdt-a', marketId: 'binance-spot', symbol: 'AAAUSDT', quoteCurrency: 'USDT', lastPrice: 5 },
+      { ...fixtures[1], id: 'usdt-b', marketId: 'binance-spot', symbol: 'BBBUSDT', quoteCurrency: 'USDT', lastPrice: 2 },
+      { ...fixtures[2], id: 'btc', marketId: 'binance-spot', symbol: 'AAABTC', quoteCurrency: 'BTC', lastPrice: .01 },
+      { ...fixtures[2], id: 'other', marketId: 'binance-spot', symbol: 'AAAIDR', quoteCurrency: 'IDR', lastPrice: 30 },
+    ]
+    const query = { search: '', favoritesOnly: false, favoriteIds: new Set<string>(), sortField: 'price' as const, sortDirection: 'asc' as const }
+    expect(queryMarketInstruments(spot, { ...query, spotQuoteFilter: 'USDT' }).map((item) => item.id)).toEqual(['usdt-b', 'usdt-a'])
+    expect(queryMarketInstruments(spot, { ...query, spotQuoteFilter: 'Other' }).map((item) => item.id)).toEqual(['other'])
+    expect(queryMarketInstruments(spot, { ...query, spotQuoteFilter: 'USDT', search: 'AAA' }).map((item) => item.id)).toEqual(['usdt-a'])
+    expect(queryMarketInstruments(spot, { ...query, spotQuoteFilter: 'BTC' }).map((item) => item.id)).toEqual(['btc'])
+  })
   it.each([
     ['price', ['b', 'c', 'a'], ['a', 'c', 'b']],
     ['change', ['a', 'c', 'b'], ['b', 'c', 'a']],

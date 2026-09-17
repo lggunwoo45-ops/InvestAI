@@ -7,6 +7,7 @@ import { WatchlistManager } from '@/components/smart-dashboard/WatchlistManager/
 import { useDashboardData } from '@/hooks/useDashboardData'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { useMarketOverview } from '@/hooks/useMarketOverview'
+import { useResolvedInstruments } from '@/hooks/useResolvedInstruments'
 import { useMarketWorkspace } from '@/hooks/useMarketWorkspace'
 import { useWatchlists } from '@/hooks/useWatchlists'
 import type { MarketInstrument } from '@/types/market'
@@ -18,8 +19,9 @@ export function DashboardPage() {
   const navigate = useNavigate()
   const dashboard = useDashboardData()
   const { sections } = useMarketOverview()
-  const { selectInstrument } = useMarketWorkspace()
-  const { trackRecentlyViewed } = useWatchlists()
+  const { selectInstrument, marketDataMode } = useMarketWorkspace()
+  const { watchlists, trackRecentlyViewed } = useWatchlists()
+  const resolvedInstruments = useResolvedInstruments(watchlists.flatMap((list) => list.instrumentIds), marketDataMode)
   const open = (instrument: MarketInstrument) => {
     trackRecentlyViewed(instrument.id)
     selectInstrument(instrument)
@@ -36,7 +38,7 @@ export function DashboardPage() {
       </header>
       <MarketPulseBoard items={dashboard.marketPulse} />
       <section className={styles.grid} aria-label="Dashboard workspace">
-        <div className={styles.watchlist}><WatchlistManager sections={sections} /></div>
+        <div className={styles.watchlist}><WatchlistManager sections={sections} resolvedInstruments={resolvedInstruments} /></div>
         <div className={styles.discover}><DiscoverTable title="Trending Now" caption="Highest cross-market attention" assets={dashboard.discover.trending} onSelect={open} /></div>
         <section className={styles.news} aria-labelledby="dashboard-news"><header><div><span>MARKET-AWARE FEED</span><h2 id="dashboard-news">Latest News</h2></div><button type="button" onClick={() => navigate('/news')}>Open News Center →</button></header><div>{dashboard.news.slice(0, 3).map((article) => <NewsCard key={article.id} article={article} />)}</div></section>
       </section>

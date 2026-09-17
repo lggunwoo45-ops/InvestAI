@@ -4,7 +4,7 @@ import { marketDataService } from '@/services/market/marketDataService'
 import { queryMarketInstruments } from '@/pages/Market/marketExplorerQuery'
 import type { MarketInstrument } from '@/types/market'
 import { binanceCatalogProvider } from './BinanceCatalogProvider'
-import { stockCatalogProvider } from './StockCatalogProvider'
+import { stockCatalogProvider, venueForStockId } from './StockCatalogProvider'
 import { upbitCatalogProvider } from './UpbitCatalogProvider'
 
 afterEach(() => vi.unstubAllGlobals())
@@ -62,6 +62,10 @@ describe('Sprint 7 market catalogs', () => {
     const us = await stockCatalogProvider.load('nasdaq')
     expect(korea.instruments.some((item) => item.id === 'krx-005930' && item.koreanName === '삼성전자')).toBe(true)
     expect(us.instruments.some((item) => item.id === 'us-nvda' && item.name.includes('NVIDIA'))).toBe(true)
+    const kosdaq = await stockCatalogProvider.load('kosdaq')
+    const nyse = await stockCatalogProvider.load('nyse')
+    expect(venueForStockId(kosdaq.instruments[0].id)).toBe('kosdaq')
+    expect(venueForStockId(nyse.instruments[0].id)).toBe('nyse')
   })
 
   it('searches symbol and bilingual names only inside the supplied venue and sorts deterministically', async () => {

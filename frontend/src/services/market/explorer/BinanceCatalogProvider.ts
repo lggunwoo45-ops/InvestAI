@@ -1,4 +1,4 @@
-import { fetchJson } from '@/services/market/providers/providerUtils'
+import { fetchJson, finiteNumber } from '@/services/market/providers/providerUtils'
 import type { MarketCatalog, MarketInstrument } from '@/types/market'
 import type { MarketCatalogProvider } from './MarketCatalogProvider'
 
@@ -47,6 +47,8 @@ export const binanceCatalogProvider: MarketCatalogProvider = {
     if (!Array.isArray(exchange.symbols) || !Array.isArray(tickerRows)) throw new Error('Invalid Binance catalog response')
     const tickers = new Map(tickerRows.map((ticker) => [ticker.symbol, ticker]))
     const instruments: MarketInstrument[] = exchange.symbols.filter((symbol) =>
+      typeof symbol.symbol === 'string' && typeof symbol.baseAsset === 'string' && typeof symbol.quoteAsset === 'string'
+      &&
       symbol.status === 'TRADING'
       && (venue === 'binance-spot' || (symbol.quoteAsset === 'USDT' && symbol.contractType === 'PERPETUAL')),
     ).map((symbol) => {
@@ -65,9 +67,9 @@ export const binanceCatalogProvider: MarketCatalogProvider = {
         name: symbol.baseAsset,
         englishName: symbol.baseAsset,
         quoteCurrency: symbol.quoteAsset,
-        lastPrice: Number(ticker?.lastPrice ?? 0),
-        change24hPercent: Number(ticker?.priceChangePercent ?? 0),
-        volume24h: Number(ticker?.quoteVolume ?? ticker?.volume ?? 0),
+        lastPrice: finiteNumber(ticker?.lastPrice),
+        change24hPercent: finiteNumber(ticker?.priceChangePercent),
+        volume24h: finiteNumber(ticker?.quoteVolume ?? ticker?.volume),
       }
     })
     return { venue, instruments, source: 'live', fetchedAt: Date.now() }

@@ -10,11 +10,17 @@ export const timeframeMilliseconds: Record<ChartTimeframe, number> = {
   '1D': 86_400_000,
 }
 
+export function finiteNumber(value: unknown, fallback = 0): number {
+  if (value === null || value === undefined || value === '') return fallback
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : fallback
+}
+
 export function updateInstrumentPrice(instrument: MarketInstrument, lastPrice: number, change24hPercent?: number): MarketInstrument {
   return {
     ...instrument,
-    lastPrice,
-    change24hPercent: change24hPercent ?? instrument.change24hPercent,
+    lastPrice: Number.isFinite(lastPrice) ? lastPrice : instrument.lastPrice,
+    change24hPercent: change24hPercent !== undefined && Number.isFinite(change24hPercent) ? change24hPercent : instrument.change24hPercent,
   }
 }
 
@@ -31,7 +37,7 @@ export function prependTrade(trades: readonly RecentTrade[], trade: RecentTrade)
 }
 
 export function buildOrderbookLevels(levels: readonly (readonly [string | number, string | number])[]): readonly OrderbookLevel[] {
-  return levels.slice(0, 10).map(([priceValue, amountValue]) => {
+  return levels.filter(([priceValue, amountValue]) => Number.isFinite(Number(priceValue)) && Number.isFinite(Number(amountValue))).slice(0, 10).map(([priceValue, amountValue]) => {
     const price = Number(priceValue)
     const amount = Number(amountValue)
     return { price, amount, total: price * amount }

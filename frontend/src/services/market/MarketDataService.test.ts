@@ -4,6 +4,7 @@ import type { RealtimeMarketProvider } from '@/services/market/contracts/Realtim
 import type { MarketInstrument } from '@/types/market'
 import type { MarketDetailSnapshot, RealtimeMarketState } from '@/types/marketDetail'
 import { MarketDataService } from './marketDataService'
+import { rememberInstrument } from './instrumentRegistry'
 
 const instrument: MarketInstrument = {
   id: 'binance-btc', marketId: 'binance-futures', symbol: 'BTCUSDT', name: 'Bitcoin Perpetual', quoteCurrency: 'USDT', lastPrice: 100_000, change24hPercent: 1, volume24h: 1_000,
@@ -30,6 +31,23 @@ function createProvider(id: string, supports: boolean): RealtimeMarketProvider {
 }
 
 describe('MarketDataService', () => {
+  it('resolves Explorer Upbit and Binance Spot identities for dashboard and recently viewed', async () => {
+    const upbit: MarketInstrument = { ...instrument, id: 'upbit-sprint72-test', marketId: 'upbit', symbol: 'TEST/KRW', providerSymbol: 'KRW-TEST', marketType: 'upbit-krw', quoteCurrency: 'KRW' }
+    const spot: MarketInstrument = { ...instrument, id: 'binance-spot-sprint72testusdt', marketId: 'binance-spot', symbol: 'TESTUSDT', providerSymbol: 'TESTUSDT', marketType: 'binance-spot' }
+    rememberInstrument(upbit)
+    rememberInstrument(spot)
+    const service = new MarketDataService()
+    const resolved = await service.resolveInstruments([upbit.id, spot.id], 'mock')
+    expect(resolved.get(upbit.id)?.providerSymbol).toBe('KRW-TEST')
+    expect(resolved.get(spot.id)?.providerSymbol).toBe('TESTUSDT')
+    expect(service.getKnownInstruments([upbit.id, spot.id]).size).toBe(2)
+  })
+
+  it('leaves genuinely unknown IDs unresolved for the Unavailable UI fallback', async () => {
+    const service = new MarketDataService()
+    expect((await service.resolveInstruments(['deleted-symbol'], 'mock')).has('deleted-symbol')).toBe(false)
+  })
+
   it('routes live instruments through the supported provider', async () => {
     const liveProvider = createProvider('live-provider', true)
     const mockProvider = createProvider('mock', true)

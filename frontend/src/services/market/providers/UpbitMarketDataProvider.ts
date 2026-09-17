@@ -73,13 +73,13 @@ export const upbitMarketDataProvider: RealtimeMarketProvider = {
   id: 'Upbit Korea',
   supports: (instrument) => instrument.marketId === 'upbit',
 
-  async loadSnapshot(instrument, timeframe) {
-    const market = upbitMarketCode(instrument.symbol)
+  async loadSnapshot(instrument, timeframe, signal) {
+    const market = instrument.providerSymbol ?? upbitMarketCode(instrument.symbol)
     const [candleRows, orderbookRows, tradeRows, tickerRows] = await Promise.all([
-      fetchJson<readonly UpbitCandle[]>(`${restBaseUrl}/candles/${candlePath[timeframe]}?market=${market}&count=120`),
-      fetchJson<readonly UpbitOrderbook[]>(`${restBaseUrl}/orderbook?markets=${market}`),
-      fetchJson<readonly UpbitTrade[]>(`${restBaseUrl}/trades/ticks?market=${market}&count=20`),
-      fetchJson<readonly UpbitTicker[]>(`${restBaseUrl}/ticker?markets=${market}`),
+      fetchJson<readonly UpbitCandle[]>(`${restBaseUrl}/candles/${candlePath[timeframe]}?market=${market}&count=120`, signal),
+      fetchJson<readonly UpbitOrderbook[]>(`${restBaseUrl}/orderbook?markets=${market}`, signal),
+      fetchJson<readonly UpbitTrade[]>(`${restBaseUrl}/trades/ticks?market=${market}&count=20`, signal),
+      fetchJson<readonly UpbitTicker[]>(`${restBaseUrl}/ticker?markets=${market}`, signal),
     ])
     const ticker = tickerRows[0]
     const candles: readonly Candle[] = candleRows.map((row) => ({
@@ -103,7 +103,7 @@ export const upbitMarketDataProvider: RealtimeMarketProvider = {
   },
 
   subscribe(instrument, timeframe, initialSnapshot, onEvent) {
-    const market = upbitMarketCode(instrument.symbol)
+    const market = instrument.providerSymbol ?? upbitMarketCode(instrument.symbol)
     let snapshot: MarketDetailSnapshot = initialSnapshot
     let streamSequence = 0
     const socket = new ReconnectingWebSocket({

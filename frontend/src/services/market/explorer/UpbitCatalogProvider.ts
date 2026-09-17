@@ -1,4 +1,4 @@
-import { fetchJson } from '@/services/market/providers/providerUtils'
+import { fetchJson, finiteNumber } from '@/services/market/providers/providerUtils'
 import type { MarketCatalog, MarketInstrument } from '@/types/market'
 import type { MarketCatalogProvider } from './MarketCatalogProvider'
 
@@ -30,7 +30,7 @@ export const upbitCatalogProvider: MarketCatalogProvider = {
     ])
     if (!Array.isArray(pairs) || !Array.isArray(tickers)) throw new Error('Invalid Upbit catalog response')
     const prices = new Map(tickers.map((ticker) => [ticker.market, ticker]))
-    const instruments: MarketInstrument[] = pairs.filter((pair) => pair.market.startsWith(`${quote}-`)).map((pair) => {
+    const instruments: MarketInstrument[] = pairs.filter((pair) => typeof pair.market === 'string' && pair.market.startsWith(`${quote}-`) && typeof pair.korean_name === 'string' && typeof pair.english_name === 'string').map((pair) => {
       const asset = pair.market.slice(quote.length + 1)
       const ticker = prices.get(pair.market)
       return {
@@ -45,9 +45,9 @@ export const upbitCatalogProvider: MarketCatalogProvider = {
         koreanName: pair.korean_name,
         englishName: pair.english_name,
         quoteCurrency: quote,
-        lastPrice: ticker?.trade_price ?? 0,
-        change24hPercent: (ticker?.signed_change_rate ?? 0) * 100,
-        volume24h: ticker?.acc_trade_price_24h ?? 0,
+        lastPrice: finiteNumber(ticker?.trade_price),
+        change24hPercent: finiteNumber(ticker?.signed_change_rate) * 100,
+        volume24h: finiteNumber(ticker?.acc_trade_price_24h),
       }
     })
     return { venue, instruments, source: 'live', fetchedAt: Date.now() }

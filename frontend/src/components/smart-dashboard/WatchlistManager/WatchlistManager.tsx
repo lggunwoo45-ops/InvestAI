@@ -8,16 +8,23 @@ import type { MarketInstrument, MarketSectionData } from '@/types/market'
 import { formatMarketChange, formatMarketPrice } from '@/utils/formatMarketValue'
 import styles from './WatchlistManager.module.css'
 
-interface WatchlistManagerProps { sections: readonly MarketSectionData[] }
+interface WatchlistManagerProps {
+  sections: readonly MarketSectionData[]
+  resolvedInstruments?: ReadonlyMap<string, MarketInstrument>
+}
 
-export const WatchlistManager = memo(function WatchlistManager({ sections }: WatchlistManagerProps) {
+export const WatchlistManager = memo(function WatchlistManager({ sections, resolvedInstruments }: WatchlistManagerProps) {
   const navigate = useNavigate()
   const { selectInstrument } = useMarketWorkspace()
   const { watchlists, activeWatchlistId, setActiveWatchlistId, createWatchlist, deleteWatchlist, toggleInWatchlist, removeFromWatchlist, reorderWatchlist } = useWatchlists()
   const [newListName, setNewListName] = useState('')
   const [selectedAssetId, setSelectedAssetId] = useState('')
   const [dragIndex, setDragIndex] = useState<number | null>(null)
-  const catalog = useMemo(() => new Map(sections.flatMap((section) => section.instruments).map((instrument) => [instrument.id, instrument])), [sections])
+  const catalog = useMemo(() => {
+    const all = new Map(sections.flatMap((section) => section.instruments).map((instrument) => [instrument.id, instrument] as const))
+    for (const [id, instrument] of resolvedInstruments ?? []) all.set(id, instrument)
+    return all
+  }, [sections, resolvedInstruments])
   const activeList = watchlists.find((list) => list.id === activeWatchlistId) ?? watchlists[0]
   const entries = (activeList?.instrumentIds ?? []).map((id) => ({ id, instrument: catalog.get(id) ?? null }))
   const availableInstruments = [...catalog.values()].filter((instrument) => !activeList?.instrumentIds.includes(instrument.id))

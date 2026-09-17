@@ -54,6 +54,21 @@ const spotConfig: BinanceProviderConfig = {
 }
 const intervalByTimeframe = { '1m': '1m', '5m': '5m', '15m': '15m', '1H': '1h', '4H': '4h', '1D': '1d' } as const
 
+/** Spot partial-book snapshots use asks/bids; futures use a/b. */
+export function binanceStreamUrl(config: 'spot' | 'futures', providerSymbol: string, timeframe: keyof typeof intervalByTimeframe): string {
+  const symbol = providerSymbol.toLowerCase()
+  const depth = config === 'spot' ? `${symbol}@depth10@100ms` : `${symbol}@depth10@500ms`
+  const streams = [`${symbol}@kline_${intervalByTimeframe[timeframe]}`, `${symbol}@aggTrade`, depth, `${symbol}@ticker`]
+  return `${config === 'spot' ? spotConfig.socketBaseUrl : futuresConfig.socketBaseUrl}${streams.join('/')}`
+}
+
+export function binanceStreamOrderbook(data: Record<string, unknown>, market: 'spot' | 'futures') {
+  const asks = data[market === 'spot' ? 'asks' : 'a']
+  const bids = data[market === 'spot' ? 'bids' : 'b']
+  if (!Array.isArray(asks) || !Array.isArray(bids)) return null
+  return { asks: buildOrderbookLevels(asks as readonly (readonly [string, string])[]).toReversed(), bids: buildOrderbookLevels(bids as readonly (readonly [string, string])[]) }
+}
+
 function mapTrade(trade: BinanceTrade): RecentTrade {
   return {
     id: `binance-${trade.id}`,
@@ -69,14 +84,14 @@ function createBinanceProvider(config: BinanceProviderConfig): RealtimeMarketPro
   id: config.name,
   supports: (instrument) => instrument.marketId === config.marketId,
 
-  async loadSnapshot(instrument, timeframe) {
-    const symbol = instrument.symbol.replace('/', '').toUpperCase()
+  async loadSnapshot(instrument, timeframe, signal) {
+    const symbol = (instrument.providerSymbol ?? instrument.symbol.replace('/', '')).toUpperCase()
     const interval = intervalByTimeframe[timeframe]
     const [klines, depth, trades, ticker] = await Promise.all([
-      fetchJson<readonly BinanceKline[]>(`${config.restBaseUrl}${config.restPath}/klines?symbol=${symbol}&interval=${interval}&limit=120`),
-      fetchJson<BinanceDepth>(`${config.restBaseUrl}${config.restPath}/depth?symbol=${symbol}&limit=10`),
-      fetchJson<readonly BinanceTrade[]>(`${config.restBaseUrl}${config.restPath}/trades?symbol=${symbol}&limit=20`),
-      fetchJson<BinanceTicker>(`${config.restBaseUrl}${config.restPath}/ticker/24hr?symbol=${symbol}`),
+      fetchJson<readonly BinanceKline[]>(`${config.restBaseUrl}${config.restPath}/klines?symbol=${symbol}&interval=${interval}&limit=120`, signal),
+      fetchJson<BinanceDepth>(`${config.restBaseUrl}${config.restPath}/depth?symbol=${symbol}&limit=10`, signal),
+      fetchJson<readonly BinanceTrade[]>(`${config.restBaseUrl}${config.restPath}/trades?symbol=${symbol}&limit=20`, signal),
+      fetchJson<BinanceTicker>(`${config.restBaseUrl}${config.restPath}/ticker/24hr?symbol=${symbol}`, signal),
     ])
     const candles: readonly Candle[] = klines.map((item) => ({
       timestamp: item[0], open: Number(item[1]), high: Number(item[2]), low: Number(item[3]), close: Number(item[4]), volume: Number(item[5]),
@@ -86,7 +101,7 @@ function createBinanceProvider(config: BinanceProviderConfig): RealtimeMarketPro
     return {
       instrument: {
         ...updateInstrumentPrice(instrument, Number(ticker.lastPrice), Number(ticker.priceChangePercent)),
-        volume24h: Number(ticker.volume),
+        volume24h: Number.isFinite(Number(ticker.volume)) ? Number(ticker.volume) : instrument.volume24h,
       },
       timeframe,
       candles,
@@ -96,17 +111,16 @@ function createBinanceProvider(config: BinanceProviderConfig): RealtimeMarketPro
   },
 
   subscribe(instrument, timeframe, initialSnapshot, onEvent) {
-    const symbol = instrument.symbol.replace('/', '').toLowerCase()
-    const interval = intervalByTimeframe[timeframe]
+    const market = config.marketId === 'binance-spot' ? 'spot' : 'futures'
     let snapshot: MarketDetailSnapshot = initialSnapshot
-    const streams = [`${symbol}@kline_${interval}`, `${symbol}@aggTrade`, `${symbol}@depth10@500ms`, `${symbol}@ticker`]
     const socket = new ReconnectingWebSocket({
-      createUrl: () => `${config.socketBaseUrl}${streams.join('/')}`,
+      createUrl: () => binanceStreamUrl(market, instrument.providerSymbol ?? instrument.symbol.replace('/', ''), timeframe),
       onOpen: () => undefined,
       onStatus: (status, reconnectAttempt) => onEvent({ status, reconnectAttempt }),
       onMessage: (message) => {
-        void (async () => {
+        try {
           const envelope = JSON.parse(String(message.data)) as BinanceStreamEnvelope
+          if (typeof envelope.stream !== 'string' || !envelope.data || typeof envelope.data !== 'object') return
           const data = envelope.data
 
           if (envelope.stream.includes('@aggTrade')) {
@@ -124,20 +138,19 @@ function createBinanceProvider(config: BinanceProviderConfig): RealtimeMarketPro
               instrument: updateInstrumentPrice(snapshot.instrument, Number(kline.c)),
             }
           } else if (envelope.stream.includes('@depth')) {
-            const asks = buildOrderbookLevels(data.a as readonly (readonly [string, string])[]).toReversed()
-            const bids = buildOrderbookLevels(data.b as readonly (readonly [string, string])[])
-            snapshot = { ...snapshot, orderbook: { symbolId: instrument.id, asks, bids, spread: (asks.at(-1)?.price ?? 0) - (bids[0]?.price ?? 0) } }
+            const book = binanceStreamOrderbook(data, market)
+            if (book) snapshot = { ...snapshot, orderbook: { symbolId: instrument.id, ...book, spread: (book.asks.at(-1)?.price ?? 0) - (book.bids[0]?.price ?? 0) } }
           } else if (envelope.stream.includes('@ticker')) {
             snapshot = {
               ...snapshot,
               instrument: {
                 ...updateInstrumentPrice(snapshot.instrument, Number(data.c), Number(data.P)),
-                volume24h: Number(data.v),
+                volume24h: Number.isFinite(Number(data.v)) ? Number(data.v) : snapshot.instrument.volume24h,
               },
             }
           }
           onEvent({ snapshot })
-        })()
+        } catch { /* Ignore malformed exchange messages; the socket remains active. */ }
       },
     })
     socket.connect()

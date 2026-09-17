@@ -9,6 +9,13 @@ const exchangeByVenue: Record<StockVenue, StockExchange> = {
   kospi: 'KOSPI', kosdaq: 'KOSDAQ', nasdaq: 'NASDAQ', nyse: 'NYSE',
 }
 
+const venueByStockId = new Map<string, StockVenue>(
+  (Object.entries(exchangeByVenue) as [StockVenue, StockExchange][]).flatMap(([venue, exchange]) =>
+    stockCatalog[exchange].map((row) => [venue === 'kospi' || venue === 'kosdaq' ? `krx-${row.symbol}` : `us-${row.symbol.toLowerCase()}`, venue] as const)),
+)
+
+export function venueForStockId(id: string): StockVenue | undefined { return venueByStockId.get(id) }
+
 function isStockVenue(venue: MarketVenue): venue is StockVenue {
   return venue in exchangeByVenue
 }

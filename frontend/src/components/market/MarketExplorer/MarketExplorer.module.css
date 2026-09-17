@@ -7,8 +7,8 @@
 .count strong { font: 650 19px ui-monospace, monospace; color: #e0e7ee; }
 .count span { color: #8897a8; font-size: 10px; text-transform: uppercase; }
 .navigation { display: grid; border-bottom: 1px solid #293744; }
-.groupTabs,.providerTabs,.venueTabs { display: flex; min-width: 0; gap: 3px; padding: 4px 10px; overflow-x: auto; scrollbar-width: thin; }
-.groupTabs { background: #101a25; }.providerTabs { background: #0e1721; }.venueTabs { background: #0b121b; }
+.groupTabs,.providerTabs,.venueTabs,.quoteTabs { display: flex; min-width: 0; gap: 3px; padding: 4px 10px; overflow-x: auto; scrollbar-width: thin; }
+.groupTabs { background: #101a25; }.providerTabs { background: #0e1721; }.venueTabs { background: #0b121b; }.quoteTabs { background: #101923; border-top: 1px solid #253341; }
 .navigation button { flex: 0 0 auto; padding: 7px 12px; border: 1px solid transparent; border-bottom: 2px solid transparent; background: transparent; color: #8797aa; cursor: pointer; font: 650 11px ui-monospace, monospace; }
 .navigation button:hover { color: #e1e8ee; background: #1a2935; }
 .navigation button[aria-selected=true] { border-color: #344b50; border-bottom-color: #85afa0; color: #ebf1f1; background: #1a2b31; }
@@ -48,7 +48,7 @@
 .disclosure { margin: 0; padding: 7px 12px; border-top: 1px solid #273241; color: #b3a181; font-size: 10px; }
 .explorer button:focus-visible,.explorer select:focus-visible { outline: 2px solid #9ec5b3; outline-offset: -2px; }
 .compact .header { padding: 9px 10px; }.compact .header h1 { font-size: 15px; }.compact .count strong { font-size: 15px; }
-.compact .groupTabs,.compact .providerTabs,.compact .venueTabs { padding: 3px 5px; }.compact .navigation button { padding: 6px 8px; font-size: 10px; }
+.compact .groupTabs,.compact .providerTabs,.compact .venueTabs,.compact .quoteTabs { padding: 3px 5px; }.compact .navigation button { padding: 6px 8px; font-size: 10px; }
 .compact .controls { padding: 7px 8px; }.compact .search { height: 34px; }.compact .search input { font-size: 10px; }.compact .searchBehavior { font-size: 9px; }
 .compact .filterRow { flex-wrap: wrap; }.compact .filterRow button,.compact .filterRow select { height: 29px; font-size: 9px; }.compact .filterRow .direction { min-width: auto; }
 .compact .meta,.compact .sortStatus { padding: 6px 8px; font-size: 9px; }.compact .meta .live,.compact .meta .mock { font-size: 8px; }

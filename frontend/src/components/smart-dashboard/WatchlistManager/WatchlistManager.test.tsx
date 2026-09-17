@@ -2,6 +2,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { App } from '@/app/App'
+import { rememberInstrument } from '@/services/market/instrumentRegistry'
 import { WATCHLIST_SCHEMA_VERSION } from '@/utils/watchlists'
 
 function createDataTransfer() {
@@ -54,6 +55,21 @@ describe('WatchlistManager drag safety', () => {
     const watchlist = await screen.findByRole('region', { name: 'Watchlist 2.0' })
     expect(within(watchlist).getByText('Unavailable')).toBeTruthy()
     fireEvent.click(within(watchlist).getByRole('button', { name: 'Remove removed-symbol' }))
+    expect(within(watchlist).queryByText('Unavailable')).toBeNull()
+  })
+
+  it('shows expanded Explorer favorites in the Dashboard without an Unavailable row', async () => {
+    rememberInstrument({ id: 'binance-spot-sprint72rowusdt', marketId: 'binance-spot', symbol: 'ROWUSDT', name: 'Row Coin', providerSymbol: 'ROWUSDT', marketType: 'binance-spot', quoteCurrency: 'USDT', lastPrice: .000001, change24hPercent: 1, volume24h: 10 })
+    rememberInstrument({ id: 'upbit-sprint72row', marketId: 'upbit', symbol: 'ROW/KRW', name: 'Row Korea', providerSymbol: 'KRW-ROW', marketType: 'upbit-krw', quoteCurrency: 'KRW', lastPrice: .1, change24hPercent: 1, volume24h: 10 })
+    window.localStorage.setItem('investai.watchlists.v2', JSON.stringify({
+      schemaVersion: WATCHLIST_SCHEMA_VERSION,
+      watchlists: [{ id: 'crypto', name: 'Crypto', instrumentIds: ['binance-spot-sprint72rowusdt', 'upbit-sprint72row'], isDefault: true }],
+    }))
+    render(<App />)
+    const watchlist = await screen.findByRole('region', { name: 'Watchlist 2.0' })
+    expect(await within(watchlist).findByText('ROWUSDT')).toBeTruthy()
+    expect(within(watchlist).getByText('ROW/KRW')).toBeTruthy()
+    expect(within(watchlist).getByText('0.000001 USDT')).toBeTruthy()
     expect(within(watchlist).queryByText('Unavailable')).toBeNull()
   })
 })
