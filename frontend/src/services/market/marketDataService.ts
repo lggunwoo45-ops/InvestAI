@@ -1,9 +1,16 @@
 import { binanceMarketDataProvider } from '@/services/market/providers/BinanceMarketDataProvider'
+import { binanceSpotMarketDataProvider } from '@/services/market/providers/BinanceMarketDataProvider'
 import { mockMarketDataProvider } from '@/services/market/providers/MockMarketDataProvider'
 import { upbitMarketDataProvider } from '@/services/market/providers/UpbitMarketDataProvider'
+import { binanceCatalogProvider } from '@/services/market/explorer/BinanceCatalogProvider'
+import { mockCryptoCatalogProvider } from '@/services/market/explorer/MockCryptoCatalogProvider'
+import { stockCatalogProvider } from '@/services/market/explorer/StockCatalogProvider'
+import { upbitCatalogProvider } from '@/services/market/explorer/UpbitCatalogProvider'
+import type { MarketCatalogProvider } from '@/services/market/explorer/MarketCatalogProvider'
 import type { RealtimeMarketProvider } from '@/services/market/contracts/RealtimeMarketProvider'
-import type { MarketDataMode, MarketInstrument, MarketSectionData } from '@/types/market'
+import type { MarketCatalog, MarketDataMode, MarketInstrument, MarketSectionData, MarketVenue } from '@/types/market'
 import type { ChartTimeframe, RealtimeMarketState } from '@/types/marketDetail'
+import { getRememberedInstrument, rememberInstrument } from './instrumentRegistry'
 
 export interface MarketOverviewService {
   getMarketOverview(): Promise<readonly MarketSectionData[]>
@@ -71,21 +78,87 @@ const mockMarketSections: readonly MarketSectionData[] = [
   },
 ]
 
-const liveProviders: readonly RealtimeMarketProvider[] = [upbitMarketDataProvider, binanceMarketDataProvider]
+const liveProviders: readonly RealtimeMarketProvider[] = [upbitMarketDataProvider, binanceSpotMarketDataProvider, binanceMarketDataProvider]
+const catalogProviders: readonly MarketCatalogProvider[] = [stockCatalogProvider, mockCryptoCatalogProvider, upbitCatalogProvider, binanceCatalogProvider]
 
 /**
  * Single market-data facade. UI code never selects an exchange adapter or owns a
  * WebSocket; future providers register here and continue emitting normalized data.
  */
 export class MarketDataService implements MarketOverviewService {
+  private readonly catalogCache = new Map<string, { value: MarketCatalog; expiresAt: number }>()
+  private readonly catalogPending = new Map<string, Promise<MarketCatalog>>()
+  private readonly instrumentIndex = new Map<string, MarketInstrument>()
+
   constructor(
     private readonly providers: readonly RealtimeMarketProvider[] = liveProviders,
     private readonly mockProvider: RealtimeMarketProvider = mockMarketDataProvider,
+    private readonly explorerProviders: readonly MarketCatalogProvider[] = catalogProviders,
   ) {}
 
   async getMarketOverview() {
     return Promise.resolve(mockMarketSections)
   }
+
+  /** Fast path for navigation and offline use; selected identities survive reload. */
+  getKnownInstruments(ids: readonly string[]): Map<string, MarketInstrument> {
+    const wanted = new Set(ids)
+    const result = new Map<string, MarketInstrument>()
+    for (const section of mockMarketSections) for (const item of section.instruments) if (wanted.has(item.id)) result.set(item.id, item)
+    for (const id of wanted) {
+      const remembered = getRememberedInstrument(id)
+      if (remembered) result.set(id, remembered)
+    }
+    for (const id of wanted) {
+      const indexed = this.instrumentIndex.get(id)
+      if (indexed) result.set(id, indexed)
+    }
+    return result
+  }
+
+  /** Resolve persisted IDs through the same provider catalogs used by Explorer. */
+  async resolveInstruments(ids: readonly string[], mode: MarketDataMode): Promise<Map<string, MarketInstrument>> {
+    const wanted = new Set(ids)
+    const result = this.getKnownInstruments(ids)
+    if (!wanted.size) return result
+    const venues = new Set<MarketVenue>()
+    for (const id of wanted) {
+      if (id.startsWith('upbit-btc-')) venues.add('upbit-btc')
+      else if (id.startsWith('upbit-usdt-')) venues.add('upbit-usdt')
+      else if (id.startsWith('upbit-')) venues.add('upbit-krw')
+      else if (id.startsWith('binance-spot-')) venues.add('binance-spot')
+      else if (id.startsWith('binance-')) venues.add('binance-futures')
+      else if (id.startsWith('krx-')) { venues.add('kospi'); venues.add('kosdaq') }
+      else if (id.startsWith('us-')) { venues.add('nasdaq'); venues.add('nyse') }
+    }
+    await Promise.allSettled([...venues].map(async (venue) => {
+      const catalog = await this.getMarketCatalog(venue, mode)
+      for (const instrument of catalog.instruments) if (wanted.has(instrument.id)) result.set(instrument.id, instrument)
+    }))
+    return result
+  }
+
+  /** The only entry point for catalog APIs; UI never addresses an exchange directly. */
+  getMarketCatalog(venue: MarketVenue, mode: MarketDataMode, force = false, signal?: AbortSignal): Promise<MarketCatalog> {
+    const key = `${mode}:${venue}`
+    const cached = this.catalogCache.get(key)
+    if (!force && cached && cached.expiresAt > Date.now()) return Promise.resolve(cached.value)
+    const pending = this.catalogPending.get(key)
+    // A caller-owned signal must not share a promise that another caller can abort.
+    if (!force && !signal && pending) return pending
+    const provider = this.explorerProviders.find((candidate) => candidate.supports(venue, mode))
+    if (!provider) return Promise.reject(new Error(`No catalog provider for ${venue}`))
+    const request = provider.load(venue, signal).then((catalog) => {
+      if (signal?.aborted) throw new DOMException('Catalog request aborted', 'AbortError')
+      this.catalogCache.set(key, { value: catalog, expiresAt: Date.now() + (catalog.source === 'live' ? 60_000 : 3_600_000) })
+      for (const instrument of catalog.instruments) this.instrumentIndex.set(instrument.id, instrument)
+      return catalog
+    }).finally(() => { if (!signal && this.catalogPending.get(key) === request) this.catalogPending.delete(key) })
+    if (!signal) this.catalogPending.set(key, request)
+    return request
+  }
+
+  rememberInstrument = rememberInstrument
 
   subscribe({ instrument, timeframe, mode, onState }: MarketStreamOptions): () => void {
     const liveProvider = this.providers.find((provider) => provider.supports(instrument))
@@ -96,6 +169,7 @@ export class MarketDataService implements MarketOverviewService {
     let stopProvider: (() => void) | null = null
     let retryTimer: ReturnType<typeof setTimeout> | null = null
     let retryAttempt = 0
+    let requestController: AbortController | null = null
     let currentState: RealtimeMarketState = {
       snapshot: null,
       connection: {
@@ -125,7 +199,8 @@ export class MarketDataService implements MarketOverviewService {
         },
       })
 
-      provider.loadSnapshot(instrument, timeframe)
+      requestController = new AbortController()
+      provider.loadSnapshot(instrument, timeframe, requestController.signal)
         .then((snapshot) => {
           if (disposed) return
           retryAttempt = 0
@@ -177,6 +252,7 @@ export class MarketDataService implements MarketOverviewService {
 
     return () => {
       disposed = true
+      requestController?.abort()
       if (retryTimer) clearTimeout(retryTimer)
       stopProvider?.()
     }

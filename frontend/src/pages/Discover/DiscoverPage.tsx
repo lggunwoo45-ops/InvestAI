@@ -5,6 +5,7 @@ import { DiscoverTable } from '@/components/discover/DiscoverTable/DiscoverTable
 import { useDashboardData } from '@/hooks/useDashboardData'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { useMarketWorkspace } from '@/hooks/useMarketWorkspace'
+import { useResolvedInstruments } from '@/hooks/useResolvedInstruments'
 import { useWatchlists } from '@/hooks/useWatchlists'
 import type { DiscoverAsset } from '@/types/dashboard'
 import type { MarketInstrument } from '@/types/market'
@@ -14,10 +15,23 @@ export function DiscoverPage() {
   useDocumentTitle('Discover')
   const navigate = useNavigate()
   const snapshot = useDashboardData()
-  const { selectInstrument } = useMarketWorkspace()
+  const { selectInstrument, marketDataMode } = useMarketWorkspace()
   const { recentlyViewedIds, trackRecentlyViewed } = useWatchlists()
   const allAssets = useMemo(() => snapshot ? Object.values(snapshot.discover).flat() : [], [snapshot])
-  const recent = useMemo(() => recentlyViewedIds.map((id) => allAssets.find((asset) => asset.instrumentId === id)).filter((asset): asset is DiscoverAsset => Boolean(asset)), [allAssets, recentlyViewedIds])
+  const resolvedInstruments = useResolvedInstruments(recentlyViewedIds, marketDataMode)
+  const recent = useMemo(() => recentlyViewedIds.map((id) => {
+    const instrument = resolvedInstruments.get(id)
+    if (instrument) return {
+      id: instrument.id, instrumentId: instrument.id, marketId: instrument.marketId,
+      symbol: instrument.displaySymbol ?? instrument.symbol, name: instrument.name,
+      price: instrument.lastPrice, changePercent: instrument.change24hPercent,
+      volume: instrument.volume24h, quote: instrument.quoteCurrency, instrument,
+    }
+    return allAssets.find((asset) => asset.instrumentId === id) ?? {
+      id, instrumentId: id, marketId: 'upbit' as const, symbol: id, name: 'Unavailable',
+      price: 0, changePercent: 0, volume: 0, quote: '', unavailable: true,
+    }
+  }) satisfies DiscoverAsset[], [allAssets, recentlyViewedIds, resolvedInstruments])
 
   const open = (instrument: MarketInstrument) => {
     trackRecentlyViewed(instrument.id)

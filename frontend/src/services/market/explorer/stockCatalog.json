@@ -1,0 +1,4810 @@
+{
+  "KOSPI": [
+    {
+      "symbol": "005930",
+      "name": "Samsung Electronics Co Ltd",
+      "koreanName": "삼성전자",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "000660",
+      "name": "SK Hynix Inc",
+      "koreanName": "SK하이닉스",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "373220",
+      "name": "LG Energy Solution Ltd",
+      "koreanName": "LG에너지솔루션",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "005380",
+      "name": "Hyundai Motor Co. Ltd.",
+      "koreanName": "현대자동차",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "035420",
+      "name": "Naver Corporation",
+      "koreanName": "NAVER",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "035720",
+      "name": "Kakao Corp",
+      "koreanName": "카카오",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "234070",
+      "name": "A ONE ALFORM",
+      "koreanName": "에이원알폼",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "078520",
+      "name": "Able C&C",
+      "koreanName": "에이블씨엔씨",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "161000",
+      "name": "Aekyung Chemical Co., Ltd.",
+      "koreanName": "애경유화",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "018250",
+      "name": "Aekyung Industrial Co Ltd",
+      "koreanName": "애경산업",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "095570",
+      "name": "AJ Networks Co Ltd",
+      "koreanName": "AJ네트웍스",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "006840",
+      "name": "Ak Holdings",
+      "koreanName": "AK홀딩스",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "001780",
+      "name": "Aluko Co Ltd",
+      "koreanName": "알루코",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "090430",
+      "name": "Amorepacific Corp. (New)",
+      "koreanName": "아모레퍼시픽",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "008700",
+      "name": "Anam Electroni",
+      "koreanName": "아남전자",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "251280",
+      "name": "AngioLab",
+      "koreanName": "안지오랩",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "007460",
+      "name": "Aprogen KIC Inc",
+      "koreanName": "에이프로젠 KIC",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "003060",
+      "name": "Aprogen Pharmaceuticals Inc",
+      "koreanName": "에이프로젠제약",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "002310",
+      "name": "Asia Paper",
+      "koreanName": "아세아제지",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "183190",
+      "name": "Asiacement",
+      "koreanName": "아세아시멘트",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "020560",
+      "name": "Asiana Airline",
+      "koreanName": "아시아나항공",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "017900",
+      "name": "Auk Corp",
+      "koreanName": "광전자",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "015260",
+      "name": "Automobile &Pc",
+      "koreanName": "에이엔피",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "035150",
+      "name": "Baiksan",
+      "koreanName": "백산",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "027410",
+      "name": "BGF Retail Co Ltd",
+      "koreanName": "BGF",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "282330",
+      "name": "BGF Retail Co Ltd",
+      "koreanName": "BGF리테일",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "090460",
+      "name": "BH Co Ltd",
+      "koreanName": "비에이치",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "005180",
+      "name": "Binggrae",
+      "koreanName": "빙그레",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "199290",
+      "name": "BIOPROTECH",
+      "koreanName": "바이오프로테크",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "006740",
+      "name": "Blue Industrial Development Co., Ltd.",
+      "koreanName": "영풍제지",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "191600",
+      "name": "BLUETOP",
+      "koreanName": "티케이씨",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "138930",
+      "name": "BNK Financial Group Inc",
+      "koreanName": "BNK금융지주",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "000890",
+      "name": "Bohae Brewery",
+      "koreanName": "보해양조",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "002760",
+      "name": "BOLAK",
+      "koreanName": "보락",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "001270",
+      "name": "Bookook Sec",
+      "koreanName": "부국증권",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "026940",
+      "name": "Bookook Steel",
+      "koreanName": "부국철강",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "003850",
+      "name": "Boryung Pharm",
+      "koreanName": "보령제약",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "011390",
+      "name": "Busan Ind",
+      "koreanName": "부산산업",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "001460",
+      "name": "BYC Co. Ltd",
+      "koreanName": "BYC",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "007210",
+      "name": "Byuksan Corp",
+      "koreanName": "벽산",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "013700",
+      "name": "Camus Engineering & Construction Inc",
+      "koreanName": "까뮤이앤씨",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "068270",
+      "name": "Celltrion Inc",
+      "koreanName": "셀트리온",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "025620",
+      "name": "Cha AI Healthcare Co., Ltd.",
+      "koreanName": "제이준코스메틱",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "009310",
+      "name": "Charm Engine",
+      "koreanName": "참엔지니어링",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "033250",
+      "name": "Chasys",
+      "koreanName": "체시스",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "001560",
+      "name": "Cheil Grinding",
+      "koreanName": "제일연마",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "030000",
+      "name": "Cheil Worldwide",
+      "koreanName": "제일기획",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "051630",
+      "name": "Chin Yang Chem",
+      "koreanName": "진양화학",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "003780",
+      "name": "Chin Yang Ind",
+      "koreanName": "진양산업",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "100250",
+      "name": "Chinyang Hold",
+      "koreanName": "진양홀딩스",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "010640",
+      "name": "Chinyang Poly",
+      "koreanName": "진양폴리우레탄",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "001550",
+      "name": "Cho Bi",
+      "koreanName": "조비",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "004700",
+      "name": "Cho Kwang Leat",
+      "koreanName": "조광피혁",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "004910",
+      "name": "Cho Kwang Pain",
+      "koreanName": "조광페인트",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "002600",
+      "name": "CHOHEUNG",
+      "koreanName": "조흥",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "018470",
+      "name": "Choil Aluminum",
+      "koreanName": "조일알미늄",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "000950",
+      "name": "Chonbang",
+      "koreanName": "전방",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "185750",
+      "name": "Chong Kun Dang Pharmaceutical",
+      "koreanName": "종근당",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "001630",
+      "name": "Chongkundang",
+      "koreanName": "종근당홀딩스",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "120030",
+      "name": "Chosun Welding",
+      "koreanName": "조선선재",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "000650",
+      "name": "Chunil Express",
+      "koreanName": "천일고속",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "103660",
+      "name": "CIAAT",
+      "koreanName": "씨앗",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "004920",
+      "name": "CItech Co Ltd",
+      "koreanName": "씨아이테크",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "079160",
+      "name": "CJ CGV",
+      "koreanName": "CJ CGV",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "097950",
+      "name": "CJ Cheiljedang",
+      "koreanName": "CJ제일제당",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "001040",
+      "name": "CJ Corp",
+      "koreanName": "CJ",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "000120",
+      "name": "CJ Korea Express",
+      "koreanName": "CJ대한통운",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "011150",
+      "name": "Cj Seafood",
+      "koreanName": "CJ씨푸드",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "063160",
+      "name": "Ckd Bio",
+      "koreanName": "종근당바이오",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "245450",
+      "name": "CNSLINK",
+      "koreanName": "씨앤에스링크",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "036420",
+      "name": "ContentreeJoongAng corp.",
+      "koreanName": "제이콘텐트리",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "189350",
+      "name": "Coset",
+      "koreanName": "코셋",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "044820",
+      "name": "Cosmax",
+      "koreanName": "코스맥스비티아이",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "192820",
+      "name": "Cosmax Inc",
+      "koreanName": "코스맥스",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "005420",
+      "name": "Cosmo Chem",
+      "koreanName": "코스모화학",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "005070",
+      "name": "Cosmoam&T",
+      "koreanName": "코스모신소재",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "021240",
+      "name": "COWAY Co. Ltd",
+      "koreanName": "코웨이",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "000480",
+      "name": "CR Holdings Co., Ltd.",
+      "koreanName": "조선내화",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "215570",
+      "name": "CRONEX",
+      "koreanName": "크로넥스",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "264900",
+      "name": "Crown Confectionery Co Ltd",
+      "koreanName": "크라운제과",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "005740",
+      "name": "CROWNHAITAI Holdings Co., Ltd.",
+      "koreanName": "크라운해태홀딩스",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "000590",
+      "name": "Cs Holdings",
+      "koreanName": "CS홀딩스",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "112610",
+      "name": "CS Wind Corp",
+      "koreanName": "씨에스윈드",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "192400",
+      "name": "Cuckoo Electronics Co Ltd",
+      "koreanName": "쿠쿠홀딩스",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "284740",
+      "name": "Cuckoo Homesys Co Ltd",
+      "koreanName": "쿠쿠홈시스",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "003160",
+      "name": "D I Corp",
+      "koreanName": "디아이",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "012800",
+      "name": "Dae Chang",
+      "koreanName": "대창",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "016090",
+      "name": "Dae Hyun",
+      "koreanName": "대현",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "024890",
+      "name": "Dae Won Chem",
+      "koreanName": "대원화성",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "014160",
+      "name": "Dae Young Pkg",
+      "koreanName": "대영포장",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "092200",
+      "name": "DAE-IL Corporation",
+      "koreanName": "디아이씨",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "015230",
+      "name": "Daechang Forgi",
+      "koreanName": "대창단조",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "000490",
+      "name": "Daedong Ind",
+      "koreanName": "대동공업",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "178600",
+      "name": "DAEDONG KOREA GINSENG",
+      "koreanName": "대동고려삼",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "008060",
+      "name": "Daeduck Co. Ltd.",
+      "koreanName": "대덕전자",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "006370",
+      "name": "Daegu Dept Sto",
+      "koreanName": "대구백화점",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "001130",
+      "name": "Daehan Flour Mills Co Ltd",
+      "koreanName": "대한제분",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "084010",
+      "name": "Daehan Steel",
+      "koreanName": "대한제강",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "003830",
+      "name": "Daehan Synthet",
+      "koreanName": "대한화섬",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "069460",
+      "name": "Daeho Al Co. Ltd.",
+      "koreanName": "대호에이엘",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "114920",
+      "name": "Daejoo Ent",
+      "koreanName": "대주이엔티",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "019680",
+      "name": "Daekyo",
+      "koreanName": "대교",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "005750",
+      "name": "Daelim B&Co",
+      "koreanName": "대림비앤코",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "006570",
+      "name": "Daelim Trading",
+      "koreanName": "대림통상",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "001680",
+      "name": "Daesang Corp",
+      "koreanName": "대상",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "084690",
+      "name": "Daesang Holdings Co Ltd",
+      "koreanName": "대상홀딩스",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "117580",
+      "name": "Daesung Energy",
+      "koreanName": "대성에너지",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "016710",
+      "name": "Daesung Holdin",
+      "koreanName": "대성홀딩스",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "128820",
+      "name": "Daesung Ind",
+      "koreanName": "대성산업",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "006340",
+      "name": "Daewon Cable",
+      "koreanName": "대원전선",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "003220",
+      "name": "Daewon Pharm",
+      "koreanName": "대원제약",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "000430",
+      "name": "Daewonkangup",
+      "koreanName": "대원강업",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "009320",
+      "name": "Daewoo Elec Co",
+      "koreanName": "대우부품",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "047040",
+      "name": "Daewoo Engineering & Construction",
+      "koreanName": "대우건설",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "003090",
+      "name": "Daewoong",
+      "koreanName": "대웅",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "069620",
+      "name": "Daewoong Pharma",
+      "koreanName": "대웅제약",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "003540",
+      "name": "Daishin Sec",
+      "koreanName": "대신증권",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "009190",
+      "name": "Daiyang Metal",
+      "koreanName": "대양금속",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "030210",
+      "name": "Daol Investment & Securities",
+      "koreanName": "KTB투자증권",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "023590",
+      "name": "Daou Tech",
+      "koreanName": "다우기술",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "199150",
+      "name": "Data Streams",
+      "koreanName": "데이터스트림즈",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "016610",
+      "name": "DB Financial Investment Co Ltd",
+      "koreanName": "DB금융투자",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "000990",
+      "name": "DB HiTek",
+      "koreanName": "DB하이텍",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "012030",
+      "name": "DB INC",
+      "koreanName": "DB",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "005830",
+      "name": "DB Insurance Co Ltd",
+      "koreanName": "DB손해보험",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "024090",
+      "name": "DCM Corp",
+      "koreanName": "디씨엠",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "145720",
+      "name": "Dentium",
+      "koreanName": "덴티움",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "058730",
+      "name": "Development Advance Solution Co Ltd",
+      "koreanName": "다스코",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "139130",
+      "name": "Dgb Financial",
+      "koreanName": "DGB금융지주",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "001530",
+      "name": "DI Dong Il Corp",
+      "koreanName": "동일방직",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "000210",
+      "name": "DL Holdings CO. LTD.",
+      "koreanName": "대림산업",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "227420",
+      "name": "DOBU",
+      "koreanName": "오백볼트",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "002150",
+      "name": "DOHWA ENGINEERING",
+      "koreanName": "도화엔지니어링",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "002690",
+      "name": "Dong Il Steel MFG Co Ltd",
+      "koreanName": "동일제강",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "030720",
+      "name": "Dong Won Fish",
+      "koreanName": "동원수산",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "008970",
+      "name": "Dong Yang Pipe",
+      "koreanName": "동양철관",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "170900",
+      "name": "Dong-A St",
+      "koreanName": "동아에스티",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "028100",
+      "name": "Donga Geologic",
+      "koreanName": "동아지질",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "000640",
+      "name": "Donga Socio Holdings",
+      "koreanName": "동아쏘시오홀딩스",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "007590",
+      "name": "Dongbang Agro",
+      "koreanName": "동방아그로",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "004140",
+      "name": "Dongbang Trans",
+      "koreanName": "동방",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "005960",
+      "name": "Dongbu",
+      "koreanName": "동부건설",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "016380",
+      "name": "Dongbu Steel Co Ltd",
+      "koreanName": "동부제철",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "004890",
+      "name": "Dongil Ind",
+      "koreanName": "동일산업",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "001230",
+      "name": "Dongkuk Steel Mill Co Ltd",
+      "koreanName": "동국제강",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "023450",
+      "name": "Dongnam Chem",
+      "koreanName": "동남합성",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "026960",
+      "name": "Dongsuh",
+      "koreanName": "동서",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "102260",
+      "name": "Dongsung Corporation",
+      "koreanName": "동성코퍼레이션",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "000020",
+      "name": "Dongwha Pharm.Co.Ltd",
+      "koreanName": "동화약품",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "006040",
+      "name": "Dongwon Ind",
+      "koreanName": "동원산업",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "018500",
+      "name": "Dongwon Metal",
+      "koreanName": "동원금속",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "014820",
+      "name": "Dongwon System",
+      "koreanName": "동원시스템즈",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "084670",
+      "name": "Dongyang Expre",
+      "koreanName": "동양고속",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "092780",
+      "name": "Dongyang Piston Co Ltd",
+      "koreanName": "동양피스톤",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "000150",
+      "name": "Doosan",
+      "koreanName": "두산",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "241560",
+      "name": "Doosan Bobcat Inc",
+      "koreanName": "두산밥캣",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "034020",
+      "name": "Doosan Heavy Ind. & Const.",
+      "koreanName": "두산중공업",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "192080",
+      "name": "DoubleU Games Co Ltd",
+      "koreanName": "더블유게임즈",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "012510",
+      "name": "Douzone Bizon Co Ltd",
+      "koreanName": "더존비즈온",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "004840",
+      "name": "Drb Holding",
+      "koreanName": "DRB동일",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "163560",
+      "name": "Drb Industrial",
+      "koreanName": "동일고무벨트",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "155660",
+      "name": "DSR Corp",
+      "koreanName": "DSR",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "069730",
+      "name": "Dsr Wire",
+      "koreanName": "DSR제강",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "007340",
+      "name": "DTR Automotive",
+      "koreanName": "디티알오토모티브",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "016740",
+      "name": "Dual Co Ltd",
+      "koreanName": "두올",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "004830",
+      "name": "Duksung",
+      "koreanName": "덕성",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "013570",
+      "name": "DY Corporation",
+      "koreanName": "디와이",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "024900",
+      "name": "DY DEOKYANG Co., Ltd.",
+      "koreanName": "덕양산업",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "210540",
+      "name": "DY Power Corp",
+      "koreanName": "디와이파워",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "145210",
+      "name": "Dynamic Design Co., Ltd.",
+      "koreanName": "세화아이엠씨",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "088260",
+      "name": "E KOCREF CR REIT",
+      "koreanName": "이리츠코크렙",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "139480",
+      "name": "E-Mart",
+      "koreanName": "이마트",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "015020",
+      "name": "E-Starco",
+      "koreanName": "이스타코",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "084680",
+      "name": "E-World",
+      "koreanName": "이월드",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "017940",
+      "name": "E1 Corporation",
+      "koreanName": "E1",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "008250",
+      "name": "Eagon Ind",
+      "koreanName": "이건산업",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "208850",
+      "name": "EB TECH",
+      "koreanName": "이비테크",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "276240",
+      "name": "Elivision",
+      "koreanName": "엘리비젼",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "278990",
+      "name": "EMB",
+      "koreanName": "파인이엠텍",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "232530",
+      "name": "EMT",
+      "koreanName": "이엠티",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "011090",
+      "name": "Enex Co.Ltd",
+      "koreanName": "에넥스",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "074610",
+      "name": "ENPlus Co Ltd",
+      "koreanName": "나노메딕스",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "140610",
+      "name": "Ensol Biosciences",
+      "koreanName": "엔솔바이오",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "224810",
+      "name": "EOMJIHOUSE",
+      "koreanName": "엄지하우스",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "001200",
+      "name": "Eugene Inv&Sec",
+      "koreanName": "유진증권",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "000700",
+      "name": "Eusu Holdings",
+      "koreanName": "유수홀딩스",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "007700",
+      "name": "F&F Holdings Co. Ltd",
+      "koreanName": "F&F",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "036580",
+      "name": "Farmsco",
+      "koreanName": "팜스코",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "133820",
+      "name": "Finebesteel",
+      "koreanName": "화인베스틸",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "010820",
+      "name": "Firstec",
+      "koreanName": "퍼스텍",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "093370",
+      "name": "Foosung",
+      "koreanName": "후성",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "016800",
+      "name": "Fursys",
+      "koreanName": "퍼시스",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "299480",
+      "name": "G&amp;E Healthcare",
+      "koreanName": "지앤이바이오텍",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "076340",
+      "name": "GA INNODUS",
+      "koreanName": "관악산업",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "011420",
+      "name": "Galaxia SM Inc",
+      "koreanName": "갤럭시아에스엠",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "000500",
+      "name": "Gaon Cable",
+      "koreanName": "가온전선",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "006280",
+      "name": "GC Biopharma Corp.",
+      "koreanName": "녹십자",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "005250",
+      "name": "GC Corp.",
+      "koreanName": "녹십자홀딩스",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "011000",
+      "name": "GeneOne Life Science Inc",
+      "koreanName": "진원생명과학",
+      "exchange": "KOSPI"
+    },
+    {
+      "symbol": "066830",
+      "name": "GENOTECH",
+      "koreanName": "제노텍",
+      "exchange": "KOSPI"
+    }
+  ],
+  "KOSDAQ": [
+    {
+      "symbol": "196170",
+      "name": "ALTEOGEN Inc",
+      "koreanName": "알테오젠",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "060310",
+      "name": "3S KOREA Co. Ltd",
+      "koreanName": "3S",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "013310",
+      "name": "A-Jin Industry Co Ltd",
+      "koreanName": "아진산업",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "071670",
+      "name": "A-Tech Solution Co. Ltd",
+      "koreanName": "에이테크솔루션",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "174900",
+      "name": "AbClon Inc",
+      "koreanName": "앱클론",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "036010",
+      "name": "ABCO Electronics Co. Ltd",
+      "koreanName": "아비코전자",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "203400",
+      "name": "Abion Inc.",
+      "koreanName": "에이비온",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "102120",
+      "name": "ABOV Semiconductor Co. Ltd",
+      "koreanName": "어보브반도체",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "003800",
+      "name": "Ace Bed Company Limited",
+      "koreanName": "에이스침대",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "088800",
+      "name": "Ace Technologies Corp",
+      "koreanName": "에이스테크",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "052790",
+      "name": "Actoz Soft Co.Ltd",
+      "koreanName": "액토즈소프트",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "290740",
+      "name": "ActRO Co. Ltd.",
+      "koreanName": "액트로",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "200710",
+      "name": "ADTechnology Co.Ltd",
+      "koreanName": "에이디테크놀로지",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "121600",
+      "name": "Advanced Nano Products Co. Ltd",
+      "koreanName": "나노신소재",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "265520",
+      "name": "Advanced Process Systems Corporation",
+      "koreanName": "AP시스템",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "067390",
+      "name": "AeroSpace Technology of Korea",
+      "koreanName": "아스트",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "013990",
+      "name": "Agabang&Company",
+      "koreanName": "아가방컴퍼니",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "060900",
+      "name": "Agent AI Co., Ltd.",
+      "koreanName": "퍼시픽바이오",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "001540",
+      "name": "Ahn-Gook Pharmaceutical Co. Ltd",
+      "koreanName": "안국약품",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "053800",
+      "name": "AhnLab Inc",
+      "koreanName": "안랩",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "059120",
+      "name": "Ajinextek Co. Ltd",
+      "koreanName": "아진엑스텍",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "238120",
+      "name": "Aligned Genetics Inc.",
+      "koreanName": "로고스바이오",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "297570",
+      "name": "Aloys Inc.",
+      "koreanName": "IBKS제9호스팩",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "085810",
+      "name": "Alticast Corporation",
+      "koreanName": "알티캐스트",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "123750",
+      "name": "Alton Sports Co.Ltd",
+      "koreanName": "알톤스포츠",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "092040",
+      "name": "Amicogen Inc",
+      "koreanName": "아미코젠",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "074430",
+      "name": "Aminologics Co.Ltd",
+      "koreanName": "아미노로직스",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "052710",
+      "name": "Amotech Co. Ltd",
+      "koreanName": "아모텍",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "025980",
+      "name": "Ananti Inc",
+      "koreanName": "아난티",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "123860",
+      "name": "AnaPass Inc",
+      "koreanName": "아나패스",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "065660",
+      "name": "Anterogen.Co.Ltd",
+      "koreanName": "안트로젠",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "196300",
+      "name": "Anygen Co. Ltd.",
+      "koreanName": "애니젠",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "054620",
+      "name": "APS Holdings Corporation",
+      "koreanName": "APS홀딩스",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "079810",
+      "name": "APS Innovation Co Ltd",
+      "koreanName": "디이엔티",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "270520",
+      "name": "APTN Inc.",
+      "koreanName": "하나금융10호스팩",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "109960",
+      "name": "Aptocrom Inc",
+      "koreanName": "에이프로젠 H&G",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "096690",
+      "name": "Aroot Co. Ltd",
+      "koreanName": "제이스테판",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "127710",
+      "name": "Asia Economy Daily Co Ltd",
+      "koreanName": "아시아경제",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "211270",
+      "name": "Asia Pacific Satellite Inc",
+      "koreanName": "AP위성",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "154030",
+      "name": "Asia Seed Co. Ltd.",
+      "koreanName": "아시아종묘",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "050860",
+      "name": "Asia Technology Co Ltd",
+      "koreanName": "아세아텍",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "246720",
+      "name": "Asta Co. Ltd.",
+      "koreanName": "아스타",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "045660",
+      "name": "Atec Co. Ltd",
+      "koreanName": "에이텍",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "224110",
+      "name": "Atec T& Co. Ltd",
+      "koreanName": "에이텍티앤",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "021080",
+      "name": "Atinum Investment Co. Ltd",
+      "koreanName": "에이티넘인베스트",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "039830",
+      "name": "Aurora World Corporation",
+      "koreanName": "오로라",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "031510",
+      "name": "Austem Company Ltd",
+      "koreanName": "오스템",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "067170",
+      "name": "Autech Corporation",
+      "koreanName": "오텍",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "083930",
+      "name": "Avaco Co. Ltd",
+      "koreanName": "아바코",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "149950",
+      "name": "Avatec Co. Ltd",
+      "koreanName": "아바텍",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "032080",
+      "name": "AztechWB Co. Ltd",
+      "koreanName": "아즈텍WB",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "267790",
+      "name": "Barrel Co. Ltd.",
+      "koreanName": "배럴",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "018700",
+      "name": "Barunson Co. Ltd",
+      "koreanName": "바른손",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "035620",
+      "name": "Barunson Entertainment & Arts Corporation",
+      "koreanName": "바른손이앤에이",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "200780",
+      "name": "BCWORLD PHARM. Co. Ltd",
+      "koreanName": "비씨월드제약",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "206400",
+      "name": "BENO TNR, Inc.",
+      "koreanName": "엔터메이트",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "148780",
+      "name": "Bflysoft Co. Ltd.",
+      "koreanName": "비플라이소프트",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "046310",
+      "name": "BG T&A Co",
+      "koreanName": "백금T&A",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "126600",
+      "name": "BGFecomaterials Co., Ltd.",
+      "koreanName": "코프라",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "083650",
+      "name": "BHI Co. Ltd",
+      "koreanName": "비에이치아이",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "044480",
+      "name": "Billions Co., Ltd.",
+      "koreanName": "바이오제네틱스",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "053030",
+      "name": "BINEX Co. Ltd",
+      "koreanName": "바이넥스",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "086820",
+      "name": "Bio Solution Co. Ltd.",
+      "koreanName": "바이오솔루션",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "064550",
+      "name": "Bioneer Corporation",
+      "koreanName": "바이오니아",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "038460",
+      "name": "BioSmart Co.Ltd",
+      "koreanName": "바이오스마트",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "086040",
+      "name": "Biotoxtech Co. Ltd",
+      "koreanName": "바이오톡스텍",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "032850",
+      "name": "BIT Computer Co. Ltd",
+      "koreanName": "비트컴퓨터",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "049470",
+      "name": "BITPLANET Co., Ltd.",
+      "koreanName": "SGA",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "093190",
+      "name": "Bixolon Co. Ltd",
+      "koreanName": "빅솔론",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "050090",
+      "name": "BK Holdings Co., Ltd.",
+      "koreanName": "휘닉스소재",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "065170",
+      "name": "BL Pharmtech Corp.",
+      "koreanName": "넥스트BT",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "033560",
+      "name": "Bluecom Co. Ltd",
+      "koreanName": "블루콤",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "086670",
+      "name": "BMT Co. Ltd",
+      "koreanName": "비엠티",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "256840",
+      "name": "BNC Korea Co. Ltd.",
+      "koreanName": "엔에이치스팩11호",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "206640",
+      "name": "Boditech Med Inc.",
+      "koreanName": "바디텍메드",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "225530",
+      "name": "Bokwang Industry Co Ltd",
+      "koreanName": "보광산업",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "226340",
+      "name": "Bonne",
+      "koreanName": "에이치엠씨3호스팩",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "008470",
+      "name": "Booster Co. Ltd",
+      "koreanName": "부스타",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "250000",
+      "name": "Boratr Co. Ltd.",
+      "koreanName": "보라티알",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "006910",
+      "name": "Bosung Power Technology Co. Ltd",
+      "koreanName": "보성파워텍",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "064480",
+      "name": "BRIDGETEC Corp",
+      "koreanName": "브리지텍",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "014470",
+      "name": "Bubang Co. Ltd",
+      "koreanName": "부방",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "264660",
+      "name": "C&G Hi Tech Co. Ltd.",
+      "koreanName": "씨앤지하이테크",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "258610",
+      "name": "Caelum Co. Ltd.",
+      "koreanName": "이더블유케이",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "042000",
+      "name": "Cafe24 Corp.",
+      "koreanName": "카페24",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "050110",
+      "name": "CammSys Corp",
+      "koreanName": "캠시스",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "210120",
+      "name": "CANVAS N Co., Ltd.",
+      "koreanName": "빅텐츠",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "064820",
+      "name": "Cape Industries Ltd",
+      "koreanName": "케이프",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "214370",
+      "name": "Caregen Co.Ltd",
+      "koreanName": "케어젠",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "263700",
+      "name": "CareLabs Co. Ltd.",
+      "koreanName": "케어랩스",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "016920",
+      "name": "CAS Corporation",
+      "koreanName": "카스",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "071850",
+      "name": "Castec Korea Co Ltd",
+      "koreanName": "캐스텍코리아",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "049960",
+      "name": "Cell Biotech Co. Ltd",
+      "koreanName": "쎌바이오텍",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "068760",
+      "name": "Celltrion Pharm Inc",
+      "koreanName": "셀트리온제약",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "049180",
+      "name": "Cellumed Co. Ltd",
+      "koreanName": "셀루메드",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "037760",
+      "name": "Cenit Co. Ltd",
+      "koreanName": "쎄니트",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "222420",
+      "name": "CENOTEC Co., Ltd.",
+      "koreanName": "쎄노텍",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "083790",
+      "name": "CG Invites Co., Ltd.",
+      "koreanName": "크리스탈",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "085660",
+      "name": "CHA Biotech Co. Ltd",
+      "koreanName": "차바이오텍",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "004650",
+      "name": "Changhae Ethanol Co. Ltd",
+      "koreanName": "창해에탄올",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "089010",
+      "name": "CHEMTRONICS.CO.Ltd",
+      "koreanName": "켐트로닉스",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "220260",
+      "name": "Chemtros Co., Ltd.",
+      "koreanName": "켐트로스",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "066360",
+      "name": "Cherrybro Co. Ltd.",
+      "koreanName": "체리부로",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "033100",
+      "name": "Cheryong Electric Co.Ltd",
+      "koreanName": "제룡전기",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "147830",
+      "name": "Cheryong Industrial Co.Ltd",
+      "koreanName": "제룡산업",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "900250",
+      "name": "China Crystal New Material",
+      "koreanName": "크리스탈신소재",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "094360",
+      "name": "Chips&Media Inc",
+      "koreanName": "칩스앤미디어",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "034940",
+      "name": "ChoA Pharmaceutical Co.Ltd",
+      "koreanName": "조아제약",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "072020",
+      "name": "Choong Ang Vaccine Laboratory Co. Ltd",
+      "koreanName": "중앙백신",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "047820",
+      "name": "CHOROKBAEM MEDIA",
+      "koreanName": "초록뱀",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "035760",
+      "name": "CJ ENM CO. Ltd",
+      "koreanName": "CJ ENM",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "051500",
+      "name": "CJ Freshway Corporation",
+      "koreanName": "CJ프레시웨이",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "214150",
+      "name": "CLASSYS Inc",
+      "koreanName": "클래시스",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "045520",
+      "name": "Clean & Science co. Ltd",
+      "koreanName": "크린앤사이언스",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "237880",
+      "name": "CLIO Cosmetics Co.Ltd",
+      "koreanName": "클리오",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "058820",
+      "name": "CMG Pharmaceutical Co. Ltd",
+      "koreanName": "CMG제약",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "056730",
+      "name": "CNT85 Inc.",
+      "koreanName": "포스링크",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "045970",
+      "name": "CoAsia Corporation",
+      "koreanName": "코아시아홀딩스",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "047770",
+      "name": "Codes Combine Co. Ltd",
+      "koreanName": "코데즈컴바인",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "900310",
+      "name": "Coloray International Investment Co. Ltd.",
+      "koreanName": "컬러레이",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "078340",
+      "name": "Com2uS Corporation",
+      "koreanName": "컴투스",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "063080",
+      "name": "Com2uS Holdings Corporation",
+      "koreanName": "게임빌",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "036690",
+      "name": "COMMAX",
+      "koreanName": "코맥스",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "056360",
+      "name": "Comunication Weaver Co.Ltd",
+      "koreanName": "코위버",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "027050",
+      "name": "Coreana Cosmetics Co.Ltd",
+      "koreanName": "코리아나",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "104540",
+      "name": "Corentec Co Ltd",
+      "koreanName": "코렌텍",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "166480",
+      "name": "CORESTEM Inc",
+      "koreanName": "코아스템",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "043710",
+      "name": "CosLeaguer Global Co., Ltd.",
+      "koreanName": "서울리거",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "222040",
+      "name": "Cosmax Nbt Inc",
+      "koreanName": "뉴트리바이오텍",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "241710",
+      "name": "Cosmecca Korea Co. Ltd",
+      "koreanName": "코스메카코리아",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "082660",
+      "name": "Cosnine",
+      "koreanName": "삼우엠스",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "033290",
+      "name": "COWELL FASHION Co.Ltd",
+      "koreanName": "코웰패션",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "101240",
+      "name": "CQV Co. Ltd",
+      "koreanName": "씨큐브",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "222080",
+      "name": "Creative & Innovative System Corporation",
+      "koreanName": "씨아이에스",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "040350",
+      "name": "CreoSG Co., Ltd.",
+      "koreanName": "큐로컴",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "096240",
+      "name": "Creverse, Inc.",
+      "koreanName": "청담러닝",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "065770",
+      "name": "CS Corporation",
+      "koreanName": "CS",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "083660",
+      "name": "CSA Cosmic Co., Ltd.",
+      "koreanName": "CSA 코스믹",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "060590",
+      "name": "CTCBIO Inc",
+      "koreanName": "씨티씨바이오",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "260930",
+      "name": "CTK Co. Ltd.",
+      "koreanName": "씨티케이코스메틱스",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "115480",
+      "name": "CU Medical Systems Inc",
+      "koreanName": "씨유메디칼",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "182360",
+      "name": "Cube Entertainment Inc",
+      "koreanName": "큐브엔터",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "021650",
+      "name": "Cubic Korea Inc",
+      "koreanName": "한국큐빅",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "060280",
+      "name": "Curexo Inc",
+      "koreanName": "큐렉소",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "051780",
+      "name": "Curo Holdings Co. Ltd",
+      "koreanName": "큐로홀딩스",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "900120",
+      "name": "CXI Healthcare Technology Group Limited",
+      "koreanName": "씨케이에이치",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "160980",
+      "name": "Cymechs Inc",
+      "koreanName": "싸이맥스",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "263720",
+      "name": "D&C Media Co. Ltd.",
+      "koreanName": "디앤씨미디어",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "067080",
+      "name": "DAE HWA Pharmaceutical Co. Ltd",
+      "koreanName": "대화제약",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "045390",
+      "name": "DAEA TI Co. Ltd",
+      "koreanName": "대아티아이",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "078140",
+      "name": "Daebongls.Co.Ltd",
+      "koreanName": "대봉엘에스",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "096350",
+      "name": "DaeChang Solution Co. Ltd",
+      "koreanName": "대창솔루션",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "140520",
+      "name": "Daechang Steel Co Ltd",
+      "koreanName": "대창스틸",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "008830",
+      "name": "Daedong Gear Co. Ltd",
+      "koreanName": "대동기어",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "020400",
+      "name": "Daedong Metals Co. Ltd",
+      "koreanName": "대동금속",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "048470",
+      "name": "Daedong Steel Co. Ltd",
+      "koreanName": "대동스틸",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "054670",
+      "name": "Daehan Nupharm Co., Ltd.",
+      "koreanName": "대한뉴팜",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "078600",
+      "name": "Daejoo Electronic Materials Co. Ltd",
+      "koreanName": "대주전자재료",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "003310",
+      "name": "Daejoo Inc",
+      "koreanName": "대주산업",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "120240",
+      "name": "Daejung Chemicals & Metals Co.Ltd",
+      "koreanName": "대정화금",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "017650",
+      "name": "Daelim Paper Co.Ltd",
+      "koreanName": "대림제지",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "004780",
+      "name": "Daeryuk Can Co. Ltd",
+      "koreanName": "대륙제관",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "104040",
+      "name": "Daesung Finetec Co.Ltd",
+      "koreanName": "대성파인텍",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "036480",
+      "name": "Daesung Microbiological Labs. Co. Ltd",
+      "koreanName": "대성미생물",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "027830",
+      "name": "Daesung Private Equity Inc",
+      "koreanName": "대성창투",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "007680",
+      "name": "Daewon Co. Ltd.",
+      "koreanName": "대원",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "048910",
+      "name": "Daewon Media Co. Ltd",
+      "koreanName": "대원미디어",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "005710",
+      "name": "Daewon Sanup Co. Ltd",
+      "koreanName": "대원산업",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "108380",
+      "name": "DAEYANG ELECTRIC.Co.Ltd",
+      "koreanName": "대양전기공업",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "023910",
+      "name": "Daihan Pharmaceutical Co.Ltd",
+      "koreanName": "대한약품",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "131220",
+      "name": "DAIHAN Scientific Co. Ltd",
+      "koreanName": "대한과학",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "020180",
+      "name": "Daishin Information & Communications Co.Ltd",
+      "koreanName": "대신정보통신",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "064260",
+      "name": "Danal Co. Ltd",
+      "koreanName": "다날",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "032190",
+      "name": "Daou Data Corp",
+      "koreanName": "다우데이타",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "066900",
+      "name": "DAP Corporation",
+      "koreanName": "디에이피",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "039560",
+      "name": "DASAN Networks Inc",
+      "koreanName": "다산네트웍스",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "263800",
+      "name": "DataSolution Inc.",
+      "koreanName": "데이타솔루션",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "068240",
+      "name": "Dawonsys Co.Ltd",
+      "koreanName": "다원시스",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "900110",
+      "name": "Deep Commerce Limited",
+      "koreanName": "이스트아시아홀딩스",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "261200",
+      "name": "Dentis Co. Ltd.",
+      "koreanName": "하나금융9호스팩",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "263600",
+      "name": "Derkwoo Electronics Co. Ltd.",
+      "koreanName": "덕우전자",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "067990",
+      "name": "Deutsch Motors Inc",
+      "koreanName": "도이치모터스",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "187870",
+      "name": "Device Eng Co. Ltd.",
+      "koreanName": "디바이스이엔지",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "194480",
+      "name": "Devsisters corporation",
+      "koreanName": "데브시스터즈",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "206560",
+      "name": "Dexter Co Ltd",
+      "koreanName": "덱스터",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "113810",
+      "name": "Dgenx Co. Ltd",
+      "koreanName": "디젠스",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "025440",
+      "name": "DHAUTOWARE Co., Ltd.",
+      "koreanName": "대성엘텍",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "021040",
+      "name": "dhSteel",
+      "koreanName": "대호피앤씨",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "031860",
+      "name": "DHX Company Co., Ltd.",
+      "koreanName": "엔에스엔",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "197140",
+      "name": "DigiCAP Co. Ltd.",
+      "koreanName": "디지캡",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "033130",
+      "name": "DIGITAL CHOSUN Inc",
+      "koreanName": "디지틀조선",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "068930",
+      "name": "Digital Daesung Co. Ltd",
+      "koreanName": "디지털대성",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "043360",
+      "name": "Digital Graphics Incorporation",
+      "koreanName": "디지아이",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "131180",
+      "name": "Dilli Illustrate Inc",
+      "koreanName": "딜리",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "039840",
+      "name": "DIO Corporation",
+      "koreanName": "디오",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "066670",
+      "name": "Display Tech Co. Ltd",
+      "koreanName": "디스플레이텍",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "110990",
+      "name": "DIT Corp.",
+      "koreanName": "디아이티",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "105740",
+      "name": "DK-Lok Corporation",
+      "koreanName": "디케이락",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "127120",
+      "name": "DNA Link Inc",
+      "koreanName": "디엔에이링크",
+      "exchange": "KOSDAQ"
+    },
+    {
+      "symbol": "092070",
+      "name": "DNF Co.Ltd",
+      "koreanName": "디엔에프",
+      "exchange": "KOSDAQ"
+    }
+  ],
+  "NASDAQ": [
+    {
+      "symbol": "AAPL",
+      "name": "Apple Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "MSFT",
+      "name": "Microsoft Corporation",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "NVDA",
+      "name": "NVIDIA Corporation",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AMZN",
+      "name": "Amazon.com Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "TSLA",
+      "name": "Tesla Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "GOOGL",
+      "name": "Alphabet Inc Class A",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "GOOG",
+      "name": "Alphabet Inc Class C",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "META",
+      "name": "Meta Platforms Inc.",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "FLWS",
+      "name": "1-800 FLOWERS.COM Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "TXG",
+      "name": "10X Genomics Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "YI",
+      "name": "111 Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "YQ",
+      "name": "17 Education Technology Group Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "BCOW",
+      "name": "1895 of Wisconsin Inc Bancorp",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "SRCE",
+      "name": "1st Source Corporation",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "DIBS",
+      "name": "1Stdibs.Com Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AIDX",
+      "name": "20/20 Biolabs, Inc. Common Stock",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "XXII",
+      "name": "22nd Century Group Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "KRKR",
+      "name": "36Kr Holdings Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "SCWO",
+      "name": "374Water Inc. Common Stock",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "FDMT",
+      "name": "4D Molecular Therapeutics Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "FEAM",
+      "name": "5E Advanced Materials Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "SXTP",
+      "name": "60 Degrees Pharmaceuticals, Inc. Common Stock",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "EGHT",
+      "name": "8x8 Inc Common Stock",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "MASS",
+      "name": "908 Devices Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "JFU",
+      "name": "9F Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AAON",
+      "name": "AAON Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AARD",
+      "name": "Aardvark Therapeutics, Inc. Common Stock",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ABEO",
+      "name": "Abeona Therapeutics Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ABSI",
+      "name": "Absci Corp",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ABVC",
+      "name": "ABVC Biopharma Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ACTG",
+      "name": "Acacia Research Corporation",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ASO",
+      "name": "Academy Sports Outdoors Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ACHC",
+      "name": "Acadia Healthcare Company Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ACAD",
+      "name": "ACADIA Pharmaceuticals Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ARAY",
+      "name": "Accuray Incorporated",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ACHV",
+      "name": "Achieve Life Sciences Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ACIW",
+      "name": "ACI Worldwide Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ACON",
+      "name": "Aclarion Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ACRS",
+      "name": "Aclaris Therapeutics Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ACMR",
+      "name": "Acm Research Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ACNB",
+      "name": "ACNB Corporation",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ACFN",
+      "name": "Acorn Energy, Inc.",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ACRV",
+      "name": "Acrivon Therapeutics, Inc. Common Stock",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ASNS",
+      "name": "Actelis Networks Inc.",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ACTU",
+      "name": "Actuate Therapeutics, Inc. Common stock",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ABOS",
+      "name": "Acumen Pharmaceuticals Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ACXP",
+      "name": "Acurx Pharmaceuticals LLC",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ADAG",
+      "name": "Adagene Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ADGM",
+      "name": "Adagio Medical Holdings, Inc Common Stock",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ADAM",
+      "name": "Adamas Trust, Inc.",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AHCO",
+      "name": "Adapthealth Corp",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ADPT",
+      "name": "Adaptive Biotechnologies Corp",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ATXG",
+      "name": "Addentax Group Corp",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ADUS",
+      "name": "Addus HomeCare Corporation",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ADEA",
+      "name": "ADEIA CORP",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ADIL",
+      "name": "Adial Pharmaceuticals Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ACET",
+      "name": "Adicet Bio Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ADTX",
+      "name": "Aditxt Inc.",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ANL",
+      "name": "Adlai Nortye Ltd.",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ADMA",
+      "name": "ADMA Biologics Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ADBE",
+      "name": "Adobe Systems Incorporated",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ADTN",
+      "name": "ADTRAN Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ADVB",
+      "name": "Advanced Biomed Inc. Common Stock",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AEIS",
+      "name": "Advanced Energy Industries Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AFCG",
+      "name": "Advanced Flower Capital Inc.",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AMD",
+      "name": "Advanced Micro Devices Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ADV",
+      "name": "Advantage Solutions Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ADBT",
+      "name": "Advasa Holdings, Inc. - Common stock",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AEHR",
+      "name": "Aehr Test Systems",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ALMU",
+      "name": "Aeluma, Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AMTX",
+      "name": "Aemetis Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AVAV",
+      "name": "AeroVironment Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ASLE",
+      "name": "AerSale Corp",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "PAIYY",
+      "name": "Aesthetic Medical International Holdings Group Limited",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ATHR",
+      "name": "Aether Holdings, Inc.",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AEMD",
+      "name": "Aethlon Medical Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AEVA",
+      "name": "Aeva Technologies, Inc. Common Stock",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "LIDR",
+      "name": "Aeye Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AFBI",
+      "name": "Affinity Bancshares Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AFRM",
+      "name": "Affirm Holdings Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ATPC",
+      "name": "Agape ATP Corporation Common Stock",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AGEN",
+      "name": "Agenus Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AGYS",
+      "name": "Agilysys Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AGIO",
+      "name": "Agios Pharm",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AGNC",
+      "name": "AGNC Investment Corp",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AGMB",
+      "name": "AgomAb Therapeutics NV",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "API",
+      "name": "Agora Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AIFC",
+      "name": "AI Financial Corporation",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AIAI",
+      "name": "AIAI Holdings Corporation",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AIMD",
+      "name": "Ainos Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AIRT",
+      "name": "Air T Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ABNB",
+      "name": "Airbnb Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AIRG",
+      "name": "Airgain Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AIRO",
+      "name": "AIRO Group Holdings, Inc. Common Stock",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AIRS",
+      "name": "Airsculpt Technologies Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AISP",
+      "name": "Airship AI Holdings Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "YYAI",
+      "name": "AiRWA Inc.",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AIXC",
+      "name": "AIxCrypto Holdings, Inc.",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AKAM",
+      "name": "Akamai Technologies Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AKTX",
+      "name": "Akari Therapeutics PLC",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AKBA",
+      "name": "Akebia Ther",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AHG",
+      "name": "Akso Health Group",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AKTS",
+      "name": "Aktis Oncology, Inc. Common stock",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ALMR",
+      "name": "Alamar Biosciences, Inc.",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ALRM",
+      "name": "Alarm.com Holdings Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ALAR",
+      "name": "Alarum Technologies Ltd.",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "TCRT",
+      "name": "Alaunos Therapeutics Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ALDX",
+      "name": "Aldeyra The",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ANNA",
+      "name": "AleAnna, Inc. Class A Common Stock",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ALEC",
+      "name": "Alector Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ALRS",
+      "name": "Alerus Financial Corp",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "RIME",
+      "name": "Algorhythm Holdings, Inc.",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ALCO",
+      "name": "Alico Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ALGN",
+      "name": "Align Technology Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ALHC",
+      "name": "Alignment Healthcare LLC",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ALGS",
+      "name": "Aligos Therapeutics Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ALKT",
+      "name": "Alkami Technology Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AIFA",
+      "name": "All In FutureTech Alliance Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ALLR",
+      "name": "Allarity Therapeutics Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ALGT",
+      "name": "Allegiant Travel Company",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ALGM",
+      "name": "Allegro Microsystems Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AENT",
+      "name": "Alliance Entertainment Holding Corporation Class A Common Stock",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "LNT",
+      "name": "Alliant Energy Corp",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ALNT",
+      "name": "Allient Inc.",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ALLO",
+      "name": "Allogene Therapeutics Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ALNY",
+      "name": "Alnylam Pharmaceuticals Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AMOD",
+      "name": "Alpha Modus Holdings, Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "TKNO",
+      "name": "Alpha Teknova Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ATEC",
+      "name": "Alphatec Holdings Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ALPS",
+      "name": "ALPS Group Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AEI",
+      "name": "Alset Ehome International Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ALTI",
+      "name": "AlTi Global, Inc.",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ALT",
+      "name": "Altimmune Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ALTO",
+      "name": "Alto Ingredients Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ALMS",
+      "name": "Alumis Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ALXO",
+      "name": "Alx Oncology Holdings",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ALZN",
+      "name": "Alzamend Neuro Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AMAL",
+      "name": "Amalgamated Bank",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AMRN",
+      "name": "Amarin Corporation PLC",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AMSS",
+      "name": "AMASS Brands Inc.",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AMBR",
+      "name": "Amber International Holding Limited",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AMCX",
+      "name": "AMC Global Media Inc.",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AMCI",
+      "name": "AMC Robotics Corporation",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AAL",
+      "name": "American Airlines Group",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ABAT",
+      "name": "American Battery Technology Company Common Stock",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ABTC",
+      "name": "American Bitcoin Corp",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ACIC",
+      "name": "American Coastal Insurance Corp",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AEP",
+      "name": "American Electric Power Co Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AOUT",
+      "name": "American Outdoor Brands Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "APEI",
+      "name": "American Public Education Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AREB",
+      "name": "American Rebel Holdings Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AREC",
+      "name": "American Resources Corp Class A",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AMSC",
+      "name": "American Superconductor Corporation",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "CRMT",
+      "name": "Americas Car-Mart Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AMSF",
+      "name": "AMERISAFE Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ASRV",
+      "name": "AmeriServ Financial Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ATLO",
+      "name": "Ames National Corporation",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AMST",
+      "name": "Amesite Operating Co",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AMGN",
+      "name": "Amgen Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AMKR",
+      "name": "Amkor Technology Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AMRX",
+      "name": "Amneal Pharmaceuticals, Inc. Class A Common Stock",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AMPH",
+      "name": "Amphastar P",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AMPG",
+      "name": "Amplitech Group Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AMPL",
+      "name": "Amplitude Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ASYS",
+      "name": "Amtech Systems Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AMLX",
+      "name": "Amylyx Pharmaceuticals Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ANTX",
+      "name": "AN2 Therapeutics Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ADI",
+      "name": "Analog Devices Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ANAB",
+      "name": "AnaptysBio Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AVXL",
+      "name": "Anavex Life Sciences Corp",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ANGI",
+      "name": "ANGI Homeservices Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ANGO",
+      "name": "AngioDynamics Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ANIP",
+      "name": "ANI Pharmaceuticals Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ANIK",
+      "name": "Anika Therapeutics Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ANIX",
+      "name": "Anixa Biosciences Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ANNX",
+      "name": "Annexon Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AVR",
+      "name": "Anteris Technologies Global Corp. Common Stock",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ATEX",
+      "name": "Anterix Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "APA",
+      "name": "APA Corporation",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "APMD",
+      "name": "Apnimed, Inc. - Common Stock",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "APOG",
+      "name": "Apogee Enterprises Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "APPF",
+      "name": "Appfolio Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "APPN",
+      "name": "Appian Corp",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "APLD",
+      "name": "Applied Digital Corporation",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AMAT",
+      "name": "Applied Materials Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AAOI",
+      "name": "Applied Opt",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "APP",
+      "name": "Applovin Corp",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "APRE",
+      "name": "Aprea Therapeutics Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "SEV",
+      "name": "Aptera Motors Corp. Class B Common Stock",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "APVO",
+      "name": "Aptevo Therapeutics Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "APYX",
+      "name": "Apyx Medical Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AQMS",
+      "name": "Aqua Metals Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AQB",
+      "name": "AquaBounty Technologies Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "AQST",
+      "name": "Aquestive Therapeutics Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "RKDA",
+      "name": "Arcadia Biosciences Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ARCB",
+      "name": "ArcBest Corp",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ARCT",
+      "name": "Arcturus Therapeutics Holdings Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ARQT",
+      "name": "Arcutis Biotherapeutics Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ARDX",
+      "name": "Ardelyx Inc",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    },
+    {
+      "symbol": "ARCC",
+      "name": "Ares Capital Corporation",
+      "koreanName": null,
+      "exchange": "NASDAQ"
+    }
+  ],
+  "NYSE": [
+    {
+      "symbol": "JPM",
+      "name": "JPMorgan Chase & Co",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "V",
+      "name": "Visa Inc. Class A",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "XOM",
+      "name": "Exxon Mobil Corp",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "KO",
+      "name": "The Coca-Cola Company",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "DDD",
+      "name": "3D Systems Corporation",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "MMM",
+      "name": "3M Company",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ATEN",
+      "name": "A10 Network",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AIR",
+      "name": "AAR Corp",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ABX",
+      "name": "Abacus Global Management, Inc. Class A Common Stock",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ABT",
+      "name": "Abbott Laboratories",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ABBV",
+      "name": "AbbVie Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ANF",
+      "name": "Abercrombie & Fitch Company",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ABM",
+      "name": "ABM Industries Incorporated",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AKR",
+      "name": "Acadia Realty Trust",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AAMI",
+      "name": "Acadian Asset Management Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ACEL",
+      "name": "Accel Entertainment Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ACH",
+      "name": "Accendra Health Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ACCO",
+      "name": "Acco Brands Corporation",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ACR",
+      "name": "Acres Commercial Realty Corp",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AYI",
+      "name": "Acuity Brands Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "GOLF",
+      "name": "Acushnet Holdings Corp",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ACVA",
+      "name": "ACV Auctions Inc.",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AGRO",
+      "name": "Adecoagro SA",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ADT",
+      "name": "ADT Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AAP",
+      "name": "Advance Auto Parts Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "WMS",
+      "name": "Advanced Drainage Systems Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ASIX",
+      "name": "AdvanSix Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ACM",
+      "name": "Aecom Technology Corporation",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AEG",
+      "name": "Aegon Ltd. New York Registry Shares",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AVEX",
+      "name": "AEVEX Corp. Class A Common Stock",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AMG",
+      "name": "Affiliated Managers Group Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AFL",
+      "name": "Aflac Incorporated",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "MITT",
+      "name": "AG Mortgage Investment Trust Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AGCO",
+      "name": "AGCO Corporation",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "A",
+      "name": "Agilent Technologies Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AGL",
+      "name": "agilon health Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ADC",
+      "name": "Agree Realty Corporation",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AHRT",
+      "name": "AH Realty Trust, Inc.",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "APD",
+      "name": "Air Products and Chemicals Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AKA",
+      "name": "AKA Brands Holding Corp",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ALG",
+      "name": "Alamo Group Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ALK",
+      "name": "Alaska Air Group Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AIN",
+      "name": "Albany International Corporation",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ALB",
+      "name": "Albemarle Corp",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ACI",
+      "name": "Albertsons Companies",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AA",
+      "name": "Alcoa Corp",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ALX",
+      "name": "Alexanders Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ARE",
+      "name": "Alexandria Real Estate Equities Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ALIT",
+      "name": "Alight Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ALH",
+      "name": "Alliance Laundry Holdings Inc.",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ALSN",
+      "name": "Allison Transmission Holdings Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ALLY",
+      "name": "Ally Financial Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AMR",
+      "name": "Alpha Metallurgical Resources Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "PINE",
+      "name": "Alpine Income Property Trust, Inc.",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ALTG",
+      "name": "Alta Equipment Group Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ANRO",
+      "name": "Alto Neuroscience, Inc.",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "MO",
+      "name": "Altria Group",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AMBQ",
+      "name": "Ambiq Micro, Inc.",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AMC",
+      "name": "AMC Entertainment Holdings Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AMTM",
+      "name": "Amentum Holdings Inc.",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AMTB",
+      "name": "Amerant Bancorp Inc.",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AEE",
+      "name": "Ameren Corp",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AMRC",
+      "name": "Ameresco Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AAT",
+      "name": "American Assets Trust Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AEO",
+      "name": "American Eagle Outfitters Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AXP",
+      "name": "American Express Company",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AFG",
+      "name": "American Financial Group Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AHR",
+      "name": "American Healthcare REIT, Inc.",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AMH",
+      "name": "American Homes 4 Rent",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AII",
+      "name": "American Integrity Insurance Group, Inc.",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AIG",
+      "name": "American International Group Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ARL",
+      "name": "American Realty Investors Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AWR",
+      "name": "American States Water Company",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "NYC",
+      "name": "American Strategic Investment Co. Class A",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AMT",
+      "name": "American Tower Corp",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AVD",
+      "name": "American Vanguard Corporation",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AWK",
+      "name": "American Water Works",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AMWL",
+      "name": "American Well Corp",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "COLD",
+      "name": "Americold Realty Trust",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AMP",
+      "name": "Ameriprise Financial Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ABCB",
+      "name": "Ameris Bancorp",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AME",
+      "name": "Ametek Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AMN",
+      "name": "AMN Healthcare Services Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AP",
+      "name": "Ampco-Pittsburgh Corporation",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "APH",
+      "name": "Amphenol Corporation",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AMPY",
+      "name": "Amplify Energy Corp",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AMPX",
+      "name": "Amprius Technologies Inc.",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AXR",
+      "name": "AMREP Corporation",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "HKD",
+      "name": "AMTD Digital Inc.",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AMTD",
+      "name": "AMTD IDEA Group",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ANDG",
+      "name": "Andersen Group Inc.",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AKO-A",
+      "name": "Andina Bottling Co Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AKO-B",
+      "name": "Andina Bottling Co Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AOMR",
+      "name": "Angel Oak Mortgage Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ANGX",
+      "name": "Angel Studios, Inc.",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AU",
+      "name": "AngloGold Ashanti plc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "NLY",
+      "name": "Annaly Capital Management, Inc.",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ANVS",
+      "name": "Annovis Bio Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AM",
+      "name": "Antero Midstream Partners LP",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AR",
+      "name": "Antero Resources Corp",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AIV",
+      "name": "Apartment Investment and Management Co",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "TRAD",
+      "name": "APEX Tech Acquisition Inc. Ordinary Shares",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "APG",
+      "name": "Api Group Corp",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ARI",
+      "name": "Apollo Commercial Real Estate Finance Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "APO",
+      "name": "Apollo Global Management LLC Class A",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "APLE",
+      "name": "Apple Hospitality REIT Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AADX",
+      "name": "Applied Aerospace & Defense, Inc. Common Stock",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AIT",
+      "name": "Applied Industrial Technologies",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ATR",
+      "name": "AptarGroup Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ARMK",
+      "name": "Aramark Holdings",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ABR",
+      "name": "Arbor Realty Trust",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "MT",
+      "name": "ArcelorMittal SA ADR",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ACHR",
+      "name": "Archer Aviation Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ADM",
+      "name": "Archer-Daniels-Midland Company",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AROC",
+      "name": "Archrock Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ACA",
+      "name": "Arcosa Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "RCUS",
+      "name": "Arcus Biosciences Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ARDT",
+      "name": "Ardent Health Partners, Inc.",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ACRE",
+      "name": "Ares Commercial Real Estate",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ARES",
+      "name": "Ares Management LP",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AGX",
+      "name": "Argan Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ANET",
+      "name": "Arista Networks",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ARLO",
+      "name": "Arlo Technologies",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ARR",
+      "name": "ARMOUR Residential REIT Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AWI",
+      "name": "Armstrong World Industries Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AD",
+      "name": "Array Digital Infrastructure, Inc.",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ARW",
+      "name": "Arrow Electronics Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AJG",
+      "name": "Arthur J Gallagher & Co",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "APAM",
+      "name": "Artisan Partners Asset Management Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AORT",
+      "name": "Artivion Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ASAN",
+      "name": "Asana Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ABG",
+      "name": "Asbury Automotive Group Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ASX",
+      "name": "ASE Technology Holding Co., Ltd.",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AHT",
+      "name": "Ashford Hospitality Trust Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ASH",
+      "name": "Ashland Global Holdings Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ASPN",
+      "name": "Aspen Aerogels Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ASB",
+      "name": "Associated Banc-Corp",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AIZ",
+      "name": "Assurant Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "T",
+      "name": "AT&T Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ASIC",
+      "name": "Ategrity Specialty Insurance Company Holdings",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ATI",
+      "name": "ATI Inc.",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ATKR",
+      "name": "Atkore International Group Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AUB",
+      "name": "Atlantic Union Bankshares Corp",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AESI",
+      "name": "Atlas Energy Solutions Inc.",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ATO",
+      "name": "Atmos Energy Corporation",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ATMU",
+      "name": "Atmus Filtration Technologies Inc.",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "RERE",
+      "name": "ATRenew Inc DRC",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ATHM",
+      "name": "Autohome Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "ALV",
+      "name": "Autoliv Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AN",
+      "name": "AutoNation Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AZO",
+      "name": "AutoZone Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AVB",
+      "name": "AvalonBay Communities Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AVNS",
+      "name": "Avanos Medical Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AVTR",
+      "name": "Avantor Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AVY",
+      "name": "Avery Dennison Corp",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AVBC",
+      "name": "Avidia Bancorp, Inc.",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AVNT",
+      "name": "Avient Corp",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AVA",
+      "name": "Avista Corporation",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "EQH",
+      "name": "Axa Equitable Holdings Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AXIA",
+      "name": "AXIA Energia",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AX",
+      "name": "Axos Financial Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "AZZ",
+      "name": "AZZ Incorporated",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "BGS",
+      "name": "B&G Foods Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "BW",
+      "name": "Babcock & Wilcox Enterprises Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "BMI",
+      "name": "Badger Meter Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "BCSF",
+      "name": "Bain Capital Specialty Finance Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "BKKT",
+      "name": "Bakkt Holdings Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "BALL",
+      "name": "Ball Corporation",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "BALY",
+      "name": "Bally's Corp",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "BANC",
+      "name": "Banc of California, Inc.",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "BBVA",
+      "name": "Banco Bilbao Vizcaya Argentaria S.A. Common Stock",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "BMA",
+      "name": "Banco Macro S.A.  ADR (representing Ten Class B Common Shares)",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "SAN",
+      "name": "Banco Santander, S.A.",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "BAC",
+      "name": "Bank of America Corp",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "BOH",
+      "name": "Bank of Hawaii Corporation",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "BKU",
+      "name": "BankUnited Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "BCS",
+      "name": "Barclays PLC Common Stock",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "BBDC",
+      "name": "Barings BDC Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "BARK",
+      "name": "BARK, Inc.",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "BNED",
+      "name": "Barnes & Noble Education Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "BBWI",
+      "name": "Bath & Body Works Inc.",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "BAX",
+      "name": "Baxter International Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "BBT",
+      "name": "Beacon Financial Corporation",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "BZH",
+      "name": "Beazer Homes USA Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "BDX",
+      "name": "Becton Dickinson and Company",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "BBBY",
+      "name": "Bed Bath & Beyond, Inc.",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "BDC",
+      "name": "Belden Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "BRBR",
+      "name": "Bellring Brands LLC",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "BHE",
+      "name": "Benchmark Electronics Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "BRK-A",
+      "name": "Berkshire Hathaway Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "BRK-B",
+      "name": "Berkshire Hathaway Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "BBY",
+      "name": "Best Buy Co. Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "BETA",
+      "name": "Beta Technologies, Inc.",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "BGSF",
+      "name": "BGSF, Inc.",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "BBAI",
+      "name": "BigBear.ai Holdings, Inc.",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "BH",
+      "name": "Biglari Holdings Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "BH-A",
+      "name": "Biglari Holdings Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "BILL",
+      "name": "Bill Com Holdings Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "BESS",
+      "name": "Bimergen Energy Corporation",
+      "koreanName": null,
+      "exchange": "NYSE"
+    },
+    {
+      "symbol": "BIO",
+      "name": "Bio-Rad Laboratories Inc",
+      "koreanName": null,
+      "exchange": "NYSE"
+    }
+  ]
+}

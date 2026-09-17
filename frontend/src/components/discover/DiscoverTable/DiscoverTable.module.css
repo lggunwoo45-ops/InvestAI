@@ -11,6 +11,7 @@
 .head span:not(:first-child) { text-align: right; }
 .row { width: 100%; min-height: 43px; padding: 6px 11px; border: 0; border-bottom: 1px solid #151e29; color: #788597; background: transparent; text-align: right; font: 8px ui-monospace, monospace; cursor: pointer; }
 .row:hover { background: #101721; }
+.row:disabled { cursor: default; opacity: .65; }
 .asset { display: flex; min-width: 0; align-items: center; gap: 8px; text-align: left; }
 .asset > i { color: #394558; font-style: normal; font-size: 7px; }
 .asset > span { display: grid; min-width: 0; gap: 3px; }

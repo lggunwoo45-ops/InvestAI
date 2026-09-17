@@ -1,14 +1,14 @@
 .orderbook { display: grid; min-height: 0; grid-template-rows: 34px 24px minmax(0, 1fr); border-bottom: 1px solid #202b38; }
 .orderbook header { display: flex; align-items: center; justify-content: space-between; padding: 0 10px; border-bottom: 1px solid #1b2633; background: #0d131a; }
-.orderbook h2 { margin: 0; color: #b8c2ce; font-size: 9px; font-weight: 650; }
-.orderbook header span { color: #4d5a6d; font: 6px ui-monospace, monospace; text-transform: uppercase; }
+.orderbook h2 { margin: 0; color: #d1dbe4; font-size: 11px; font-weight: 650; }
+.orderbook header span { color: #8999aa; font: 9px ui-monospace, monospace; text-transform: uppercase; }
 .columns, .level { display: grid; grid-template-columns: 1.3fr .8fr .8fr; align-items: center; }
-.columns { padding: 0 8px; color: #475467; font-size: 6px; letter-spacing: .06em; text-align: right; text-transform: uppercase; }
+.columns { padding: 0 8px; color: #8292a4; font-size: 9px; letter-spacing: .04em; text-align: right; text-transform: uppercase; }
 .columns span:first-child { text-align: left; }
 .levels { min-width: 0; min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
 .levels > * { min-width: 215px; }
-.level { position: relative; min-height: 19px; padding: 0 8px; border-top: 1px solid #141e29; font: 6px/1 ui-monospace, monospace; text-align: right; }
-.level span { position: relative; z-index: 1; color: #647286; }
+.level { position: relative; min-height: 22px; padding: 0 8px; border-top: 1px solid #1b2a36; font: 10px/1 ui-monospace, monospace; text-align: right; }
+.level span { position: relative; z-index: 1; color: #a4b1bf; }
 .level span:first-of-type { text-align: left; }
 .level i { position: absolute; top: 1px; right: 0; bottom: 1px; opacity: .08; }
 .ask span:first-of-type { color: #ad646a; }
@@ -16,6 +16,6 @@
 .bid span:first-of-type { color: #57a18f; }
 .bid i { background: #5bac99; }
 .spread { display: flex; height: 25px; align-items: center; justify-content: space-between; padding: 0 8px; border-block: 1px solid #2a3745; background: #101821; }
-.spread span { color: #506074; font-size: 6px; text-transform: uppercase; }
-.spread strong { color: #82909f; font: 500 7px ui-monospace, monospace; }
-@media (min-width: 2200px) { .level { min-height: 22px; font-size: 7px; } }
+.spread span { color: #91a2b2; font-size: 9px; text-transform: uppercase; }
+.spread strong { color: #d0dce3; font: 600 10px ui-monospace, monospace; }
+@media (min-width: 2200px) { .level { min-height: 25px; font-size: 11px; } }

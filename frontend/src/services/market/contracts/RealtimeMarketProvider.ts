@@ -11,7 +11,7 @@ export interface ProviderStreamEvent {
 export interface RealtimeMarketProvider {
   readonly id: string
   supports(instrument: MarketInstrument): boolean
-  loadSnapshot(instrument: MarketInstrument, timeframe: ChartTimeframe): Promise<MarketDetailSnapshot>
+  loadSnapshot(instrument: MarketInstrument, timeframe: ChartTimeframe, signal?: AbortSignal): Promise<MarketDetailSnapshot>
   subscribe(
     instrument: MarketInstrument,
     timeframe: ChartTimeframe,
