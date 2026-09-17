@@ -144,15 +144,17 @@ export class MarketDataService implements MarketOverviewService {
     const cached = this.catalogCache.get(key)
     if (!force && cached && cached.expiresAt > Date.now()) return Promise.resolve(cached.value)
     const pending = this.catalogPending.get(key)
-    if (!force && pending) return pending
+    // A caller-owned signal must not share a promise that another caller can abort.
+    if (!force && !signal && pending) return pending
     const provider = this.explorerProviders.find((candidate) => candidate.supports(venue, mode))
     if (!provider) return Promise.reject(new Error(`No catalog provider for ${venue}`))
     const request = provider.load(venue, signal).then((catalog) => {
+      if (signal?.aborted) throw new DOMException('Catalog request aborted', 'AbortError')
       this.catalogCache.set(key, { value: catalog, expiresAt: Date.now() + (catalog.source === 'live' ? 60_000 : 3_600_000) })
       for (const instrument of catalog.instruments) this.instrumentIndex.set(instrument.id, instrument)
       return catalog
-    }).finally(() => { this.catalogPending.delete(key) })
-    this.catalogPending.set(key, request)
+    }).finally(() => { if (!signal && this.catalogPending.get(key) === request) this.catalogPending.delete(key) })
+    if (!signal) this.catalogPending.set(key, request)
     return request
   }
 

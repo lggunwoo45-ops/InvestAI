@@ -18,13 +18,15 @@ export function useMarketCatalog(venue: MarketVenue, mode: MarketDataMode, retry
 
   useEffect(() => {
     let active = true
+    const controller = new AbortController()
     const started = performance.now()
-    marketDataService.getMarketCatalog(venue, mode, retry > 0).then((catalog) => {
+    marketDataService.getMarketCatalog(venue, mode, retry > 0, controller.signal).then((catalog) => {
       if (active) setResult({ key, catalog, loading: false, error: null, loadingMilliseconds: performance.now() - started })
     }).catch((error: unknown) => {
+      if (error !== null && typeof error === 'object' && 'name' in error && error.name === 'AbortError') return
       if (active) setResult({ key, catalog: null, loading: false, error: error instanceof Error ? error.message : 'Unknown catalog error', loadingMilliseconds: performance.now() - started })
     })
-    return () => { active = false }
+    return () => { active = false; controller.abort() }
   }, [key, venue, mode, retry])
 
   return result.key === key

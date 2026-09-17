@@ -8,13 +8,29 @@ const sample: MarketInstrument = { id: 'test', marketId: 'upbit', symbol: 'TEST'
 describe('market-aware price formatting', () => {
   it.each([
     [0.1, 'KRW', '₩0.1'],
+    [0.5, 'KRW', '₩0.5'],
+    [0.94, 'KRW', '₩0.94'],
+    [1.5, 'KRW', '₩1.5'],
+    [3.45, 'KRW', '₩3.45'],
+    [9.87, 'KRW', '₩9.87'],
+    [12.3, 'KRW', '₩12.3'],
+    [99.99, 'KRW', '₩99.99'],
+    [1_187, 'KRW', '₩1,187'],
+    [104_640, 'KRW', '₩104,640'],
     [0.0001, 'KRW', '₩0.0001'],
+    [0.00000001, 'KRW', '₩0.00000001'],
     [0.000001, 'USDT', '0.000001 USDT'],
     [0.00000001, 'BTC', '0.00000001 BTC'],
     [148_721_000, 'KRW', '₩148,721,000'],
     [104_382.6, 'USDT', '104,382.6 USDT'],
   ])('formats %s %s without losing nonzero precision', (lastPrice, quoteCurrency, expected) => {
     expect(formatMarketPrice({ ...sample, lastPrice, quoteCurrency })).toBe(expected)
+  })
+
+  it('never formats a nonzero KRW price as zero', () => {
+    for (const lastPrice of [1e-15, 1e-8, .0001, .5, 1.5, 3.45, 9.87, 12.3, 99.99]) {
+      expect(formatMarketPrice({ ...sample, lastPrice })).not.toBe('₩0')
+    }
   })
 
   it('uses a safe fallback for invalid provider numbers', () => {

@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import type { RealtimeMarketProvider } from '@/services/market/contracts/RealtimeMarketProvider'
-import type { MarketInstrument } from '@/types/market'
+import type { MarketCatalogProvider } from '@/services/market/explorer/MarketCatalogProvider'
+import type { MarketCatalog, MarketInstrument } from '@/types/market'
 import type { MarketDetailSnapshot, RealtimeMarketState } from '@/types/marketDetail'
 import { MarketDataService } from './marketDataService'
 import { rememberInstrument } from './instrumentRegistry'
@@ -31,6 +32,27 @@ function createProvider(id: string, supports: boolean): RealtimeMarketProvider {
 }
 
 describe('MarketDataService', () => {
+  it('does not let one aborted catalog request poison another caller', async () => {
+    const pending: Array<{ resolve: (catalog: MarketCatalog) => void }> = []
+    const catalog: MarketCatalog = { venue: 'upbit-krw', instruments: [], source: 'live', fetchedAt: 1 }
+    const provider: MarketCatalogProvider = {
+      id: 'controlled catalog', supports: () => true,
+      load: () => new Promise<MarketCatalog>((resolve) => { pending.push({ resolve }) }),
+    }
+    const service = new MarketDataService([], createProvider('mock', true), [provider])
+    const firstController = new AbortController()
+    const secondController = new AbortController()
+    const first = service.getMarketCatalog('upbit-krw', 'live', false, firstController.signal)
+    const second = service.getMarketCatalog('upbit-krw', 'live', false, secondController.signal)
+    const firstOutcome = expect(first).rejects.toMatchObject({ name: 'AbortError' })
+    expect(pending).toHaveLength(2)
+    firstController.abort()
+    pending[0].resolve(catalog) // Simulate a provider that ignores the signal.
+    pending[1].resolve(catalog)
+    await firstOutcome
+    await expect(second).resolves.toBe(catalog)
+  })
+
   it('resolves Explorer Upbit and Binance Spot identities for dashboard and recently viewed', async () => {
     const upbit: MarketInstrument = { ...instrument, id: 'upbit-sprint72-test', marketId: 'upbit', symbol: 'TEST/KRW', providerSymbol: 'KRW-TEST', marketType: 'upbit-krw', quoteCurrency: 'KRW' }
     const spot: MarketInstrument = { ...instrument, id: 'binance-spot-sprint72testusdt', marketId: 'binance-spot', symbol: 'TESTUSDT', providerSymbol: 'TESTUSDT', marketType: 'binance-spot' }

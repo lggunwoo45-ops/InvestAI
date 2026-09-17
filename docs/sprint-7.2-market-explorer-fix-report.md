@@ -27,7 +27,7 @@ The Spot partial-depth stream format and 100 ms interval follow the [official Bi
 
 - `npm run lint`: exit 0, one existing TanStack Virtual/React Compiler compatibility warning.
 - `npm run typecheck`: exit 0 (`tsc --build --force`).
-- `npm run test`: 55/55 tests passed, 12 files.
+- `npm run test`: 70/70 tests passed, 13 files after the minor-fix addendum below.
 - `npm run build`: exit 0 (Vite production build).
 - Browser automation at 1366×768, 1920×1080, and 2560×1440: Upbit KRW/BTC/USDT, Binance Spot/Futures, KOSPI/KOSDAQ, NASDAQ/NYSE tabs; all five Spot quote filters; search and sorting; Explorer favorite shown on Dashboard; recently viewed survives page reload. Zero browser console/page errors and zero horizontal document overflow.
 - A deterministic intercepted public-API fixture was used for browser catalog checks. The Spot/Futures stream contract is verified by official documentation and unit tests; an end-to-end live-exchange WebSocket session was not available in this test environment and remains a user-PC validation item.
@@ -45,3 +45,14 @@ Screenshots and the short demonstration GIF are stored outside the Git repositor
 - MOCK Binance Spot has only representative USDT pairs, so non-USDT quote tabs can be empty in offline mode. LIVE catalogs populate all supported quote groups.
 - The Dashboard's manual add-symbol dropdown remains a small representative convenience list; any Explorer symbol can be favorited from the Explorer itself and then resolved in Dashboard.
 - Deferred to Sprint 7.3: Crypto/Stock workspace visual redesign, TradingView Markets-like layout improvements, app/brand rename, and full AI forecast UI.
+
+## Minor-fix addendum — KRW precision and catalog cancellation
+
+This addendum fixes two remaining review items without changing launcher behavior or adding features. The minor commit changes seven files: this report; `frontend/src/utils/formatMarketValue.ts` and `.test.ts`; `frontend/src/hooks/useMarketCatalog.ts` and its new `.test.tsx`; `frontend/src/services/market/marketDataService.ts` and `MarketDataService.test.ts`.
+
+- KRW prices previously used zero fraction digits for all values at least ₩1, so ₩1.5 became ₩2 and ₩99.99 became ₩100. Integer KRW values still use comma-separated integer formatting, while non-integers now keep meaningful decimals without trailing zeros. Tests cover ₩0.5, ₩0.94, ₩1.5, ₩3.45, ₩9.87, ₩12.3, ₩99.99, ₩1,187, ₩104,640, ₩0.0001, and ₩0.00000001, plus a nonzero-never-₩0 assertion.
+- `useMarketCatalog` now owns an `AbortController`, passes its signal to the service, and aborts on effect cleanup. Its existing active/key guard remains. `AbortError` is silent. Signal-owning requests do not share a pending promise with unrelated callers, so React remounts or rapid tab changes cannot poison another catalog load. The service also rejects an aborted result from a provider that ignores the signal before caching it.
+- Added tests for cleanup cancellation, stale tab response suppression, silent abort, and independent catalog callers. Final checks: lint exit 0 (same existing TanStack Virtual/React Compiler warning), typecheck exit 0, tests 70/70, production build exit 0.
+- Browser fixture verification: all 10 KRW examples displayed correctly, search plus sorting passed, and console errors were zero. The broader three-resolution Sprint 7.2 tab/filter/watchlist/recently-viewed browser regression also passed with zero page errors.
+- Separate real-network LIVE Binance Spot verification selected BTCUSDT and observed the orderbook for 30 seconds. The orderbook text changed and 650 WebSocket frames were received across the page's sockets, including the Binance `@depth10@100ms` stream; no page errors were recorded. This is a single local observation, not a continuous-availability guarantee.
+- Windows demo EXE and portable ZIP rebuilt successfully. ZIP inspection found the EXE and README. The GUI launch was **not** rerun because launching it would open a browser and dialog on the user's active desktop; only build and archive integrity are verified in this addendum. PR #5 launcher source remains unchanged.
