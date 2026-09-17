@@ -16,4 +16,5 @@
 .stats dt { color: #4e5b6e; font-size: 6px; letter-spacing: .08em; text-transform: uppercase; }
 .stats dd { margin: 0; overflow: hidden; color: #9ca8b6; font: 500 7px ui-monospace, monospace; text-overflow: ellipsis; text-transform: capitalize; white-space: nowrap; }
 .chartArea { min-height: 0; }
+@media (max-width: 1600px) { .detail { grid-template-rows: 98px 47px 34px minmax(0, 1fr); } .header { grid-template-columns: minmax(0, 1fr) auto; gap: 4px 9px; padding: 8px 10px; } .feedControl { grid-column: 1 / -1; justify-content: space-between; } .identity h1 { font-size: 14px; } .quote strong { font-size: 14px; } }
 @media (min-width: 2200px) { .detail { grid-template-rows: 88px 55px 38px minmax(0, 1fr); } .identity h1, .quote strong { font-size: 20px; } .stats dd { font-size: 8px; } }

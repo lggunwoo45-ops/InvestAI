@@ -1,4 +1,5 @@
 import type { RealtimeMarketProvider } from '@/services/market/contracts/RealtimeMarketProvider'
+import type { MarketId } from '@/types/market'
 import type { Candle, MarketDetailSnapshot, RecentTrade } from '@/types/marketDetail'
 import { ReconnectingWebSocket } from '@/services/market/realtime/ReconnectingWebSocket'
 import { applyTrade, buildOrderbookLevels, fetchJson, mergeCandle, updateInstrumentPrice } from './providerUtils'
@@ -29,8 +30,28 @@ interface BinanceStreamEnvelope {
   data: Record<string, unknown>
 }
 
-const restBaseUrl = 'https://fapi.binance.com'
-const socketBaseUrl = 'wss://fstream.binance.com/stream?streams='
+interface BinanceProviderConfig {
+  marketId: Extract<MarketId, 'binance-spot' | 'binance-futures'>
+  name: string
+  restBaseUrl: string
+  restPath: string
+  socketBaseUrl: string
+}
+
+const futuresConfig: BinanceProviderConfig = {
+  marketId: 'binance-futures',
+  name: 'Binance USDⓈ-M Futures',
+  restBaseUrl: 'https://fapi.binance.com',
+  restPath: '/fapi/v1',
+  socketBaseUrl: 'wss://fstream.binance.com/stream?streams=',
+}
+const spotConfig: BinanceProviderConfig = {
+  marketId: 'binance-spot',
+  name: 'Binance Spot',
+  restBaseUrl: 'https://data-api.binance.vision',
+  restPath: '/api/v3',
+  socketBaseUrl: 'wss://stream.binance.com:9443/stream?streams=',
+}
 const intervalByTimeframe = { '1m': '1m', '5m': '5m', '15m': '15m', '1H': '1h', '4H': '4h', '1D': '1d' } as const
 
 function mapTrade(trade: BinanceTrade): RecentTrade {
@@ -43,18 +64,19 @@ function mapTrade(trade: BinanceTrade): RecentTrade {
   }
 }
 
-export const binanceMarketDataProvider: RealtimeMarketProvider = {
-  id: 'Binance USDⓈ-M Futures',
-  supports: (instrument) => instrument.marketId === 'binance-futures',
+function createBinanceProvider(config: BinanceProviderConfig): RealtimeMarketProvider {
+  return {
+  id: config.name,
+  supports: (instrument) => instrument.marketId === config.marketId,
 
   async loadSnapshot(instrument, timeframe) {
     const symbol = instrument.symbol.replace('/', '').toUpperCase()
     const interval = intervalByTimeframe[timeframe]
     const [klines, depth, trades, ticker] = await Promise.all([
-      fetchJson<readonly BinanceKline[]>(`${restBaseUrl}/fapi/v1/klines?symbol=${symbol}&interval=${interval}&limit=120`),
-      fetchJson<BinanceDepth>(`${restBaseUrl}/fapi/v1/depth?symbol=${symbol}&limit=10`),
-      fetchJson<readonly BinanceTrade[]>(`${restBaseUrl}/fapi/v1/trades?symbol=${symbol}&limit=20`),
-      fetchJson<BinanceTicker>(`${restBaseUrl}/fapi/v1/ticker/24hr?symbol=${symbol}`),
+      fetchJson<readonly BinanceKline[]>(`${config.restBaseUrl}${config.restPath}/klines?symbol=${symbol}&interval=${interval}&limit=120`),
+      fetchJson<BinanceDepth>(`${config.restBaseUrl}${config.restPath}/depth?symbol=${symbol}&limit=10`),
+      fetchJson<readonly BinanceTrade[]>(`${config.restBaseUrl}${config.restPath}/trades?symbol=${symbol}&limit=20`),
+      fetchJson<BinanceTicker>(`${config.restBaseUrl}${config.restPath}/ticker/24hr?symbol=${symbol}`),
     ])
     const candles: readonly Candle[] = klines.map((item) => ({
       timestamp: item[0], open: Number(item[1]), high: Number(item[2]), low: Number(item[3]), close: Number(item[4]), volume: Number(item[5]),
@@ -79,7 +101,7 @@ export const binanceMarketDataProvider: RealtimeMarketProvider = {
     let snapshot: MarketDetailSnapshot = initialSnapshot
     const streams = [`${symbol}@kline_${interval}`, `${symbol}@aggTrade`, `${symbol}@depth10@500ms`, `${symbol}@ticker`]
     const socket = new ReconnectingWebSocket({
-      createUrl: () => `${socketBaseUrl}${streams.join('/')}`,
+      createUrl: () => `${config.socketBaseUrl}${streams.join('/')}`,
       onOpen: () => undefined,
       onStatus: (status, reconnectAttempt) => onEvent({ status, reconnectAttempt }),
       onMessage: (message) => {
@@ -122,3 +144,7 @@ export const binanceMarketDataProvider: RealtimeMarketProvider = {
     return () => socket.close()
   },
 }
+}
+
+export const binanceMarketDataProvider = createBinanceProvider(futuresConfig)
+export const binanceSpotMarketDataProvider = createBinanceProvider(spotConfig)

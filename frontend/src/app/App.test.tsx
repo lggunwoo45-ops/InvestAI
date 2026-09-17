@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { App } from './App'
@@ -12,24 +12,26 @@ describe('InvestAI application shell', () => {
   it('opens the market workspace as the home page', async () => {
     render(<App />)
 
-    expect(await screen.findByRole('heading', { name: 'Market Overview' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Market Explorer' })).toBeTruthy()
     expect(screen.getByRole('navigation', { name: 'Primary navigation' })).toBeTruthy()
     expect(screen.getByRole('complementary', { name: 'AI Copilot' })).toBeTruthy()
     expect(screen.getByRole('searchbox', { name: 'Global search' })).toBeTruthy()
-    expect(await screen.findByRole('heading', { name: 'Upbit' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'Binance Futures' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'Korea Stock' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'US Stock' })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'Crypto' })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'Korea' })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'US' })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'Upbit' })).toBeTruthy()
   })
 
   it('sends a selected symbol to the AI Copilot', async () => {
     render(<App />)
 
-    const samsungRowButton = (await screen.findByText('Samsung Electronics')).closest('button')
-    expect(samsungRowButton).toBeTruthy()
-    fireEvent.click(samsungRowButton!)
+    fireEvent.click(await screen.findByRole('tab', { name: 'Korea' }))
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search symbol, Korean or English name' }), { target: { value: '005930' } })
+    fireEvent.click(await screen.findByRole('button', { name: 'Open 005930' }))
 
     expect(await screen.findByRole('img', { name: /005930 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
+    expect((screen.getByRole('searchbox', { name: 'Search symbol, Korean or English name' }) as HTMLInputElement).value).toBe('005930')
+    expect(screen.getByRole('button', { name: 'Open 005930' })).toBeTruthy()
     expect(screen.getByRole('complementary', { name: 'Trading information' })).toBeTruthy()
     expect(screen.getByText('Top 10 · MOCK')).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Recent Trades' })).toBeTruthy()
@@ -50,22 +52,19 @@ describe('InvestAI application shell', () => {
     render(<App />)
 
     fireEvent.click(screen.getByRole('button', { name: 'MOCK' }))
-    const bitcoinRowButton = (await screen.findByText('Bitcoin')).closest('button')
-    fireEvent.click(bitcoinRowButton!)
+    fireEvent.click(await screen.findByRole('button', { name: 'Open BTC/KRW' }))
 
     expect(await screen.findByRole('img', { name: /BTC\/KRW 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
     expect(screen.getAllByText('MOCK').length).toBeGreaterThan(1)
   })
 
-  it('filters symbols and toggles favorites inside a market section', async () => {
+  it('filters the active venue and toggles favorites', async () => {
     render(<App />)
-
-    const upbitSearch = await screen.findByRole('searchbox', { name: 'Search Upbit' })
-    fireEvent.change(upbitSearch, { target: { value: 'XRP' } })
-
-    const upbitSection = screen.getByRole('region', { name: 'Upbit' })
-    expect(within(upbitSection).queryByText('Bitcoin')).toBeNull()
-    expect(within(upbitSection).getByText('XRP')).toBeTruthy()
+    fireEvent.click(await screen.findByRole('button', { name: 'MOCK' }))
+    const search = screen.getByRole('searchbox', { name: 'Search symbol, Korean or English name' })
+    fireEvent.change(search, { target: { value: 'XRP' } })
+    expect(await screen.findByRole('button', { name: 'Open XRP/KRW' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Open BTC/KRW' })).toBeNull()
 
     const favoriteButton = screen.getByRole('button', { name: 'Add XRP/KRW favorite' })
     fireEvent.click(favoriteButton)
@@ -116,8 +115,7 @@ describe('InvestAI application shell', () => {
   it('clears the Header market status after leaving Market', async () => {
     render(<App />)
     fireEvent.click(screen.getByRole('button', { name: 'MOCK' }))
-    const bitcoinRowButton = (await screen.findByText('Bitcoin')).closest('button')
-    fireEvent.click(bitcoinRowButton!)
+    fireEvent.click(await screen.findByRole('button', { name: 'Open BTC/KRW' }))
     expect(await screen.findByTitle('Market: online')).toBeTruthy()
 
     fireEvent.click(screen.getByRole('link', { name: 'Dashboard' }))

@@ -1,8 +1,14 @@
 import { binanceMarketDataProvider } from '@/services/market/providers/BinanceMarketDataProvider'
+import { binanceSpotMarketDataProvider } from '@/services/market/providers/BinanceMarketDataProvider'
 import { mockMarketDataProvider } from '@/services/market/providers/MockMarketDataProvider'
 import { upbitMarketDataProvider } from '@/services/market/providers/UpbitMarketDataProvider'
+import { binanceCatalogProvider } from '@/services/market/explorer/BinanceCatalogProvider'
+import { mockCryptoCatalogProvider } from '@/services/market/explorer/MockCryptoCatalogProvider'
+import { stockCatalogProvider } from '@/services/market/explorer/StockCatalogProvider'
+import { upbitCatalogProvider } from '@/services/market/explorer/UpbitCatalogProvider'
+import type { MarketCatalogProvider } from '@/services/market/explorer/MarketCatalogProvider'
 import type { RealtimeMarketProvider } from '@/services/market/contracts/RealtimeMarketProvider'
-import type { MarketDataMode, MarketInstrument, MarketSectionData } from '@/types/market'
+import type { MarketCatalog, MarketDataMode, MarketInstrument, MarketSectionData, MarketVenue } from '@/types/market'
 import type { ChartTimeframe, RealtimeMarketState } from '@/types/marketDetail'
 
 export interface MarketOverviewService {
@@ -71,20 +77,42 @@ const mockMarketSections: readonly MarketSectionData[] = [
   },
 ]
 
-const liveProviders: readonly RealtimeMarketProvider[] = [upbitMarketDataProvider, binanceMarketDataProvider]
+const liveProviders: readonly RealtimeMarketProvider[] = [upbitMarketDataProvider, binanceSpotMarketDataProvider, binanceMarketDataProvider]
+const catalogProviders: readonly MarketCatalogProvider[] = [stockCatalogProvider, mockCryptoCatalogProvider, upbitCatalogProvider, binanceCatalogProvider]
 
 /**
  * Single market-data facade. UI code never selects an exchange adapter or owns a
  * WebSocket; future providers register here and continue emitting normalized data.
  */
 export class MarketDataService implements MarketOverviewService {
+  private readonly catalogCache = new Map<string, { value: MarketCatalog; expiresAt: number }>()
+  private readonly catalogPending = new Map<string, Promise<MarketCatalog>>()
+
   constructor(
     private readonly providers: readonly RealtimeMarketProvider[] = liveProviders,
     private readonly mockProvider: RealtimeMarketProvider = mockMarketDataProvider,
+    private readonly explorerProviders: readonly MarketCatalogProvider[] = catalogProviders,
   ) {}
 
   async getMarketOverview() {
     return Promise.resolve(mockMarketSections)
+  }
+
+  /** The only entry point for catalog APIs; UI never addresses an exchange directly. */
+  getMarketCatalog(venue: MarketVenue, mode: MarketDataMode, force = false): Promise<MarketCatalog> {
+    const key = `${mode}:${venue}`
+    const cached = this.catalogCache.get(key)
+    if (!force && cached && cached.expiresAt > Date.now()) return Promise.resolve(cached.value)
+    const pending = this.catalogPending.get(key)
+    if (!force && pending) return pending
+    const provider = this.explorerProviders.find((candidate) => candidate.supports(venue, mode))
+    if (!provider) return Promise.reject(new Error(`No catalog provider for ${venue}`))
+    const request = provider.load(venue).then((catalog) => {
+      this.catalogCache.set(key, { value: catalog, expiresAt: Date.now() + (catalog.source === 'live' ? 60_000 : 3_600_000) })
+      return catalog
+    }).finally(() => { this.catalogPending.delete(key) })
+    this.catalogPending.set(key, request)
+    return request
   }
 
   subscribe({ instrument, timeframe, mode, onState }: MarketStreamOptions): () => void {

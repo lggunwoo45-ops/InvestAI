@@ -1,6 +1,12 @@
 InvestAI v0.6.2 Portable Demo
 ============================
 
+Launcher log
+%LOCALAPPDATA%\InvestAI\demo-launcher.log
+
+The log records process startup, the selected port, listener and browser launch
+results, the local health check, shutdown requests, and launcher exceptions.
+
 How to start
 1. If this file came from the ZIP, extract every file before starting.
 2. Double-click InvestAI_v0.6.2_demo.exe.
@@ -17,6 +23,17 @@ How to close
 
 Windows SmartScreen
 This demonstration EXE is not digitally signed. Windows may show "Windows protected your PC" even though the file was produced by the InvestAI project. If you trust the file source, choose More info, then Run anyway. Do not run copies received from an untrusted source.
+
+Troubleshooting: the browser did not open
+The demo runs a local-only server on 127.0.0.1. If double-clicking the EXE does not open a browser:
+1. Open http://127.0.0.1:18460/market in your browser.
+2. If it still does not open, try these addresses in order:
+   http://127.0.0.1:18461/market
+   http://127.0.0.1:18462/market
+   http://127.0.0.1:18463/market
+3. If multiple instances are running, open Task Manager and close InvestAI_v0.6.2_demo.exe, then start the demo again.
+
+LIVE mode requires internet. MOCK mode can be used offline. The demo EXE is unsigned, so Windows SmartScreen may show a warning.
 
 What is saved
 Watchlists and recently viewed symbols are saved in this browser on the stable local address http://127.0.0.1:18460. If that port is busy, the demo uses 18461, 18462, or 18463; data saved under another port is separate.
