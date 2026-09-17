@@ -71,6 +71,23 @@ describe('InvestAI application shell', () => {
     expect(favoriteButton.getAttribute('aria-pressed')).toBe('true')
   })
 
+  it('keeps sorting visible through search and market tab changes', async () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'MOCK' }))
+    const search = screen.getByRole('searchbox', { name: 'Search symbol, Korean or English name' })
+    fireEvent.change(search, { target: { value: 'BTC' } })
+    fireEvent.click(screen.getByRole('button', { name: /Sort by Price/ }))
+    expect((search as HTMLInputElement).value).toBe('BTC')
+    expect(screen.getByRole('status').textContent).toContain('Price ↓')
+    fireEvent.click(screen.getByRole('button', { name: /Sort by Price/ }))
+    expect(screen.getByRole('status').textContent).toContain('Price ↑')
+    fireEvent.click(screen.getByRole('tab', { name: 'Korea' }))
+    expect((search as HTMLInputElement).value).toBe('')
+    expect(screen.getByRole('status').textContent).toContain('Price ↑')
+    fireEvent.change(search, { target: { value: '005930' } })
+    expect(await screen.findByRole('button', { name: 'Open 005930' })).toBeTruthy()
+  })
+
   it('provides persisted multi-watchlist dashboard controls', async () => {
     window.history.pushState({}, '', '/dashboard')
     render(<App />)

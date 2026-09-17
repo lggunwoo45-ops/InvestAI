@@ -2,6 +2,7 @@ import { memo, useMemo } from 'react'
 
 import { ConnectionIndicator } from '@/components/market-data/ConnectionIndicator/ConnectionIndicator'
 import { DataModeControl } from '@/components/market-data/DataModeControl/DataModeControl'
+import { marketExplorerText } from '@/pages/Market/marketExplorerConfig'
 import type { MarketConnectionState, MarketDataMode } from '@/types/market'
 import type { MarketDetailSnapshot, ChartTimeframe } from '@/types/marketDetail'
 import { formatMarketChange, formatMarketPrice, formatMarketVolume } from '@/utils/formatMarketValue'
@@ -20,6 +21,9 @@ interface MarketDetailPanelProps {
 
 export const MarketDetailPanel = memo(function MarketDetailPanel({ snapshot, connection, selectedTimeframe, marketDataMode, onSelectTimeframe, onMarketDataModeChange }: MarketDetailPanelProps) {
   const { instrument, candles } = snapshot
+  const venueLabel = instrument.marketType
+    ? marketExplorerText.en.venue[instrument.marketType]
+    : instrument.marketId.replaceAll('-', ' ')
   const sessionStats = useMemo(() => ({
     high: Math.max(...candles.map((candle) => candle.high)),
     low: Math.min(...candles.map((candle) => candle.low)),
@@ -30,7 +34,7 @@ export const MarketDetailPanel = memo(function MarketDetailPanel({ snapshot, con
     <section className={styles.detail} aria-label="Market detail">
       <header className={styles.header}>
         <div className={styles.identity}>
-          <span>{instrument.marketId.replaceAll('-', ' ')}</span>
+          <span>{venueLabel}</span>
           <h1>{instrument.symbol}</h1>
           <p>{instrument.name}</p>
         </div>
@@ -46,7 +50,7 @@ export const MarketDetailPanel = memo(function MarketDetailPanel({ snapshot, con
         </div>
       </header>
       <dl className={styles.stats}>
-        <div><dt>Market</dt><dd>{instrument.marketId.replaceAll('-', ' ')}</dd></div>
+        <div><dt>Market</dt><dd>{venueLabel}</dd></div>
         <div><dt>High</dt><dd>{valueAsInstrument(sessionStats.high)}</dd></div>
         <div><dt>Low</dt><dd>{valueAsInstrument(sessionStats.low)}</dd></div>
         <div><dt>Volume</dt><dd>{formatMarketVolume(instrument.volume24h, instrument.quoteCurrency)}</dd></div>

@@ -53,17 +53,21 @@ export function MarketExplorer({
   const instruments = useMemo(() => queryMarketInstruments(catalog?.instruments ?? [], {
     search, favoritesOnly, favoriteIds, sortField, sortDirection,
   }), [catalog, favoriteIds, favoritesOnly, search, sortDirection, sortField])
+  const providerLabel = group === 'crypto' ? text.provider[cryptoProvider] : text.provider.stock
+  const source = catalog?.source ?? (group === 'crypto' && mode === 'live' ? 'live' : 'mock')
+  const sortLabel = sortField === 'change' ? text.change : text[sortField]
+  const directionLabel = sortDirection === 'asc' ? text.ascending : text.descending
   const getItemKey = useCallback((index: number) => instruments[index]?.id ?? index, [instruments])
   const virtualizer = useVirtualizer({
     count: instruments.length,
     getScrollElement: () => scrollRef.current,
-    estimateSize: () => compact ? 52 : 54,
+    estimateSize: () => compact ? 58 : 62,
     getItemKey,
     overscan: 8,
     useFlushSync: false,
     initialRect: { width: compact ? 260 : 900, height: 600 },
   })
-  const rowHeight = compact ? 52 : 54
+  const rowHeight = compact ? 58 : 62
   const measuredItems = virtualizer.getVirtualItems()
   // The initial rows remain accessible before ResizeObserver reports a viewport.
   const visibleItems = measuredItems.length > 0
@@ -80,7 +84,7 @@ export function MarketExplorer({
     <section className={`${styles.explorer} ${compact ? styles.compact : ''}`} aria-label={text.title}>
       <header className={styles.header}>
         <div>{compact && onBack && <button type="button" className={styles.back} onClick={onBack}>← {text.all}</button>}<span className={styles.eyebrow}>{text.eyebrow}</span><h1>{text.title}</h1></div>
-        <div className={styles.count}><DataModeControl value={mode} onChange={onModeChange} /><strong>{catalog?.instruments.length.toLocaleString() ?? '—'}</strong><span>{text.all}</span></div>
+        <div className={styles.count}><DataModeControl value={mode} onChange={onModeChange} /><strong>{instruments.length.toLocaleString()}</strong><span>{text.results}</span></div>
       </header>
 
       <div className={styles.navigation}>
@@ -98,34 +102,44 @@ export function MarketExplorer({
 
       <div className={styles.controls}>
         <label className={styles.search}><span aria-hidden="true">⌕</span><input type="search" value={search} onChange={(event) => onSearchChange(event.target.value)} placeholder={text.search} aria-label={text.search} /></label>
+        <span className={styles.searchBehavior}>{text.searchBehavior}</span>
         <div className={styles.filterRow}>
           <button type="button" className={favoritesOnly ? styles.activeFavorite : ''} aria-pressed={favoritesOnly} onClick={() => onFavoritesOnlyChange(!favoritesOnly)}>★ {text.favorites}</button>
           <label><span>{text.sort}</span><select aria-label={text.sort} value={sortField} onChange={(event) => onSortFieldChange(event.target.value as ExplorerSortField)}>
             {sortFields.map((field) => <option key={field} value={field}>{field === 'change' ? text.change : text[field]}</option>)}
           </select></label>
-          <button type="button" aria-label={sortDirection === 'asc' ? text.ascending : text.descending} title={sortDirection === 'asc' ? text.ascending : text.descending} onClick={() => onSortDirectionChange(sortDirection === 'asc' ? 'desc' : 'asc')}>{sortDirection === 'asc' ? '↑' : '↓'}</button>
+          <button type="button" className={styles.direction} aria-label={`${text.sort}: ${directionLabel}`} title={`${sortLabel} · ${directionLabel}`} onClick={() => onSortDirectionChange(sortDirection === 'asc' ? 'desc' : 'asc')}>{sortDirection === 'asc' ? '↑' : '↓'} {directionLabel}</button>
         </div>
       </div>
 
       <div className={styles.meta}>
-        <span>{text.venue[venue]} · {instruments.length.toLocaleString()} {text.results}</span>
-        <span className={catalog?.source === 'live' ? styles.live : styles.mock}>{catalog?.source === 'live' ? text.live : text.mock}</span>
+        <span className={styles.marketPath}>{text.group[group]} <b>/</b> {providerLabel} <b>/</b> {text.venue[venue].split(' · ').at(-1)}</span>
+        <span className={source === 'live' ? styles.live : styles.mock}>{source === 'live' ? text.realPublicApi : text.mockData}</span>
       </div>
-      <div className={styles.tableHead}><span>{text.instrument}</span><span>{text.price}</span><span>{text.change}</span><span>{text.volume}</span><span>★</span></div>
+      <div className={styles.sortStatus} role="status">{text.sortedBy} <strong>{sortLabel} {sortDirection === 'asc' ? '↑' : '↓'}</strong><span>{directionLabel} · {instruments.length.toLocaleString()} {text.results}</span></div>
+      <div className={styles.tableHead}>
+        {sortFields.map((field) => {
+          const label = field === 'change' ? text.change : text[field]
+          const active = sortField === field
+          return <button key={field} type="button" className={active ? styles.activeSort : ''} aria-pressed={active} aria-label={`Sort by ${label}${active ? `, ${directionLabel}` : ''}`} onClick={() => onSortFieldChange(field)}>{label}<span aria-hidden="true">{active ? sortDirection === 'asc' ? '↑' : '↓' : '↕'}</span></button>
+        })}
+        <span aria-label={text.favorites}>★</span>
+      </div>
       <div className={styles.scroll} ref={scrollRef} role="region" aria-label={`${text.venue[venue]} ${text.instruments}`}>
         {loading && <div className={styles.state}>{text.loading}</div>}
         {!loading && error && <div className={styles.state}><p>{text.sourceUnavailable}</p><small>{error}</small><button type="button" onClick={onRetry}>{text.retry}</button></div>}
-        {!loading && !error && instruments.length === 0 && <div className={styles.state}>{text.empty}</div>}
+        {!loading && !error && instruments.length === 0 && <div className={styles.state}><p>{text.empty}</p>{search && <button type="button" onClick={() => onSearchChange('')}>{text.clearSearch}</button>}</div>}
         {!loading && !error && instruments.length > 0 && <div className={styles.virtualSize} style={{ height: Math.max(virtualizer.getTotalSize(), instruments.length * rowHeight) }}>
           {visibleItems.map((item) => {
             const instrument = instruments[item.index]
             const favorite = favoriteIds.has(instrument.id)
             return <div key={item.key} className={`${styles.row} ${selectedInstrumentId === instrument.id ? styles.selected : ''}`} style={{ transform: `translateY(${item.start}px)` }} data-index={item.index}>
-              <button type="button" className={styles.instrument} onClick={() => onSelect(instrument)} aria-label={`${text.open} ${instrument.symbol}`}>
+              <button type="button" className={styles.instrument} onClick={() => onSelect(instrument)} aria-label={`${text.open} ${instrument.symbol}`} aria-current={selectedInstrumentId === instrument.id ? 'true' : undefined}>
                 <strong>{instrument.displaySymbol ?? instrument.symbol}</strong>
                 <small title={[instrument.koreanName, instrument.englishName ?? instrument.name].filter(Boolean).join(' · ')}>
                   {instrument.koreanName ? `${instrument.koreanName} · ${instrument.englishName ?? instrument.name}` : instrument.englishName ?? instrument.name}
                 </small>
+                {selectedInstrumentId === instrument.id && <em>{text.selected}</em>}
               </button>
               <span className={styles.numeric}>{formatMarketPrice(instrument)}</span>
               <span className={`${styles.numeric} ${instrument.change24hPercent >= 0 ? styles.positive : styles.negative}`}>{formatMarketChange(instrument.change24hPercent)}</span>

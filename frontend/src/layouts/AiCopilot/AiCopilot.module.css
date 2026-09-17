@@ -4,22 +4,22 @@
 .header > button:hover { color: var(--color-text); background: var(--color-surface-hover); }
 .titleGroup { display: flex; align-items: center; gap: 10px; }
 .titleGroup > div { display: grid; }
-.titleGroup strong { color: #d9dfe8; font-size: 11px; }
-.titleGroup span { margin-top: 2px; color: var(--color-text-subtle); font-size: 8px; }
+.titleGroup strong { color: #e3eaf0; font-size: 13px; }
+.titleGroup span { margin-top: 2px; color: #8a9aaa; font-size: 10px; }
 .aiIcon { display: grid; width: 29px; height: 29px; place-items: center; border: 1px solid rgba(93,228,199,.2); border-radius: 7px; color: var(--color-accent); background: var(--color-accent-soft); }
-.contextBar { display: flex; align-items: center; justify-content: space-between; padding: 0 18px; border-bottom: 1px solid var(--color-border); color: var(--color-text-subtle); font-size: 9px; }
-.contextBar strong { color: #677487; font-weight: 500; }
+.contextBar { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 8px; padding: 0 18px; border-bottom: 1px solid var(--color-border); color: #8c9bab; font-size: 10px; }
+.contextBar strong { min-width: 0; overflow: hidden; color: #c2d8cf; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
 .content { min-height: 0; padding: 16px; overflow: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
 .analysis { display: grid; gap: 12px; }
 .instrumentHeader { padding: 3px 2px 13px; border-bottom: 1px solid var(--color-border); }
-.instrumentHeader > span { color: #607e7a; font-size: 7px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.instrumentHeader > span { color: #93b3a5; font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
 .instrumentHeader h2 { margin: 7px 0 0; color: #e0e5ec; font: 650 19px/1 ui-monospace, monospace; }
-.instrumentHeader p { margin: 6px 0 0; color: #59677a; font-size: 9px; }
+.instrumentHeader p { margin: 6px 0 0; color: #a0aebc; font-size: 10px; }
 .marketFacts { display: grid; margin: 0; border: 1px solid #1b2634; border-radius: 5px; background: #0d131b; }
 .marketFacts > div { display: flex; min-height: 39px; align-items: center; justify-content: space-between; gap: 12px; padding: 0 11px; border-bottom: 1px solid #192330; }
 .marketFacts > div:last-child { border-bottom: 0; }
-.marketFacts dt { color: #59677a; font-size: 8px; }
-.marketFacts dd { margin: 0; color: #bbc4cf; font: 500 9px/1.2 ui-monospace, monospace; text-transform: capitalize; }
+.marketFacts dt { color: #8c9aaa; font-size: 10px; }
+.marketFacts dd { margin: 0; color: #d2dbe3; font: 600 10px/1.2 ui-monospace, monospace; text-transform: capitalize; }
 .marketFacts dd.positive { color: #65b8a2; }
 .marketFacts dd.negative { color: #bf7379; }
 .confidence { padding: 12px; border: 1px solid #1d2a38; border-radius: 5px; background: linear-gradient(145deg, #101821, #0d131b); }

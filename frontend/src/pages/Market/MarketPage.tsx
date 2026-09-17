@@ -8,7 +8,7 @@ import { useMarketDetailData } from '@/hooks/useMarketDetailData'
 import { useMarketWorkspace } from '@/hooks/useMarketWorkspace'
 import { useWatchlists } from '@/hooks/useWatchlists'
 import type { MarketInstrument, MarketVenue } from '@/types/market'
-import type { ExplorerSortDirection, ExplorerSortField } from './marketExplorerQuery'
+import { nextExplorerSort, type ExplorerSortDirection, type ExplorerSortField } from './marketExplorerQuery'
 import styles from './MarketPage.module.css'
 
 function initialVenue(instrument: MarketInstrument): MarketVenue {
@@ -48,6 +48,11 @@ export function MarketPage() {
     if (selectedInstrument) setVenue(initialVenue(selectedInstrument))
     clearInstrument()
   }, [clearInstrument, selectedInstrument])
+  const changeSortField = useCallback((field: ExplorerSortField) => {
+    const next = nextExplorerSort(sortField, sortDirection, field)
+    setSortField(next.field)
+    setSortDirection(next.direction)
+  }, [sortField, sortDirection])
 
   const explorer = (
     <MarketExplorer
@@ -62,7 +67,7 @@ export function MarketPage() {
       favoritesOnly={favoritesOnly}
       onFavoritesOnlyChange={setFavoritesOnly}
       sortField={sortField}
-      onSortFieldChange={setSortField}
+      onSortFieldChange={changeSortField}
       sortDirection={sortDirection}
       onSortDirectionChange={setSortDirection}
       favoriteIds={favoriteIds}

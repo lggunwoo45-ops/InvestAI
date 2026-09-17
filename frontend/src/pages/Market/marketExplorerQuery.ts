@@ -11,6 +11,13 @@ export interface ExplorerQuery {
   sortDirection: ExplorerSortDirection
 }
 
+export function nextExplorerSort(currentField: ExplorerSortField, currentDirection: ExplorerSortDirection, requestedField: ExplorerSortField) {
+  if (requestedField === currentField) {
+    return { field: currentField, direction: currentDirection === 'asc' ? 'desc' : 'asc' } as const
+  }
+  return { field: requestedField, direction: requestedField === 'alphabet' ? 'asc' : 'desc' } as const
+}
+
 export function queryMarketInstruments(instruments: readonly MarketInstrument[], query: ExplorerQuery): MarketInstrument[] {
   const needle = query.search.trim().toLocaleLowerCase()
   const filtered = instruments.filter((instrument) =>
@@ -21,7 +28,7 @@ export function queryMarketInstruments(instruments: readonly MarketInstrument[],
   const sign = query.sortDirection === 'asc' ? 1 : -1
   return filtered.sort((left, right) => {
     const comparison = query.sortField === 'alphabet'
-      ? (left.englishName ?? left.name).localeCompare(right.englishName ?? right.name)
+      ? (left.displaySymbol ?? left.symbol).localeCompare(right.displaySymbol ?? right.symbol, undefined, { numeric: true })
       : query.sortField === 'price'
         ? left.lastPrice - right.lastPrice
         : query.sortField === 'change'
