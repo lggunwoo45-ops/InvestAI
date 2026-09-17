@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { App } from './App'
@@ -12,7 +12,8 @@ describe('InvestAI application shell', () => {
   it('opens the market workspace as the home page', async () => {
     render(<App />)
 
-    expect(await screen.findByRole('heading', { name: 'Market Explorer' })).toBeTruthy()
+    const cryptoHeading = await screen.findByRole('heading', { name: 'Crypto Terminal' })
+    expect(cryptoHeading.closest('section')?.getAttribute('data-workspace')).toBe('crypto')
     expect(screen.getByRole('navigation', { name: 'Primary navigation' })).toBeTruthy()
     expect(screen.getByRole('complementary', { name: 'AI Copilot' })).toBeTruthy()
     expect(screen.getByRole('searchbox', { name: 'Global search' })).toBeTruthy()
@@ -20,19 +21,29 @@ describe('InvestAI application shell', () => {
     expect(screen.getByRole('tab', { name: 'Korea' })).toBeTruthy()
     expect(screen.getByRole('tab', { name: 'US' })).toBeTruthy()
     expect(screen.getByRole('tab', { name: 'Upbit' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'MOCK' }))
+    expect(within(await screen.findByRole('button', { name: 'Open BTC/KRW' })).getByText('KRW')).toBeTruthy()
   })
 
   it('sends a selected symbol to the AI Copilot', async () => {
     render(<App />)
 
     fireEvent.click(await screen.findByRole('tab', { name: 'Korea' }))
+    const stockHeading = await screen.findByRole('heading', { name: 'Stock Research' })
+    expect(stockHeading.closest('section')?.getAttribute('data-workspace')).toBe('stock')
+    expect(screen.getByText('Stock quotes are simulated. Not investment data.')).toBeTruthy()
     fireEvent.change(screen.getByRole('searchbox', { name: 'Search symbol, Korean or English name' }), { target: { value: '005930' } })
-    fireEvent.click(await screen.findByRole('button', { name: 'Open 005930' }))
+    const stockRow = await screen.findByRole('button', { name: 'Open 005930' })
+    expect(within(stockRow).getByText('KOSPI')).toBeTruthy()
+    fireEvent.click(stockRow)
 
     expect(await screen.findByRole('img', { name: /005930 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
     expect((screen.getByRole('searchbox', { name: 'Search symbol, Korean or English name' }) as HTMLInputElement).value).toBe('005930')
     expect(screen.getByRole('button', { name: 'Open 005930' })).toBeTruthy()
     expect(screen.getByRole('complementary', { name: 'Trading information' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: /Samsung Electronics/i })).toBeTruthy()
+    expect(screen.getByText('Market Activity')).toBeTruthy()
+    expect(screen.getByText('Company research context')).toBeTruthy()
     expect(screen.getByText('Top 10 · MOCK')).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Recent Trades' })).toBeTruthy()
 

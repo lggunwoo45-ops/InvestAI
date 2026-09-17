@@ -13,9 +13,10 @@ interface TradingInformationProps {
 }
 
 export const TradingInformation = memo(function TradingInformation({ snapshot, connection }: TradingInformationProps) {
+  const isStock = snapshot.instrument.marketId === 'korea-stock' || snapshot.instrument.marketId === 'us-stock'
   return (
-    <aside className={styles.panel} aria-label="Trading information">
-      <div className={styles.title}><strong>Trading Information</strong><ConnectionIndicator connection={connection} compact /></div>
+    <aside className={`${styles.panel} ${isStock ? styles.stock : ''}`} aria-label="Trading information">
+      <div className={styles.title}><strong>{isStock ? 'Market Activity' : 'Trading Information'}</strong><ConnectionIndicator connection={connection} compact /></div>
       <div className={styles.content}>
         <Orderbook instrument={snapshot.instrument} snapshot={snapshot.orderbook} mode={connection.effectiveMode} />
         <RecentTrades instrument={snapshot.instrument} trades={snapshot.recentTrades} mode={connection.effectiveMode} />

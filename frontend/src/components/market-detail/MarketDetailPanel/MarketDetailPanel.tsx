@@ -21,6 +21,8 @@ interface MarketDetailPanelProps {
 
 export const MarketDetailPanel = memo(function MarketDetailPanel({ snapshot, connection, selectedTimeframe, marketDataMode, onSelectTimeframe, onMarketDataModeChange }: MarketDetailPanelProps) {
   const { instrument, candles } = snapshot
+  const isStock = instrument.marketId === 'korea-stock' || instrument.marketId === 'us-stock'
+  const workspace = marketExplorerText.en.workspace[isStock ? 'stock' : 'crypto']
   const venueLabel = instrument.marketType
     ? marketExplorerText.en.venue[instrument.marketType]
     : instrument.marketId.replaceAll('-', ' ')
@@ -31,12 +33,12 @@ export const MarketDetailPanel = memo(function MarketDetailPanel({ snapshot, con
   const valueAsInstrument = (value: number) => formatMarketPrice({ ...instrument, lastPrice: value })
 
   return (
-    <section className={styles.detail} aria-label="Market detail">
+    <section className={`${styles.detail} ${isStock ? styles.stock : styles.crypto}`} data-workspace={isStock ? 'stock' : 'crypto'} aria-label="Market detail">
       <header className={styles.header}>
         <div className={styles.identity}>
-          <span>{venueLabel}</span>
-          <h1>{instrument.symbol}</h1>
-          <p>{instrument.name}</p>
+          <span>{workspace.detail} / {venueLabel}</span>
+          <h1>{isStock ? instrument.name : instrument.symbol}</h1>
+          <p>{isStock ? `${instrument.symbol} · ${venueLabel}` : instrument.name}</p>
         </div>
         <div className={styles.quote}>
           <strong>{formatMarketPrice(instrument)}</strong>

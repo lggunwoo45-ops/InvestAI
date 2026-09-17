@@ -1,4 +1,5 @@
 .copilot { display: grid; min-width: 0; min-height: 0; grid-template-rows: 63px 42px minmax(0, 1fr) auto; overflow: hidden; border-left: 1px solid var(--color-border); background: #0a0f16; }
+.stockContext { border-top: 2px solid #738ba9; background: #0d131c; }
 .header { display: flex; align-items: center; justify-content: space-between; padding: 0 18px; border-bottom: 1px solid var(--color-border); }
 .header > button { width: 27px; height: 27px; padding: 0; border: 0; border-radius: 5px; color: var(--color-text-subtle); background: transparent; cursor: pointer; }
 .header > button:hover { color: var(--color-text); background: var(--color-surface-hover); }
@@ -9,6 +10,7 @@
 .aiIcon { display: grid; width: 29px; height: 29px; place-items: center; border: 1px solid rgba(93,228,199,.2); border-radius: 7px; color: var(--color-accent); background: var(--color-accent-soft); }
 .contextBar { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 8px; padding: 0 18px; border-bottom: 1px solid var(--color-border); color: #8c9bab; font-size: 10px; }
 .contextBar strong { min-width: 0; overflow: hidden; color: #c2d8cf; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+.stockContext .contextBar strong { color: #b8cbe0; }
 .content { min-height: 0; padding: 16px; overflow: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
 .analysis { display: grid; gap: 12px; }
 .instrumentHeader { padding: 3px 2px 13px; border-bottom: 1px solid var(--color-border); }
