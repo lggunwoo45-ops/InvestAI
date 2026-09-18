@@ -7,8 +7,9 @@ export function useNewsFeed(mode: NewsProviderMode): NewsLoadResult | null {
 
   useEffect(() => {
     let active = true
-    newsService.loadNews(mode).then((next) => { if (active) setResult(next) })
-    return () => { active = false }
+    const controller = new AbortController()
+    newsService.loadNews(mode, { signal: controller.signal }).then((next) => { if (active) setResult(next) })
+    return () => { active = false; controller.abort() }
   }, [mode])
 
   return result?.requestedMode === mode ? result : null

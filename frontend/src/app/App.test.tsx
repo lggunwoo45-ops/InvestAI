@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { App } from './App'
 
@@ -187,7 +187,7 @@ describe('Market Copilot application shell', () => {
 
     expect(await screen.findByRole('heading', { name: 'News Center' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'NVDA ON' })).toBeTruthy()
-    expect(screen.getByText(/NVIDIA outlines/)).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: /NVIDIA outlines/ })).toBeTruthy()
     expect(screen.getAllByText('Demo news / Mock data').length).toBeGreaterThan(0)
     fireEvent.click(await within(screen.getByRole('complementary', { name: 'AI Copilot' })).findByRole('link', { name: /NVIDIA outlines/ }))
     expect((screen.getByRole('searchbox', { name: 'Search news' }) as HTMLInputElement).value).toContain('NVIDIA outlines')
@@ -252,17 +252,40 @@ describe('Market Copilot application shell', () => {
   })
 
   it('shows RSS unavailability and explicitly falls back to demo news without losing filters', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('Failed to fetch'))
     window.history.pushState({}, '', '/news')
     render(<App />)
     expect(await screen.findByText(/Global markets assess a possible rates path/)).toBeTruthy()
     fireEvent.change(screen.getByRole('searchbox', { name: 'Search news' }), { target: { value: 'rates' } })
-    fireEvent.click(screen.getByRole('button', { name: 'RSS Ready' }))
+    fireEvent.click(screen.getByRole('button', { name: 'RSS Experimental' }))
     expect(await screen.findByText('RSS unavailable')).toBeTruthy()
-    expect(screen.getByRole('alert').textContent).toContain('Using demo news')
+    expect(screen.getByRole('alert').textContent).toContain('Showing demo news')
+    expect(window.localStorage.getItem('market-copilot.newsProviderMode')).toBe('rss-ready')
     expect((screen.getByRole('searchbox', { name: 'Search news' }) as HTMLInputElement).value).toBe('rates')
     expect(screen.getByText(/Global markets assess a possible rates path/)).toBeTruthy()
+    fireEvent.click(screen.getByRole('link', { name: 'Market Briefing' }))
+    expect(await screen.findByRole('heading', { name: 'Market Briefing' })).toBeTruthy()
+    expect(await screen.findByText('RSS unavailable')).toBeTruthy()
+    expect(screen.getAllByText('Demo briefing / Mock data').length).toBeGreaterThan(0)
+    fireEvent.click(screen.getByRole('link', { name: 'News' }))
     fireEvent.click(screen.getByRole('button', { name: 'Mock' }))
     expect(await screen.findByText('Mock', { selector: 'strong[role="status"]' })).toBeTruthy()
+    expect(window.localStorage.getItem('market-copilot.newsProviderMode')).toBe('mock')
+    fetchSpy.mockRestore()
+  })
+
+  it('labels a successful RSS response as real without mock article badges', async () => {
+    const xml = '<rss><channel><item><title>Official rate update</title><link>https://www.federalreserve.gov/newsevents/pressreleases/example.htm</link><pubDate>Tue, 15 Sep 2026 10:00:00 GMT</pubDate><description>Policy announcement</description></item></channel></rss>'
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(xml, { status: 200, headers: { 'Content-Type': 'text/xml' } }))
+    window.localStorage.setItem('market-copilot.newsProviderMode', 'rss-ready')
+    window.history.pushState({}, '', '/news')
+    render(<App />)
+    expect(await screen.findByText('Official rate update')).toBeTruthy()
+    expect(screen.getAllByText('Real RSS News').length).toBeGreaterThan(0)
+    expect(screen.queryByText('Demo news / Mock data')).toBeNull()
+    expect(screen.getByText('Federal Reserve Board')).toBeTruthy()
+    expect(screen.queryByRole('alert')).toBeNull()
+    fetchSpy.mockRestore()
   })
 
   it('keeps the active instrument while reading News and changes it only on a related-symbol click', async () => {

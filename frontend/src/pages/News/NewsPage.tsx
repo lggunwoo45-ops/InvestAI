@@ -7,17 +7,17 @@ import { NewsProviderStatus } from '@/components/news/NewsProviderStatus/NewsPro
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { useMarketWorkspace } from '@/hooks/useMarketWorkspace'
 import { useNewsFeed } from '@/hooks/useNewsFeed'
+import { useNewsProviderMode } from '@/hooks/useNewsProviderMode'
 import { useLanguage } from '@/i18n/useLanguage'
 import { uiText } from '@/i18n/translations'
 import { filterNews } from '@/services/news/newsSelectors'
-import type { NewsProviderMode } from '@/services/news/newsService'
 import type { NewsCategory, NewsImportance, NewsMarket, NewsSentiment } from '@/types/dashboard'
 import styles from './NewsPage.module.css'
 
 const categories: readonly NewsCategory[] = ['crypto', 'korea-stock', 'us-stock', 'macro', 'technology', 'ai', 'earnings', 'regulation']
 const markets: readonly NewsMarket[] = ['crypto', 'korea', 'us', 'macro']
-const sentiments: readonly NewsSentiment[] = ['positive', 'neutral', 'negative']
-const importanceLevels: readonly NewsImportance[] = ['high', 'medium', 'low']
+const sentiments: readonly NewsSentiment[] = ['positive', 'neutral', 'negative', 'unassessed']
+const importanceLevels: readonly NewsImportance[] = ['high', 'medium', 'low', 'unassessed']
 interface NewsRouteState { query?: string; market?: NewsMarket }
 interface NewsPageState {
   routeKey: string
@@ -35,7 +35,7 @@ export function NewsPage() {
   useDocumentTitle(text.title)
   const location = useLocation()
   const routeState = location.state as NewsRouteState | null
-  const [providerMode, setProviderMode] = useState<NewsProviderMode>('mock')
+  const { mode: providerMode, setMode: setProviderMode } = useNewsProviderMode()
   const feed = useNewsFeed(providerMode)
   const { selectedInstrument } = useMarketWorkspace()
   // Route-keyed state makes a new explicit news link visible without an effect or stale filters.
@@ -48,7 +48,7 @@ export function NewsPage() {
 
   return (
     <div className={styles.page}>
-      <header className={styles.heading}><div><span>MARKET INTELLIGENCE</span><h1>{text.title}</h1><p>{text.subtitle}</p>{feed?.source === 'mock' && <strong className={styles.demo}>{text.demo}</strong>}</div><div className={styles.context}><span>{text.relatedMarket}</span><button type="button" disabled={!selectedInstrument} aria-pressed={symbolFilter} onClick={() => updateFilters({ symbolFilter: !symbolFilter })}>{selectedInstrument ? `${selectedInstrument.symbol} ${symbolFilter ? text.on : text.off}` : text.noSymbol}</button></div></header>
+      <header className={styles.heading}><div><span>MARKET INTELLIGENCE</span><h1>{text.title}</h1><p>{text.subtitle}</p>{feed?.source === 'mock' && <strong className={styles.demo}>{text.demo}</strong>}{feed?.source === 'rss' && <strong className={styles.demo}>{text.provider.realRss}</strong>}</div><div className={styles.context}><span>{text.relatedMarket}</span><button type="button" disabled={!selectedInstrument} aria-pressed={symbolFilter} onClick={() => updateFilters({ symbolFilter: !symbolFilter })}>{selectedInstrument ? `${selectedInstrument.symbol} ${symbolFilter ? text.on : text.off}` : text.noSymbol}</button></div></header>
       <NewsProviderStatus mode={providerMode} result={feed} onModeChange={setProviderMode} />
       <div className={styles.controls}>
         <label><Icon name="search" size={14} /><input type="search" value={query} onChange={(event) => updateFilters({ query: event.target.value })} placeholder={text.search} aria-label="Search news" /></label>

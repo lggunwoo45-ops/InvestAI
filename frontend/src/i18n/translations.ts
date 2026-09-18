@@ -46,6 +46,9 @@ interface UiStrings {
       title: string; mock: string; rssReady: string; rssUnavailable: string; notConfigured: string
       realRss: string; lastUpdated: string; fallback: string; error: string; source: string
       publishedTime: string; relatedUnavailable: string; unassessed: string
+      mode: string; status: string; ready: string; loading: string; fallbackStatus: string
+      experimental: string; unableToLoad: string; networkError: string; timeoutError: string
+      httpError: string; invalidFeedError: string; notConfiguredError: string
     }
   }
   copilot: {
@@ -86,10 +89,15 @@ export const uiText = {
       noRelated: 'No related demo news yet.', analysisInactive: 'AI analysis is not active yet.', allMarkets: 'All markets', allSentiments: 'All sentiments', allImportance: 'All importance levels',
       sentiments: { positive: 'Positive', neutral: 'Neutral', negative: 'Negative', unassessed: 'Not assessed' }, importanceLevels: { high: 'High', medium: 'Medium', low: 'Low', unassessed: 'Not assessed' },
       provider: {
-        title: 'News provider', mock: 'Mock', rssReady: 'RSS Ready', rssUnavailable: 'RSS unavailable', notConfigured: 'Provider not configured',
-        realRss: 'Real RSS news', lastUpdated: 'Last updated', fallback: 'Using demo news because real news provider is unavailable.',
+        title: 'News provider', mock: 'Mock', rssReady: 'RSS Experimental', rssUnavailable: 'RSS unavailable', notConfigured: 'Provider not configured',
+        realRss: 'Real RSS News', lastUpdated: 'Last updated', fallback: 'Real RSS unavailable. Showing demo news.',
         error: 'Approved RSS feed URLs and transport are not configured.', source: 'Source', publishedTime: 'Published time',
         relatedUnavailable: 'Related symbols unavailable', unassessed: 'Not assessed',
+        mode: 'Provider mode', status: 'Status', ready: 'Ready', loading: 'Loading', fallbackStatus: 'Fallback',
+        experimental: 'Experimental provider', unableToLoad: 'Unable to load RSS.',
+        networkError: 'The browser could not reach the RSS feed. Network or CORS access may be blocked.',
+        timeoutError: 'The RSS feed did not respond in time.', httpError: 'The RSS feed returned an error.',
+        invalidFeedError: 'The RSS feed did not contain valid news items.', notConfiguredError: 'No approved RSS feed is configured.',
       },
     },
     copilot: {
@@ -130,10 +138,15 @@ export const uiText = {
       noRelated: '관련 데모 뉴스가 아직 없습니다.', analysisInactive: 'AI 분석은 아직 활성화되지 않았습니다.', allMarkets: '전체 시장', allSentiments: '전체 감성', allImportance: '전체 중요도',
       sentiments: { positive: '긍정', neutral: '중립', negative: '부정', unassessed: '평가되지 않음' }, importanceLevels: { high: '높음', medium: '보통', low: '낮음', unassessed: '평가되지 않음' },
       provider: {
-        title: '뉴스 제공자', mock: '모의', rssReady: 'RSS 준비', rssUnavailable: 'RSS 이용 불가', notConfigured: '제공자 미설정',
-        realRss: '실제 RSS 뉴스', lastUpdated: '마지막 갱신', fallback: '실제 뉴스 제공자를 사용할 수 없어 데모 뉴스를 표시합니다.',
+        title: '뉴스 제공자', mock: '모의', rssReady: 'RSS 실험', rssUnavailable: 'RSS 이용 불가', notConfigured: '제공자 미설정',
+        realRss: '실제 RSS 뉴스', lastUpdated: '마지막 갱신', fallback: '실제 RSS를 사용할 수 없어 데모 뉴스를 표시합니다.',
         error: '승인된 RSS 피드 주소와 전송 방식이 설정되지 않았습니다.', source: '출처', publishedTime: '게시 시간',
         relatedUnavailable: '관련 종목 정보 없음', unassessed: '평가되지 않음',
+        mode: '제공자 모드', status: '상태', ready: '준비됨', loading: '불러오는 중', fallbackStatus: '대체 표시',
+        experimental: '실험적 제공자', unableToLoad: 'RSS를 불러올 수 없습니다.',
+        networkError: '브라우저에서 RSS 피드에 연결할 수 없습니다. 네트워크 또는 CORS가 차단되었을 수 있습니다.',
+        timeoutError: 'RSS 피드 응답 시간이 초과되었습니다.', httpError: 'RSS 피드가 오류를 반환했습니다.',
+        invalidFeedError: 'RSS 피드에 유효한 뉴스 항목이 없습니다.', notConfiguredError: '승인된 RSS 피드가 설정되지 않았습니다.',
       },
     },
     copilot: {

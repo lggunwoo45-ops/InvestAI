@@ -20,7 +20,7 @@ export const NewsCard = memo(function NewsCard({ article }: NewsCardProps) {
     <article className={styles.article}>
       {article.thumbnailTone && <div className={styles.thumbnail} data-tone={article.thumbnailTone}><span>{article.category.slice(0, 2).toUpperCase()}</span></div>}
       <div className={styles.content}>
-        <span className={styles.category}>{text.categories[article.category]} · {article.isMock ? text.demo : text.importanceLevels[article.importance]}</span>
+        <span className={styles.category}>{text.categories[article.category]} · {article.isMock ? text.demo : text.provider.realRss}</span>
         <h2>{article.title}</h2>
         <p className={styles.summary}>{article.summary}</p>
         <footer><strong>{article.source}</strong><time dateTime={article.publishedAt}>{published}</time></footer>

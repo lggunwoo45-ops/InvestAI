@@ -10,11 +10,12 @@ interface BriefingCardProps {
   briefing: MarketBriefing
   language: Language
   news: readonly NewsArticle[]
+  newsSource: 'mock' | 'rss' | null
   onOpenInstrument: (id: string) => void
   availableIds: ReadonlySet<string>
 }
 
-export function BriefingCard({ briefing, language, news, onOpenInstrument, availableIds }: BriefingCardProps) {
+export function BriefingCard({ briefing, language, news, newsSource, onOpenInstrument, availableIds }: BriefingCardProps) {
   const text = uiText[language].briefing
   const title = text[briefing.id]
   const groups: readonly { label: string; entries: readonly BriefingReference[] }[] = [
@@ -43,7 +44,7 @@ export function BriefingCard({ briefing, language, news, onOpenInstrument, avail
     </div>
     <div className={styles.bottom}>
       <section><h3>{text.watch}</h3><ul>{briefing.whatToWatch.map((item) => <li key={item.en}>{item[language]}</li>)}</ul></section>
-      <section><h3>{text.relatedNews}</h3>{news.length ? <ul>{news.map((item) => <li key={item.id}><Link to="/news" state={{ query: item.title, market: briefing.id }}>{item.title}</Link></li>)}</ul> : <p>{text.noNews}</p>}</section>
+      <section><h3>{text.relatedNews}</h3>{newsSource && <span className={styles.newsSource}>{newsSource === 'rss' ? uiText[language].news.provider.realRss : uiText[language].news.demo}</span>}{news.length ? <ul>{news.map((item) => <li key={item.id}><Link to="/news" state={{ query: item.title, market: briefing.id }}>{item.title}</Link></li>)}</ul> : <p>{text.noNews}</p>}</section>
     </div>
   </section>
 }
