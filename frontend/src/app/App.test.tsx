@@ -22,7 +22,9 @@ describe('InvestAI application shell', () => {
     expect(screen.getByRole('tab', { name: 'US' })).toBeTruthy()
     expect(screen.getByRole('tab', { name: 'Upbit' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'MOCK' }))
-    expect(within(await screen.findByRole('button', { name: 'Open BTC/KRW' })).getByText('KRW')).toBeTruthy()
+    expect(within(await screen.findByRole('button', { name: 'Open BTC/KRW' })).queryByText('KRW')).toBeNull()
+    expect(screen.getByText('KRW', { selector: 'button[role="tab"]' })).toBeTruthy()
+    expect(screen.getByLabelText(/results$/).getAttribute('aria-live')).toBe('polite')
   })
 
   it('sends a selected symbol to the AI Copilot', async () => {
@@ -34,7 +36,7 @@ describe('InvestAI application shell', () => {
     expect(screen.getByText('Stock quotes are simulated. Not investment data.')).toBeTruthy()
     fireEvent.change(screen.getByRole('searchbox', { name: 'Search symbol, Korean or English name' }), { target: { value: '005930' } })
     const stockRow = await screen.findByRole('button', { name: 'Open 005930' })
-    expect(within(stockRow).getByText('KOSPI')).toBeTruthy()
+    expect(within(stockRow).queryByText('KOSPI')).toBeNull()
     fireEvent.click(stockRow)
 
     expect(await screen.findByRole('img', { name: /005930 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
@@ -75,6 +77,7 @@ describe('InvestAI application shell', () => {
     const search = screen.getByRole('searchbox', { name: 'Search symbol, Korean or English name' })
     fireEvent.change(search, { target: { value: 'XRP' } })
     expect(await screen.findByRole('button', { name: 'Open XRP/KRW' })).toBeTruthy()
+    expect(screen.getByLabelText('1 results').getAttribute('aria-live')).toBe('polite')
     expect(screen.queryByRole('button', { name: 'Open BTC/KRW' })).toBeNull()
 
     const favoriteButton = screen.getByRole('button', { name: 'Add XRP/KRW favorite' })

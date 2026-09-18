@@ -66,6 +66,8 @@ export function MarketExplorer({
   const venueLabel = text.venue[venue].split(' · ').at(-1)
   const sortLabel = sortField === 'change' ? text.change : text[sortField]
   const directionLabel = sortDirection === 'asc' ? text.ascending : text.descending
+  // A quote badge only distinguishes rows in Binance Spot's mixed-quote view.
+  const showQuoteTag = venue === 'binance-spot' && spotQuoteFilter === 'Other'
   const getItemKey = useCallback((index: number) => instruments[index]?.id ?? index, [instruments])
   const virtualizer = useVirtualizer({
     count: instruments.length,
@@ -98,7 +100,7 @@ export function MarketExplorer({
           <h1>{workspace.title}</h1>
           {!compact && <p>{workspace.subtitle}</p>}
         </div>
-        <div className={styles.count}><DataModeControl value={mode} onChange={onModeChange} /><strong>{instruments.length.toLocaleString()}</strong><span>{text.results}</span></div>
+        <div className={styles.count}><DataModeControl value={mode} onChange={onModeChange} /><strong aria-live="polite" aria-atomic="true" aria-label={`${instruments.length.toLocaleString()} ${text.results}`}>{instruments.length.toLocaleString()}</strong><span>{text.results}</span></div>
       </header>
 
       <div className={styles.navigation}>
@@ -162,7 +164,7 @@ export function MarketExplorer({
               <button type="button" className={styles.instrument} onClick={() => onSelect(instrument)} aria-label={`${text.open} ${instrument.symbol}`} aria-current={selectedInstrumentId === instrument.id ? 'true' : undefined}>
                 <span className={styles.identityLine}>
                   <strong>{instrument.displaySymbol ?? instrument.symbol}</strong>
-                  <span className={styles.identityTag}>{isCrypto ? instrument.quoteCurrency : text.venue[instrument.marketType ?? venue].split(' · ').at(-1)}</span>
+                  {showQuoteTag && <span className={styles.identityTag}>{instrument.quoteCurrency}</span>}
                 </span>
                 <small title={[instrument.koreanName, instrument.englishName ?? instrument.name].filter(Boolean).join(' · ')}>
                   {instrument.koreanName ? `${instrument.koreanName} · ${instrument.englishName ?? instrument.name}` : instrument.englishName ?? instrument.name}
