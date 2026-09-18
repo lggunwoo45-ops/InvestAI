@@ -188,6 +188,37 @@ describe('Market Copilot application shell', () => {
     expect(await screen.findByRole('heading', { name: 'News Center' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'NVDA ON' })).toBeTruthy()
     expect(screen.getByText(/NVIDIA outlines/)).toBeTruthy()
+    expect(screen.getAllByText('Demo news / Mock data').length).toBeGreaterThan(0)
+  })
+
+  it('opens briefing references intentionally without clearing active context on navigation', async () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'MOCK' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Open BTC/KRW' }))
+    expect(await screen.findByRole('img', { name: /BTC\/KRW 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
+    fireEvent.click(screen.getByRole('link', { name: 'Market Briefing' }))
+    expect(await screen.findByRole('heading', { name: 'Market Briefing' })).toBeTruthy()
+    expect(screen.getByRole('complementary', { name: 'AI Copilot' }).textContent).toContain('BTC/KRW')
+    expect(screen.getAllByText('Demo briefing / Mock data').length).toBeGreaterThan(0)
+    fireEvent.click(screen.getByRole('link', { name: /Global markets assess a possible rates path/ }))
+    expect(await screen.findByRole('heading', { name: 'News Center' })).toBeTruthy()
+    expect(screen.getByText(/Global markets assess a possible rates path/)).toBeTruthy()
+    fireEvent.click(screen.getByRole('link', { name: 'Market Briefing' }))
+    fireEvent.click(screen.getAllByRole('button', { name: /Samsung Electronics/ })[0])
+    expect(await screen.findByRole('img', { name: /005930 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
+    expect(screen.getByRole('complementary', { name: 'AI Copilot' }).textContent).toContain('005930')
+  })
+
+  it('translates briefing labels and keeps mock news visibly labeled', async () => {
+    window.history.pushState({}, '', '/briefing')
+    render(<App />)
+    expect(await screen.findByRole('heading', { name: 'Crypto Briefing' })).toBeTruthy()
+    fireEvent.change(screen.getByRole('combobox', { name: 'Language' }), { target: { value: 'ko' } })
+    expect(screen.getByRole('heading', { name: '암호화폐 브리핑' })).toBeTruthy()
+    expect(screen.getAllByText('데모 브리핑 / 모의 데이터').length).toBeGreaterThan(0)
+    fireEvent.click(screen.getByRole('link', { name: '뉴스' }))
+    expect(await screen.findByRole('heading', { name: '뉴스 센터' })).toBeTruthy()
+    expect(screen.getAllByText('데모 뉴스 / 모의 데이터').length).toBeGreaterThan(0)
   })
 
   it('clears the Header market status after leaving Market', async () => {

@@ -5,6 +5,7 @@ import { RouteLoadingFallback } from '@/components/RouteLoadingFallback/RouteLoa
 import { AppShell } from '@/layouts/AppShell/AppShell'
 
 const AiAnalysisPage = lazy(() => import('@/pages/AiAnalysis/AiAnalysisPage').then((module) => ({ default: module.AiAnalysisPage })))
+const MarketBriefingPage = lazy(() => import('@/pages/MarketBriefing/MarketBriefingPage').then((module) => ({ default: module.MarketBriefingPage })))
 const DashboardPage = lazy(() => import('@/pages/Dashboard/DashboardPage').then((module) => ({ default: module.DashboardPage })))
 const DiscoverPage = lazy(() => import('@/pages/Discover/DiscoverPage').then((module) => ({ default: module.DiscoverPage })))
 const MarketPage = lazy(() => import('@/pages/Market/MarketPage').then((module) => ({ default: module.MarketPage })))
@@ -22,6 +23,7 @@ export function AppRoutes() {
         <Route element={<AppShell />}>
           <Route index element={<Navigate to="/market" replace />} />
           <Route path="market" element={<MarketPage />} />
+          <Route path="briefing" element={<MarketBriefingPage />} />
           <Route path="markets" element={<Navigate to="/market" replace />} />
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="discover" element={<DiscoverPage />} />

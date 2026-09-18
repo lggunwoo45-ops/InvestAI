@@ -71,6 +71,15 @@ export function AiCopilot() {
               </ul>
             </section>
 
+            <section className={styles.scenarioPreparation} aria-label={text.entryPlanning}>
+              <strong>{text.noAdvice}</strong>
+              <dl>
+                {[text.whyMatters, text.bullish, text.neutral, text.bearish, text.watchConditions, text.riskFactors,
+                  text.firstInterest, text.secondInterest, text.invalidation, text.targetArea].map((label) =>
+                  <div key={label}><dt>{label}</dt><dd>{text.pending}</dd></div>)}
+              </dl>
+            </section>
+
             <div className={styles.boundaryNote}>
               <Icon name="sparkles" size={13} />
               <p>{text.boundary}</p>

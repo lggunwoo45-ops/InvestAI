@@ -7,6 +7,7 @@ export type NavigationIcon =
   | 'strategies'
   | 'news'
   | 'discover'
+  | 'briefing'
   | 'settings'
 
 export interface NavigationItem {
