@@ -23,7 +23,7 @@ export class AppErrorBoundary extends Component<PropsWithChildren, AppErrorBound
       return (
         <main className={styles.fallback}>
           <span>Application recovery</span>
-          <h1>InvestAI could not render this workspace.</h1>
+          <h1>Market Copilot could not render this workspace.</h1>
           <p>Reload the application. No trading action was submitted.</p>
           <button type="button" onClick={() => window.location.reload()}>Reload workspace</button>
         </main>

@@ -9,8 +9,8 @@ using System.Text;
 using System.Threading;
 using System.Windows.Forms;
 
-[assembly: AssemblyTitle("InvestAI Demo")]
-[assembly: AssemblyProduct("InvestAI")]
+[assembly: AssemblyTitle("Market Copilot Demo")]
+[assembly: AssemblyProduct("Market Copilot")]
 [assembly: AssemblyCompany("InvestAI")]
 [assembly: AssemblyVersion("0.6.2.0")]
 [assembly: AssemblyFileVersion("0.6.2.0")]
@@ -53,7 +53,7 @@ internal static class Launcher
                 {
                     try { lockTaken = startupMutex.WaitOne(TimeSpan.FromSeconds(15)); }
                     catch (AbandonedMutexException) { lockTaken = true; }
-                    if (!lockTaken) throw new InvalidOperationException("InvestAI startup is busy. Please try again.");
+                    if (!lockTaken) throw new InvalidOperationException("Market Copilot startup is busy. Please try again.");
 
                     existingUrl = FindExistingInstance();
                     if (existingUrl == null)
@@ -74,8 +74,8 @@ internal static class Launcher
             {
                 Log("INFO", "Duplicate instance detected at " + existingUrl + ".");
                 OpenBrowser(existingUrl);
-                MessageBox.Show("InvestAI is already running at:\r\n" + existingUrl,
-                    "InvestAI Demo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("Market Copilot is already running at:\r\n" + existingUrl,
+                    "Market Copilot Demo", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 processExitReason = "New launcher exiting after opening existing instance.";
                 Log("INFO", processExitReason);
                 return;
@@ -109,17 +109,17 @@ internal static class Launcher
             processExitReason = "Launcher startup failed: " + exception.Message;
             Log("ERROR", processExitReason + " " + exception.ToString());
             string message = exception.Message == "Ports 18460-18463 are unavailable."
-                ? "InvestAI could not start because ports 18460–18463 are already in use.\r\n\r\nTry:\r\n1. Close existing InvestAI_v0.6.2_demo.exe processes from Task Manager.\r\n2. Or restart Windows.\r\n3. Then start InvestAI again."
-                : "InvestAI demo could not start.\r\n\r\n" + exception.Message;
-            MessageBox.Show(message, "InvestAI Demo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ? "Market Copilot could not start because ports 18460–18463 are already in use.\r\n\r\nTry:\r\n1. Close existing InvestAI_v0.6.2_demo.exe processes from Task Manager.\r\n2. Or restart Windows.\r\n3. Then start Market Copilot again."
+                : "Market Copilot demo could not start.\r\n\r\n" + exception.Message;
+            MessageBox.Show(message, "Market Copilot Demo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
         catch (Exception exception)
         {
             processExitReason = "Launcher stopped unexpectedly: " + exception.Message;
             Log("FATAL", "Launcher stopped because of an exception. " + exception.ToString());
             MessageBox.Show(
-                "InvestAI demo could not start.\r\n\r\n" + exception.Message,
-                "InvestAI Demo",
+                "Market Copilot demo could not start.\r\n\r\n" + exception.Message,
+                "Market Copilot Demo",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Error);
         }
@@ -235,10 +235,10 @@ internal static class Launcher
             ? string.Empty
             : "\r\n\r\nLauncher logging is unavailable:\r\n" + loggingInitializationFailure;
         string fallbackNotice = port == Ports[0] ? string.Empty
-            : "\r\n\r\nInvestAI started on fallback port " + port + ".\r\nWatchlist data may be separate from the default 18460 storage.";
+            : "\r\n\r\nMarket Copilot started on fallback port " + port + ".\r\nWatchlist data may be separate from the default 18460 storage.";
         MessageBox.Show(
-            "InvestAI demo is running.\r\n\r\nOpen:\r\n" + localUrl + "\r\n\r\nIf your browser did not open automatically, copy and paste the URL into your browser." + fallbackNotice + loggingNotice,
-            "InvestAI Demo",
+            "Market Copilot demo is running.\r\n\r\nOpen:\r\n" + localUrl + "\r\n\r\nIf your browser did not open automatically, copy and paste the URL into your browser." + fallbackNotice + loggingNotice,
+            "Market Copilot Demo",
             MessageBoxButtons.OK,
             MessageBoxIcon.Information);
     }
@@ -315,7 +315,7 @@ internal static class Launcher
     private static void ExtractSite(string destination)
     {
         Stream resource = Assembly.GetExecutingAssembly().GetManifestResourceStream("InvestAI.Site");
-        if (resource == null) throw new InvalidOperationException("Embedded InvestAI application is missing.");
+        if (resource == null) throw new InvalidOperationException("Embedded Market Copilot application is missing.");
         using (resource)
         using (ZipArchive archive = new ZipArchive(resource, ZipArchiveMode.Read))
         {

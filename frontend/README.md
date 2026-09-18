@@ -1,9 +1,11 @@
-# InvestAI frontend
+# Market Copilot frontend
+
+Market Copilot is the visible product name; the repository and internal compatibility identifiers remain InvestAI.
 
 Production-oriented desktop workspace built with React 19, TypeScript, and
-Vite. Sprint 6.2 polishes the daily smart dashboard, persistent multi-watchlists,
-cross-market discovery, market-aware news, global search, and session status on
-top of Sprint 5's TradingView charts and public real-time market data. AI,
+Vite. Sprint 7.4 keeps the active chart visible while browsing other markets,
+adds a Korean/English UI foundation, and retains the smart dashboard,
+multi-watchlists, news, TradingView charts, and public real-time market data. AI,
 trading, backend, authentication, and database capabilities remain deliberately
 unimplemented.
 

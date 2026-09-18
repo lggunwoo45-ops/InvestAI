@@ -1,5 +1,7 @@
 .header { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 24px; padding: 0 22px 0 26px; border-bottom: 1px solid var(--color-border); background: rgba(10, 14, 20, .96); }
 .actions { display: flex; min-width: 0; align-items: center; gap: 17px; }
+.languageSelect { max-width: 78px; padding: 5px 3px; border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text); font: 10px ui-sans-serif, system-ui, sans-serif; cursor: pointer; }
+.languageSelect:focus-visible { outline: 2px solid var(--color-accent); }
 .statuses { display: flex; align-items: center; gap: 12px; }
 .divider { width: 1px; height: 15px; background: var(--color-border); }
 .clock { display: grid; min-width: 76px; text-align: right; }

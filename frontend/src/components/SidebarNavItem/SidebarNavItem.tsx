@@ -8,17 +8,18 @@ import styles from './SidebarNavItem.module.css'
 interface SidebarNavItemProps {
   item: NavigationItem
   compact: boolean
+  label?: string
 }
 
-export function SidebarNavItem({ item, compact }: SidebarNavItemProps) {
+export function SidebarNavItem({ item, compact, label = item.label }: SidebarNavItemProps) {
   return (
     <NavLink
       to={item.path}
-      title={compact ? item.label : undefined}
+      title={compact ? label : undefined}
       className={({ isActive }) => classNames(styles.link, isActive && styles.active)}
     >
       <Icon name={item.icon} size={18} />
-      {!compact && <span>{item.label}</span>}
+      {!compact && <span>{label}</span>}
     </NavLink>
   )
 }

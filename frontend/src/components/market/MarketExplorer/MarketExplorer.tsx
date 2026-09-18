@@ -2,6 +2,7 @@ import { useCallback, useDeferredValue, useEffect, useMemo, useRef } from 'react
 import { useVirtualizer } from '@tanstack/react-virtual'
 
 import { DataModeControl } from '@/components/market-data/DataModeControl/DataModeControl'
+import { useLanguage } from '@/i18n/useLanguage'
 import { marketExplorerText, groupForVenue, venuesByGroup } from '@/pages/Market/marketExplorerConfig'
 import { queryMarketInstruments, type BinanceSpotQuoteFilter, type ExplorerSortDirection, type ExplorerSortField } from '@/pages/Market/marketExplorerQuery'
 import type { MarketCatalog, MarketDataMode, MarketGroup, MarketInstrument, MarketVenue } from '@/types/market'
@@ -15,6 +16,7 @@ interface MarketExplorerProps {
   loading: boolean
   error: string | null
   selectedInstrumentId: string | null
+  activeInstrument?: MarketInstrument | null
   search: string
   onSearchChange: (value: string) => void
   favoritesOnly: boolean
@@ -35,19 +37,20 @@ interface MarketExplorerProps {
   compact?: boolean
 }
 
-const text = marketExplorerText.en
 const groups: readonly MarketGroup[] = ['crypto', 'korea', 'us']
 const sortFields: readonly ExplorerSortField[] = ['alphabet', 'price', 'change', 'volume']
 const spotQuotes: readonly BinanceSpotQuoteFilter[] = ['USDT', 'FDUSD', 'BTC', 'ETH', 'Other']
 
 export function MarketExplorer({
-  venue, mode, catalog, loading, error, selectedInstrumentId,
+  venue, mode, catalog, loading, error, selectedInstrumentId, activeInstrument,
   search, onSearchChange, favoritesOnly, onFavoritesOnlyChange,
   sortField, onSortFieldChange, sortDirection, onSortDirectionChange,
   spotQuoteFilter, onSpotQuoteFilterChange,
   favoriteIds, onVenueChange, onModeChange,
   onSelect, onToggleFavorite, onRetry, onBack, compact = false,
 }: MarketExplorerProps) {
+  const { language } = useLanguage()
+  const text = marketExplorerText[language]
   const scrollRef = useRef<HTMLDivElement>(null)
   const deferredSearch = useDeferredValue(search)
   const group = groupForVenue(venue)
@@ -115,7 +118,7 @@ export function MarketExplorer({
           {venues.map((item) => <button key={item} type="button" role="tab" aria-selected={venue === item} onClick={() => onVenueChange(item)}>{text.venue[item].split(' · ').at(-1)}</button>)}
         </div>
         {venue === 'binance-spot' && <div className={styles.quoteTabs} role="tablist" aria-label="Binance Spot quote asset">
-          {spotQuotes.map((quote) => <button key={quote} type="button" role="tab" aria-selected={spotQuoteFilter === quote} onClick={() => onSpotQuoteFilterChange(quote)}>{quote}</button>)}
+          {spotQuotes.map((quote) => <button key={quote} type="button" role="tab" aria-selected={spotQuoteFilter === quote} onClick={() => onSpotQuoteFilterChange(quote)}>{quote === 'Other' ? text.other : quote}</button>)}
         </div>}
       </div>
 
@@ -134,9 +137,10 @@ export function MarketExplorer({
 
       <div className={styles.meta}>
         <div className={styles.marketPath}>
-          <span>{workspace.scope}</span>
+          <span>{text.browsing} · {workspace.scope}</span>
           <strong>{isCrypto ? providerLabel : text.group[group]}</strong>
           <b>/</b> {venueLabel}{venue === 'binance-spot' ? ` / ${spotQuoteFilter}` : ''}
+          {compact && activeInstrument && <span className={styles.activeContext}>{text.active}: {activeInstrument.displaySymbol ?? activeInstrument.symbol} · {activeInstrument.marketType ? text.venue[activeInstrument.marketType] : activeInstrument.marketId}</span>}
         </div>
         <div className={styles.sourceInfo}>
           {!isCrypto && <span className={styles.mockWarning}>{text.mockDisclosure}</span>}
@@ -148,7 +152,7 @@ export function MarketExplorer({
         {sortFields.map((field) => {
           const label = field === 'change' ? text.change : text[field]
           const active = sortField === field
-          return <button key={field} type="button" className={active ? styles.activeSort : ''} aria-pressed={active} aria-label={`Sort by ${label}${active ? `, ${directionLabel}` : ''}`} onClick={() => onSortFieldChange(field)}>{label}<span aria-hidden="true">{active ? sortDirection === 'asc' ? '↑' : '↓' : '↕'}</span></button>
+          return <button key={field} type="button" className={active ? styles.activeSort : ''} aria-pressed={active} aria-label={`${text.sortBy} ${label}${active ? `, ${directionLabel}` : ''}`} onClick={() => onSortFieldChange(field)}>{label}<span aria-hidden="true">{active ? sortDirection === 'asc' ? '↑' : '↓' : '↕'}</span></button>
         })}
         <span aria-label={text.favorites}>★</span>
       </div>

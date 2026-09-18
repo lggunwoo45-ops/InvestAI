@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import { App } from './App'
 
-describe('InvestAI application shell', () => {
+describe('Market Copilot application shell', () => {
   beforeEach(() => {
     window.localStorage.clear()
     window.history.pushState({}, '', '/')
@@ -69,6 +69,53 @@ describe('InvestAI application shell', () => {
 
     expect(await screen.findByRole('img', { name: /BTC\/KRW 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
     expect(screen.getAllByText('MOCK').length).toBeGreaterThan(1)
+  })
+
+  it('keeps the active chart and copilot while browsing other markets', async () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'MOCK' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Open BTC/KRW' }))
+    expect(await screen.findByRole('img', { name: /BTC\/KRW 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Binance' }))
+    expect(screen.getByRole('tab', { name: 'Binance' }).getAttribute('aria-selected')).toBe('true')
+    expect(screen.getByRole('img', { name: /BTC\/KRW 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
+    fireEvent.click(screen.getByRole('tab', { name: 'FDUSD' }))
+    expect(screen.getByRole('tab', { name: 'FDUSD' }).getAttribute('aria-selected')).toBe('true')
+    expect(screen.getByRole('img', { name: /BTC\/KRW 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Korea' }))
+    expect(screen.getByRole('tab', { name: 'Korea' }).getAttribute('aria-selected')).toBe('true')
+    expect(screen.getByRole('heading', { name: 'Stock Research' })).toBeTruthy()
+    expect(screen.getByRole('img', { name: /BTC\/KRW 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
+    expect(screen.getByText(/Active analysis: BTC\/KRW/)).toBeTruthy()
+    expect(screen.getByRole('complementary', { name: 'AI Copilot' }).textContent).toContain('BTC/KRW')
+
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search symbol, Korean or English name' }), { target: { value: '005930' } })
+    fireEvent.click(await screen.findByRole('button', { name: 'Open 005930' }))
+    expect(await screen.findByRole('img', { name: /005930 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
+    expect(screen.getByRole('complementary', { name: 'AI Copilot' }).textContent).toContain('005930')
+    fireEvent.click(screen.getByRole('button', { name: '← All instruments' }))
+    expect(screen.queryByRole('img', { name: /TradingView candlestick chart/i })).toBeNull()
+    expect(screen.getByRole('tab', { name: 'Korea' }).getAttribute('aria-selected')).toBe('true')
+  })
+
+  it('switches and persists English and Korean core workspace labels', async () => {
+    const app = render(<App />)
+    const language = screen.getByRole('combobox', { name: 'Language' })
+    fireEvent.change(language, { target: { value: 'ko' } })
+    expect(screen.getByRole('link', { name: '대시보드' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: '암호화폐 터미널' })).toBeTruthy()
+    expect(screen.getByRole('searchbox', { name: '심볼·한국어·영어 이름 검색' })).toBeTruthy()
+    expect(window.localStorage.getItem('market-copilot.language')).toBe('ko')
+    app.unmount()
+
+    render(<App />)
+    expect((screen.getByRole('combobox', { name: 'Language' }) as HTMLSelectElement).value).toBe('ko')
+    expect(screen.getByRole('link', { name: '대시보드' })).toBeTruthy()
+    fireEvent.change(screen.getByRole('combobox', { name: 'Language' }), { target: { value: 'en' } })
+    expect(screen.getByRole('heading', { name: 'Crypto Terminal' })).toBeTruthy()
+    expect(screen.getByRole('searchbox', { name: 'Search symbol, Korean or English name' })).toBeTruthy()
   })
 
   it('filters the active venue and toggles favorites', async () => {
@@ -150,6 +197,6 @@ describe('InvestAI application shell', () => {
     expect(await screen.findByTitle('Market: online')).toBeTruthy()
 
     fireEvent.click(screen.getByRole('link', { name: 'Dashboard' }))
-    expect(await screen.findByTitle('Market: unconfigured')).toBeTruthy()
+    expect(await screen.findByTitle('Market: Not configured')).toBeTruthy()
   })
 })

@@ -2,6 +2,8 @@ import { memo, useMemo } from 'react'
 
 import { ConnectionIndicator } from '@/components/market-data/ConnectionIndicator/ConnectionIndicator'
 import { DataModeControl } from '@/components/market-data/DataModeControl/DataModeControl'
+import { uiText } from '@/i18n/translations'
+import { useLanguage } from '@/i18n/useLanguage'
 import { marketExplorerText } from '@/pages/Market/marketExplorerConfig'
 import type { MarketConnectionState, MarketDataMode } from '@/types/market'
 import type { MarketDetailSnapshot, ChartTimeframe } from '@/types/marketDetail'
@@ -21,10 +23,12 @@ interface MarketDetailPanelProps {
 
 export const MarketDetailPanel = memo(function MarketDetailPanel({ snapshot, connection, selectedTimeframe, marketDataMode, onSelectTimeframe, onMarketDataModeChange }: MarketDetailPanelProps) {
   const { instrument, candles } = snapshot
+  const { language } = useLanguage()
+  const labels = uiText[language].detail
   const isStock = instrument.marketId === 'korea-stock' || instrument.marketId === 'us-stock'
-  const workspace = marketExplorerText.en.workspace[isStock ? 'stock' : 'crypto']
+  const workspace = marketExplorerText[language].workspace[isStock ? 'stock' : 'crypto']
   const venueLabel = instrument.marketType
-    ? marketExplorerText.en.venue[instrument.marketType]
+    ? marketExplorerText[language].venue[instrument.marketType]
     : instrument.marketId.replaceAll('-', ' ')
   const sessionStats = useMemo(() => ({
     high: Math.max(...candles.map((candle) => candle.high)),
@@ -52,10 +56,10 @@ export const MarketDetailPanel = memo(function MarketDetailPanel({ snapshot, con
         </div>
       </header>
       <dl className={styles.stats}>
-        <div><dt>Market</dt><dd>{venueLabel}</dd></div>
-        <div><dt>High</dt><dd>{valueAsInstrument(sessionStats.high)}</dd></div>
-        <div><dt>Low</dt><dd>{valueAsInstrument(sessionStats.low)}</dd></div>
-        <div><dt>Volume</dt><dd>{formatMarketVolume(instrument.volume24h, instrument.quoteCurrency)}</dd></div>
+        <div><dt>{labels.market}</dt><dd>{venueLabel}</dd></div>
+        <div><dt>{labels.high}</dt><dd>{valueAsInstrument(sessionStats.high)}</dd></div>
+        <div><dt>{labels.low}</dt><dd>{valueAsInstrument(sessionStats.low)}</dd></div>
+        <div><dt>{labels.volume}</dt><dd>{formatMarketVolume(instrument.volume24h, instrument.quoteCurrency)}</dd></div>
       </dl>
       <TimeframeToolbar selected={selectedTimeframe} mode={connection.effectiveMode} onSelect={onSelectTimeframe} />
       <div className={styles.chartArea}>
