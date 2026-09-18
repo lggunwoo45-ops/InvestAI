@@ -1,7 +1,8 @@
 import type { NewsArticle } from '@/types/dashboard'
 import { newsProvider } from './MockNewsProvider'
 import type { NewsProvider } from './NewsProvider'
-import { RssNewsProvider } from './RssNewsProvider'
+import type { NewsLoadOptions } from './NewsProvider'
+import { RssNewsProvider, RssProviderError, type RssFailureReason } from './RssNewsProvider'
 
 export type NewsProviderMode = 'mock' | 'rss-ready'
 export type NewsProviderState = 'mock' | 'rss-ready' | 'rss-unavailable' | 'provider-not-configured'
@@ -13,26 +14,27 @@ export interface NewsLoadResult {
   providerLabel: string
   articles: readonly NewsArticle[]
   lastUpdatedAt: string | null
-  error: 'rss-unavailable' | 'provider-not-configured' | null
+  error: RssFailureReason | 'provider-not-configured' | null
   fallback: boolean
 }
 
-/** Mock is the only active default. RSS has no transport and always falls back visibly. */
+/** Mock remains the default; the real-feed experiment is opt-in and never mixes sources. */
 export class NewsService {
   constructor(
     private readonly mock: NewsProvider = newsProvider,
     private readonly rss: NewsProvider = new RssNewsProvider(),
   ) {}
 
-  async loadNews(mode: NewsProviderMode = 'mock'): Promise<NewsLoadResult> {
+  async loadNews(mode: NewsProviderMode = 'mock', options?: NewsLoadOptions): Promise<NewsLoadResult> {
     if (mode === 'rss-ready') {
       try {
-        const articles = await this.rss.loadNews()
+        const articles = await this.rss.loadNews(options)
+        if (!articles.length || articles.some((article) => article.isMock)) throw new RssProviderError('invalid-feed')
         return { requestedMode: mode, state: 'rss-ready', source: 'rss', providerLabel: this.rss.label, articles, lastUpdatedAt: new Date().toISOString(), error: null, fallback: false }
-      } catch {
+      } catch (error) {
         try {
           const articles = await this.mock.loadNews()
-          return { requestedMode: mode, state: 'rss-unavailable', source: 'mock', providerLabel: this.mock.label, articles, lastUpdatedAt: null, error: 'rss-unavailable', fallback: true }
+          return { requestedMode: mode, state: 'rss-unavailable', source: 'mock', providerLabel: this.mock.label, articles, lastUpdatedAt: null, error: error instanceof RssProviderError ? error.reason : 'network', fallback: true }
         } catch {
           return { requestedMode: mode, state: 'provider-not-configured', source: null, providerLabel: this.rss.label, articles: [], lastUpdatedAt: null, error: 'provider-not-configured', fallback: false }
         }

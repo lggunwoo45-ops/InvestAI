@@ -17,9 +17,11 @@ describe('NewsService provider boundary', () => {
   })
 
   it('labels RSS unavailability and mock fallback explicitly', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockRejectedValueOnce(new TypeError('Failed to fetch'))
     const result = await new NewsService().loadNews('rss-ready')
-    expect(result).toMatchObject({ requestedMode: 'rss-ready', state: 'rss-unavailable', source: 'mock', error: 'rss-unavailable', fallback: true })
+    expect(result).toMatchObject({ requestedMode: 'rss-ready', state: 'rss-unavailable', source: 'mock', error: 'network', fallback: true })
     expect(result.articles.every((article) => article.isMock)).toBe(true)
+    fetchSpy.mockRestore()
   })
 
   it('supports a future RSS provider without altering the UI contract', async () => {
