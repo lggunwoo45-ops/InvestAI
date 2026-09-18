@@ -12,7 +12,7 @@ describe('Market Copilot application shell', () => {
   it('opens the market workspace as the home page', async () => {
     render(<App />)
 
-    const cryptoHeading = await screen.findByRole('heading', { name: 'Crypto Terminal' })
+    const cryptoHeading = await screen.findByRole('heading', { name: 'Crypto Terminal' }, { timeout: 5000 })
     expect(cryptoHeading.closest('section')?.getAttribute('data-workspace')).toBe('crypto')
     expect(screen.getByRole('navigation', { name: 'Primary navigation' })).toBeTruthy()
     expect(screen.getByRole('complementary', { name: 'AI Copilot' })).toBeTruthy()
@@ -189,6 +189,9 @@ describe('Market Copilot application shell', () => {
     expect(screen.getByRole('button', { name: 'NVDA ON' })).toBeTruthy()
     expect(screen.getByText(/NVIDIA outlines/)).toBeTruthy()
     expect(screen.getAllByText('Demo news / Mock data').length).toBeGreaterThan(0)
+    fireEvent.click(await within(screen.getByRole('complementary', { name: 'AI Copilot' })).findByRole('link', { name: /NVIDIA outlines/ }))
+    expect((screen.getByRole('searchbox', { name: 'Search news' }) as HTMLInputElement).value).toContain('NVIDIA outlines')
+    expect(screen.getByRole('button', { name: 'NVDA OFF' })).toBeTruthy()
   })
 
   it('opens briefing references intentionally without clearing active context on navigation', async () => {
@@ -200,7 +203,7 @@ describe('Market Copilot application shell', () => {
     expect(await screen.findByRole('heading', { name: 'Market Briefing' })).toBeTruthy()
     expect(screen.getByRole('complementary', { name: 'AI Copilot' }).textContent).toContain('BTC/KRW')
     expect(screen.getAllByText('Demo briefing / Mock data').length).toBeGreaterThan(0)
-    fireEvent.click(screen.getByRole('link', { name: /Global markets assess a possible rates path/ }))
+    fireEvent.click(await screen.findByRole('link', { name: /Global markets assess a possible rates path/ }))
     expect(await screen.findByRole('heading', { name: 'News Center' })).toBeTruthy()
     expect(screen.getByText(/Global markets assess a possible rates path/)).toBeTruthy()
     fireEvent.click(screen.getByRole('link', { name: 'Market Briefing' }))
@@ -218,7 +221,73 @@ describe('Market Copilot application shell', () => {
     expect(screen.getAllByText('데모 브리핑 / 모의 데이터').length).toBeGreaterThan(0)
     fireEvent.click(screen.getByRole('link', { name: '뉴스' }))
     expect(await screen.findByRole('heading', { name: '뉴스 센터' })).toBeTruthy()
-    expect(screen.getAllByText('데모 뉴스 / 모의 데이터').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('모의 뉴스 / 데모 데이터').length).toBeGreaterThan(0)
+  })
+
+  it('links briefing market context to a visible News filter', async () => {
+    window.history.pushState({}, '', '/briefing')
+    render(<App />)
+    const crypto = await screen.findByRole('region', { name: 'Crypto Briefing' })
+    fireEvent.click(within(crypto).getByRole('link', { name: /View market news/ }))
+    expect(await screen.findByRole('heading', { name: 'News Center' })).toBeTruthy()
+    expect((screen.getByRole('combobox', { name: 'Market' }) as HTMLSelectElement).value).toBe('crypto')
+    expect(screen.getAllByText('Demo news / Mock data').length).toBeGreaterThan(0)
+    expect(screen.getByText(/Filtered for Crypto/)).toBeTruthy()
+  })
+
+  it('combines News filters and shows an empty state without losing mock labeling', async () => {
+    window.history.pushState({}, '', '/news')
+    render(<App />)
+    expect(await screen.findByRole('heading', { name: 'News Center' })).toBeTruthy()
+    expect(await screen.findByText(/Global markets assess a possible rates path/)).toBeTruthy()
+    fireEvent.click(screen.getByRole('tab', { name: 'Macro' }))
+    fireEvent.change(screen.getByRole('combobox', { name: 'Market' }), { target: { value: 'macro' } })
+    fireEvent.change(screen.getByRole('combobox', { name: 'Sentiment' }), { target: { value: 'negative' } })
+    fireEvent.change(screen.getByRole('combobox', { name: 'Importance' }), { target: { value: 'high' } })
+    expect(screen.getByText('1 ARTICLES')).toBeTruthy()
+    fireEvent.change(screen.getByRole('combobox', { name: 'Importance' }), { target: { value: 'low' } })
+    expect(screen.getByText('0 ARTICLES')).toBeTruthy()
+    expect(screen.getByText('No articles match the active filters.')).toBeTruthy()
+    expect(screen.getByText('Demo news / Mock data')).toBeTruthy()
+  })
+
+  it('keeps the active instrument while reading News and changes it only on a related-symbol click', async () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'MOCK' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Open BTC/KRW' }))
+    expect(await screen.findByRole('img', { name: /BTC\/KRW 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
+    fireEvent.click(screen.getByRole('link', { name: 'News' }))
+    expect(await screen.findByRole('heading', { name: 'News Center' })).toBeTruthy()
+    const copilot = screen.getByRole('complementary', { name: 'AI Copilot' })
+    expect(copilot.textContent).toContain('BTC/KRW')
+    fireEvent.click((await screen.findAllByRole('button', { name: 'Read details' }))[0])
+    expect(copilot.textContent).toContain('BTC/KRW')
+    fireEvent.click(screen.getByRole('button', { name: 'BTC/KRW ON' }))
+    fireEvent.click((await screen.findAllByRole('button', { name: 'Open in Market: NVDA' }))[0])
+    expect(await screen.findByRole('img', { name: /NVDA 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
+    expect(screen.getByRole('complementary', { name: 'AI Copilot' }).textContent).toContain('NVDA')
+    expect(screen.getByRole('heading', { name: /NVIDIA/ })).toBeTruthy()
+  })
+
+  it('updates compact instrument news and shows a no-news state for uncovered symbols', async () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'MOCK' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Open BTC/KRW' }))
+    const copilot = screen.getByRole('complementary', { name: 'AI Copilot' })
+    expect(await within(copilot).findByText(/Bitcoin liquidity and institutional rebalancing/)).toBeTruthy()
+    fireEvent.click(screen.getByRole('tab', { name: 'Korea' }))
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search symbol, Korean or English name' }), { target: { value: '035420' } })
+    fireEvent.click(await screen.findByRole('button', { name: 'Open 035420' }))
+    expect(await within(copilot).findByText('No related demo news yet.')).toBeTruthy()
+  })
+
+  it('keeps a news-linked Binance symbol in its own market context', async () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'MOCK' }))
+    fireEvent.click(screen.getByRole('link', { name: 'News' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Open in Market: BTCUSDT' }))
+    expect(await screen.findByRole('img', { name: /BTCUSDT 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
+    expect(screen.getByRole('complementary', { name: 'AI Copilot' }).textContent).toContain('binance-futures')
   })
 
   it('clears the Header market status after leaving Market', async () => {

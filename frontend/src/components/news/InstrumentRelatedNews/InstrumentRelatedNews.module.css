@@ -1,0 +1,10 @@
+.panel { padding: 11px; border: 1px solid #2b4048; background: #101b22; }
+.panel header { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+.panel header strong { color: #bad1ca; font-size: 10px; }
+.panel header span { color: #c9b483; font-size: 8px; text-align: right; }
+.panel ul { display: grid; gap: 0; margin: 9px 0; padding: 0; list-style: none; }
+.panel li { border-top: 1px solid #263843; }
+.panel a { display: grid; gap: 4px; padding: 8px 0; color: #adcbc4; font-size: 9px; line-height: 1.4; text-decoration: none; }
+.panel a:hover { color: #e1f0ea; text-decoration: underline; }
+.panel small, .panel p { margin: 0; color: #899caa; font-size: 8px; line-height: 1.4; }
+.boundary { display: block; padding-top: 8px; border-top: 1px solid #263843; }

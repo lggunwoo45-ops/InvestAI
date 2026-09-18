@@ -25,6 +25,8 @@ export interface NewsArticle {
   source: string
   publishedAt: string
   relatedSymbols: readonly string[]
+  /** Explicit symbol-to-internal-ID links; index-only symbols remain non-interactive. */
+  relatedInstrumentIds?: Readonly<Record<string, string>>
   relatedMarkets: readonly NewsMarket[]
   sentiment: NewsSentiment
   importance: NewsImportance

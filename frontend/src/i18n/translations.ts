@@ -30,13 +30,18 @@ interface UiStrings {
     title: string; subtitle: string; eyebrow: string; demo: string; trust: string; finalDecision: string
     crypto: string; korea: string; us: string; macro: string; mood: string; whyMatters: string
     movers: string; gainers: string; losers: string; highVolume: string; relatedNews: string
-    watch: string; openSymbol: string; noSymbol: string; noNews: string; simulated: string
+    watch: string; openSymbol: string; noSymbol: string; noNews: string; simulated: string; viewNews: string
   }
   news: {
     title: string; subtitle: string; all: string; search: string; relatedMarket: string
     noSymbol: string; on: string; off: string; articles: string; allCoverage: string
     filteredFor: string; noResults: string; demo: string; summary: string; importance: string
     categories: Record<NewsCategory, string>
+    filters: string; marketFilter: string; sentiment: string; relatedSymbols: string; relatedMarkets: string; loading: string
+    openInMarket: string; viewSymbol: string; details: string; hideDetails: string; externalSource: string
+    noRelated: string; analysisInactive: string; allMarkets: string; allSentiments: string; allImportance: string
+    sentiments: { positive: string; neutral: string; negative: string }
+    importanceLevels: { high: string; medium: string; low: string }
   }
   copilot: {
     title: string; context: string; none: string; company: string; scenario: string
@@ -64,13 +69,17 @@ export const uiText = {
       demo: 'Demo briefing / Mock data', trust: 'Information is for analysis support only. Not investment advice.', finalDecision: 'You make the final decision.',
       crypto: 'Crypto Briefing', korea: 'Korea Stock Briefing', us: 'US Stock Briefing', macro: 'Macro / Global Briefing',
       mood: 'Market mood', whyMatters: 'Why this market matters', movers: 'Major Movers', gainers: 'Top Gainers', losers: 'Top Losers', highVolume: 'High Volume',
-      relatedNews: 'Related News', watch: 'What to Watch', openSymbol: 'Open in Market', noSymbol: 'Illustrative macro reference only', noNews: 'No related headlines', simulated: 'Simulated snapshot — not live market data',
+      relatedNews: 'Related News', watch: 'What to Watch', openSymbol: 'Open in Market', noSymbol: 'Illustrative macro reference only', noNews: 'No related headlines', simulated: 'Simulated snapshot — not live market data', viewNews: 'View market news',
     },
     news: {
       title: 'News Center', subtitle: 'Structured illustrative headlines linked to your active market context.', all: 'All News', search: 'Search headlines, sources, or symbols',
       relatedMarket: 'RELATED MARKET', noSymbol: 'No symbol selected', on: 'ON', off: 'OFF', articles: 'ARTICLES', allCoverage: 'All market coverage',
       filteredFor: 'Filtered for', noResults: 'No articles match the active filters.', demo: 'Demo news / Mock data', summary: 'Summary', importance: 'Importance',
       categories: { crypto: 'Crypto', 'korea-stock': 'Korea Stock', 'us-stock': 'US Stock', macro: 'Macro', technology: 'Technology', ai: 'AI', earnings: 'Earnings', regulation: 'Regulation' },
+      filters: 'News filters', marketFilter: 'Market', sentiment: 'Sentiment', relatedSymbols: 'Related Symbols', relatedMarkets: 'Related Markets', loading: 'Loading demo news…',
+      openInMarket: 'Open in Market', viewSymbol: 'View symbol', details: 'Read details', hideDetails: 'Hide details', externalSource: 'Open source article',
+      noRelated: 'No related demo news yet.', analysisInactive: 'AI analysis is not active yet.', allMarkets: 'All markets', allSentiments: 'All sentiments', allImportance: 'All importance levels',
+      sentiments: { positive: 'Positive', neutral: 'Neutral', negative: 'Negative' }, importanceLevels: { high: 'High', medium: 'Medium', low: 'Low' },
     },
     copilot: {
       title: 'AI Copilot', context: 'Context', none: 'No market selected', company: 'Company research context', scenario: 'Market scenario context',
@@ -98,13 +107,17 @@ export const uiText = {
       demo: '데모 브리핑 / 모의 데이터', trust: '정보는 분석 보조용이며 투자 조언이 아닙니다.', finalDecision: '최종 결정은 사용자가 내립니다.',
       crypto: '암호화폐 브리핑', korea: '한국 주식 브리핑', us: '미국 주식 브리핑', macro: '거시경제 / 글로벌 브리핑',
       mood: '시장 분위기', whyMatters: '이 시장이 중요한 이유', movers: '주요 변동 종목', gainers: '상승 종목', losers: '하락 종목', highVolume: '거래량 상위',
-      relatedNews: '관련 뉴스', watch: '관찰할 사항', openSymbol: '마켓에서 열기', noSymbol: '설명용 거시경제 항목', noNews: '관련 헤드라인 없음', simulated: '시뮬레이션 화면 — 실시간 시장 데이터 아님',
+      relatedNews: '관련 뉴스', watch: '관찰할 사항', openSymbol: '마켓에서 열기', noSymbol: '설명용 거시경제 항목', noNews: '관련 헤드라인 없음', simulated: '시뮬레이션 화면 — 실시간 시장 데이터 아님', viewNews: '해당 시장 뉴스 보기',
     },
     news: {
       title: '뉴스 센터', subtitle: '현재 선택된 시장과 연결된 예시 헤드라인을 살펴봅니다.', all: '전체 뉴스', search: '제목·출처·종목 검색',
       relatedMarket: '관련 시장', noSymbol: '선택된 종목 없음', on: '켬', off: '끔', articles: '건', allCoverage: '전체 시장 뉴스',
-      filteredFor: '필터 적용', noResults: '현재 필터에 맞는 기사가 없습니다.', demo: '데모 뉴스 / 모의 데이터', summary: '요약', importance: '중요도',
+      filteredFor: '필터 적용', noResults: '현재 필터에 맞는 기사가 없습니다.', demo: '모의 뉴스 / 데모 데이터', summary: '요약', importance: '중요도',
       categories: { crypto: '암호화폐', 'korea-stock': '한국 주식', 'us-stock': '미국 주식', macro: '거시경제', technology: '기술', ai: 'AI', earnings: '실적', regulation: '규제' },
+      filters: '뉴스 필터', marketFilter: '시장', sentiment: '감성', relatedSymbols: '관련 종목', relatedMarkets: '관련 시장', loading: '데모 뉴스를 불러오는 중…',
+      openInMarket: '마켓에서 열기', viewSymbol: '종목 보기', details: '자세히 보기', hideDetails: '접기', externalSource: '원문 열기',
+      noRelated: '관련 데모 뉴스가 아직 없습니다.', analysisInactive: 'AI 분석은 아직 활성화되지 않았습니다.', allMarkets: '전체 시장', allSentiments: '전체 감성', allImportance: '전체 중요도',
+      sentiments: { positive: '긍정', neutral: '중립', negative: '부정' }, importanceLevels: { high: '높음', medium: '보통', low: '낮음' },
     },
     copilot: {
       title: 'AI 코파일럿', context: '분석 대상', none: '선택된 종목 없음', company: '기업 리서치 맥락', scenario: '시장 시나리오 맥락',
