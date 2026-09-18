@@ -1,5 +1,6 @@
 import { EmptyState } from '@/components/EmptyState/EmptyState'
 import { Icon } from '@/components/Icon/Icon'
+import { InstrumentRelatedNews } from '@/components/news/InstrumentRelatedNews/InstrumentRelatedNews'
 import { useMarketWorkspace } from '@/hooks/useMarketWorkspace'
 import { useUiStore } from '@/hooks/useUiStore'
 import { uiText } from '@/i18n/translations'
@@ -79,6 +80,8 @@ export function AiCopilot() {
                   <div key={label}><dt>{label}</dt><dd>{text.pending}</dd></div>)}
               </dl>
             </section>
+
+            <InstrumentRelatedNews instrument={displayedInstrument!} />
 
             <div className={styles.boundaryNote}>
               <Icon name="sparkles" size={13} />

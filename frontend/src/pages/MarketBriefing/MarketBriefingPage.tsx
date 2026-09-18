@@ -2,13 +2,13 @@ import { useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { BriefingCard } from '@/components/briefing/BriefingCard'
+import { useDashboardData } from '@/hooks/useDashboardData'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { useMarketWorkspace } from '@/hooks/useMarketWorkspace'
 import { useWatchlists } from '@/hooks/useWatchlists'
 import { useLanguage } from '@/i18n/useLanguage'
 import { uiText } from '@/i18n/translations'
 import { mockBriefings } from '@/services/briefing/mockBriefingData'
-import { newsArticles } from '@/services/dashboard/mockDashboardData'
 import { marketDataService } from '@/services/market/marketDataService'
 import styles from './MarketBriefingPage.module.css'
 
@@ -21,6 +21,7 @@ const availableIds = new Set(knownInstruments.keys())
 export function MarketBriefingPage() {
   const navigate = useNavigate()
   const { language } = useLanguage()
+  const dashboard = useDashboardData()
   const { selectInstrument } = useMarketWorkspace()
   const { trackRecentlyViewed } = useWatchlists()
   const text = uiText[language].briefing
@@ -43,7 +44,7 @@ export function MarketBriefingPage() {
     <p className={styles.trust}>{text.trust} {text.finalDecision}</p>
     <div className={styles.grid}>{mockBriefings.map((briefing) => <BriefingCard
       key={briefing.id} briefing={briefing} language={language} availableIds={availableIds}
-      news={briefing.newsIds.flatMap((id) => { const article = newsArticles.find((item) => item.id === id); return article ? [article] : [] })}
+      news={briefing.newsIds.flatMap((id) => { const article = dashboard?.news.find((item) => item.id === id); return article ? [article] : [] })}
       onOpenInstrument={openInstrument}
     />)}</div>
   </main>

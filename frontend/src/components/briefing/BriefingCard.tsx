@@ -27,7 +27,7 @@ export function BriefingCard({ briefing, language, news, onOpenInstrument, avail
   return <section className={styles.card} aria-label={title}>
     <header className={styles.header}>
       <div><span className={styles.eyebrow}>{briefing.id.toUpperCase()} / {text.simulated}</span><h2>{title}</h2></div>
-      <span className={styles.demo}>{text.demo}</span>
+      <div className={styles.actions}><span className={styles.demo}>{text.demo}</span><Link to="/news" state={{ market: briefing.id }}>{text.viewNews} ↗</Link></div>
     </header>
     <div className={styles.intro}>
       <div><span>{text.mood}</span><strong>{briefing.mood[language]}</strong></div>
@@ -43,7 +43,7 @@ export function BriefingCard({ briefing, language, news, onOpenInstrument, avail
     </div>
     <div className={styles.bottom}>
       <section><h3>{text.watch}</h3><ul>{briefing.whatToWatch.map((item) => <li key={item.en}>{item[language]}</li>)}</ul></section>
-      <section><h3>{text.relatedNews}</h3><ul>{news.map((item) => <li key={item.id}><Link to="/news" state={{ query: item.title }}>{item.title}</Link></li>)}</ul></section>
+      <section><h3>{text.relatedNews}</h3>{news.length ? <ul>{news.map((item) => <li key={item.id}><Link to="/news" state={{ query: item.title, market: briefing.id }}>{item.title}</Link></li>)}</ul> : <p>{text.noNews}</p>}</section>
     </div>
   </section>
 }

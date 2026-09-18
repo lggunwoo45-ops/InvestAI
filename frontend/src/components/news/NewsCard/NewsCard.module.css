@@ -11,4 +11,15 @@
 .summary { margin: 0 0 9px; color: #8593a4; font-size: 9px; line-height: 1.4; }
 .article footer { display: flex; justify-content: space-between; color: #4b586a; font-size: 7px; }
 .article footer strong { color: #687588; font-weight: 500; }
+.symbols { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+.symbols button, .symbols span { padding: 4px 6px; border: 1px solid #2a3e48; color: #9db1bd; background: #142029; font: 9px ui-monospace, monospace; }
+.symbols button { border-color: #3a605c; color: #b6d6cc; cursor: pointer; }
+.symbols button:hover, .symbols button:focus-visible { border-color: #83aca1; color: #e0f2ec; }
+.detailsToggle { justify-self: start; margin-top: 10px; padding: 3px 0; border: 0; color: #9ebcb7; background: transparent; font-size: 9px; cursor: pointer; }
+.details { margin-top: 8px; padding: 10px; border-top: 1px solid #2a3b46; background: #111b24; }
+.details dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; margin: 0; }
+.details dt { color: #80929f; font-size: 9px; }
+.details dd { margin: 3px 0 0; color: #b5c6d0; font-size: 9px; }
+.details p { color: #a5b4c0; font-size: 9px; line-height: 1.5; }
+.details a { color: #b7d9d0; font-size: 9px; }
 @media (min-width: 2200px) { .article { min-height: 112px; grid-template-columns: 102px minmax(0, 1fr); } .content { padding: 14px 16px; } .article h2 { font-size: 11px; } }
