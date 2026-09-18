@@ -1,5 +1,5 @@
 import { discoverAssets, marketPulseItems } from '@/services/dashboard/mockDashboardData'
-import { newsProvider } from '@/services/news/MockNewsProvider'
+import { newsService } from '@/services/news/newsService'
 import { filterNews, type NewsFilters } from '@/services/news/newsSelectors'
 import type { DiscoverAsset, DiscoverSectionId, MarketPulseItem, NewsArticle } from '@/types/dashboard'
 
@@ -20,12 +20,12 @@ export class DashboardService {
         losers: [...discoverAssets].sort((a, b) => a.changePercent - b.changePercent).slice(0, 5),
         volume: [...discoverAssets].sort((a, b) => b.volume - a.volume).slice(0, 5),
       },
-      news: await newsProvider.loadNews(),
+      news: (await newsService.loadNews('mock')).articles,
     }
   }
 
   async searchNews(filters: NewsFilters): Promise<readonly NewsArticle[]> {
-    return filterNews(await newsProvider.loadNews(), filters)
+    return filterNews((await newsService.loadNews('mock')).articles, filters)
   }
 }
 
