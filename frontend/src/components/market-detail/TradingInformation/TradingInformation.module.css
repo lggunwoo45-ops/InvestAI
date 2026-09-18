@@ -1,6 +1,8 @@
 .panel { display: grid; min-width: 0; min-height: 0; grid-template-rows: 35px minmax(0, 1fr); border-left: 1px solid #202b38; background: #090e14; }
+.stock { background: #0e1723; }
 .title { display: flex; align-items: center; justify-content: space-between; padding: 0 10px; border-bottom: 1px solid #202b38; background: #0b1017; }
 .title strong { color: #c7d3dd; font-size: 11px; }
+.stock .title { background: #172333; }
 .title span { color: #8293a4; font: 9px ui-monospace, monospace; letter-spacing: .07em; text-transform: uppercase; }
 .content { display: grid; min-height: 0; grid-template-rows: minmax(300px, 3fr) minmax(180px, 2fr); overflow: hidden; }
 @media (max-width: 1550px) {

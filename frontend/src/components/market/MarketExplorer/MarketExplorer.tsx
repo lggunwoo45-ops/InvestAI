@@ -51,6 +51,8 @@ export function MarketExplorer({
   const scrollRef = useRef<HTMLDivElement>(null)
   const deferredSearch = useDeferredValue(search)
   const group = groupForVenue(venue)
+  const isCrypto = group === 'crypto'
+  const workspace = text.workspace[isCrypto ? 'crypto' : 'stock']
   const cryptoProvider = venue.startsWith('binance-') ? 'binance' : 'upbit'
   const venues = group === 'crypto'
     ? venuesByGroup.crypto.filter((item) => item.startsWith(cryptoProvider))
@@ -59,10 +61,13 @@ export function MarketExplorer({
     search: deferredSearch, favoritesOnly, favoriteIds, sortField, sortDirection,
     spotQuoteFilter: venue === 'binance-spot' ? spotQuoteFilter : undefined,
   }), [catalog, deferredSearch, favoriteIds, favoritesOnly, sortDirection, sortField, spotQuoteFilter, venue])
-  const providerLabel = group === 'crypto' ? text.provider[cryptoProvider] : text.provider.stock
-  const source = catalog?.source ?? (group === 'crypto' && mode === 'live' ? 'live' : 'mock')
+  const providerLabel = isCrypto ? text.provider[cryptoProvider] : text.provider.stock
+  const source = catalog?.source ?? (isCrypto && mode === 'live' ? 'live' : 'mock')
+  const venueLabel = text.venue[venue].split(' · ').at(-1)
   const sortLabel = sortField === 'change' ? text.change : text[sortField]
   const directionLabel = sortDirection === 'asc' ? text.ascending : text.descending
+  // A quote badge only distinguishes rows in Binance Spot's mixed-quote view.
+  const showQuoteTag = venue === 'binance-spot' && spotQuoteFilter === 'Other'
   const getItemKey = useCallback((index: number) => instruments[index]?.id ?? index, [instruments])
   const virtualizer = useVirtualizer({
     count: instruments.length,
@@ -87,10 +92,15 @@ export function MarketExplorer({
     onVenueChange(provider === 'upbit' ? 'upbit-krw' : 'binance-spot')
 
   return (
-    <section className={`${styles.explorer} ${compact ? styles.compact : ''}`} aria-label={text.title}>
+    <section className={`${styles.explorer} ${isCrypto ? styles.crypto : styles.stock} ${compact ? styles.compact : ''}`} data-workspace={isCrypto ? 'crypto' : 'stock'} aria-label={text.title}>
       <header className={styles.header}>
-        <div>{compact && onBack && <button type="button" className={styles.back} onClick={onBack}>← {text.all}</button>}<span className={styles.eyebrow}>{text.eyebrow}</span><h1>{text.title}</h1></div>
-        <div className={styles.count}><DataModeControl value={mode} onChange={onModeChange} /><strong>{instruments.length.toLocaleString()}</strong><span>{text.results}</span></div>
+        <div className={styles.heading}>
+          {compact && onBack && <button type="button" className={styles.back} onClick={onBack}>← {text.all}</button>}
+          <span className={styles.eyebrow}>{workspace.eyebrow}</span>
+          <h1>{workspace.title}</h1>
+          {!compact && <p>{workspace.subtitle}</p>}
+        </div>
+        <div className={styles.count}><DataModeControl value={mode} onChange={onModeChange} /><strong aria-live="polite" aria-atomic="true" aria-label={`${instruments.length.toLocaleString()} ${text.results}`}>{instruments.length.toLocaleString()}</strong><span>{text.results}</span></div>
       </header>
 
       <div className={styles.navigation}>
@@ -114,7 +124,8 @@ export function MarketExplorer({
         <span className={styles.searchBehavior}>{text.searchBehavior}</span>
         <div className={styles.filterRow}>
           <button type="button" className={favoritesOnly ? styles.activeFavorite : ''} aria-pressed={favoritesOnly} onClick={() => onFavoritesOnlyChange(!favoritesOnly)}>★ {text.favorites}</button>
-          <label><span>{text.sort}</span><select aria-label={text.sort} value={sortField} onChange={(event) => onSortFieldChange(event.target.value as ExplorerSortField)}>
+          <span className={styles.sortHint}>{text.sortHint}</span>
+          <label className={styles.sortFallback}><span>{text.sort}</span><select aria-label={text.sort} value={sortField} onChange={(event) => onSortFieldChange(event.target.value as ExplorerSortField)}>
             {sortFields.map((field) => <option key={field} value={field}>{field === 'change' ? text.change : text[field]}</option>)}
           </select></label>
           <button type="button" className={styles.direction} aria-label={`${text.sort}: ${directionLabel}`} title={`${sortLabel} · ${directionLabel}`} onClick={() => onSortDirectionChange(sortDirection === 'asc' ? 'desc' : 'asc')}>{sortDirection === 'asc' ? '↑' : '↓'} {directionLabel}</button>
@@ -122,10 +133,17 @@ export function MarketExplorer({
       </div>
 
       <div className={styles.meta}>
-        <span className={styles.marketPath}>{text.group[group]} <b>/</b> {providerLabel} <b>/</b> {text.venue[venue].split(' · ').at(-1)}{venue === 'binance-spot' ? ` / ${spotQuoteFilter}` : ''}</span>
-        <span className={source === 'live' ? styles.live : styles.mock}>{source === 'live' ? text.realPublicApi : text.mockData}</span>
+        <div className={styles.marketPath}>
+          <span>{workspace.scope}</span>
+          <strong>{isCrypto ? providerLabel : text.group[group]}</strong>
+          <b>/</b> {venueLabel}{venue === 'binance-spot' ? ` / ${spotQuoteFilter}` : ''}
+        </div>
+        <div className={styles.sourceInfo}>
+          {!isCrypto && <span className={styles.mockWarning}>{text.mockDisclosure}</span>}
+          <span className={source === 'live' ? styles.live : styles.mock}>{source === 'live' ? text.realPublicApi : text.mockData}</span>
+        </div>
       </div>
-      <div className={styles.sortStatus} role="status">{text.sortedBy} <strong>{sortLabel} {sortDirection === 'asc' ? '↑' : '↓'}</strong><span>{directionLabel} · {instruments.length.toLocaleString()} {text.results}</span></div>
+      <div className={styles.sortStatus} role="status">{text.sortedBy} <strong>{sortLabel} {sortDirection === 'asc' ? '↑' : '↓'}</strong><span>{directionLabel}</span></div>
       <div className={styles.tableHead}>
         {sortFields.map((field) => {
           const label = field === 'change' ? text.change : text[field]
@@ -144,7 +162,10 @@ export function MarketExplorer({
             const favorite = favoriteIds.has(instrument.id)
             return <div key={item.key} className={`${styles.row} ${selectedInstrumentId === instrument.id ? styles.selected : ''}`} style={{ transform: `translateY(${item.start}px)` }} data-index={item.index}>
               <button type="button" className={styles.instrument} onClick={() => onSelect(instrument)} aria-label={`${text.open} ${instrument.symbol}`} aria-current={selectedInstrumentId === instrument.id ? 'true' : undefined}>
-                <strong>{instrument.displaySymbol ?? instrument.symbol}</strong>
+                <span className={styles.identityLine}>
+                  <strong>{instrument.displaySymbol ?? instrument.symbol}</strong>
+                  {showQuoteTag && <span className={styles.identityTag}>{instrument.quoteCurrency}</span>}
+                </span>
                 <small title={[instrument.koreanName, instrument.englishName ?? instrument.name].filter(Boolean).join(' · ')}>
                   {instrument.koreanName ? `${instrument.koreanName} · ${instrument.englishName ?? instrument.name}` : instrument.englishName ?? instrument.name}
                 </small>
@@ -158,7 +179,6 @@ export function MarketExplorer({
           })}
         </div>}
       </div>
-      {(venue === 'kospi' || venue === 'kosdaq' || venue === 'nasdaq' || venue === 'nyse') && <p className={styles.disclosure}>{text.mockDisclosure}</p>}
     </section>
   )
 }

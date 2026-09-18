@@ -9,16 +9,17 @@ export function AiCopilot() {
   const { toggleAiCopilot } = useUiStore()
   const { selectedInstrument, selectedTimeframe, activeMarketState } = useMarketWorkspace()
   const displayedInstrument = activeMarketState?.snapshot?.instrument ?? selectedInstrument
+  const isStock = displayedInstrument?.marketId === 'korea-stock' || displayedInstrument?.marketId === 'us-stock'
   const mockConfidence = selectedInstrument
     ? 72 + ((selectedInstrument.symbol.length + selectedTimeframe.length) % 12)
     : null
 
   return (
-    <aside className={styles.copilot} aria-label="AI Copilot">
+    <aside className={`${styles.copilot} ${isStock ? styles.stockContext : ''}`} aria-label="AI Copilot">
       <div className={styles.header}>
         <div className={styles.titleGroup}>
           <span className={styles.aiIcon}><Icon name="sparkles" size={15} /></span>
-          <div><strong>AI Copilot</strong><span>Investment intelligence</span></div>
+          <div><strong>AI Copilot</strong><span>{displayedInstrument ? isStock ? 'Company research context' : 'Market scenario context' : 'Judgment coach · scenarios'}</span></div>
         </div>
         <button type="button" onClick={toggleAiCopilot} aria-label="Close AI Copilot">×</button>
       </div>

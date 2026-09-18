@@ -61,6 +61,7 @@ describe('Sprint 7 market catalogs', () => {
     const korea = await stockCatalogProvider.load('kospi')
     const us = await stockCatalogProvider.load('nasdaq')
     expect(korea.instruments.some((item) => item.id === 'krx-005930' && item.koreanName === '삼성전자')).toBe(true)
+    expect(korea.instruments.find((item) => item.symbol === '299480')?.name).toBe('G&E Healthcare')
     expect(us.instruments.some((item) => item.id === 'us-nvda' && item.name.includes('NVIDIA'))).toBe(true)
     const kosdaq = await stockCatalogProvider.load('kosdaq')
     const nyse = await stockCatalogProvider.load('nyse')
