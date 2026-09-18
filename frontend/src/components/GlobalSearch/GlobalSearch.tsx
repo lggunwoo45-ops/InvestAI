@@ -5,6 +5,8 @@ import { Icon } from '@/components/Icon/Icon'
 import { useDashboardData } from '@/hooks/useDashboardData'
 import { useMarketWorkspace } from '@/hooks/useMarketWorkspace'
 import { useWatchlists } from '@/hooks/useWatchlists'
+import { uiText } from '@/i18n/translations'
+import { useLanguage } from '@/i18n/useLanguage'
 import type { MarketInstrument } from '@/types/market'
 import styles from './GlobalSearch.module.css'
 
@@ -13,6 +15,8 @@ export function GlobalSearch() {
   const dashboard = useDashboardData()
   const { selectInstrument } = useMarketWorkspace()
   const { trackRecentlyViewed } = useWatchlists()
+  const { language } = useLanguage()
+  const text = uiText[language]
   const [query, setQuery] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
   const normalized = query.trim().toLocaleLowerCase()
@@ -37,13 +41,13 @@ export function GlobalSearch() {
 
   return (
     <div className={styles.wrapper} onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setQuery('') }}>
-      <label className={styles.search}><Icon name="search" size={17} /><input ref={inputRef} type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search coins, stocks, or news" aria-label="Global search" /><kbd>Ctrl K</kbd></label>
+      <label className={styles.search}><Icon name="search" size={17} /><input ref={inputRef} type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={text.globalSearch} aria-label="Global search" /><kbd>Ctrl K</kbd></label>
       {isOpen && <div className={styles.results}>
-        <div className={styles.label}>MARKETS</div>
+        <div className={styles.label}>{text.searchMarkets}</div>
         {assets.map((asset) => <button key={asset.id} type="button" aria-label={`Open ${asset.symbol} from global search`} onClick={() => { const instrument: MarketInstrument = { id: asset.instrumentId, marketId: asset.marketId, symbol: asset.symbol, name: asset.name, quoteCurrency: asset.quote, lastPrice: asset.price, change24hPercent: asset.changePercent, volume24h: asset.volume }; trackRecentlyViewed(instrument.id); selectInstrument(instrument); navigate('/market'); setQuery('') }}><span><strong>{asset.symbol}</strong><small>{asset.name}</small></span><em>{asset.marketId.replace('-', ' ')}</em></button>)}
-        <div className={styles.label}>NEWS</div>
+        <div className={styles.label}>{text.searchNews}</div>
         {articles.map((article) => <button key={article.id} type="button" onClick={() => { navigate('/news', { state: { query: article.title.split(' ').slice(0, 3).join(' ') } }); setQuery('') }}><span><strong>{article.title}</strong><small>{article.source}</small></span><em>{article.category}</em></button>)}
-        {assets.length === 0 && articles.length === 0 && <p>No results across markets or news.</p>}
+        {assets.length === 0 && articles.length === 0 && <p>{text.searchEmpty}</p>}
       </div>}
     </div>
   )

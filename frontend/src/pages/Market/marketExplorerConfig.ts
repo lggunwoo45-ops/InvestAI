@@ -1,10 +1,10 @@
 import type { MarketGroup, MarketVenue } from '@/types/market'
 
-/** Translation-ready identifiers; language switching is intentionally out of scope. */
+/** Typed market-workspace copy shared by the explorer and active detail. */
 export const marketExplorerText = {
   en: {
     title: 'Market Explorer',
-    eyebrow: 'INVESTAI / MARKET DATA',
+    eyebrow: 'MARKET COPILOT / MARKET DATA',
     subtitle: 'Discover every available crypto pair and explore stock universes.',
     workspace: {
       crypto: {
@@ -43,9 +43,13 @@ export const marketExplorerText = {
     sort: 'Sort',
     sortHint: 'Select a column heading to sort',
     sortedBy: 'Sorted by',
+    sortBy: 'Sort by',
+    browsing: 'Browsing',
+    active: 'Active analysis',
     ascending: 'Ascending',
     descending: 'Descending',
     selected: 'Selected',
+    other: 'Other',
     provider: { upbit: 'Upbit', binance: 'Binance', stock: 'Mock Stock' },
     realPublicApi: 'Real public API',
     mockData: 'Mock data',
@@ -72,7 +76,7 @@ export const marketExplorerText = {
   },
   ko: {
     title: '마켓 탐색',
-    eyebrow: 'INVESTAI / 마켓 데이터',
+    eyebrow: 'MARKET COPILOT / 마켓 데이터',
     subtitle: '거래 가능한 암호화폐와 주식 종목을 탐색합니다.',
     workspace: {
       crypto: {
@@ -111,9 +115,13 @@ export const marketExplorerText = {
     sort: '정렬',
     sortHint: '열 제목을 선택해 정렬',
     sortedBy: '정렬 기준',
+    sortBy: '정렬:',
+    browsing: '탐색 중',
+    active: '분석 중',
     ascending: '오름차순',
     descending: '내림차순',
     selected: '선택됨',
+    other: '기타',
     provider: { upbit: '업비트', binance: '바이낸스', stock: '모의 주식' },
     realPublicApi: '공개 API',
     mockData: '모의 데이터',

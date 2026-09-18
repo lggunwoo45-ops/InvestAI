@@ -7,10 +7,12 @@ import { useMarketCatalog } from '@/hooks/useMarketCatalog'
 import { useMarketDetailData } from '@/hooks/useMarketDetailData'
 import { useMarketWorkspace } from '@/hooks/useMarketWorkspace'
 import { useWatchlists } from '@/hooks/useWatchlists'
+import { useLanguage } from '@/i18n/useLanguage'
 import { marketDataService } from '@/services/market/marketDataService'
 import { venueForStockId } from '@/services/market/explorer/StockCatalogProvider'
 import type { MarketInstrument, MarketVenue } from '@/types/market'
 import { nextExplorerSort, type BinanceSpotQuoteFilter, type ExplorerSortDirection, type ExplorerSortField } from './marketExplorerQuery'
+import { marketExplorerText } from './marketExplorerConfig'
 import styles from './MarketPage.module.css'
 
 function initialVenue(instrument: MarketInstrument): MarketVenue {
@@ -24,7 +26,8 @@ function initialVenue(instrument: MarketInstrument): MarketVenue {
 }
 
 export function MarketPage() {
-  useDocumentTitle('Market Explorer')
+  const { language } = useLanguage()
+  useDocumentTitle(marketExplorerText[language].title)
   const { selectedInstrument, selectedTimeframe, marketDataMode, selectInstrument, clearInstrument, selectTimeframe, setMarketDataMode } = useMarketWorkspace()
   const { favoriteIds, toggleFavorite, trackRecentlyViewed } = useWatchlists()
   const [venue, setVenue] = useState<MarketVenue>(() => selectedInstrument ? initialVenue(selectedInstrument) : 'upbit-krw')
@@ -35,8 +38,8 @@ export function MarketPage() {
   const [sortField, setSortField] = useState<ExplorerSortField>('volume')
   const [sortDirection, setSortDirection] = useState<ExplorerSortDirection>('desc')
   const [spotQuoteFilter, setSpotQuoteFilter] = useState<BinanceSpotQuoteFilter>('USDT')
-  const activeVenue = selectedInstrument ? initialVenue(selectedInstrument) : venue
-  const catalogState = useMarketCatalog(activeVenue, marketDataMode, retry)
+  // The explorer's browsing venue is independent of the active chart instrument.
+  const catalogState = useMarketCatalog(venue, marketDataMode, retry)
   const detailState = useMarketDetailData(selectedInstrument, selectedTimeframe)
 
   const openInstrument = useCallback((instrument: MarketInstrument) => {
@@ -53,12 +56,10 @@ export function MarketPage() {
   const changeVenue = useCallback((next: MarketVenue) => {
     setVenue(next)
     setSearch('')
+  }, [])
+  const returnToExplorer = useCallback(() => {
     clearInstrument()
   }, [clearInstrument])
-  const returnToExplorer = useCallback(() => {
-    if (selectedInstrument) setVenue(initialVenue(selectedInstrument))
-    clearInstrument()
-  }, [clearInstrument, selectedInstrument])
   const changeSortField = useCallback((field: ExplorerSortField) => {
     const next = nextExplorerSort(sortField, sortDirection, field)
     setSortField(next.field)
@@ -67,12 +68,13 @@ export function MarketPage() {
 
   const explorer = (
     <MarketExplorer
-      venue={activeVenue}
+      venue={venue}
       mode={marketDataMode}
       catalog={catalogState.catalog}
       loading={catalogState.loading}
       error={catalogState.error}
       selectedInstrumentId={selectedInstrument?.id ?? null}
+      activeInstrument={selectedInstrument}
       search={search}
       onSearchChange={setSearch}
       favoritesOnly={favoritesOnly}

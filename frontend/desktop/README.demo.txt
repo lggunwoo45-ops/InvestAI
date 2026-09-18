@@ -1,4 +1,4 @@
-InvestAI v0.6.2 Portable Demo
+Market Copilot (InvestAI) v0.6.2 Portable Demo
 ============================
 
 Launcher log
@@ -10,7 +10,7 @@ results, the local health check, shutdown requests, and launcher exceptions.
 How to start
 1. If this file came from the ZIP, extract every file before starting.
 2. Double-click InvestAI_v0.6.2_demo.exe.
-3. Wait a few seconds. InvestAI opens in your default web browser.
+3. Wait a few seconds. Market Copilot opens in your default web browser.
 
 LIVE and MOCK modes
 - LIVE mode needs an internet connection. It uses public Upbit and Binance market feeds.
@@ -25,7 +25,7 @@ How to close
   (Ctrl+Shift+Esc) to end InvestAI_v0.6.2_demo.exe.
 
 Windows SmartScreen
-This demonstration EXE is not digitally signed. Windows may show "Windows protected your PC" even though the file was produced by the InvestAI project. If you trust the file source, choose More info, then Run anyway. Do not run copies received from an untrusted source.
+This demonstration EXE is not digitally signed. Windows may show "Windows protected your PC" even though the file was produced by the Market Copilot project (repository: InvestAI). If you trust the file source, choose More info, then Run anyway. Do not run copies received from an untrusted source.
 
 Troubleshooting: the browser did not open
 The demo runs a local-only server on 127.0.0.1. If double-clicking the EXE does not open a browser:
@@ -36,7 +36,7 @@ The demo runs a local-only server on 127.0.0.1. If double-clicking the EXE does 
    http://127.0.0.1:18463/market
 3. If multiple instances are running, open Task Manager and close InvestAI_v0.6.2_demo.exe, then start the demo again.
 
-Re-launching the EXE reuses an existing InvestAI server instead of starting
+Re-launching the EXE reuses an existing Market Copilot server instead of starting
 another one. The normal URL is http://127.0.0.1:18460/market. You can check
 the active server at http://127.0.0.1:18460/health; it replies InvestAI Demo OK.
 If a different service occupies 18460, the demo warns that it is using a

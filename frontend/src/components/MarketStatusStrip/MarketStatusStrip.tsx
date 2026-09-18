@@ -1,13 +1,15 @@
 import type { MarketRegion } from '@/types/dashboard'
-import { getMarketSessionStatus, marketSessionLabel } from '@/utils/marketSessions'
+import { uiText } from '@/i18n/translations'
+import { useLanguage } from '@/i18n/useLanguage'
+import { getMarketSessionStatus } from '@/utils/marketSessions'
 import styles from './MarketStatusStrip.module.css'
 
-const markets: readonly { region: MarketRegion; label: string }[] = [
-  { region: 'crypto', label: 'Crypto' }, { region: 'korea', label: 'Korea' }, { region: 'us', label: 'US' },
-]
+const markets: readonly MarketRegion[] = ['crypto', 'korea', 'us']
 
 interface MarketStatusStripProps { now: Date }
 
 export function MarketStatusStrip({ now }: MarketStatusStripProps) {
-  return <div className={styles.strip} aria-label="Market sessions">{markets.map((market) => { const status = getMarketSessionStatus(market.region, now); return <span key={market.region} data-status={status}><i />{market.label}<strong>{marketSessionLabel(status)}</strong></span> })}</div>
+  const { language } = useLanguage()
+  const text = uiText[language]
+  return <div className={styles.strip} aria-label={text.marketSessions}>{markets.map((region) => { const status = getMarketSessionStatus(region, now); return <span key={region} data-status={status}><i />{text.sessions[region]}<strong>{text.sessions[status]}</strong></span> })}</div>
 }
