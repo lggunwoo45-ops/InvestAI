@@ -2,7 +2,10 @@ import type { MarketId, MarketInstrument } from '@/types/market'
 
 export type MarketRegion = 'crypto' | 'korea' | 'us'
 export type MarketSessionStatus = 'always-open' | 'open' | 'closed'
-export type NewsCategory = 'crypto' | 'stocks' | 'economy' | 'technology'
+export type NewsCategory = 'crypto' | 'korea-stock' | 'us-stock' | 'macro' | 'technology' | 'ai' | 'earnings' | 'regulation'
+export type NewsSentiment = 'positive' | 'neutral' | 'negative'
+export type NewsImportance = 'low' | 'medium' | 'high'
+export type NewsMarket = MarketRegion | 'macro'
 export type DiscoverSectionId = 'trending' | 'gainers' | 'losers' | 'volume'
 
 export interface MarketPulseItem {
@@ -22,6 +25,13 @@ export interface NewsArticle {
   source: string
   publishedAt: string
   relatedSymbols: readonly string[]
+  relatedMarkets: readonly NewsMarket[]
+  sentiment: NewsSentiment
+  importance: NewsImportance
+  summary: string
+  /** Only HTTPS links may be rendered by the UI. Mock articles do not carry links. */
+  url?: string
+  isMock: boolean
   thumbnailTone?: 'teal' | 'amber' | 'blue' | 'slate'
 }
 
