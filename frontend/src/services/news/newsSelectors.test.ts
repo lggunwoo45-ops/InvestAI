@@ -7,7 +7,7 @@ import { filterNews, newsForInstrument } from './newsSelectors'
 
 describe('news selectors', () => {
   it('keeps mock provenance and resolves only explicitly mapped instrument links', async () => {
-    expect(newsProvider.source).toBe('mock')
+    expect(newsProvider.type).toBe('mock')
     expect(await newsProvider.loadNews()).toBe(newsArticles)
     for (const article of newsArticles) {
       expect(article.isMock).toBe(true)

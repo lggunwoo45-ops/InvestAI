@@ -40,8 +40,13 @@ interface UiStrings {
     filters: string; marketFilter: string; sentiment: string; relatedSymbols: string; relatedMarkets: string; loading: string
     openInMarket: string; viewSymbol: string; details: string; hideDetails: string; externalSource: string
     noRelated: string; analysisInactive: string; allMarkets: string; allSentiments: string; allImportance: string
-    sentiments: { positive: string; neutral: string; negative: string }
-    importanceLevels: { high: string; medium: string; low: string }
+    sentiments: { positive: string; neutral: string; negative: string; unassessed: string }
+    importanceLevels: { high: string; medium: string; low: string; unassessed: string }
+    provider: {
+      title: string; mock: string; rssReady: string; rssUnavailable: string; notConfigured: string
+      realRss: string; lastUpdated: string; fallback: string; error: string; source: string
+      publishedTime: string; relatedUnavailable: string; unassessed: string
+    }
   }
   copilot: {
     title: string; context: string; none: string; company: string; scenario: string
@@ -79,7 +84,13 @@ export const uiText = {
       filters: 'News filters', marketFilter: 'Market', sentiment: 'Sentiment', relatedSymbols: 'Related Symbols', relatedMarkets: 'Related Markets', loading: 'Loading demo news…',
       openInMarket: 'Open in Market', viewSymbol: 'View symbol', details: 'Read details', hideDetails: 'Hide details', externalSource: 'Open source article',
       noRelated: 'No related demo news yet.', analysisInactive: 'AI analysis is not active yet.', allMarkets: 'All markets', allSentiments: 'All sentiments', allImportance: 'All importance levels',
-      sentiments: { positive: 'Positive', neutral: 'Neutral', negative: 'Negative' }, importanceLevels: { high: 'High', medium: 'Medium', low: 'Low' },
+      sentiments: { positive: 'Positive', neutral: 'Neutral', negative: 'Negative', unassessed: 'Not assessed' }, importanceLevels: { high: 'High', medium: 'Medium', low: 'Low', unassessed: 'Not assessed' },
+      provider: {
+        title: 'News provider', mock: 'Mock', rssReady: 'RSS Ready', rssUnavailable: 'RSS unavailable', notConfigured: 'Provider not configured',
+        realRss: 'Real RSS news', lastUpdated: 'Last updated', fallback: 'Using demo news because real news provider is unavailable.',
+        error: 'Approved RSS feed URLs and transport are not configured.', source: 'Source', publishedTime: 'Published time',
+        relatedUnavailable: 'Related symbols unavailable', unassessed: 'Not assessed',
+      },
     },
     copilot: {
       title: 'AI Copilot', context: 'Context', none: 'No market selected', company: 'Company research context', scenario: 'Market scenario context',
@@ -117,7 +128,13 @@ export const uiText = {
       filters: '뉴스 필터', marketFilter: '시장', sentiment: '감성', relatedSymbols: '관련 종목', relatedMarkets: '관련 시장', loading: '데모 뉴스를 불러오는 중…',
       openInMarket: '마켓에서 열기', viewSymbol: '종목 보기', details: '자세히 보기', hideDetails: '접기', externalSource: '원문 열기',
       noRelated: '관련 데모 뉴스가 아직 없습니다.', analysisInactive: 'AI 분석은 아직 활성화되지 않았습니다.', allMarkets: '전체 시장', allSentiments: '전체 감성', allImportance: '전체 중요도',
-      sentiments: { positive: '긍정', neutral: '중립', negative: '부정' }, importanceLevels: { high: '높음', medium: '보통', low: '낮음' },
+      sentiments: { positive: '긍정', neutral: '중립', negative: '부정', unassessed: '평가되지 않음' }, importanceLevels: { high: '높음', medium: '보통', low: '낮음', unassessed: '평가되지 않음' },
+      provider: {
+        title: '뉴스 제공자', mock: '모의', rssReady: 'RSS 준비', rssUnavailable: 'RSS 이용 불가', notConfigured: '제공자 미설정',
+        realRss: '실제 RSS 뉴스', lastUpdated: '마지막 갱신', fallback: '실제 뉴스 제공자를 사용할 수 없어 데모 뉴스를 표시합니다.',
+        error: '승인된 RSS 피드 주소와 전송 방식이 설정되지 않았습니다.', source: '출처', publishedTime: '게시 시간',
+        relatedUnavailable: '관련 종목 정보 없음', unassessed: '평가되지 않음',
+      },
     },
     copilot: {
       title: 'AI 코파일럿', context: '분석 대상', none: '선택된 종목 없음', company: '기업 리서치 맥락', scenario: '시장 시나리오 맥락',

@@ -25,6 +25,7 @@ export const NewsCard = memo(function NewsCard({ article }: NewsCardProps) {
         <p className={styles.summary}>{article.summary}</p>
         <footer><strong>{article.source}</strong><time dateTime={article.publishedAt}>{published}</time></footer>
         <div className={styles.symbols} aria-label={text.relatedSymbols}>
+          {article.relatedSymbols.length === 0 && <span>{text.provider.relatedUnavailable}</span>}
           {article.relatedSymbols.map((symbol) => {
             const id = article.relatedInstrumentIds?.[symbol]
             return id && canOpenInstrument(id)
@@ -35,13 +36,14 @@ export const NewsCard = memo(function NewsCard({ article }: NewsCardProps) {
         <button className={styles.detailsToggle} type="button" aria-expanded={expanded} onClick={() => setExpanded((value) => !value)}>{expanded ? text.hideDetails : text.details}</button>
         {expanded && <div className={styles.details}>
           <dl>
-            <div><dt>{text.categories[article.category]}</dt><dd>{article.source}</dd></div>
+            <div><dt>{text.provider.source}</dt><dd>{article.source}</dd></div>
+            <div><dt>{text.provider.publishedTime}</dt><dd>{published}</dd></div>
             <div><dt>{text.sentiment}</dt><dd>{text.sentiments[article.sentiment]}</dd></div>
             <div><dt>{text.importance}</dt><dd>{text.importanceLevels[article.importance]}</dd></div>
             <div><dt>{text.relatedMarkets}</dt><dd>{article.relatedMarkets.map((market) => market === 'macro' ? text.categories.macro : uiText[language].sessions[market]).join(' · ')}</dd></div>
           </dl>
           <p>{text.summary}: {article.summary}</p>
-          <p>{article.isMock ? text.demo : null} · {uiText[language].briefing.trust} {uiText[language].briefing.finalDecision}</p>
+          <p>{article.isMock && `${text.demo} · `}{uiText[language].briefing.trust} {uiText[language].briefing.finalDecision}</p>
           {href && <a href={href} target="_blank" rel="noopener noreferrer">{text.externalSource} ↗</a>}
         </div>}
       </div>

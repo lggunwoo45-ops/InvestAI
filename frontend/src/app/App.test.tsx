@@ -251,6 +251,20 @@ describe('Market Copilot application shell', () => {
     expect(screen.getByText('Demo news / Mock data')).toBeTruthy()
   })
 
+  it('shows RSS unavailability and explicitly falls back to demo news without losing filters', async () => {
+    window.history.pushState({}, '', '/news')
+    render(<App />)
+    expect(await screen.findByText(/Global markets assess a possible rates path/)).toBeTruthy()
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search news' }), { target: { value: 'rates' } })
+    fireEvent.click(screen.getByRole('button', { name: 'RSS Ready' }))
+    expect(await screen.findByText('RSS unavailable')).toBeTruthy()
+    expect(screen.getByRole('alert').textContent).toContain('Using demo news')
+    expect((screen.getByRole('searchbox', { name: 'Search news' }) as HTMLInputElement).value).toBe('rates')
+    expect(screen.getByText(/Global markets assess a possible rates path/)).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Mock' }))
+    expect(await screen.findByText('Mock', { selector: 'strong[role="status"]' })).toBeTruthy()
+  })
+
   it('keeps the active instrument while reading News and changes it only on a related-symbol click', async () => {
     render(<App />)
     fireEvent.click(screen.getByRole('button', { name: 'MOCK' }))
