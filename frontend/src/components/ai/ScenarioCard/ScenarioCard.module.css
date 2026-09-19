@@ -2,9 +2,9 @@
 .card header { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 9px 10px; border-bottom: 1px solid #273542; }
 .card header strong { color: #c2d0d8; font-size: 10px; }
 .card header span { color: #667586; font-size: 8px; }
-.card[data-scenario='bullish'] header { border-left: 2px solid #5b8d7f; }
-.card[data-scenario='neutral'] header { border-left: 2px solid #777f8b; }
-.card[data-scenario='bearish'] header { border-left: 2px solid #8f6268; }
+.card header > div { display: flex; align-items: center; gap: 6px; }
+.card header .status { padding: 3px 5px; border: 1px solid #46535e; color: #aab5bd; background: #171f27; font-weight: 650; }
+.card[data-scenario] header { border-left: 2px solid #66747f; }
 .card > p { margin: 0; padding: 9px 10px; color: #98a7b4; font-size: 9px; line-height: 1.5; }
 .card dl { margin: 0; padding: 0 10px 9px; }
 .card dl > div { padding: 7px 0; border-top: 1px solid #202d38; }

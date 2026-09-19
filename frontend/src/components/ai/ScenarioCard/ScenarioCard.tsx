@@ -8,7 +8,7 @@ interface ScenarioCardProps { scenario: AiScenarioItem; language: Language }
 export function ScenarioCard({ scenario, language }: ScenarioCardProps) {
   const text = uiText[language].copilot
   return <article className={styles.card} data-scenario={scenario.kind}>
-    <header><strong>{scenario.label}</strong><span>{scenario.probability === null ? text.probabilityPending : `${scenario.probability}%`}</span></header>
+    <header><strong>{scenario.label}</strong><div><span className={styles.status}>{text.statusLabels[scenario.status]}</span><span>{scenario.probability === null ? text.probabilityPending : `${scenario.probability}%`}</span></div></header>
     <p>{scenario.summary}</p>
     <dl>
       <div><dt>{text.supportingConditions}</dt><dd><ul>{scenario.conditions.map((item) => <li key={item}>{item}</li>)}</ul></dd></div>

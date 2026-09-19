@@ -40,15 +40,7 @@ export function AiCopilot() {
       <div className={styles.content}>
         {selectedInstrument ? (
           <div className={styles.analysis}>
-            <div className={styles.instrumentHeader}>
-              <span>{displayedInstrument!.marketId.replace('-', ' ')}</span>
-              <h2>{displayedInstrument!.symbol}</h2>
-              <p>{displayedInstrument!.name}</p>
-            </div>
-
             <dl className={styles.marketFacts}>
-              <div><dt>{uiText[language].detail.market}</dt><dd>{displayedInstrument!.marketId.replace('-', ' ')}</dd></div>
-              <div><dt>{text.timeframe}</dt><dd>{selectedTimeframe}</dd></div>
               <div><dt>{text.price}</dt><dd>{formatMarketPrice(displayedInstrument!)}</dd></div>
               <div>
                 <dt>{text.change}</dt>
@@ -58,7 +50,7 @@ export function AiCopilot() {
               </div>
             </dl>
 
-            <AiForecastPanel instrument={displayedInstrument!} timeframe={scenarioTimeframe} />
+            <AiForecastPanel instrument={displayedInstrument!} timeframe={scenarioTimeframe} displayTimeframe={selectedTimeframe} />
 
             <InstrumentRelatedNews instrument={displayedInstrument!} />
 

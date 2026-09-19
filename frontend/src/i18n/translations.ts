@@ -63,6 +63,12 @@ interface UiStrings {
     rationale: string; supportingConditions: string; riskNote: string; probabilityPending: string
     confidencePending: string; possiblePaths: string; planningReference: string; planningOnly: string
     analysisInactive: string; selectScenario: string; relatedDemoConsidered: string
+    scenarioMap: string; evidenceCheck: string; priceAction: string; volumeEvidence: string
+    newsContext: string; marketRegime: string; missingEvidence: string; mockPlaceholder: string
+    demoOnly: string; missingConnections: string; incompleteEvidence: string; aiInactive: string
+    scenarioStatus: string; lastGenerated: string; statusLabels: { watch: string; wait: string; risk: string; neutral: string }
+    notInstruction: string; ownRiskControl: string; waitConfirmation: string; analysisUnavailable: string
+    demoNewsBoundary: string
     bias: { bullish: string; neutral: string; bearish: string; mixed: string }
     analysisTimeframes: { short: string; medium: string; long: string }
   }
@@ -115,12 +121,18 @@ export const uiText = {
       judgment: 'AI confidence and explanations require human judgment.',
       whyMatters: 'Why this market matters', bullish: 'Bullish scenario', neutral: 'Neutral scenario', bearish: 'Bearish scenario', watchConditions: 'Watch conditions',
       riskFactors: 'Risk factors', entryPlanning: 'Possible entry planning reference', firstInterest: '1st interest area', secondInterest: '2nd interest area',
-      invalidation: 'Invalidation / stop condition', targetArea: 'Target / take-profit area', pending: 'Placeholder — no AI analysis active',
+      invalidation: 'Invalidation condition', targetArea: 'Target / observation area', pending: 'Placeholder — no AI analysis active',
       noAdvice: 'Demo only · Not investment advice · You make the final decision.',
       forecast: 'AI Forecast', scenarioAnalysis: 'Scenario Analysis', mockScenario: 'Mock scenario', marketBias: 'Market bias',
       rationale: 'Rationale', supportingConditions: 'Supporting conditions', riskNote: 'Risk note', probabilityPending: 'No probability · placeholder',
       confidencePending: 'Placeholder · no AI score', possiblePaths: 'Possible paths, not a prediction', planningReference: 'Planning Reference', planningOnly: 'Planning reference only',
-      analysisInactive: 'AI analysis is not active yet.', selectScenario: 'Select an instrument to view scenario analysis.', relatedDemoConsidered: 'Related demo news considered',
+      analysisInactive: 'AI analysis is not active yet.', selectScenario: 'Select an instrument from Market Explorer to view scenario analysis.', relatedDemoConsidered: 'Related demo news considered',
+      scenarioMap: 'Scenario Map', evidenceCheck: 'Evidence Check', priceAction: 'Price action', volumeEvidence: 'Volume',
+      newsContext: 'News context', marketRegime: 'Market regime', missingEvidence: 'Missing evidence', mockPlaceholder: 'Mock placeholder',
+      demoOnly: 'Demo only', missingConnections: 'Real AI and real news backend are not connected yet.', incompleteEvidence: 'Incomplete evidence', aiInactive: 'AI inactive',
+      scenarioStatus: 'Scenario status', lastGenerated: 'Last generated', statusLabels: { watch: 'Watch', wait: 'Wait', risk: 'Risk', neutral: 'Neutral' },
+      notInstruction: 'Not a buy/sell instruction', ownRiskControl: 'Use with your own risk control', waitConfirmation: 'Consider waiting for confirmation.', analysisUnavailable: 'Mock scenario analysis is temporarily unavailable.',
+      demoNewsBoundary: 'Demo news only — real news analysis is not active yet.',
       bias: { bullish: 'Bullish', neutral: 'Neutral', bearish: 'Bearish', mixed: 'Mixed' },
       analysisTimeframes: { short: 'Short', medium: 'Medium', long: 'Long' },
     },
@@ -170,12 +182,18 @@ export const uiText = {
       judgment: 'AI 확신도와 설명에는 사람의 판단이 필요합니다.',
       whyMatters: '이 시장이 중요한 이유', bullish: '상승 시나리오', neutral: '중립 시나리오', bearish: '하락 시나리오', watchConditions: '관찰 조건',
       riskFactors: '위험 요인', entryPlanning: '가능한 진입 계획 참고', firstInterest: '1차 관심 구간', secondInterest: '2차 관심 구간',
-      invalidation: '무효화 / 손절 조건', targetArea: '목표 / 이익실현 구간', pending: '준비 중 — AI 분석 비활성',
+      invalidation: '무효화 조건', targetArea: '목표 / 관찰 영역', pending: '준비 중 — AI 분석 비활성',
       noAdvice: '데모 전용 · 투자 조언 아님 · 최종 결정은 사용자가 합니다.',
       forecast: 'AI 전망', scenarioAnalysis: '시나리오 분석', mockScenario: '모의 시나리오', marketBias: '시장 성향',
       rationale: '근거', supportingConditions: '시나리오 지지 조건', riskNote: '위험 참고', probabilityPending: '확률 없음 · 자리표시자',
       confidencePending: '자리표시자 · AI 점수 없음', possiblePaths: '예측이 아닌 가능한 경로', planningReference: '계획 참고', planningOnly: '계획 참고용',
-      analysisInactive: 'AI 분석은 아직 활성화되지 않았습니다.', selectScenario: '시나리오 분석을 보려면 종목을 선택하세요.', relatedDemoConsidered: '관련 데모 뉴스 참고',
+      analysisInactive: 'AI 분석은 아직 활성화되지 않았습니다.', selectScenario: '시나리오 분석을 보려면 마켓 익스플로러에서 종목을 선택하세요.', relatedDemoConsidered: '관련 데모 뉴스 참고',
+      scenarioMap: '시나리오 맵', evidenceCheck: '근거 확인', priceAction: '가격 움직임', volumeEvidence: '거래량',
+      newsContext: '뉴스 맥락', marketRegime: '시장 국면', missingEvidence: '부족한 근거', mockPlaceholder: '모의 자리표시자',
+      demoOnly: '데모 전용', missingConnections: '실제 AI와 실제 뉴스 백엔드는 아직 연결되지 않았습니다.', incompleteEvidence: '불완전한 근거', aiInactive: 'AI 비활성',
+      scenarioStatus: '시나리오 상태', lastGenerated: '마지막 생성', statusLabels: { watch: '관찰', wait: '대기', risk: '위험', neutral: '중립' },
+      notInstruction: '매수·매도 지시가 아닙니다', ownRiskControl: '본인의 위험 관리 원칙과 함께 사용하세요', waitConfirmation: '확인 신호를 기다리는 것을 고려하세요.', analysisUnavailable: '모의 시나리오 분석을 일시적으로 표시할 수 없습니다.',
+      demoNewsBoundary: '데모 뉴스 전용 — 실제 뉴스 분석은 아직 활성화되지 않았습니다.',
       bias: { bullish: '상승', neutral: '중립', bearish: '하락', mixed: '혼재' },
       analysisTimeframes: { short: '단기', medium: '중기', long: '장기' },
     },

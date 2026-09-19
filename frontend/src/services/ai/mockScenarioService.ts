@@ -20,6 +20,11 @@ const copy = {
       neutral: 'Price may consolidate while the market waits for clearer confirmation.',
       bearish: 'The scenario may weaken if support and participation deteriorate.',
     },
+    scenarioMap: {
+      bullish: 'Needs momentum and participation confirmation.',
+      neutral: 'May remain range-bound while evidence stays mixed.',
+      bearish: 'Risk increases if observed support conditions weaken.',
+    },
     conditions: {
       bullish: ['Participation remains constructive', 'Momentum holds above the observed support area'],
       neutral: ['Mixed momentum persists', 'No decisive break from the current range'],
@@ -56,6 +61,11 @@ const copy = {
       neutral: '더 명확한 확인 신호를 기다리며 가격이 횡보할 수 있습니다.',
       bearish: '지지 조건과 시장 참여가 약해지면 시나리오가 악화될 수 있습니다.',
     },
+    scenarioMap: {
+      bullish: '모멘텀과 시장 참여의 확인이 필요합니다.',
+      neutral: '근거가 혼재된 동안 범위 안에 머물 수 있습니다.',
+      bearish: '관찰된 지지 조건이 약해지면 위험이 커집니다.',
+    },
     conditions: {
       bullish: ['시장 참여가 양호하게 유지됨', '관찰된 지지 영역 위에서 모멘텀이 유지됨'],
       neutral: ['혼재된 모멘텀이 지속됨', '현재 범위를 명확하게 벗어나지 않음'],
@@ -82,6 +92,7 @@ export function createMockScenarioAnalysis(instrument: MarketInstrument, languag
   const context = instrument.marketId === 'upbit' || instrument.marketId.startsWith('binance') ? text.crypto : text.stock
   const scenario = (kind: AiScenarioKind) => ({
     kind,
+    status: kind === 'bullish' ? 'watch' as const : kind === 'neutral' ? 'wait' as const : 'risk' as const,
     label: text.labels[kind],
     probability: null,
     summary: text.summaries[kind],
@@ -97,16 +108,31 @@ export function createMockScenarioAnalysis(instrument: MarketInstrument, languag
 
   return {
     instrumentId: instrument.id,
-    generatedAt: new Date(0).toISOString(),
+    generatedAt: new Date().toISOString(),
     providerMode: 'mock',
     confidence: null,
     marketBias: 'mixed',
     timeframe,
     scenarios,
+    scenarioMap: text.scenarioMap,
     rationale: context.rationale,
     watchConditions: context.watch,
     riskFactors: context.risks,
     tradePlan: text.plan,
+    evidence: {
+      priceAction: 'mock-placeholder',
+      volume: 'mock-placeholder',
+      newsContext: 'demo-only',
+      marketRegime: 'mock-placeholder',
+      missingEvidence: ['real-ai', 'real-news-backend'],
+    },
     disclaimer: text.disclaimer,
   }
+}
+
+/** Invalid or incomplete catalog data must degrade to an unavailable state instead of crashing the panel. */
+export function safelyCreateMockScenarioAnalysis(instrument: MarketInstrument, language: Language, timeframe: AiScenarioTimeframe): AiScenarioAnalysis | null {
+  if (!instrument.id.trim() || !instrument.symbol.trim() || !instrument.name.trim()) return null
+  try { return createMockScenarioAnalysis(instrument, language, timeframe) }
+  catch { return null }
 }

@@ -21,6 +21,6 @@ export function InstrumentRelatedNews({ instrument }: InstrumentRelatedNewsProps
     {!dashboard ? <p>{text.loading}</p> : articles.length ? <ul>{articles.map((article) =>
       <li key={article.id}><Link to="/news" state={{ query: article.title }}><span>{article.title}</span><small>{article.source}</small></Link></li>)}</ul>
       : <p>{text.noRelated}</p>}
-    <small className={styles.boundary}>{text.analysisInactive} {uiText[language].briefing.trust}</small>
+    <small className={styles.boundary}>{uiText[language].copilot.demoNewsBoundary} {uiText[language].briefing.trust}</small>
   </section>
 }
