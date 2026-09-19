@@ -1,18 +1,29 @@
+import { useMemo } from 'react'
+
 import { EmptyState } from '@/components/EmptyState/EmptyState'
 import { Icon } from '@/components/Icon/Icon'
+import { AiAnalysisFoundation } from '@/components/ai/AiAnalysisFoundation/AiAnalysisFoundation'
 import { AiForecastPanel } from '@/components/ai/AiForecastPanel/AiForecastPanel'
 import { InstrumentRelatedNews } from '@/components/news/InstrumentRelatedNews/InstrumentRelatedNews'
+import { useDashboardData } from '@/hooks/useDashboardData'
 import { useMarketWorkspace } from '@/hooks/useMarketWorkspace'
+import { useNewsProviderMode } from '@/hooks/useNewsProviderMode'
 import { useUiStore } from '@/hooks/useUiStore'
 import { uiText } from '@/i18n/translations'
 import { useLanguage } from '@/i18n/useLanguage'
+import { buildAiAnalysisContext } from '@/services/ai/aiAnalysisContextBuilder'
+import { createMockAiAnalysis } from '@/services/ai/mockAiAnalysisEngine'
+import { safelyCreateMockScenarioAnalysis } from '@/services/ai/mockScenarioService'
+import { newsForInstrument } from '@/services/news/newsSelectors'
 import { formatMarketChange, formatMarketPrice } from '@/utils/formatMarketValue'
 import type { AiScenarioTimeframe } from '@/types/aiScenario'
 import styles from './AiCopilot.module.css'
 
 export function AiCopilot() {
   const { toggleAiCopilot } = useUiStore()
-  const { selectedInstrument, selectedTimeframe, activeMarketState } = useMarketWorkspace()
+  const { selectedInstrument, selectedTimeframe, activeMarketState, marketDataMode } = useMarketWorkspace()
+  const { mode: newsProviderMode } = useNewsProviderMode()
+  const dashboard = useDashboardData()
   const { language } = useLanguage()
   const text = uiText[language].copilot
   const liveInstrument = activeMarketState?.snapshot?.instrument
@@ -21,6 +32,18 @@ export function AiCopilot() {
   const isStock = displayedInstrument?.marketId === 'korea-stock' || displayedInstrument?.marketId === 'us-stock'
   const scenarioTimeframe: AiScenarioTimeframe = selectedTimeframe === '1D' ? 'long'
     : selectedTimeframe === '4H' ? 'medium' : 'short'
+  const scenarioAnalysis = useMemo(() => displayedInstrument ? safelyCreateMockScenarioAnalysis(displayedInstrument, language, scenarioTimeframe) : null, [displayedInstrument, language, scenarioTimeframe])
+  const relatedNews = useMemo(() => displayedInstrument ? newsForInstrument(dashboard?.news ?? [], displayedInstrument) : [], [dashboard?.news, displayedInstrument])
+  const analysisContext = useMemo(() => buildAiAnalysisContext({
+    instrument: displayedInstrument ?? null,
+    scenario: scenarioAnalysis,
+    relatedNews,
+    newsProviderMode,
+    marketDataMode,
+    connectionStatus: activeMarketState?.connection.status,
+    language,
+  }), [activeMarketState?.connection.status, displayedInstrument, language, marketDataMode, newsProviderMode, relatedNews, scenarioAnalysis])
+  const foundationResult = useMemo(() => analysisContext.status === 'ready' ? createMockAiAnalysis(analysisContext.input, language) : null, [analysisContext, language])
 
   return (
     <aside className={`${styles.copilot} ${isStock ? styles.stockContext : ''}`} aria-label="AI Copilot">
@@ -50,7 +73,9 @@ export function AiCopilot() {
               </div>
             </dl>
 
-            <AiForecastPanel instrument={displayedInstrument!} timeframe={scenarioTimeframe} displayTimeframe={selectedTimeframe} />
+            <AiForecastPanel instrument={displayedInstrument!} timeframe={scenarioTimeframe} displayTimeframe={selectedTimeframe} analysis={scenarioAnalysis} />
+
+            {analysisContext.status === 'ready' && foundationResult && <AiAnalysisFoundation input={analysisContext.input} result={foundationResult} language={language} />}
 
             <InstrumentRelatedNews instrument={displayedInstrument!} />
 

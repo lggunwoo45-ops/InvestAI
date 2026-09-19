@@ -1,0 +1,26 @@
+.panel { display: grid; gap: 9px; padding: 10px; border: 1px solid #2a3b48; background: #0d151d; }
+.panel > header { display: flex; align-items: start; justify-content: space-between; gap: 8px; padding-bottom: 8px; border-bottom: 1px solid #25333e; }
+.panel > header > div:first-child { display: grid; gap: 3px; }
+.panel header strong { color: #c2d1d5; font-size: 10px; }
+.panel header span { color: #73858f; font-size: 7px; }
+.badges { display: flex; flex-wrap: wrap; justify-content: end; gap: 3px; }
+.badges span { padding: 3px 4px; border: 1px solid #5a4e38; color: #baa576; white-space: nowrap; }
+.badges span:last-child { border-color: #454e59; color: #87939e; }
+.inactive, .resultSummary, .panel section p { margin: 0; color: #84949e; font-size: 8px; line-height: 1.5; }
+.inactive { padding: 7px 8px; border-left: 2px solid #756441; background: #17170f; color: #a99c7c; }
+.summary { display: flex; justify-content: space-between; gap: 8px; color: #72828e; font-size: 8px; }
+.summary strong { color: #aebdc4; font-weight: 600; text-align: right; }
+.panel h3 { margin: 0 0 6px; color: #9aabb2; font-size: 8px; text-transform: uppercase; }
+.panel ul { display: grid; gap: 3px; margin: 0; padding-left: 14px; color: #82929d; font-size: 8px; line-height: 1.4; }
+.reason { padding-left: 8px; border-left: 2px solid #4d6a65; }
+.evidence, .package dl { display: grid; margin: 0; border: 1px solid #23313d; }
+.evidence div, .package dl div { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 7px; border-bottom: 1px solid #202c36; }
+.evidence div:last-child, .package dl div:last-child { border-bottom: 0; }
+.evidence dt, .package dt { color: #7e8e99; font-size: 8px; }
+.evidence dd, .package dd { margin: 0; color: #91aaa5; font-size: 8px; text-align: right; }
+.evidence [data-status='missing'] dd, .package [data-status='missing'] dd { color: #a78b76; }
+.evidence [data-status='demo'] dd, .package [data-status='demo'] dd { color: #aa9e76; }
+.package { border: 1px solid #2a3945; }
+.package summary { padding: 8px; color: #9dabb3; font-size: 8px; font-weight: 650; cursor: pointer; }
+.package dl { border: 0; border-top: 1px solid #24323c; }
+.disclaimer { margin: 0; color: #6f7f8a; font-size: 7px; text-align: center; }

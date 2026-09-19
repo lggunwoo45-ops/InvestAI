@@ -65,6 +65,13 @@ describe('Market Copilot application shell', () => {
     expect(copilot.textContent).toContain('Planning Reference')
     expect(copilot.textContent).toContain('Scenario Map')
     expect(copilot.textContent).toContain('Evidence Check')
+    expect(copilot.textContent).toContain('AI Analysis Foundation')
+    expect(copilot.textContent).toContain('Analysis Input Package')
+    expect(copilot.textContent).toContain('Evidence used')
+    expect(copilot.textContent).toContain('Missing evidence')
+    expect(copilot.textContent).toContain('Real AI model')
+    expect(copilot.textContent).toContain('Real news backend')
+    expect(copilot.textContent).toContain('Real AI analysis is not connected yet')
     expect(copilot.textContent).toContain('Not a buy/sell instruction')
     expect(copilot.textContent).toContain('Use with your own risk control')
     expect(copilot.textContent).toContain('Related demo news considered')
@@ -75,6 +82,9 @@ describe('Market Copilot application shell', () => {
     expect(copilot.textContent).toContain('시나리오 맵')
     expect(copilot.textContent).toContain('근거 확인')
     expect(copilot.textContent).toContain('매수·매도 지시가 아닙니다')
+    expect(copilot.textContent).toContain('AI 분석 기반')
+    expect(copilot.textContent).toContain('분석 입력 패키지')
+    expect(copilot.textContent).toContain('실제 AI 모델')
   })
 
   it('keeps an explicit mock mode for supported live markets', async () => {
