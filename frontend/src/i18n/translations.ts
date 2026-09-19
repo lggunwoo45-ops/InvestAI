@@ -70,6 +70,13 @@ interface UiStrings {
     scenarioStatus: string; lastGenerated: string; statusLabels: { watch: string; wait: string; risk: string; neutral: string }
     notInstruction: string; ownRiskControl: string; waitConfirmation: string; analysisUnavailable: string
     demoNewsBoundary: string
+    analysisFoundation: {
+      title: string; status: string; mockAnalysis: string; realAiInactive: string; inputPackage: string
+      evidenceUsed: string; missingEvidence: string; watchReason: string; riskSummary: string; nextWatchPoints: string
+      priceData: string; newsData: string; scenarioData: string; aiModel: string; newsBackend: string; portfolioContext: string
+      notConnected: string; demoOnly: string; available: string; missing: string; inactiveMessage: string; futurePackage: string
+      disclaimer: string; finalDecision: string
+    }
     bias: { bullish: string; neutral: string; bearish: string; mixed: string }
     analysisTimeframes: { short: string; medium: string; long: string }
   }
@@ -135,6 +142,13 @@ export const uiText = {
       scenarioStatus: 'Scenario status', lastGenerated: 'Last generated', statusLabels: { watch: 'Watch', wait: 'Wait', risk: 'Risk', neutral: 'Neutral' },
       notInstruction: 'Not a buy/sell instruction', ownRiskControl: 'Use with your own risk control', waitConfirmation: 'Consider waiting for confirmation.', analysisUnavailable: 'Mock scenario analysis is temporarily unavailable.',
       demoNewsBoundary: 'Demo news only — real news analysis is not active yet.',
+      analysisFoundation: {
+        title: 'AI Analysis Foundation', status: 'Analysis status', mockAnalysis: 'Mock analysis', realAiInactive: 'Real AI not active', inputPackage: 'Analysis Input Package',
+        evidenceUsed: 'Evidence used', missingEvidence: 'Missing evidence', watchReason: 'Watch reason', riskSummary: 'Risk summary', nextWatchPoints: 'Next watch points',
+        priceData: 'Price data', newsData: 'News data', scenarioData: 'Scenario data', aiModel: 'AI model', newsBackend: 'News backend', portfolioContext: 'Portfolio context',
+        notConnected: 'Not connected', demoOnly: 'Demo only', available: 'Available', missing: 'Missing', inactiveMessage: 'Real AI analysis is not connected yet. This panel shows the structure and evidence package that a future AI model will use.',
+        futurePackage: 'Future AI model will use this evidence package', disclaimer: 'Not investment advice', finalDecision: 'User makes final decision',
+      },
       bias: { bullish: 'Bullish', neutral: 'Neutral', bearish: 'Bearish', mixed: 'Mixed' },
       analysisTimeframes: { short: 'Short', medium: 'Medium', long: 'Long' },
     },
@@ -197,6 +211,13 @@ export const uiText = {
       scenarioStatus: '시나리오 상태', lastGenerated: '마지막 생성', statusLabels: { watch: '관찰', wait: '대기', risk: '위험', neutral: '중립' },
       notInstruction: '매수·매도 지시가 아닙니다', ownRiskControl: '본인의 위험 관리 원칙과 함께 사용하세요', waitConfirmation: '확인 신호를 기다리는 것을 고려하세요.', analysisUnavailable: '모의 시나리오 분석을 일시적으로 표시할 수 없습니다.',
       demoNewsBoundary: '데모 뉴스 전용 — 실제 뉴스 분석은 아직 활성화되지 않았습니다.',
+      analysisFoundation: {
+        title: 'AI 분석 기반', status: '분석 상태', mockAnalysis: '모의 분석', realAiInactive: '실제 AI 비활성', inputPackage: '분석 입력 패키지',
+        evidenceUsed: '사용된 근거', missingEvidence: '부족한 근거', watchReason: '관찰 이유', riskSummary: '위험 요약', nextWatchPoints: '다음 관찰 항목',
+        priceData: '가격 데이터', newsData: '뉴스 데이터', scenarioData: '시나리오 데이터', aiModel: 'AI 모델', newsBackend: '뉴스 백엔드', portfolioContext: '포트폴리오 맥락',
+        notConnected: '연결되지 않음', demoOnly: '데모 전용', available: '사용 가능', missing: '없음', inactiveMessage: '실제 AI 분석은 아직 연결되지 않았습니다. 현재 화면은 향후 AI 모델이 사용할 분석 구조와 근거 패키지를 보여줍니다.',
+        futurePackage: '향후 AI 모델이 이 근거 패키지를 사용합니다', disclaimer: '투자 조언이 아닙니다', finalDecision: '최종 결정은 사용자가 합니다',
+      },
       bias: { bullish: '상승', neutral: '중립', bearish: '하락', mixed: '혼재' },
       analysisTimeframes: { short: '단기', medium: '중기', long: '장기' },
     },

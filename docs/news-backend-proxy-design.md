@@ -154,7 +154,7 @@ Structured logs and metrics should record request ID, provider ID, duration, cac
 ## Deferred implementation sequence
 
 1. Approve source policy and contract with legal/security review.
-2. Implement the contract as a local-only Sprint 9.3 prototype using fixture-backed adapters.
+2. Implement the contract as a local-only Sprint 9.4 prototype using fixture-backed adapters.
 3. Add one approved real adapter behind a disabled feature flag and deterministic tests.
 4. Validate freshness, attribution, cache, failure, and operational controls.
 5. Consider hosted deployment only after an explicit security and production-readiness review.

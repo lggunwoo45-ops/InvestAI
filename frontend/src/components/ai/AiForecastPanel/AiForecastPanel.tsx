@@ -7,16 +7,17 @@ import { TradePlanningReference } from '@/components/ai/TradePlanningReference/T
 import { useLanguage } from '@/i18n/useLanguage'
 import { uiText } from '@/i18n/translations'
 import { safelyCreateMockScenarioAnalysis } from '@/services/ai/mockScenarioService'
-import type { AiScenarioTimeframe } from '@/types/aiScenario'
+import type { AiScenarioAnalysis, AiScenarioTimeframe } from '@/types/aiScenario'
 import type { MarketInstrument } from '@/types/market'
 import styles from './AiForecastPanel.module.css'
 
-interface AiForecastPanelProps { instrument: MarketInstrument; timeframe: AiScenarioTimeframe; displayTimeframe: string }
+interface AiForecastPanelProps { instrument: MarketInstrument; timeframe: AiScenarioTimeframe; displayTimeframe: string; analysis?: AiScenarioAnalysis | null }
 
-export function AiForecastPanel({ instrument, timeframe, displayTimeframe }: AiForecastPanelProps) {
+export function AiForecastPanel({ instrument, timeframe, displayTimeframe, analysis: providedAnalysis }: AiForecastPanelProps) {
   const { language } = useLanguage()
   const text = uiText[language].copilot
-  const analysis = useMemo(() => safelyCreateMockScenarioAnalysis(instrument, language, timeframe), [instrument, language, timeframe])
+  const generatedAnalysis = useMemo(() => safelyCreateMockScenarioAnalysis(instrument, language, timeframe), [instrument, language, timeframe])
+  const analysis = providedAnalysis === undefined ? generatedAnalysis : providedAnalysis
   if (!analysis) return <section className={styles.unavailable} aria-label={text.scenarioAnalysis}><strong>{text.scenarioAnalysis}</strong><p>{text.analysisUnavailable}</p><small>{text.analysisInactive}</small></section>
   const generatedAt = new Intl.DateTimeFormat(language === 'ko' ? 'ko-KR' : 'en-US', { hour: '2-digit', minute: '2-digit' }).format(new Date(analysis.generatedAt))
   return <section className={styles.forecast} aria-label={text.scenarioAnalysis}>
