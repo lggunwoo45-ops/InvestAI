@@ -50,7 +50,7 @@ export function MarketBriefingPage() {
     <p className={styles.trust}>{text.trust} {text.finalDecision}</p>
     <div className={styles.grid}>{mockBriefings.map((briefing) => <BriefingCard
       key={briefing.id} briefing={briefing} language={language} availableIds={availableIds}
-      news={feed?.source === 'rss'
+      news={feed?.source === 'rss' || feed?.source === 'local-proxy'
         ? feed.articles.filter((article) => article.relatedMarkets.includes(briefing.id)).slice(0, 4)
         : providerMode === 'mock' || feed?.source === 'mock'
           ? briefing.newsIds.flatMap((id) => { const article = (feed?.articles ?? dashboard?.news)?.find((item) => item.id === id); return article ? [article] : [] })

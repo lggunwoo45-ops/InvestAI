@@ -51,4 +51,18 @@ describe('NewsService provider boundary', () => {
     expect(fetchSpy).not.toHaveBeenCalled()
     fetchSpy.mockRestore()
   })
+
+  it('labels successful local proxy articles without mixing mock content', async () => {
+    const localProxy: NewsProvider = { id: 'local-proxy', label: 'Federal Reserve Board · Local Proxy', type: 'rss', loadNews: async () => [{ ...(await newsProvider.loadNews())[0], isMock: false }] }
+    const result = await new NewsService(newsProvider, unavailableRss, localProxy).loadNews('local-proxy')
+    expect(result).toMatchObject({ requestedMode: 'local-proxy', state: 'local-proxy-ready', source: 'local-proxy', fallback: false, error: null })
+    expect(result.articles.every((article) => !article.isMock)).toBe(true)
+  })
+
+  it('labels local proxy failure and falls back to demo news', async () => {
+    const localProxy: NewsProvider = { id: 'local-proxy', label: 'Local Proxy', type: 'rss', loadNews: async () => { throw new RssProviderError('network') } }
+    const result = await new NewsService(newsProvider, unavailableRss, localProxy).loadNews('local-proxy')
+    expect(result).toMatchObject({ requestedMode: 'local-proxy', state: 'local-proxy-unavailable', source: 'mock', fallback: true, error: 'network' })
+    expect(result.articles.every((article) => article.isMock)).toBe(true)
+  })
 })

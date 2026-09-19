@@ -13,9 +13,12 @@ interface NewsProviderStatusProps {
 export function NewsProviderStatus({ mode, result, onModeChange }: NewsProviderStatusProps) {
   const { language } = useLanguage()
   const text = uiText[language].news.provider
-  const stateLabel = result?.state === 'rss-unavailable' ? text.rssUnavailable
-    : result?.state === 'provider-not-configured' ? text.notConfigured
-      : result?.state === 'rss-ready' ? text.realRss : text.mock
+  const localProxyMode = mode === 'local-proxy'
+  const stateLabel = result?.state === 'local-proxy-ready' ? text.localProxyConnected
+    : result?.state === 'local-proxy-unavailable' ? text.localProxyUnavailable
+      : result?.state === 'rss-unavailable' ? text.rssUnavailable
+        : result?.state === 'provider-not-configured' ? text.notConfigured
+          : result?.state === 'rss-ready' ? text.realRss : text.mock
   const reason = result?.error === 'network' ? text.networkError
     : result?.error === 'timeout' ? text.timeoutError
       : result?.error === 'http' ? text.httpError
@@ -28,14 +31,17 @@ export function NewsProviderStatus({ mode, result, onModeChange }: NewsProviderS
       <div className={styles.modes} role="group" aria-label={text.title}>
         <button type="button" aria-pressed={mode === 'mock'} onClick={() => onModeChange('mock')}>{text.mock}</button>
         <button type="button" aria-pressed={mode === 'rss-ready'} onClick={() => onModeChange('rss-ready')}>{text.rssReady}</button>
+        <button type="button" aria-pressed={mode === 'local-proxy'} onClick={() => onModeChange('local-proxy')}>{text.localProxy}</button>
       </div>
       <strong role="status">{result ? stateLabel : uiText[language].news.loading}</strong>
     </div>
-    <div className={styles.meta}><span>{text.status}: {!result ? text.loading : result.fallback ? text.fallbackStatus : result.error ? text.rssUnavailable : text.ready}</span>{mode === 'rss-ready' && <span>{text.experimental}</span>}</div>
+    <div className={styles.meta}><span>{localProxyMode ? text.proxyStatus : text.status}: {!result ? text.loading : result.fallback ? text.fallbackStatus : result.error ? (localProxyMode ? text.localProxyUnavailable : text.rssUnavailable) : text.ready}</span>{mode !== 'mock' && <span>{localProxyMode ? text.localProxyRequired : text.experimental}</span>}</div>
+    {localProxyMode && <div className={styles.meta}><span>{text.sourceAllowlist}: fed-press</span><span>{text.serverSideRss}</span></div>}
     {result && <div className={styles.meta}>
       <span>{text.source}: {result.providerLabel}</span>
       {result.lastUpdatedAt && <span>{text.lastUpdated}: <time dateTime={result.lastUpdatedAt}>{new Intl.DateTimeFormat(language === 'ko' ? 'ko-KR' : 'en-US', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(result.lastUpdatedAt))}</time></span>}
     </div>}
-    {result?.error && <p className={styles.warning} role="alert">{text.unableToLoad} {reason} {result.fallback && text.fallback}</p>}
+    {result?.state === 'local-proxy-ready' && <p className={styles.success} role="status">{text.localProxyRealRss}</p>}
+    {result?.error && <p className={styles.warning} role="alert">{localProxyMode ? `${text.localProxyFallback} ${text.localProxyStart}` : `${text.unableToLoad} ${reason} ${result.fallback ? text.fallback : ''}`}</p>}
   </section>
 }
