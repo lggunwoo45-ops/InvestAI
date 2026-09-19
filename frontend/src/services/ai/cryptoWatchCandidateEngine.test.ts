@@ -26,6 +26,23 @@ describe('cryptoWatchCandidateEngine', () => {
     expect(first.every((item) => item.watchScore >= 0 && item.watchScore <= 100)).toBe(true)
   })
 
+  it('supports all horizons with different scores and planning zones', () => {
+    const short = buildCryptoWatchCandidates({ instruments, newsResult: null, language: 'en', horizon: 'short', limit: 10 }).find((item) => item.instrumentId === 'upbit-btc')!
+    const swing = buildCryptoWatchCandidates({ instruments, newsResult: null, language: 'en', horizon: 'swing', limit: 10 }).find((item) => item.instrumentId === 'upbit-btc')!
+    const long = buildCryptoWatchCandidates({ instruments, newsResult: null, language: 'en', horizon: 'long', limit: 10 }).find((item) => item.instrumentId === 'upbit-btc')!
+    expect([short.horizon, swing.horizon, long.horizon]).toEqual(['short', 'swing', 'long'])
+    expect(new Set([short.watchScore, swing.watchScore, long.watchScore]).size).toBeGreaterThan(1)
+    expect(new Set([short.planningZones.interestArea, swing.planningZones.interestArea, long.planningZones.interestArea]).size).toBe(3)
+    expect(short.planningZones.interestArea).toContain('KRW')
+  })
+
+  it('uses text-only planning references when price is missing', () => {
+    const missing = { ...instruments[0], lastPrice: Number.NaN } as MarketInstrument
+    const candidate = buildCryptoWatchCandidates({ instruments: [missing], newsResult: null, language: 'en' })[0]
+    expect(candidate.planningZones.interestArea).toContain('after price data is confirmed')
+    expect(JSON.stringify(candidate.planningZones).toLowerCase()).not.toMatch(/guaranteed|profit expected/)
+  })
+
   it('rewards healthy momentum and volume while penalizing extreme movement', () => {
     const candidates = buildCryptoWatchCandidates({ instruments, newsResult: null, language: 'en', limit: 10 })
     const eth = candidates.find((item) => item.instrumentId === 'upbit-eth')!

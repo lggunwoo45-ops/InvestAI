@@ -4,6 +4,26 @@ export type WatchCandidateEvidenceStatus = 'positive' | 'neutral' | 'risk' | 'mi
 export type WatchCandidateScoreLabel = 'high' | 'medium' | 'low' | 'incomplete'
 export type WatchCandidateNewsSource = 'demo' | 'local-proxy' | 'browser-rss' | 'none'
 export type WatchCandidateNewsScope = 'instrument' | 'market' | 'demo' | 'none'
+export type WatchCandidateHorizon = 'short' | 'swing' | 'long'
+export type WatchCandidateLifecycleStatus = 'new' | 'maintained' | 'strengthened' | 'weakened' | 'review-needed'
+
+export interface CandidatePlanningZones {
+  interestArea: string
+  secondInterestArea: string
+  targetObservationArea: string
+  invalidationRiskArea: string
+  riskRewardNote: string
+  confidenceNote: string
+}
+
+export interface CandidateHorizonProfile {
+  horizon: WatchCandidateHorizon
+  label: string
+  description: string
+  reviewCadence: string
+  evidenceFocus: readonly string[]
+  scoreAdjustmentNote: string
+}
 
 export interface WatchCandidateBreakdown {
   type: WatchCandidateEvidenceType
@@ -29,6 +49,10 @@ export interface WatchCandidate {
   symbol: string
   name: string
   assetType: WatchCandidateAssetType
+  horizon: WatchCandidateHorizon
+  lifecycleStatus: WatchCandidateLifecycleStatus
+  reviewCadence: string
+  planningZones: CandidatePlanningZones
   rank: number
   watchScore: number
   scoreLabel: WatchCandidateScoreLabel

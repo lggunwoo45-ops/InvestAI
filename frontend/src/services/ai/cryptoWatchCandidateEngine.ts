@@ -2,12 +2,16 @@ import type { Language } from '@/i18n/translations'
 import { newsForInstrument } from '@/services/news/newsSelectors'
 import type { NewsLoadResult } from '@/services/news/newsService'
 import type { MarketInstrument } from '@/types/market'
-import type { WatchCandidate, WatchCandidateBreakdown, WatchCandidateNewsEvidence, WatchCandidateScoreLabel } from '@/types/watchCandidate'
+import type { CandidatePlanningZones, WatchCandidate, WatchCandidateBreakdown, WatchCandidateHorizon, WatchCandidateNewsEvidence, WatchCandidateScoreLabel } from '@/types/watchCandidate'
+import { lifecycleFromSnapshot, type CandidateScoreSnapshotMap } from '@/utils/candidateSnapshotStorage'
+import { getCandidateHorizonProfile } from './candidateHorizonProfiles'
 
 export interface CryptoWatchCandidateInput {
   instruments: readonly MarketInstrument[]
   newsResult: NewsLoadResult | null
   language: Language
+  horizon?: WatchCandidateHorizon
+  previousSnapshots?: CandidateScoreSnapshotMap
   limit?: number
 }
 
@@ -28,6 +32,30 @@ const copy = {
 
 const clamp = (value: number, minimum: number, maximum: number) => Math.min(maximum, Math.max(minimum, value))
 const finite = (value: number) => Number.isFinite(value)
+
+const horizonWeights = {
+  short: { momentum: 25, volume: 25, context: 15, news: 15, scenario: 10 },
+  swing: { momentum: 20, volume: 25, context: 20, news: 15, scenario: 10 },
+  long: { momentum: 12, volume: 30, context: 28, news: 10, scenario: 10 },
+} as const
+
+function planningZones(price: number, quote: string, horizon: WatchCandidateHorizon, language: Language): CandidatePlanningZones {
+  const missing = !finite(price) || price <= 0
+  const zone = (low: number, high: number) => {
+    if (missing) return language === 'ko' ? '가격 데이터 확인 후 범위 산출' : 'Range available after price data is confirmed'
+    const digits = price < 1 ? 6 : price < 100 ? 2 : 0
+    const format = (value: number) => `${new Intl.NumberFormat(language === 'ko' ? 'ko-KR' : 'en-US', { maximumFractionDigits: digits }).format(value)} ${quote}`
+    return `${format(price * (1 + low))} – ${format(price * (1 + high))}`
+  }
+  const bands = horizon === 'short' ? { interest: [-.02, 0], second: [-.035, -.02], target: [.02, .05], risk: [-.05, -.03] }
+    : horizon === 'swing' ? { interest: [-.07, -.03], second: [-.1, -.07], target: [.07, .15], risk: [-.12, -.08] }
+      : { interest: [-.15, -.05], second: [-.22, -.15], target: [.15, .35], risk: [-.25, -.15] }
+  return {
+    interestArea: zone(bands.interest[0], bands.interest[1]), secondInterestArea: zone(bands.second[0], bands.second[1]), targetObservationArea: zone(bands.target[0], bands.target[1]), invalidationRiskArea: zone(bands.risk[0], bands.risk[1]),
+    riskRewardNote: language === 'ko' ? '현재가 기반의 단순 비율 범위이며 실제 시장 구조를 대체하지 않습니다.' : 'Simple percentage bands from current price; they do not replace market-structure review.',
+    confidenceNote: language === 'ko' ? '규칙 기반 계획 참고용이며 실제 확률이나 가격 전망이 아닙니다.' : 'Rule-based planning reference only; not a probability or price forecast.',
+  }
+}
 
 function scoreLabel(score: number, incomplete: boolean): WatchCandidateScoreLabel {
   if (incomplete) return 'incomplete'
@@ -60,6 +88,9 @@ function newsEvidence(instrument: MarketInstrument, result: NewsLoadResult | nul
 /** Pure, deterministic ranking. It does not fetch, predict, or call an AI model. */
 export function buildCryptoWatchCandidates(input: CryptoWatchCandidateInput): readonly WatchCandidate[] {
   const t = copy[input.language]
+  const horizon = input.horizon ?? 'short'
+  const profile = getCandidateHorizonProfile(horizon, input.language)
+  const weights = horizonWeights[horizon]
   const limit = clamp(Math.trunc(input.limit ?? 5), 1, 10)
   const crypto = input.instruments.filter((item) => item.marketId === 'upbit' || item.marketId.startsWith('binance'))
   const preferred = crypto.filter((item) => item.marketId === 'upbit' && item.quoteCurrency === 'KRW')
@@ -71,28 +102,35 @@ export function buildCryptoWatchCandidates(input: CryptoWatchCandidateInput): re
     const missing = !finite(instrument.lastPrice) || !finite(instrument.change24hPercent) || !finite(instrument.volume24h)
     const change = finite(instrument.change24hPercent) ? instrument.change24hPercent : 0
     const absoluteChange = Math.abs(change)
-    const momentum = change > 0 && absoluteChange <= 8 ? Math.round(15 + Math.min(change / 8, 1) * 10) : change > 0 ? 12 : change > -3 ? 8 : 4
+    const momentumRatio = horizon === 'long' ? change > 0 && absoluteChange <= 12 ? .75 : change > -5 ? .55 : .35
+      : change > 0 && absoluteChange <= (horizon === 'short' ? 8 : 10) ? .6 + Math.min(change / 10, 1) * .4 : change > 0 ? .48 : change > -3 ? .32 : .16
+    const momentum = Math.round(momentumRatio * weights.momentum)
     const rank = volumeRank.get(instrument.id)
-    const volume = rank === undefined || pool.length === 0 ? 0 : Math.round(8 + (1 - rank / Math.max(1, pool.length - 1)) * 17)
-    const context = instrument.symbol.startsWith('BTC/') ? 15 : 11
+    const volume = rank === undefined || pool.length === 0 ? 0 : Math.round((.32 + (1 - rank / Math.max(1, pool.length - 1)) * .68) * weights.volume)
+    const major = instrument.symbol.startsWith('BTC/') || instrument.symbol.startsWith('ETH/')
+    const context = Math.round((instrument.symbol.startsWith('BTC/') ? 1 : major ? .9 : horizon === 'long' ? .5 : .73) * weights.context)
     const news = newsEvidence(instrument, input.newsResult, input.language)
-    const scenario = missing ? 0 : 10
-    const penalty = missing ? 20 : absoluteChange >= 15 ? 20 : absoluteChange >= 10 ? 12 : absoluteChange > 8 ? 6 : 0
-    const score = clamp(momentum + volume + context + news.points + scenario - penalty, 0, 100)
+    const newsPoints = Math.round((news.points / 15) * weights.news)
+    const scenario = missing ? 0 : weights.scenario
+    const penalty = missing ? 20 : horizon === 'short' ? absoluteChange >= 15 ? 20 : absoluteChange >= 10 ? 12 : absoluteChange > 8 ? 6 : 0
+      : horizon === 'swing' ? absoluteChange >= 18 ? 15 : absoluteChange >= 12 ? 9 : absoluteChange > 10 ? 4 : 0
+        : absoluteChange >= 25 ? 10 : absoluteChange >= 18 ? 5 : 0
+    const score = clamp(momentum + volume + context + newsPoints + scenario - penalty, 0, 100)
     const evidence: WatchCandidateBreakdown[] = [
-      { type: 'momentum', label: t.momentum, score: momentum, maxScore: 25, summary: change > 0 && absoluteChange <= 8 ? t.positiveMomentum : t.neutralMomentum, status: momentum >= 15 ? 'positive' : 'neutral' },
-      { type: 'volume', label: t.volume, score: volume, maxScore: 25, summary: t.volumeRank, status: volume >= 17 ? 'positive' : volume ? 'neutral' : 'missing' },
-      { type: 'marketContext', label: t.context, score: context, maxScore: 15, summary: t.contextReady, status: 'positive' },
-      news.item,
-      { type: 'scenario', label: t.scenario, score: scenario, maxScore: 10, summary: missing ? t.scenarioMissing : t.scenarioReady, status: missing ? 'missing' : 'positive' },
+      { type: 'momentum', label: t.momentum, score: momentum, maxScore: weights.momentum, summary: change > 0 && absoluteChange <= 10 ? t.positiveMomentum : t.neutralMomentum, status: momentum >= weights.momentum * .6 ? 'positive' : 'neutral' },
+      { type: 'volume', label: t.volume, score: volume, maxScore: weights.volume, summary: t.volumeRank, status: volume >= weights.volume * .65 ? 'positive' : volume ? 'neutral' : 'missing' },
+      { type: 'marketContext', label: t.context, score: context, maxScore: weights.context, summary: t.contextReady, status: 'positive' },
+      { ...news.item, score: newsPoints, maxScore: weights.news },
+      { type: 'scenario', label: t.scenario, score: scenario, maxScore: weights.scenario, summary: missing ? t.scenarioMissing : t.scenarioReady, status: missing ? 'missing' : 'positive' },
       { type: 'risk', label: t.risk, score: -penalty, maxScore: 0, summary: missing ? t.riskMissing : penalty ? t.riskExtreme : t.riskNormal, status: penalty ? 'risk' : 'neutral' },
     ]
-    return {
-      id: `crypto-watch-${instrument.id}`, instrumentId: instrument.id, symbol: instrument.displaySymbol ?? instrument.symbol, name: instrument.name,
-      assetType: 'crypto' as const, rank: 0, watchScore: score, scoreLabel: scoreLabel(score, missing), summary: t.summary, watchReason: t.reason,
+    const candidate: WatchCandidate = {
+      id: `crypto-watch-${horizon}-${instrument.id}`, instrumentId: instrument.id, symbol: instrument.displaySymbol ?? instrument.symbol, name: instrument.name,
+      assetType: 'crypto', horizon, lifecycleStatus: 'new', reviewCadence: profile.reviewCadence, planningZones: planningZones(instrument.lastPrice, instrument.quoteCurrency, horizon, input.language), rank: 0, watchScore: score, scoreLabel: scoreLabel(score, missing), summary: t.summary, watchReason: t.reason,
       evidence, riskSummary: evidence.at(-1)?.summary ?? t.riskNormal, invalidationSummary: t.invalidation, nextWatchPoints: t.next,
       newsEvidence: news.evidence, disclaimer: t.disclaimer,
     }
+    return { ...candidate, lifecycleStatus: lifecycleFromSnapshot(candidate, input.previousSnapshots ?? {}) }
   }).sort((a, b) => b.watchScore - a.watchScore || b.evidence[1].score - a.evidence[1].score || a.symbol.localeCompare(b.symbol))
     .slice(0, limit).map((candidate, index) => ({ ...candidate, rank: index + 1 }))
 }

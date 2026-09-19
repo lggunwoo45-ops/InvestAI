@@ -2,19 +2,20 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { WatchCandidate } from '@/types/watchCandidate'
+import { getCandidateHorizonProfile } from '@/services/ai/candidateHorizonProfiles'
 import { CANDIDATE_FEEDBACK_STORAGE_KEY } from '@/utils/candidateFeedbackStorage'
 import { filterCandidatesByReviewStatus } from '@/utils/candidateFeedbackSelectors'
 import { CryptoWatchCandidates } from './CryptoWatchCandidates'
 
 const candidate: WatchCandidate = {
-  id: 'crypto-watch-upbit-btc', instrumentId: 'upbit-btc', symbol: 'BTC/KRW', name: 'Bitcoin', assetType: 'crypto', rank: 1, watchScore: 78, scoreLabel: 'high', summary: 'Transparent candidate.', watchReason: 'Evidence-ranked for review.',
+  id: 'crypto-watch-short-upbit-btc', instrumentId: 'upbit-btc', symbol: 'BTC/KRW', name: 'Bitcoin', assetType: 'crypto', horizon: 'short', lifecycleStatus: 'new', reviewCadence: 'Review daily or intraday', planningZones: { interestArea: '98 – 100 KRW', secondInterestArea: '96.5 – 98 KRW', targetObservationArea: '102 – 105 KRW', invalidationRiskArea: '95 – 97 KRW', riskRewardNote: 'Reference only.', confidenceNote: 'Rule-based.' }, rank: 1, watchScore: 78, scoreLabel: 'high', summary: 'Transparent candidate.', watchReason: 'Evidence-ranked for review.',
   evidence: [{ type: 'momentum', label: 'Momentum', score: 20, maxScore: 25, summary: 'Positive movement.', status: 'positive' }], riskSummary: 'No extreme penalty.', invalidationSummary: 'Reassess on reversal.', nextWatchPoints: ['Confirm trend.'],
   newsEvidence: { source: 'local-proxy', scope: 'market', count: 1, headlines: ['Macro update'], generated: false, disclaimer: 'Market context only.' }, disclaimer: 'Not a recommendation.',
 }
 
 function renderCandidates(language: 'en' | 'ko' = 'en') {
   const open = vi.fn()
-  render(<CryptoWatchCandidates candidates={[candidate]} language={language} mode="live" newsSource="local-proxy" onOpenInstrument={open} onOpenMarket={vi.fn()} onModeChange={vi.fn()} onRetry={vi.fn()} />)
+  render(<CryptoWatchCandidates candidates={[candidate]} language={language} mode="live" newsSource="local-proxy" horizon="short" horizonProfile={getCandidateHorizonProfile('short', language)} onHorizonChange={vi.fn()} onOpenInstrument={open} onOpenMarket={vi.fn()} onModeChange={vi.fn()} onRetry={vi.fn()} />)
   return open
 }
 
@@ -93,12 +94,21 @@ describe('CryptoWatchCandidates', () => {
     const open = renderCandidates()
     fireEvent.click(screen.getByRole('button', { name: 'Mark reviewed after opening' }))
     expect(open).toHaveBeenCalledWith('upbit-btc')
-    expect(document.body.textContent?.toLowerCase()).not.toMatch(/\b(buy|sell|guaranteed|profit expected)\b/)
+    expect(document.body.textContent?.toLowerCase()).not.toMatch(/buy here|sell here|strong buy|strong sell|guaranteed target|profit expected/)
+  })
+
+  it('renders horizon tabs, cadence guidance, and planning zones', () => {
+    const changeHorizon = vi.fn()
+    render(<CryptoWatchCandidates candidates={[candidate]} language="en" mode="live" newsSource="local-proxy" horizon="short" horizonProfile={getCandidateHorizonProfile('short', 'en')} onHorizonChange={changeHorizon} onOpenInstrument={vi.fn()} onOpenMarket={vi.fn()} onModeChange={vi.fn()} onRetry={vi.fn()} />)
+    expect(screen.getByText('98 – 100 KRW')).toBeTruthy()
+    expect(screen.getAllByText(/Review daily or intraday/).length).toBeGreaterThan(0)
+    fireEvent.click(screen.getByRole('tab', { name: 'Swing' }))
+    expect(changeHorizon).toHaveBeenCalledWith('swing')
   })
 
   it('shows an actionable empty state', () => {
     const openMarket = vi.fn()
-    render(<CryptoWatchCandidates candidates={[]} language="en" mode="live" newsSource="none" onOpenInstrument={vi.fn()} onOpenMarket={openMarket} onModeChange={vi.fn()} onRetry={vi.fn()} />)
+    render(<CryptoWatchCandidates candidates={[]} language="en" mode="live" newsSource="none" horizon="short" horizonProfile={getCandidateHorizonProfile('short', 'en')} onHorizonChange={vi.fn()} onOpenInstrument={vi.fn()} onOpenMarket={openMarket} onModeChange={vi.fn()} onRetry={vi.fn()} />)
     expect(screen.getByText('No complete crypto market catalog is available.')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Open Market' }))
     expect(openMarket).toHaveBeenCalledOnce()
