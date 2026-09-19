@@ -5,7 +5,6 @@ import { Icon } from '@/components/Icon/Icon'
 import { AiAnalysisFoundation } from '@/components/ai/AiAnalysisFoundation/AiAnalysisFoundation'
 import { AiForecastPanel } from '@/components/ai/AiForecastPanel/AiForecastPanel'
 import { InstrumentRelatedNews } from '@/components/news/InstrumentRelatedNews/InstrumentRelatedNews'
-import { useDashboardData } from '@/hooks/useDashboardData'
 import { useMarketWorkspace } from '@/hooks/useMarketWorkspace'
 import { useNewsProviderMode } from '@/hooks/useNewsProviderMode'
 import { useUiStore } from '@/hooks/useUiStore'
@@ -14,7 +13,6 @@ import { useLanguage } from '@/i18n/useLanguage'
 import { buildAiAnalysisContext } from '@/services/ai/aiAnalysisContextBuilder'
 import { createMockAiAnalysis } from '@/services/ai/mockAiAnalysisEngine'
 import { safelyCreateMockScenarioAnalysis } from '@/services/ai/mockScenarioService'
-import { newsForInstrument } from '@/services/news/newsSelectors'
 import { formatMarketChange, formatMarketPrice } from '@/utils/formatMarketValue'
 import type { AiScenarioTimeframe } from '@/types/aiScenario'
 import styles from './AiCopilot.module.css'
@@ -22,8 +20,7 @@ import styles from './AiCopilot.module.css'
 export function AiCopilot() {
   const { toggleAiCopilot } = useUiStore()
   const { selectedInstrument, selectedTimeframe, activeMarketState, marketDataMode } = useMarketWorkspace()
-  const { mode: newsProviderMode } = useNewsProviderMode()
-  const dashboard = useDashboardData()
+  const { mode: newsProviderMode, result: newsResult } = useNewsProviderMode()
   const { language } = useLanguage()
   const text = uiText[language].copilot
   const liveInstrument = activeMarketState?.snapshot?.instrument
@@ -33,16 +30,15 @@ export function AiCopilot() {
   const scenarioTimeframe: AiScenarioTimeframe = selectedTimeframe === '1D' ? 'long'
     : selectedTimeframe === '4H' ? 'medium' : 'short'
   const scenarioAnalysis = useMemo(() => displayedInstrument ? safelyCreateMockScenarioAnalysis(displayedInstrument, language, scenarioTimeframe) : null, [displayedInstrument, language, scenarioTimeframe])
-  const relatedNews = useMemo(() => displayedInstrument ? newsForInstrument(dashboard?.news ?? [], displayedInstrument) : [], [dashboard?.news, displayedInstrument])
   const analysisContext = useMemo(() => buildAiAnalysisContext({
     instrument: displayedInstrument ?? null,
     scenario: scenarioAnalysis,
-    relatedNews,
     newsProviderMode,
+    newsResult,
     marketDataMode,
     connectionStatus: activeMarketState?.connection.status,
     language,
-  }), [activeMarketState?.connection.status, displayedInstrument, language, marketDataMode, newsProviderMode, relatedNews, scenarioAnalysis])
+  }), [activeMarketState?.connection.status, displayedInstrument, language, marketDataMode, newsProviderMode, newsResult, scenarioAnalysis])
   const foundationResult = useMemo(() => analysisContext.status === 'ready' ? createMockAiAnalysis(analysisContext.input, language) : null, [analysisContext, language])
 
   return (

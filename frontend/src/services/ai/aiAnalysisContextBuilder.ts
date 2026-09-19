@@ -1,15 +1,15 @@
 import type { Language } from '@/i18n/translations'
-import type { NewsProviderMode } from '@/services/news/newsService'
+import type { NewsLoadResult, NewsProviderMode } from '@/services/news/newsService'
+import { newsForInstrument } from '@/services/news/newsSelectors'
 import type { AiAnalysisContextBuildResult } from '@/types/aiAnalysis'
 import type { AiScenarioAnalysis } from '@/types/aiScenario'
-import type { NewsArticle } from '@/types/dashboard'
 import type { MarketConnectionStatus, MarketDataMode, MarketInstrument } from '@/types/market'
 
 export interface AiAnalysisContextSource {
   instrument: MarketInstrument | null
   scenario: AiScenarioAnalysis | null
-  relatedNews: readonly NewsArticle[]
   newsProviderMode: NewsProviderMode
+  newsResult: NewsLoadResult | null
   marketDataMode: MarketDataMode
   connectionStatus?: MarketConnectionStatus
   language: Language
@@ -34,8 +34,20 @@ export function buildAiAnalysisContext(source: AiAnalysisContextSource): AiAnaly
   const change24h = finite(instrument.change24hPercent)
   const volume24h = finite(instrument.volume24h)
   const crypto = instrument.marketId === 'upbit' || instrument.marketId.startsWith('binance')
-  const relatedNews = source.relatedNews.slice(0, 3)
-  const isRealNewsAvailable = relatedNews.some((article) => !article.isMock)
+  const articles = source.newsResult?.articles ?? []
+  const relatedNews = newsForInstrument(articles, instrument)
+  const relatedIds = new Set(relatedNews.map((article) => article.id))
+  const marketLevelNews = articles.filter((article) => !relatedIds.has(article.id) && article.relatedMarkets.includes('macro'))
+  const isDemoOnly = source.newsResult?.source === 'mock' && articles.length > 0
+  const isRealNewsAvailable = articles.some((article) => !article.isMock)
+  const isLocalProxyNews = source.newsResult?.source === 'local-proxy' && isRealNewsAvailable
+  const evidenceLabel = isLocalProxyNews ? 'local-proxy-rss'
+    : source.newsResult?.source === 'rss' && isRealNewsAvailable ? 'browser-rss'
+      : isDemoOnly && source.newsResult?.fallback ? 'demo-news-fallback'
+        : isDemoOnly ? 'demo-news' : 'no-news-evidence'
+  const evidenceScope = isDemoOnly ? 'demo-only'
+    : relatedNews.length ? 'instrument-specific'
+      : marketLevelNews.length ? 'market-level' : 'none'
 
   return {
     status: 'ready',
@@ -62,11 +74,16 @@ export function buildAiAnalysisContext(source: AiAnalysisContextSource): AiAnaly
       },
       newsContext: {
         providerMode: source.newsProviderMode,
-        providerStatus: source.newsProviderMode === 'mock' ? 'mock' : 'not-observed',
+        providerStatus: source.newsResult?.state ?? 'not-observed',
+        source: source.newsResult?.source ?? 'none',
         relatedNewsCount: relatedNews.length,
-        relatedHeadlines: relatedNews.map((article) => article.title),
-        isDemoOnly: relatedNews.length === 0 || relatedNews.every((article) => article.isMock),
+        relatedHeadlines: relatedNews.slice(0, 3).map((article) => article.title),
+        marketLevelHeadlines: marketLevelNews.slice(0, 3).map((article) => article.title),
+        isDemoOnly,
         isRealNewsAvailable,
+        isLocalProxyNews,
+        evidenceLabel,
+        evidenceScope,
       },
       scenarioContext: {
         marketBias: source.scenario?.marketBias ?? null,

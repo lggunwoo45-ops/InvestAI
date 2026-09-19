@@ -39,6 +39,8 @@ The prototype listens only on `localhost:8787` and exposes `GET /api/news/rss?so
 
 This narrow endpoint is intentionally different from the proposed production `/api/news/v1/articles` contract below. The prototype validates the transport and normalization boundary before a production contract is implemented.
 
+Sprint 9.5 shares the active `NewsLoadResult` across News Center, Market Briefing, and AI Copilot. Normalized Local Proxy articles can therefore enter the transparent analysis input package without another fetch. Articles with explicit verified symbol links are instrument-specific; unlinked `macro` articles are market-level only. UI filters do not mutate this provider result. This connection supplies evidence provenance, not AI interpretation, causality, ranking, or a recommendation.
+
 ## Proposed frontend contract
 
 ### Articles

@@ -17,7 +17,7 @@ export const NewsCard = memo(function NewsCard({ article }: NewsCardProps) {
   const published = new Intl.DateTimeFormat(language === 'ko' ? 'ko-KR' : 'en-US', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Seoul' }).format(new Date(article.publishedAt))
   const href = safeNewsUrl(article.url)
   return (
-    <article className={styles.article}>
+    <article className={styles.article} data-has-thumbnail={Boolean(article.thumbnailTone)}>
       {article.thumbnailTone && <div className={styles.thumbnail} data-tone={article.thumbnailTone}><span>{article.category.slice(0, 2).toUpperCase()}</span></div>}
       <div className={styles.content}>
         <span className={styles.category}>{text.categories[article.category]} · {article.isMock ? text.demo : text.provider.realRss}</span>

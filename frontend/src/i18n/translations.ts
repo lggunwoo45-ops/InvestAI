@@ -79,6 +79,11 @@ interface UiStrings {
       priceData: string; newsData: string; scenarioData: string; aiModel: string; newsBackend: string; portfolioContext: string
       notConnected: string; demoOnly: string; available: string; missing: string; inactiveMessage: string; futurePackage: string
       disclaimer: string; finalDecision: string
+      newsEvidence: string; evidenceSource: string; evidenceScope: string; headlinesConsidered: string
+      marketLevelNews: string; instrumentSpecificNews: string; localProxyRss: string; browserRss: string; noNewsEvidence: string
+      realAiInterpretation: string; localProxyTransport: string; demoIllustrative: string; productionBackendMissing: string
+      localProxyPrototype: string; newsScope: string; source: string; scope: string; consideredHeadlines: string; newsEvidenceOnly: string
+      localProxyExperimental: string
     }
     bias: { bullish: string; neutral: string; bearish: string; mixed: string }
     analysisTimeframes: { short: string; medium: string; long: string }
@@ -155,6 +160,11 @@ export const uiText = {
         priceData: 'Price data', newsData: 'News data', scenarioData: 'Scenario data', aiModel: 'AI model', newsBackend: 'News backend', portfolioContext: 'Portfolio context',
         notConnected: 'Not connected', demoOnly: 'Demo only', available: 'Available', missing: 'Missing', inactiveMessage: 'Real AI analysis is not connected yet. This panel shows the structure and evidence package that a future AI model will use.',
         futurePackage: 'Future AI model will use this evidence package', disclaimer: 'Not investment advice', finalDecision: 'User makes final decision',
+        newsEvidence: 'News Evidence', evidenceSource: 'Evidence source', evidenceScope: 'Evidence scope', headlinesConsidered: 'Headlines considered',
+        marketLevelNews: 'Market-level news', instrumentSpecificNews: 'Instrument-specific news', localProxyRss: 'Local Proxy RSS', browserRss: 'Browser RSS', noNewsEvidence: 'No news evidence',
+        realAiInterpretation: 'Real AI interpretation is not connected yet.', localProxyTransport: 'Local Proxy RSS is real news transport, not AI analysis.', demoIllustrative: 'Demo news is illustrative and not live market evidence.', productionBackendMissing: 'Production news backend is not connected.',
+        localProxyPrototype: 'Local proxy prototype', newsScope: 'News scope', source: 'Source', scope: 'Scope', consideredHeadlines: 'Considered headlines', newsEvidenceOnly: 'News evidence only',
+        localProxyExperimental: 'Local Proxy RSS is experimental.',
       },
       bias: { bullish: 'Bullish', neutral: 'Neutral', bearish: 'Bearish', mixed: 'Mixed' },
       analysisTimeframes: { short: 'Short', medium: 'Medium', long: 'Long' },
@@ -228,6 +238,11 @@ export const uiText = {
         priceData: '가격 데이터', newsData: '뉴스 데이터', scenarioData: '시나리오 데이터', aiModel: 'AI 모델', newsBackend: '뉴스 백엔드', portfolioContext: '포트폴리오 맥락',
         notConnected: '연결되지 않음', demoOnly: '데모 전용', available: '사용 가능', missing: '없음', inactiveMessage: '실제 AI 분석은 아직 연결되지 않았습니다. 현재 화면은 향후 AI 모델이 사용할 분석 구조와 근거 패키지를 보여줍니다.',
         futurePackage: '향후 AI 모델이 이 근거 패키지를 사용합니다', disclaimer: '투자 조언이 아닙니다', finalDecision: '최종 결정은 사용자가 합니다',
+        newsEvidence: '뉴스 근거', evidenceSource: '근거 출처', evidenceScope: '근거 범위', headlinesConsidered: '검토한 헤드라인',
+        marketLevelNews: '시장 수준 뉴스', instrumentSpecificNews: '종목별 뉴스', localProxyRss: '로컬 프록시 RSS', browserRss: '브라우저 RSS', noNewsEvidence: '뉴스 근거 없음',
+        realAiInterpretation: '실제 AI 해석은 아직 연결되지 않았습니다.', localProxyTransport: '로컬 프록시 RSS는 실제 뉴스 전송 수단이며 AI 분석이 아닙니다.', demoIllustrative: '데모 뉴스는 설명용이며 실시간 시장 근거가 아닙니다.', productionBackendMissing: '프로덕션 뉴스 백엔드는 연결되지 않았습니다.',
+        localProxyPrototype: '로컬 프록시 프로토타입', newsScope: '뉴스 범위', source: '출처', scope: '범위', consideredHeadlines: '검토한 헤드라인', newsEvidenceOnly: '뉴스 근거 전용',
+        localProxyExperimental: '로컬 프록시 RSS는 실험 기능입니다.',
       },
       bias: { bullish: '상승', neutral: '중립', bearish: '하락', mixed: '혼재' },
       analysisTimeframes: { short: '단기', medium: '중기', long: '장기' },
