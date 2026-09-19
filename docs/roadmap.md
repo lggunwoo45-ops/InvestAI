@@ -14,7 +14,7 @@
 - **9.4 — Local News Proxy prototype:** localhost-only fixed-source RSS transport, normalization, explicit provider mode, and safe demo fallback are implemented for experimental testing. Production backend, hosting, caching, and source expansion remain deferred.
 - **9.5 — News + AI Evidence Connection:** normalized Mock, Browser RSS, and Local Proxy RSS provider results now feed a transparent AI evidence package. Explicit symbol links remain instrument-specific; unlinked macro RSS remains market-level. Real AI interpretation and the production news backend remain disconnected.
 - **9.6 — Usable Analysis Pilot:** deliver a transparent, deterministic Crypto Watch Candidates screen using existing market and news evidence. It is a research shortlist, not a recommendation, prediction, probability, paid feature, or real AI result.
-- **9.7 — Candidate UX polish + feedback loop:** improve candidate review ergonomics and capture local, non-trading feedback without implying model learning or outcomes.
+- **9.7 — Candidate UX polish + feedback loop:** candidate review status, device-only notes, review summaries, status filters, and a human verification checklist are delivered. Feedback never leaves local storage and does not affect Watch Score.
 - **9.8 — Paid Sector Picks UI:** design the future paid sector-by-sector candidate experience only after evidence governance, entitlement, and backend boundaries are approved.
 - **9.9 — Real AI API planning / cost control:** document reviewed model integration, prompt and evidence governance, budgets, failure modes, and audit requirements before connecting an API.
 - **1.0 — Beta:** consolidate usability, resilience, accessibility, performance, security, and release-readiness findings without unsupported AI claims.
