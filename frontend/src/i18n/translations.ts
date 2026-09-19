@@ -40,6 +40,7 @@ interface UiStrings {
     filters: string; marketFilter: string; sentiment: string; relatedSymbols: string; relatedMarkets: string; loading: string
     openInMarket: string; viewSymbol: string; details: string; hideDetails: string; externalSource: string
     noRelated: string; analysisInactive: string; allMarkets: string; allSentiments: string; allImportance: string
+    activeFilters: string; clearAll: string; removeFilter: string; filterLabels: { search: string; topic: string; symbol: string }
     sentiments: { positive: string; neutral: string; negative: string; unassessed: string }
     importanceLevels: { high: string; medium: string; low: string; unassessed: string }
     provider: {
@@ -99,6 +100,7 @@ export const uiText = {
       filters: 'News filters', marketFilter: 'Market', sentiment: 'Sentiment', relatedSymbols: 'Related Symbols', relatedMarkets: 'Related Markets', loading: 'Loading demo news…',
       openInMarket: 'Open in Market', viewSymbol: 'View symbol', details: 'Read details', hideDetails: 'Hide details', externalSource: 'Open source article',
       noRelated: 'No related demo news yet.', analysisInactive: 'AI analysis is not active yet.', allMarkets: 'All markets', allSentiments: 'All sentiments', allImportance: 'All importance levels',
+      activeFilters: 'Active filters', clearAll: 'Clear all', removeFilter: 'Remove filter', filterLabels: { search: 'Search', topic: 'Topic', symbol: 'Symbol' },
       sentiments: { positive: 'Positive', neutral: 'Neutral', negative: 'Negative', unassessed: 'Not assessed' }, importanceLevels: { high: 'High', medium: 'Medium', low: 'Low', unassessed: 'Not assessed' },
       provider: {
         title: 'News provider', mock: 'Mock', rssReady: 'RSS Experimental', rssUnavailable: 'RSS unavailable', notConfigured: 'Provider not configured',
@@ -160,6 +162,7 @@ export const uiText = {
       filters: '뉴스 필터', marketFilter: '시장', sentiment: '감성', relatedSymbols: '관련 종목', relatedMarkets: '관련 시장', loading: '데모 뉴스를 불러오는 중…',
       openInMarket: '마켓에서 열기', viewSymbol: '종목 보기', details: '자세히 보기', hideDetails: '접기', externalSource: '원문 열기',
       noRelated: '관련 데모 뉴스가 아직 없습니다.', analysisInactive: 'AI 분석은 아직 활성화되지 않았습니다.', allMarkets: '전체 시장', allSentiments: '전체 감성', allImportance: '전체 중요도',
+      activeFilters: '적용된 필터', clearAll: '모두 초기화', removeFilter: '필터 해제', filterLabels: { search: '검색', topic: '주제', symbol: '종목' },
       sentiments: { positive: '긍정', neutral: '중립', negative: '부정', unassessed: '평가되지 않음' }, importanceLevels: { high: '높음', medium: '보통', low: '낮음', unassessed: '평가되지 않음' },
       provider: {
         title: '뉴스 제공자', mock: '모의', rssReady: 'RSS 실험', rssUnavailable: 'RSS 이용 불가', notConfigured: '제공자 미설정',

@@ -1,0 +1,11 @@
+.summary { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; margin-top: 8px; padding: 8px 10px; border: 1px solid #253445; background: #0d151e; }
+.title { color: #718092; font-size: 8px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
+.title strong { display: inline-grid; min-width: 17px; height: 17px; margin-left: 4px; place-items: center; border: 1px solid #31544f; color: #8fbdb2; font-size: 8px; }
+.chips { display: flex; min-width: 0; flex-wrap: wrap; gap: 5px; }
+.chip { display: inline-flex; align-items: center; gap: 5px; min-width: 0; padding: 5px 7px; border: 1px solid #2b3d4c; color: #b4c1cc; background: #121d28; font-size: 8px; cursor: pointer; }
+.chip span { color: #708294; }
+.chip b { color: #7ca99e; font-size: 11px; font-weight: 400; line-height: .8; }
+.chip:hover, .chip:focus-visible { border-color: #4b756e; color: #e0e7eb; outline: 0; }
+.clear { padding: 5px 7px; border: 0; color: #7f8d9c; background: transparent; font-size: 8px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; white-space: nowrap; }
+.clear:hover, .clear:focus-visible { color: #c0ccd5; outline: 0; }
+@media (max-width: 900px) { .summary { grid-template-columns: 1fr auto; } .title { grid-column: 1 / -1; } }
