@@ -1,0 +1,9 @@
+.panel { border: 1px solid #514834; background: #171711; }
+.panel header { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 9px 10px; border-bottom: 1px solid #514834; }
+.panel header strong { color: #d2bd8c; font-size: 10px; }
+.panel header span { color: #8e805f; font-size: 8px; }
+.panel dl { margin: 0; padding: 0 10px; }
+.panel dl > div { padding: 8px 0; border-bottom: 1px solid #343020; }
+.panel dt { color: #b2a57f; font-size: 8px; }
+.panel dd { margin: 4px 0 0; color: #b7b5a9; font-size: 9px; line-height: 1.45; }
+.panel > p { margin: 0; padding: 9px 10px; color: #8e805f; font-size: 8px; line-height: 1.4; }

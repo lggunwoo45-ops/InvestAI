@@ -16,6 +16,7 @@ describe('Market Copilot application shell', () => {
     expect(cryptoHeading.closest('section')?.getAttribute('data-workspace')).toBe('crypto')
     expect(screen.getByRole('navigation', { name: 'Primary navigation' })).toBeTruthy()
     expect(screen.getByRole('complementary', { name: 'AI Copilot' })).toBeTruthy()
+    expect(screen.getByText('Select an instrument to view scenario analysis.')).toBeTruthy()
     expect(screen.getByRole('searchbox', { name: 'Global search' })).toBeTruthy()
     expect(screen.getByRole('tab', { name: 'Crypto' })).toBeTruthy()
     expect(screen.getByRole('tab', { name: 'Korea' })).toBeTruthy()
@@ -57,8 +58,13 @@ describe('Market Copilot application shell', () => {
     expect(copilot.textContent).toContain('4H')
     expect(copilot.textContent).toContain('Current Price')
     expect(copilot.textContent).toContain('AI Confidence')
-    expect(copilot.textContent).toContain('Why?')
-    expect(copilot.textContent).toContain('Trend continuation')
+    expect(copilot.textContent).toContain('Scenario Analysis')
+    expect(copilot.textContent).toContain('Bullish scenario')
+    expect(copilot.textContent).toContain('Neutral scenario')
+    expect(copilot.textContent).toContain('Bearish scenario')
+    expect(copilot.textContent).toContain('Planning Reference')
+    expect(copilot.textContent).toContain('Not investment advice')
+    expect(copilot.textContent).toContain('Medium')
   })
 
   it('keeps an explicit mock mode for supported live markets', async () => {

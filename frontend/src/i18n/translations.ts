@@ -59,6 +59,12 @@ interface UiStrings {
     whyMatters: string; bullish: string; neutral: string; bearish: string; watchConditions: string
     riskFactors: string; entryPlanning: string; firstInterest: string; secondInterest: string
     invalidation: string; targetArea: string; pending: string; noAdvice: string
+    forecast: string; scenarioAnalysis: string; mockScenario: string; marketBias: string
+    rationale: string; supportingConditions: string; riskNote: string; probabilityPending: string
+    confidencePending: string; possiblePaths: string; planningReference: string; planningOnly: string
+    analysisInactive: string; selectScenario: string; relatedDemoConsidered: string
+    bias: { bullish: string; neutral: string; bearish: string; mixed: string }
+    analysisTimeframes: { short: string; medium: string; long: string }
   }
 }
 
@@ -111,6 +117,12 @@ export const uiText = {
       riskFactors: 'Risk factors', entryPlanning: 'Possible entry planning reference', firstInterest: '1st interest area', secondInterest: '2nd interest area',
       invalidation: 'Invalidation / stop condition', targetArea: 'Target / take-profit area', pending: 'Placeholder — no AI analysis active',
       noAdvice: 'Demo only · Not investment advice · You make the final decision.',
+      forecast: 'AI Forecast', scenarioAnalysis: 'Scenario Analysis', mockScenario: 'Mock scenario', marketBias: 'Market bias',
+      rationale: 'Rationale', supportingConditions: 'Supporting conditions', riskNote: 'Risk note', probabilityPending: 'No probability · placeholder',
+      confidencePending: 'Placeholder · no AI score', possiblePaths: 'Possible paths, not a prediction', planningReference: 'Planning Reference', planningOnly: 'Planning reference only',
+      analysisInactive: 'AI analysis is not active yet.', selectScenario: 'Select an instrument to view scenario analysis.', relatedDemoConsidered: 'Related demo news considered',
+      bias: { bullish: 'Bullish', neutral: 'Neutral', bearish: 'Bearish', mixed: 'Mixed' },
+      analysisTimeframes: { short: 'Short', medium: 'Medium', long: 'Long' },
     },
   },
   ko: {
@@ -160,6 +172,12 @@ export const uiText = {
       riskFactors: '위험 요인', entryPlanning: '가능한 진입 계획 참고', firstInterest: '1차 관심 구간', secondInterest: '2차 관심 구간',
       invalidation: '무효화 / 손절 조건', targetArea: '목표 / 이익실현 구간', pending: '준비 중 — AI 분석 비활성',
       noAdvice: '데모 전용 · 투자 조언 아님 · 최종 결정은 사용자가 합니다.',
+      forecast: 'AI 전망', scenarioAnalysis: '시나리오 분석', mockScenario: '모의 시나리오', marketBias: '시장 성향',
+      rationale: '근거', supportingConditions: '시나리오 지지 조건', riskNote: '위험 참고', probabilityPending: '확률 없음 · 자리표시자',
+      confidencePending: '자리표시자 · AI 점수 없음', possiblePaths: '예측이 아닌 가능한 경로', planningReference: '계획 참고', planningOnly: '계획 참고용',
+      analysisInactive: 'AI 분석은 아직 활성화되지 않았습니다.', selectScenario: '시나리오 분석을 보려면 종목을 선택하세요.', relatedDemoConsidered: '관련 데모 뉴스 참고',
+      bias: { bullish: '상승', neutral: '중립', bearish: '하락', mixed: '혼재' },
+      analysisTimeframes: { short: '단기', medium: '중기', long: '장기' },
     },
   },
 } as const satisfies Record<Language, UiStrings>

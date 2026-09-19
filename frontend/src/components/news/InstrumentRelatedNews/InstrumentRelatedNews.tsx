@@ -17,7 +17,7 @@ export function InstrumentRelatedNews({ instrument }: InstrumentRelatedNewsProps
   const articles = useMemo(() => newsForInstrument(dashboard?.news ?? [], instrument).slice(0, 3), [dashboard?.news, instrument])
 
   return <section className={styles.panel} aria-label={uiText[language].briefing.relatedNews}>
-    <header><strong>{uiText[language].briefing.relatedNews}</strong><span>{text.demo}</span></header>
+    <header><strong>{uiText[language].briefing.relatedNews}</strong><span>{uiText[language].copilot.relatedDemoConsidered}</span></header>
     {!dashboard ? <p>{text.loading}</p> : articles.length ? <ul>{articles.map((article) =>
       <li key={article.id}><Link to="/news" state={{ query: article.title }}><span>{article.title}</span><small>{article.source}</small></Link></li>)}</ul>
       : <p>{text.noRelated}</p>}
