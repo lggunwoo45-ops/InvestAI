@@ -1,0 +1,12 @@
+.panel { display: grid; gap: 7px; padding: 9px; border: 1px solid #2a3a45; background: #0c151c; }
+.panel header { display: flex; justify-content: space-between; gap: 8px; padding-bottom: 6px; border-bottom: 1px solid #24323c; }
+.panel header strong { color: #b8c9cd; font-size: 9px; }
+.panel header span { color: #73858f; font-size: 7px; }
+.panel dl { display: grid; grid-template-columns: 1fr 1fr; margin: 0; border: 1px solid #22313b; }
+.panel dl div { display: grid; gap: 3px; padding: 7px; }
+.panel dl div + div { border-left: 1px solid #22313b; }
+.panel dt, .panel h4 { margin: 0; color: #748692; font-size: 7px; text-transform: uppercase; }
+.panel dd { margin: 0; color: #a5b7bd; font-size: 8px; }
+.headlines ul { display: grid; gap: 4px; margin: 5px 0 0; padding-left: 14px; color: #8798a2; font-size: 8px; line-height: 1.35; }
+.panel p { margin: 0; color: #91a1a9; font-size: 8px; line-height: 1.45; }
+.panel small { padding-left: 7px; border-left: 2px solid #685c3e; color: #9f9275; font-size: 7px; line-height: 1.45; }

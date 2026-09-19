@@ -1,9 +1,10 @@
 import { createContext } from 'react'
 
-import type { NewsProviderMode } from '@/services/news/newsService'
+import type { NewsLoadResult, NewsProviderMode } from '@/services/news/newsService'
 
 export interface NewsProviderModeValue {
   mode: NewsProviderMode
+  result: NewsLoadResult | null
   setMode: (mode: NewsProviderMode) => void
 }
 

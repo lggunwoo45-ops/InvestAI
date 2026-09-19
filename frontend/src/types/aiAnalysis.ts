@@ -29,11 +29,16 @@ export interface AiAnalysisInput {
   }
   newsContext: {
     providerMode: 'mock' | 'rss-ready' | 'local-proxy'
-    providerStatus: 'mock' | 'not-observed'
+    providerStatus: 'mock' | 'rss-ready' | 'rss-unavailable' | 'local-proxy-ready' | 'local-proxy-unavailable' | 'provider-not-configured' | 'not-observed'
+    source: 'mock' | 'rss' | 'local-proxy' | 'none'
     relatedNewsCount: number
     relatedHeadlines: readonly string[]
+    marketLevelHeadlines: readonly string[]
     isDemoOnly: boolean
     isRealNewsAvailable: boolean
+    isLocalProxyNews: boolean
+    evidenceLabel: 'demo-news' | 'demo-news-fallback' | 'browser-rss' | 'local-proxy-rss' | 'no-news-evidence'
+    evidenceScope: 'instrument-specific' | 'market-level' | 'demo-only' | 'none'
   }
   scenarioContext: {
     marketBias: AiMarketBias | null
@@ -81,5 +86,6 @@ export interface AiAnalysisResult {
   invalidationSummary: string
   nextWatchPoints: readonly string[]
   scenarioLinks: readonly AiScenarioLink[]
+  newsEvidenceSummary: string
   disclaimer: string
 }

@@ -34,4 +34,12 @@ describe('NewsCard external links', () => {
     expect(link.getAttribute('target')).toBe('_blank')
     expect(link.getAttribute('rel')).toBe('noopener noreferrer')
   })
+
+  it('uses a full-width content layout for a long RSS headline without a thumbnail', () => {
+    const article = { ...newsArticles[0], id: 'long-rss', isMock: false, thumbnailTone: undefined, title: 'Federal Reserve Board publishes an extended official policy communication for market participants' }
+    render(<MemoryRouter><AppProviders><NewsCard article={article} /></AppProviders></MemoryRouter>)
+    const card = screen.getByRole('article')
+    expect(card.getAttribute('data-has-thumbnail')).toBe('false')
+    expect(screen.getByRole('heading', { name: article.title })).toBeTruthy()
+  })
 })
