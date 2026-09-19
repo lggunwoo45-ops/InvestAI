@@ -1,11 +1,13 @@
 import { EmptyState } from '@/components/EmptyState/EmptyState'
 import { Icon } from '@/components/Icon/Icon'
+import { AiForecastPanel } from '@/components/ai/AiForecastPanel/AiForecastPanel'
 import { InstrumentRelatedNews } from '@/components/news/InstrumentRelatedNews/InstrumentRelatedNews'
 import { useMarketWorkspace } from '@/hooks/useMarketWorkspace'
 import { useUiStore } from '@/hooks/useUiStore'
 import { uiText } from '@/i18n/translations'
 import { useLanguage } from '@/i18n/useLanguage'
 import { formatMarketChange, formatMarketPrice } from '@/utils/formatMarketValue'
+import type { AiScenarioTimeframe } from '@/types/aiScenario'
 import styles from './AiCopilot.module.css'
 
 export function AiCopilot() {
@@ -17,9 +19,8 @@ export function AiCopilot() {
   const displayedInstrument = selectedInstrument && liveInstrument?.id === selectedInstrument.id
     ? liveInstrument : selectedInstrument
   const isStock = displayedInstrument?.marketId === 'korea-stock' || displayedInstrument?.marketId === 'us-stock'
-  const mockConfidence = selectedInstrument
-    ? 72 + ((selectedInstrument.symbol.length + selectedTimeframe.length) % 12)
-    : null
+  const scenarioTimeframe: AiScenarioTimeframe = selectedTimeframe === '1D' ? 'long'
+    : selectedTimeframe === '4H' ? 'medium' : 'short'
 
   return (
     <aside className={`${styles.copilot} ${isStock ? styles.stockContext : ''}`} aria-label="AI Copilot">
@@ -57,29 +58,7 @@ export function AiCopilot() {
               </div>
             </dl>
 
-            <section className={styles.confidence}>
-              <div><span>{text.confidence}</span><strong>{mockConfidence}%</strong></div>
-              <p>{text.mockConfidence}</p>
-              <div className={styles.confidenceTrack}><span style={{ width: `${mockConfidence}%` }} /></div>
-            </section>
-
-            <section className={styles.why} aria-label="Recommendation explanation">
-              <div><strong>{text.why}</strong><span>{text.placeholder}</span></div>
-              <ul>
-                <li>{text.trend}</li>
-                <li>{text.volume}</li>
-                <li>{text.momentum}</li>
-              </ul>
-            </section>
-
-            <section className={styles.scenarioPreparation} aria-label={text.entryPlanning}>
-              <strong>{text.noAdvice}</strong>
-              <dl>
-                {[text.whyMatters, text.bullish, text.neutral, text.bearish, text.watchConditions, text.riskFactors,
-                  text.firstInterest, text.secondInterest, text.invalidation, text.targetArea].map((label) =>
-                  <div key={label}><dt>{label}</dt><dd>{text.pending}</dd></div>)}
-              </dl>
-            </section>
+            <AiForecastPanel instrument={displayedInstrument!} timeframe={scenarioTimeframe} />
 
             <InstrumentRelatedNews instrument={displayedInstrument!} />
 
@@ -91,7 +70,7 @@ export function AiCopilot() {
         ) : (
           <EmptyState
             title={text.ready}
-            description={text.readyDescription}
+            description={text.selectScenario}
           />
         )}
       </div>

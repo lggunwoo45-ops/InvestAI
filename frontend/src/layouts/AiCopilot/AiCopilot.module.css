@@ -24,25 +24,6 @@
 .marketFacts dd { margin: 0; color: #d2dbe3; font: 600 10px/1.2 ui-monospace, monospace; text-transform: capitalize; }
 .marketFacts dd.positive { color: #65b8a2; }
 .marketFacts dd.negative { color: #bf7379; }
-.confidence { padding: 12px; border: 1px solid #1d2a38; border-radius: 5px; background: linear-gradient(145deg, #101821, #0d131b); }
-.confidence > div:first-child { display: flex; align-items: center; justify-content: space-between; }
-.confidence span { color: #7d8b9d; font-size: 9px; }
-.confidence strong { color: #687689; font: 500 18px/1 ui-monospace, monospace; }
-.confidence p { margin: 6px 0 10px; color: #4b586a; font-size: 8px; }
-.confidenceTrack { height: 3px; overflow: hidden; border-radius: 2px; background: #1a2532; }
-.confidenceTrack span { display: block; width: 0; height: 100%; background: #577e78; }
-.why { border-left: 2px solid #3d5554; background: #0d141b; }
-.why > div { display: flex; align-items: center; justify-content: space-between; padding: 9px 10px; border-bottom: 1px solid #1b2733; }
-.why strong { color: #8aa19f; font-size: 9px; }
-.why > div span { color: #485568; font-size: 7px; text-transform: uppercase; }
-.why ul { display: grid; gap: 8px; margin: 0; padding: 10px 12px 11px 25px; color: #748195; font-size: 8px; }
-.why li::marker { color: #567f79; }
-.scenarioPreparation { padding: 11px; border: 1px solid #30404d; background: #111a22; }
-.scenarioPreparation > strong { display: block; margin-bottom: 10px; color: #c9b482; font-size: 9px; line-height: 1.4; }
-.scenarioPreparation dl { display: grid; gap: 0; margin: 0; }
-.scenarioPreparation dl div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; padding: 6px 0; border-top: 1px solid #263541; }
-.scenarioPreparation dt { color: #a3b4bf; font-size: 9px; }
-.scenarioPreparation dd { margin: 0; color: #788a9b; font-size: 8px; text-align: right; }
 .boundaryNote { display: flex; align-items: flex-start; gap: 8px; padding: 10px; color: #516377; background: rgba(93, 228, 199, .025); }
 .boundaryNote svg { flex: 0 0 auto; color: #50736f; }
 .boundaryNote p { margin: 0; font-size: 8px; line-height: 1.5; }
