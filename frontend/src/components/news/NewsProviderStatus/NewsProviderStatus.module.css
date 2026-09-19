@@ -8,3 +8,4 @@
 .modes button[aria-pressed='true'] { color: #c8e1d9; background: #1d3335; }
 .meta { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 7px; color: #708291; }
 .warning { margin: 9px 0 0; padding: 7px 9px; border-left: 2px solid #94764d; color: #cbb896; background: #242016; }
+.success { margin: 9px 0 0; padding: 7px 9px; border-left: 2px solid #4f8175; color: #a8cbc1; background: #10201f; }

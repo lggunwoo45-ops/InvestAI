@@ -2,7 +2,7 @@
 
 ## Status and boundary
 
-This document defines the proposed Sprint 9.2 boundary between InvestAI's frontend and future authorized news sources. It is a design only. No proxy, backend, hosted endpoint, credential, paid feed, scraping path, or production news claim is implemented by this sprint.
+This document defines the Sprint 9.2 boundary between Market Copilot's frontend and future authorized news sources. Sprint 9.4 adds a localhost-only experimental prototype for one official RSS source. It is not a production backend, hosted endpoint, credentialed provider, paid feed, scraping path, cache service, or production news claim.
 
 The frontend must continue to consume the existing `NewsProvider` / `NewsService` boundary. UI components must never fetch a publisher URL, carry a provider secret, parse remote XML, or depend on a source-specific response shape.
 
@@ -32,6 +32,12 @@ News UI
 ```
 
 The proxy is not a general-purpose URL fetcher. All upstream destinations are server-owned, reviewed, and allowlisted. The client can select supported filters but cannot submit a feed URL.
+
+## Sprint 9.4 local prototype
+
+The prototype listens only on `localhost:8787` and exposes `GET /api/news/rss?source=fed-press`. The `source` value maps server-side to the fixed Federal Reserve Board HTTPS RSS URL. Unknown sources, additional query keys such as `url`, non-GET methods, oversized responses, unsafe XML, and invalid feeds fail with JSON responses. It uses no credentials, persistence, cache, authentication, or production deployment configuration.
+
+This narrow endpoint is intentionally different from the proposed production `/api/news/v1/articles` contract below. The prototype validates the transport and normalization boundary before a production contract is implemented.
 
 ## Proposed frontend contract
 
@@ -154,8 +160,8 @@ Structured logs and metrics should record request ID, provider ID, duration, cac
 ## Deferred implementation sequence
 
 1. Approve source policy and contract with legal/security review.
-2. Implement the contract as a local-only Sprint 9.4 prototype using fixture-backed adapters.
-3. Add one approved real adapter behind a disabled feature flag and deterministic tests.
+2. Validate the completed local-only Sprint 9.4 prototype and its fixed allowlist with manual localhost testing.
+3. Review the official source's publication, attribution, storage, and operational terms before any hosted use.
 4. Validate freshness, attribution, cache, failure, and operational controls.
 5. Consider hosted deployment only after an explicit security and production-readiness review.
 

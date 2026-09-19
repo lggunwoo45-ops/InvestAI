@@ -15,4 +15,9 @@ describe('news provider mode storage', () => {
     window.localStorage.setItem(newsProviderModeStorageKey, 'rss-ready')
     expect(readNewsProviderMode()).toBe('rss-ready')
   })
+
+  it('restores an explicit local proxy opt-in', () => {
+    window.localStorage.setItem(newsProviderModeStorageKey, 'local-proxy')
+    expect(readNewsProviderMode()).toBe('local-proxy')
+  })
 })

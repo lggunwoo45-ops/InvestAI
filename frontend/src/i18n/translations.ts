@@ -50,6 +50,9 @@ interface UiStrings {
       mode: string; status: string; ready: string; loading: string; fallbackStatus: string
       experimental: string; unableToLoad: string; networkError: string; timeoutError: string
       httpError: string; invalidFeedError: string; notConfiguredError: string
+      localProxy: string; localProxyConnected: string; localProxyUnavailable: string; localProxyRequired: string
+      localProxyStart: string; localProxyRealRss: string; localProxyFallback: string; sourceAllowlist: string
+      serverSideRss: string; proxyStatus: string
     }
   }
   copilot: {
@@ -119,6 +122,10 @@ export const uiText = {
         networkError: 'The browser could not reach the RSS feed. Network or CORS access may be blocked.',
         timeoutError: 'The RSS feed did not respond in time.', httpError: 'The RSS feed returned an error.',
         invalidFeedError: 'The RSS feed did not contain valid news items.', notConfiguredError: 'No approved RSS feed is configured.',
+        localProxy: 'Local Proxy Experimental', localProxyConnected: 'Local proxy connected', localProxyUnavailable: 'Local proxy unavailable',
+        localProxyRequired: 'Requires local news proxy server', localProxyStart: 'Start the local news proxy server to test server-side RSS loading.',
+        localProxyRealRss: 'Real RSS loaded through local proxy', localProxyFallback: 'Local proxy unavailable. Showing demo news.',
+        sourceAllowlist: 'Source allowlist', serverSideRss: 'Server-side RSS loading', proxyStatus: 'Proxy status',
       },
     },
     copilot: {
@@ -188,6 +195,10 @@ export const uiText = {
         networkError: '브라우저에서 RSS 피드에 연결할 수 없습니다. 네트워크 또는 CORS가 차단되었을 수 있습니다.',
         timeoutError: 'RSS 피드 응답 시간이 초과되었습니다.', httpError: 'RSS 피드가 오류를 반환했습니다.',
         invalidFeedError: 'RSS 피드에 유효한 뉴스 항목이 없습니다.', notConfiguredError: '승인된 RSS 피드가 설정되지 않았습니다.',
+        localProxy: '로컬 프록시 실험', localProxyConnected: '로컬 프록시 연결됨', localProxyUnavailable: '로컬 프록시 이용 불가',
+        localProxyRequired: '로컬 뉴스 프록시 서버가 필요합니다', localProxyStart: '서버 측 RSS 로딩을 테스트하려면 로컬 뉴스 프록시 서버를 시작하세요.',
+        localProxyRealRss: '로컬 프록시를 통해 실제 RSS를 불러왔습니다', localProxyFallback: '로컬 프록시를 사용할 수 없어 데모 뉴스를 표시합니다.',
+        sourceAllowlist: '출처 허용 목록', serverSideRss: '서버 측 RSS 로딩', proxyStatus: '프록시 상태',
       },
     },
     copilot: {

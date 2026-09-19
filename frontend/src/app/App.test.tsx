@@ -322,6 +322,34 @@ describe('Market Copilot application shell', () => {
     fetchSpy.mockRestore()
   })
 
+  it('loads normalized real RSS through the optional local proxy mode', async () => {
+    const payload = { source: 'fed-press', sourceLabel: 'Federal Reserve Board', status: 'ok', fetchedAt: '2026-09-19T00:00:00.000Z', cacheStatus: 'none', fallbackUsed: false, errors: [], articles: [{ id: 'rss-fed-press-proxy', title: 'Official proxy policy update', summary: 'Policy announcement', url: 'https://www.federalreserve.gov/newsevents/pressreleases/example.htm', publishedAt: '2026-09-18T12:00:00.000Z', source: 'Federal Reserve Board', category: 'macro', relatedMarkets: ['macro'], relatedSymbols: [], sentiment: 'unassessed', importance: 'unassessed', isMock: false }] }
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(payload), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+    window.history.pushState({}, '', '/news')
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Local Proxy Experimental' }))
+    expect(await screen.findByText('Local proxy connected')).toBeTruthy()
+    expect(screen.getAllByText('Real RSS loaded through local proxy').length).toBeGreaterThan(0)
+    expect(screen.getByRole('heading', { name: 'Official proxy policy update' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('tab', { name: 'Macro' }))
+    expect(screen.getByText('1 ARTICLES')).toBeTruthy()
+    expect(window.localStorage.getItem('market-copilot.newsProviderMode')).toBe('local-proxy')
+    fetchSpy.mockRestore()
+  })
+
+  it('keeps the app usable and labels demo fallback when the local proxy is absent', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('offline'))
+    window.history.pushState({}, '', '/news')
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Local Proxy Experimental' }))
+    expect(await screen.findByText('Local proxy unavailable')).toBeTruthy()
+    expect(screen.getByRole('alert').textContent).toContain('Local proxy unavailable. Showing demo news.')
+    expect(screen.getByRole('alert').textContent).toContain('Start the local news proxy server')
+    expect(screen.getByText(/Global markets assess a possible rates path/)).toBeTruthy()
+    expect(screen.getAllByText('Demo news / Mock data').length).toBeGreaterThan(0)
+    fetchSpy.mockRestore()
+  })
+
   it('keeps the active instrument while reading News and changes it only on a related-symbol click', async () => {
     render(<App />)
     fireEvent.click(screen.getByRole('button', { name: 'MOCK' }))

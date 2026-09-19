@@ -28,7 +28,7 @@ export interface AiAnalysisInput {
     sessionStatus: 'always-open' | 'unknown'
   }
   newsContext: {
-    providerMode: 'mock' | 'rss-ready'
+    providerMode: 'mock' | 'rss-ready' | 'local-proxy'
     providerStatus: 'mock' | 'not-observed'
     relatedNewsCount: number
     relatedHeadlines: readonly string[]
