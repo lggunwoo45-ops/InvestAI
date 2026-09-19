@@ -9,7 +9,7 @@
 
 ## Market Copilot 9.x
 
-- **9.2 — News Backend Proxy design:** define an authorized server-side news boundary, source policy, caching, failure handling and safe frontend contract. No implementation in Sprint 9.1.
+- **9.2 — News Filter UX and News Backend Proxy design:** active filter visibility and reversible controls are delivered. The authorized server-side boundary, source policy, caching, failure handling, security controls, and safe frontend contract are documented in `news-backend-proxy-design.md`. No backend or proxy is implemented.
 - **9.3 — Local News Proxy prototype:** test the approved proxy design locally before any hosted service or production feed claim.
 - **9.5 — Paid Sector Picks UI foundation:** design a paid, sector-by-sector view of evidence-based daily **watchlist candidates** or **interest candidates**, targeting approximately three candidates per sector. It must not use aggressive “buy recommendation” language. Real implementation depends on the news/backend foundation and an auditable evidence model.
 

@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom'
 
 import { Icon } from '@/components/Icon/Icon'
 import { NewsCard } from '@/components/news/NewsCard/NewsCard'
+import { NewsFilterSummary, type ActiveNewsFilter } from '@/components/news/NewsFilterSummary/NewsFilterSummary'
 import { NewsProviderStatus } from '@/components/news/NewsProviderStatus/NewsProviderStatus'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { useMarketWorkspace } from '@/hooks/useMarketWorkspace'
@@ -45,14 +46,22 @@ export function NewsPage() {
   const { category, query, market, sentiment, importance, symbolFilter } = filters
   const updateFilters = (next: Partial<NewsPageState>) => setSavedFilters({ ...filters, ...next })
   const articles = useMemo(() => filterNews(feed?.articles ?? [], { query, category, market, sentiment, importance, symbol: symbolFilter ? selectedInstrument?.symbol : null }), [feed?.articles, query, category, market, sentiment, importance, selectedInstrument?.symbol, symbolFilter])
+  const activeFilters: ActiveNewsFilter[] = []
+  if (query.trim()) activeFilters.push({ id: 'query', label: text.filterLabels.search, value: query.trim(), onRemove: () => updateFilters({ query: '' }) })
+  if (category !== 'all') activeFilters.push({ id: 'category', label: text.filterLabels.topic, value: text.categories[category], onRemove: () => updateFilters({ category: 'all' }) })
+  if (market !== 'all') activeFilters.push({ id: 'market', label: text.marketFilter, value: market === 'macro' ? text.categories.macro : uiText[language].sessions[market], onRemove: () => updateFilters({ market: 'all' }) })
+  if (sentiment !== 'all') activeFilters.push({ id: 'sentiment', label: text.sentiment, value: text.sentiments[sentiment], onRemove: () => updateFilters({ sentiment: 'all' }) })
+  if (importance !== 'all') activeFilters.push({ id: 'importance', label: text.importance, value: text.importanceLevels[importance], onRemove: () => updateFilters({ importance: 'all' }) })
+  if (symbolFilter && selectedInstrument) activeFilters.push({ id: 'symbol', label: text.filterLabels.symbol, value: selectedInstrument.symbol, onRemove: () => updateFilters({ symbolFilter: false }) })
+  const clearFilters = () => updateFilters({ category: 'all', query: '', market: 'all', sentiment: 'all', importance: 'all', symbolFilter: false })
 
   return (
     <div className={styles.page}>
       <header className={styles.heading}><div><span>MARKET INTELLIGENCE</span><h1>{text.title}</h1><p>{text.subtitle}</p>{feed?.source === 'mock' && <strong className={styles.demo}>{text.demo}</strong>}{feed?.source === 'rss' && <strong className={styles.demo}>{text.provider.realRss}</strong>}</div><div className={styles.context}><span>{text.relatedMarket}</span><button type="button" disabled={!selectedInstrument} aria-pressed={symbolFilter} onClick={() => updateFilters({ symbolFilter: !symbolFilter })}>{selectedInstrument ? `${selectedInstrument.symbol} ${symbolFilter ? text.on : text.off}` : text.noSymbol}</button></div></header>
       <NewsProviderStatus mode={providerMode} result={feed} onModeChange={setProviderMode} />
       <div className={styles.controls}>
-        <label><Icon name="search" size={14} /><input type="search" value={query} onChange={(event) => updateFilters({ query: event.target.value })} placeholder={text.search} aria-label="Search news" /></label>
-        <div role="tablist" aria-label="News categories"><button type="button" role="tab" aria-selected={category === 'all'} onClick={() => updateFilters({ category: 'all' })}>{text.all}</button>{categories.map((item) => <button key={item} type="button" role="tab" aria-selected={category === item} onClick={() => updateFilters({ category: item })}>{text.categories[item]}</button>)}</div>
+        <div className={styles.search}><span>{text.filterLabels.search}</span><label><Icon name="search" size={14} /><input type="search" value={query} onChange={(event) => updateFilters({ query: event.target.value })} placeholder={text.search} aria-label="Search news" /></label></div>
+        <div className={styles.topics}><span>{text.filterLabels.topic}</span><div role="tablist" aria-label="News categories"><button type="button" role="tab" aria-selected={category === 'all'} onClick={() => updateFilters({ category: 'all' })}>{text.all}</button>{categories.map((item) => <button key={item} type="button" role="tab" aria-selected={category === item} onClick={() => updateFilters({ category: item })}>{text.categories[item]}</button>)}</div></div>
       </div>
       <div className={styles.filterRow} aria-label={text.filters}>
         <label>{text.marketFilter}<select aria-label={text.marketFilter} value={market} onChange={(event) => updateFilters({ market: event.target.value as NewsMarket | 'all' })}>
@@ -65,6 +74,7 @@ export function NewsPage() {
           <option value="all">{text.allImportance}</option>{importanceLevels.map((item) => <option key={item} value={item}>{text.importanceLevels[item]}</option>)}
         </select></label>
       </div>
+      <NewsFilterSummary filters={activeFilters} title={text.activeFilters} clearAllLabel={text.clearAll} removeLabel={text.removeFilter} onClearAll={clearFilters} />
       <p className={styles.trust}>{uiText[language].briefing.trust} {uiText[language].briefing.finalDecision}</p>
       <div className={styles.resultBar} aria-live="polite"><span>{articles.length} {text.articles}</span><strong>{selectedInstrument && symbolFilter ? `${text.filteredFor} ${selectedInstrument.symbol}` : market !== 'all' ? `${text.filteredFor} ${market === 'macro' ? text.categories.macro : uiText[language].sessions[market]}` : text.allCoverage}</strong></div>
       <div className={styles.grid}>{articles.map((article) => <NewsCard key={article.id} article={article} />)}</div>
