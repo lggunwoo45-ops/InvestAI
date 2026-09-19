@@ -16,6 +16,6 @@ export function TradePlanningReference({ plan, language }: TradePlanningReferenc
   return <section className={styles.panel} aria-label={text.planningReference}>
     <header><strong>{text.planningReference}</strong><span>{text.planningOnly}</span></header>
     <dl>{rows.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
-    <p>{text.noAdvice}</p>
+    <p>{text.planningOnly} · {text.notInstruction}<br />{text.waitConfirmation} {text.ownRiskControl}<br />{text.noAdvice}</p>
   </section>
 }

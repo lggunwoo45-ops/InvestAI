@@ -1,0 +1,9 @@
+.panel { border: 1px solid #34404a; background: #111820; }
+.panel header { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 9px 10px; border-bottom: 1px solid #34404a; }
+.panel header strong { color: #b6c3ca; font-size: 10px; }
+.panel header span { color: #967f64; font-size: 8px; }
+.panel dl { margin: 0; padding: 0 10px; }
+.panel dl > div { display: grid; grid-template-columns: 95px minmax(0, 1fr); gap: 8px; padding: 7px 0; border-bottom: 1px solid #28333d; }
+.panel dl > div:last-child { border-bottom: 0; }
+.panel dt { color: #82929f; font-size: 8px; }
+.panel dd { margin: 0; color: #a3b0ba; font-size: 8px; line-height: 1.4; }

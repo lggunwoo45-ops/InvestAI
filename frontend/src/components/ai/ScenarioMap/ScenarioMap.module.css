@@ -1,0 +1,7 @@
+.map { padding: 10px; border: 1px solid #2a3945; background: #101820; }
+.map h3 { margin: 0 0 8px; color: #b6c4cc; font-size: 10px; }
+.map ul { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.map li { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 8px; padding: 7px 0; border-top: 1px solid #26333e; }
+.map li strong { color: #96aaa9; font-size: 8px; }
+.map li span { color: #91a0ad; font-size: 8px; line-height: 1.4; }
+.map p { margin: 7px 0 0; color: #647382; font-size: 8px; }
