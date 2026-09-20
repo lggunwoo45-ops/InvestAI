@@ -1,5 +1,8 @@
 export type WatchCandidateAssetType = 'crypto' | 'stock'
-export type WatchCandidateEvidenceType = 'momentum' | 'volume' | 'liquidity' | 'marketContext' | 'news' | 'risk' | 'scenario'
+export type WatchCandidateEvidenceType = 'momentum' | 'volume' | 'liquidity' | 'sector' | 'marketContext' | 'news' | 'risk' | 'scenario' | 'incomplete'
+export type StockCandidateEvidenceType = 'momentum' | 'liquidity' | 'sector' | 'news' | 'marketContext' | 'risk' | 'incomplete'
+export type StockMarketRegion = 'korea' | 'us'
+export type StockCandidateDataQuality = 'live' | 'mock' | 'limited' | 'unavailable'
 export type WatchCandidateEvidenceStatus = 'positive' | 'neutral' | 'risk' | 'missing' | 'demo'
 export type WatchCandidateScoreLabel = 'high' | 'medium' | 'low' | 'incomplete'
 export type WatchCandidateNewsSource = 'demo' | 'local-proxy' | 'browser-rss' | 'none'
@@ -64,4 +67,13 @@ export interface WatchCandidate {
   nextWatchPoints: readonly string[]
   newsEvidence: WatchCandidateNewsEvidence
   disclaimer: string
+}
+
+export interface StockWatchCandidate extends WatchCandidate {
+  assetType: 'stock'
+  region: StockMarketRegion
+  sectorLabel?: string
+  dataQuality: StockCandidateDataQuality
+  dataQualityNote: string
+  stockEvidenceTypes: readonly StockCandidateEvidenceType[]
 }

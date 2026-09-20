@@ -35,6 +35,7 @@ describe('marketRadarEngine', () => {
     const snapshot = buildMarketRadar({ instruments: [], watchCandidates: [], newsResult: null, language: 'ko', mode: 'live' })
     expect(snapshot.signals.some((signal) => signal.status === 'incomplete')).toBe(true)
     expect(snapshot.riskNotes).toContain('시장 데이터가 없어 레이더가 불완전합니다.')
+    expect(snapshot.riskNotes.some((note) => note.includes('주식 후보 베타'))).toBe(true)
   })
   it('contains no unsafe action, return, or recommendation wording', () => expect(JSON.stringify(build()).toLowerCase()).not.toMatch(/buy now|sell now|strong buy|guaranteed|profit expected|ai recommends|recommendation|recommended/))
 })

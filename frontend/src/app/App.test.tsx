@@ -202,6 +202,17 @@ describe('Market Copilot application shell', () => {
     expect(window.localStorage.getItem('investai.watchlists.v2')).toContain('us-nvda')
   })
 
+  it('switches between crypto, Korea stock, and US stock candidate workspaces', async () => {
+    window.history.pushState({}, '', '/ai-analysis')
+    render(<App />)
+    expect(await screen.findByRole('tab', { name: 'Crypto' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('tab', { name: 'Korea Stocks' }))
+    expect(await screen.findByRole('heading', { name: 'Korea Stock Candidates' })).toBeTruthy()
+    expect(screen.getByText(/Stock data coverage · Early beta/)).toBeTruthy()
+    fireEvent.click(screen.getByRole('tab', { name: 'US Stocks' }))
+    expect(await screen.findByRole('heading', { name: 'US Stock Candidates' })).toBeTruthy()
+  })
+
   it('searches stocks globally and opens their market context', async () => {
     render(<App />)
     const globalSearch = screen.getByRole('searchbox', { name: 'Global search' })
