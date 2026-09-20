@@ -10,6 +10,7 @@ export const primaryNavigation: readonly NavigationItem[] = [
   { label: 'AI Analysis', path: '/ai-analysis', icon: 'ai' },
   { label: 'Strategies', path: '/strategies', icon: 'strategies' },
   { label: 'News', path: '/news', icon: 'news' },
+  { label: 'Demo', path: '/demo', icon: 'demo' },
 ]
 
 export const utilityNavigation: readonly NavigationItem[] = [

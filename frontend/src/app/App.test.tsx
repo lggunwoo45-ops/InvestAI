@@ -213,6 +213,16 @@ describe('Market Copilot application shell', () => {
     expect(await screen.findByRole('heading', { name: 'US Stock Candidates' })).toBeTruthy()
   })
 
+  it('renders the Investor Demo route and keeps internal demo links navigable', async () => {
+    window.history.pushState({}, '', '/demo')
+    render(<App />)
+    expect(await screen.findByRole('heading', { name: 'Market Copilot 1.5 Beta' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Demo' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('link', { name: /Open Market Radar/ }))
+    expect(await screen.findByRole('heading', { name: 'Market Radar' })).toBeTruthy()
+    expect(screen.getByRole('complementary', { name: '1.5 Beta scope' })).toBeTruthy()
+  })
+
   it('searches stocks globally and opens their market context', async () => {
     render(<App />)
     const globalSearch = screen.getByRole('searchbox', { name: 'Global search' })
