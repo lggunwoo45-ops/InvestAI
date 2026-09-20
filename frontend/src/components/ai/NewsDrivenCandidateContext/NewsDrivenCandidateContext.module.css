@@ -1,0 +1,3 @@
+.section { margin-bottom: 12px; padding: 11px; border: 1px solid #2c4447; background: #0c151a; }.section > header { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 9px; }.section > header span { color: #6f9993; font: 650 8px ui-monospace, monospace; letter-spacing: .12em; }.section h2 { margin: 4px 0 0; color: #c9d7da; font-size: 14px; }.section > header p { max-width: 52%; margin: 0; color: #7d8f95; font-size: 9px; text-align: right; }.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+@media (max-width: 1400px) { .grid { grid-template-columns: 1fr; }.section > header { align-items: start; flex-direction: column; }.section > header p { max-width: none; text-align: left; } }
+

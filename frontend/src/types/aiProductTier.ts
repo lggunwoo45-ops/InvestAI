@@ -1,8 +1,8 @@
 export type AiProductTier = 'free' | 'basic' | 'pro'
-export type AiFeatureKey = 'marketRadar' | 'cryptoWatchCandidates' | 'candidatePlanningZones' | 'localNotes' | 'newsOriginal' | 'aiNewsSummary' | 'aiCandidateAnalysis' | 'aiDeepDive' | 'sectorWatchCandidates' | 'portfolioAnalysis' | 'translationSummary' | 'aiAlerts'
+export type AiFeatureKey = 'marketRadar' | 'cryptoWatchCandidates' | 'candidatePlanningZones' | 'localNotes' | 'newsOriginal' | 'newsInsight' | 'aiNewsSummary' | 'aiCandidateAnalysis' | 'candidateReport' | 'aiDeepDive' | 'sectorWatchCandidates' | 'portfolioAnalysis' | 'translationSummary' | 'aiAlerts'
 export type AiFeatureAccess = 'available' | 'limited' | 'locked' | 'planned'
 export type AiUsageUnit = 'credit' | 'request' | 'report'
-export type AiRequestType = 'newsSummary' | 'candidateAnalysis' | 'deepDive' | 'sectorPicks' | 'translationSummary' | 'portfolioAnalysis'
+export type AiRequestType = 'newsSummary' | 'candidateAnalysis' | 'candidateReport' | 'deepDive' | 'sectorPicks' | 'translationSummary' | 'portfolioAnalysis'
 
 export interface AiTierPolicy {
   tier: AiProductTier

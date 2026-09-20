@@ -3,7 +3,7 @@ import type { AiFeatureKey, AiProductTier, AiRequestType, AiUsageDecision } from
 import { getAiTierPolicy } from './aiTierPolicy'
 import { getAiUsageEstimate } from './aiUsageEstimator'
 
-const requestFeature: Readonly<Record<AiRequestType, AiFeatureKey>> = { newsSummary: 'aiNewsSummary', candidateAnalysis: 'aiCandidateAnalysis', deepDive: 'aiDeepDive', sectorPicks: 'sectorWatchCandidates', translationSummary: 'translationSummary', portfolioAnalysis: 'portfolioAnalysis' }
+const requestFeature: Readonly<Record<AiRequestType, AiFeatureKey>> = { newsSummary: 'aiNewsSummary', candidateAnalysis: 'aiCandidateAnalysis', candidateReport: 'candidateReport', deepDive: 'aiDeepDive', sectorPicks: 'sectorWatchCandidates', translationSummary: 'translationSummary', portfolioAnalysis: 'portfolioAnalysis' }
 
 /** Planning-only decision. executable is intentionally always false until reviewed backend enforcement exists. */
 export function evaluateAiUsage(tier: AiProductTier, requestType: AiRequestType, language: Language = 'en'): AiUsageDecision {

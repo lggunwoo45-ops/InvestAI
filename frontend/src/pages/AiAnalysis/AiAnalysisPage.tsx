@@ -10,6 +10,7 @@ import { useNewsProviderMode } from '@/hooks/useNewsProviderMode'
 import { useOpenNewsInstrument } from '@/hooks/useOpenNewsInstrument'
 import { useLanguage } from '@/i18n/useLanguage'
 import { buildCryptoWatchCandidates } from '@/services/ai/cryptoWatchCandidateEngine'
+import { buildNewsInsight } from '@/services/news/newsInsightEngine'
 import { getCandidateHorizonProfile } from '@/services/ai/candidateHorizonProfiles'
 import type { WatchCandidateHorizon, WatchCandidateNewsSource } from '@/types/watchCandidate'
 import { loadCandidateSnapshots, saveCandidateSnapshots } from '@/utils/candidateSnapshotStorage'
@@ -26,11 +27,12 @@ export function AiAnalysisPage() {
   const catalog = useMarketCatalog('upbit-krw', marketDataMode, retry)
   useDocumentTitle(language === 'ko' ? '가상자산 관찰 후보' : 'Crypto Watch Candidates')
   const candidates = useMemo(() => buildCryptoWatchCandidates({ instruments: catalog.catalog?.instruments ?? [], newsResult, language, horizon, previousSnapshots }), [catalog.catalog, horizon, language, newsResult, previousSnapshots])
+  const newsInsights = useMemo(() => [...(newsResult?.articles ?? [])].sort((left, right) => Date.parse(right.publishedAt) - Date.parse(left.publishedAt)).slice(0, 3).map((article) => buildNewsInsight({ article, availableInstruments: candidates.map((candidate) => ({ id: candidate.instrumentId, symbol: candidate.symbol, name: candidate.name })), language })), [candidates, language, newsResult?.articles])
   const horizonProfile = useMemo(() => getCandidateHorizonProfile(horizon, language), [horizon, language])
   useEffect(() => { if (candidates.length) saveCandidateSnapshots(candidates) }, [candidates])
   const newsSource: WatchCandidateNewsSource = newsResult?.source === 'local-proxy' ? 'local-proxy' : newsResult?.source === 'rss' ? 'browser-rss' : newsResult?.source === 'mock' ? 'demo' : 'none'
   const retryCatalog = useCallback(() => setRetry((value) => value + 1), [])
 
   return <><CryptoWatchCandidates candidates={candidates} language={language} mode={marketDataMode} newsSource={newsSource} horizon={horizon} horizonProfile={horizonProfile} onHorizonChange={setHorizon} loading={catalog.loading} error={catalog.error}
-    onOpenInstrument={openInstrument} onOpenMarket={() => navigate('/market')} onModeChange={setMarketDataMode} onRetry={retryCatalog} /><AiUsagePlans language={language} /></>
+    onOpenInstrument={openInstrument} onOpenMarket={() => navigate('/market')} onModeChange={setMarketDataMode} onRetry={retryCatalog} newsInsights={newsInsights} /><AiUsagePlans language={language} /></>
 }
