@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { DiscoverTable } from '@/components/discover/DiscoverTable/DiscoverTable'
+import { BetaScopeBanner } from '@/components/demo/BetaScopeBanner/BetaScopeBanner'
 import { MarketRadar } from '@/components/market/MarketRadar/MarketRadar'
 import { NewsCard } from '@/components/news/NewsCard/NewsCard'
 import { MarketPulseBoard } from '@/components/smart-dashboard/MarketPulseBoard/MarketPulseBoard'
@@ -46,6 +47,7 @@ export function DashboardPage() {
 
   return (
     <div className={styles.page}>
+      <BetaScopeBanner language={language} />
       <MarketRadar snapshot={radar} language={language} onOpenInstrument={openInstrument} />
       <header className={styles.heading}>
         <div><span>DAILY INVESTMENT WORKSPACE</span><h2>Smart Market Dashboard</h2><p>Your watchlists, global sessions, discovery signals, and market-aware news.</p></div>

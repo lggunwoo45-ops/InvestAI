@@ -1,0 +1,27 @@
+import { Link } from 'react-router-dom'
+
+import { BetaScopeBanner } from '@/components/demo/BetaScopeBanner/BetaScopeBanner'
+import { useDocumentTitle } from '@/hooks/useDocumentTitle'
+import { useLanguage } from '@/i18n/useLanguage'
+import { getDemoScopeSummary } from '@/services/demo/demoScopeConfig'
+import styles from './DemoPage.module.css'
+
+const copy = {
+  en: { eyebrow: 'INVESTOR DEMO', subtitle: 'AI-ready market decision-support platform', rule: 'Rule-based now, AI-ready later', crypto: 'Crypto workflow available', stock: 'Stock workflow early beta', ai: 'Real AI planned, not connected', works: 'What works now', flow: 'Demo flow', show: 'What to show', say: 'What to say', roadmap: 'Product roadmap', trust: 'Trust boundary', questions: 'Investor questions', quick: 'Demo quick links', next: 'Next milestone', limits: 'Limitations', open: 'Open step', quickLinks: [{ label: 'Open Market Radar', route: '/dashboard' }, { label: 'Open Watch Candidates', route: '/ai-analysis' }, { label: 'Open News Center', route: '/news' }, { label: 'Open Market Workspace', route: '/market' }, { label: 'Open AI Usage Plans', route: '/ai-analysis#ai-usage-plans-title' }], roadmapItems: ['1.5 Beta · Current demo scope', '1.6 · Stock data expansion', '1.7 · AI summary pilot', '1.8 · Paid Sector Picks UI', '2.0 · AI-assisted full beta'], questionsItems: ['Is the candidate logic understandable?', 'Does horizon separation make sense?', 'Is the stock beta direction valuable?', 'Which AI features would users pay for?', 'Is Market Radar useful as a first screen?', 'What data would be needed before paying?'], statuses: { available: 'Available', beta: 'Beta', limited: 'Limited', planned: 'Planned', locked: 'Locked', notAvailable: 'Not available' } },
+  ko: { eyebrow: '투자자 데모', subtitle: 'AI-ready 시장 의사결정 지원 플랫폼', rule: '현재는 규칙 기반, 향후 AI-ready', crypto: '가상자산 흐름 사용 가능', stock: '주식 흐름 초기 베타', ai: '실제 AI 예정 · 미연결', works: '현재 작동하는 기능', flow: '데모 흐름', show: '보여줄 내용', say: '설명할 내용', roadmap: '제품 로드맵', trust: '신뢰 경계', questions: '투자자 질문', quick: '데모 빠른 이동', next: '다음 단계', limits: '제한사항', open: '단계 열기', quickLinks: [{ label: 'Market Radar 열기', route: '/dashboard' }, { label: '관찰 후보 열기', route: '/ai-analysis' }, { label: '뉴스 센터 열기', route: '/news' }, { label: '마켓 작업공간 열기', route: '/market' }, { label: 'AI 사용량 및 플랜 열기', route: '/ai-analysis#ai-usage-plans-title' }], roadmapItems: ['1.5 Beta · 현재 데모 범위', '1.6 · 주식 데이터 확장', '1.7 · AI 요약 파일럿', '1.8 · 유료 Sector Picks UI', '2.0 · AI 지원 전체 베타'], questionsItems: ['후보 로직을 이해할 수 있는가?', '기간 구분이 타당한가?', '주식 베타 방향이 가치 있는가?', '어떤 AI 기능에 비용을 지불할 것인가?', 'Market Radar가 첫 화면으로 유용한가?', '결제 전에 어떤 데이터가 필요한가?'], statuses: { available: '사용 가능', beta: '베타', limited: '제한', planned: '예정', locked: '잠김', notAvailable: '사용 불가' } },
+} as const
+
+export function DemoPage() {
+  const { language } = useLanguage()
+  const scope = getDemoScopeSummary(language)
+  const t = copy[language]
+  useDocumentTitle(scope.versionLabel)
+  return <div className={styles.page}>
+    <BetaScopeBanner language={language} />
+    <header className={styles.hero}><span>{t.eyebrow}</span><h1>{scope.versionLabel}</h1><h2>{t.subtitle}</h2><p>{scope.positioning}</p><div><b>{t.crypto}</b><b>{t.stock}</b><b>{t.ai}</b><b>{t.rule}</b></div></header>
+    <nav className={styles.quick} aria-label={t.quick}><span>{t.quick}</span>{t.quickLinks.map((link) => <Link key={link.label} to={link.route}>{link.label} →</Link>)}</nav>
+    <section className={styles.section} aria-labelledby="demo-works"><header><span>01</span><h2 id="demo-works">{t.works}</h2></header><div className={styles.capabilities}>{scope.capabilities.map((capability) => <article key={capability.area} data-status={capability.status}><header><h3>{capability.title}</h3><em>{t.statuses[capability.status]}</em></header><p>{capability.summary}</p><ul>{capability.whatWorks.map((item) => <li key={item}>{item}</li>)}</ul><details><summary>{t.limits}</summary><ul>{capability.limitations.map((item) => <li key={item}>{item}</li>)}</ul><small>{t.next}: {capability.nextMilestone}</small></details></article>)}</div></section>
+    <section className={styles.section} aria-labelledby="demo-flow"><header><span>02</span><h2 id="demo-flow">{t.flow}</h2></header><ol className={styles.flow}>{scope.demoFlow.map((step, index) => <li key={step.id}><b>{String(index + 1).padStart(2, '0')}</b><div><header><h3>{step.title}</h3><em>{t.statuses[step.status]}</em></header><p><span>{t.show}</span>{step.summary}</p><p><span>{t.say}</span>{step.talkingPoints.join(' · ')}</p><Link to={step.route}>{t.open} →</Link></div></li>)}</ol></section>
+    <section className={styles.split}><article aria-labelledby="demo-roadmap"><span>03</span><h2 id="demo-roadmap">{t.roadmap}</h2><ol>{t.roadmapItems.map((item) => <li key={item}>{item}</li>)}</ol><small>{language === 'ko' ? '표시된 버전은 제품 방향이며 확정 일정이 아닙니다.' : 'Version labels show product direction, not committed dates.'}</small></article><article aria-labelledby="demo-trust"><span>04</span><h2 id="demo-trust">{t.trust}</h2><ul>{scope.trustBoundaries.map((item) => <li key={item}>{item}</li>)}</ul></article><article aria-labelledby="demo-questions"><span>05</span><h2 id="demo-questions">{t.questions}</h2><ul>{t.questionsItems.map((item) => <li key={item}>□ {item}</li>)}</ul><small>{language === 'ko' ? '제출·텔레메트리·백엔드 없음' : 'No submission, telemetry, or backend'}</small></article></section>
+  </div>
+}
