@@ -16,11 +16,14 @@
 - **9.6 — Usable Analysis Pilot:** deliver a transparent, deterministic Crypto Watch Candidates screen using existing market and news evidence. It is a research shortlist, not a recommendation, prediction, probability, paid feature, or real AI result.
 - **9.7 — Candidate UX polish + feedback loop:** candidate review status, device-only notes, review summaries, status filters, and a human verification checklist are delivered. Feedback never leaves local storage and does not affect Watch Score.
 - **9.8 — Candidate Horizon System + Planning Zones:** short-term, swing, and long-term candidate profiles, review cadence guidance, rule-based planning reference bands, and local lifecycle snapshots are delivered without trading instructions.
-- **9.9 — Real AI API planning / cost control:** document reviewed model integration, prompt and evidence governance, budgets, failure modes, and audit requirements before connecting an API.
+- **9.9 — AI usage, cost control, and product tier foundation:** deterministic Free/Basic/Pro policies, feature access states, planning credit estimates, and non-executable AI placeholders are delivered. Prices and credits are illustrative; no AI, billing, account, or entitlement service is connected.
+- **9.10 or later — Paid Sector Picks UI Foundation:** consider roughly three evidence-based watch candidates per sector only after AI usage enforcement, evidence governance, account entitlement, and payment boundaries are approved. These must remain research candidates, not trade recommendations.
 - **1.0 — Beta:** consolidate usability, resilience, accessibility, performance, security, and release-readiness findings without unsupported AI claims.
 
 Future news translation work must preserve the original headline and source link, generate a separate clearly labelled Korean summary, and control model cost and API usage. It is not part of the current news provider pipeline.
 
 Paid Sector Picks remains deferred until evidence governance, entitlement, backend, account, and payment boundaries receive dedicated review.
+
+The future first screen should be **Market Radar**, organized around Hot sectors, Unusual volume, Volatility radar, and Watch candidates. It must not present “today's recommended stocks.”
 
 These items do not authorize real AI, paid access, news proxy, account, payment, trading, or recommendation logic before their dedicated reviewed sprints.
