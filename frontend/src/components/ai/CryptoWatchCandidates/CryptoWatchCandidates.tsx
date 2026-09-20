@@ -1,11 +1,13 @@
 import { useMemo, useState } from 'react'
 
 import { useCandidateFeedback } from '@/hooks/useCandidateFeedback'
+import { NewsDrivenCandidateContext } from '@/components/ai/NewsDrivenCandidateContext/NewsDrivenCandidateContext'
 import type { Language } from '@/i18n/translations'
 import { candidateHorizons, getCandidateHorizonProfile } from '@/services/ai/candidateHorizonProfiles'
 import { getWatchScoreLabel } from '@/services/ai/cryptoWatchCandidateEngine'
 import type { CandidateReviewFilter, CandidateReviewStatus } from '@/types/candidateFeedback'
 import type { MarketDataMode } from '@/types/market'
+import type { NewsInsightSummary } from '@/types/newsInsight'
 import type { CandidateHorizonProfile, WatchCandidate, WatchCandidateHorizon, WatchCandidateNewsSource } from '@/types/watchCandidate'
 import { CANDIDATE_NOTE_MAX_LENGTH } from '@/utils/candidateFeedbackStorage'
 import { filterCandidatesByReviewStatus } from '@/utils/candidateFeedbackSelectors'
@@ -25,6 +27,7 @@ interface CryptoWatchCandidatesProps {
   onOpenMarket: () => void
   onModeChange: (mode: MarketDataMode) => void
   onRetry: () => void
+  newsInsights?: readonly NewsInsightSummary[]
 }
 
 const statusOrder: readonly CandidateReviewStatus[] = ['unreviewed', 'watching', 'reviewed', 'dismissed']
@@ -36,7 +39,7 @@ const text = {
     title: '가상자산 관찰 후보', eyebrow: '일일 검토 작업공간', subtitle: '업비트 KRW 시장 근거를 규칙 기반으로 계산한 리서치 후보 목록입니다.', trust: '투명한 규칙 기반 화면 · AI 모델 없음 · 투자 추천 아님', live: '실시간 카탈로그', mock: '모의 카탈로그', loading: '근거 기반 관찰 목록을 준비하고 있습니다…', empty: '사용 가능한 가상자산 시장 카탈로그가 없습니다.', filteredEmpty: '이 검토 필터에 맞는 후보가 없습니다.', error: '가상자산 카탈로그를 불러오지 못했습니다.', openMarket: '마켓 열기', useMock: '모의 카탈로그 사용', retry: '다시 시도', open: '마켓에서 열기', openAndReview: '연 후 검토 완료', why: '관찰 이유', evidence: '근거 점수 상세', risk: '위험 / 무효화 조건', next: '다음 확인 항목', news: '뉴스 출처', source: '출처', scope: '범위', headlines: '개 헤드라인', details: '근거 펼쳐보기', score: '관찰 점수', today: '오늘의 검토', candidates: '개 후보', dataMode: '데이터 모드', newsSource: '뉴스 출처', realAi: '실제 AI', inactive: '비활성', all: '전체', reviewFilter: '검토 상태 필터', statuses: { unreviewed: '미확인', watching: '관찰 중', reviewed: '검토 완료', dismissed: '제외' }, actions: { watching: '관찰 중으로 표시', reviewed: '검토 완료로 표시', dismissed: '제외', unreviewed: '상태 초기화' }, note: '로컬 메모', localOnly: '이 기기에만 저장됩니다 · 분석 기간 간 공유', addNote: '메모 추가', clearNote: '메모 삭제', reset: '로컬 피드백 초기화', resetConfirm: '이 기기의 모든 후보 상태와 로컬 메모를 삭제할까요?', checklist: '검토 체크리스트', checklistItems: ['거래량 확인', 'BTC 방향 확인', '뉴스 출처 확인', '무효화 조건 확인', '판단 전 차트 열기'], analysisHorizon: '분석 기간', cadenceGuidance: '후보 검토 주기', realtimeGuidance: '실시간 데이터로 점수는 바뀔 수 있지만, 매 순간 추격하지 말고 분석 기간에 맞춰 검토하세요.', lifecycle: '수명주기 상태', lifecycleLabels: { new: '신규', maintained: '유지', strengthened: '강화', weakened: '약화', 'review-needed': '재검토 필요' }, planning: '계획 구간', interest: '관심 구간', secondInterest: '2차 관심 구간', target: '목표 관찰 구간', invalidation: '무효화 / 리스크 구간', planningOnly: '규칙 기반 계획 참고용이며 매수·매도 지시가 아닙니다.', riskReward: '리스크 / 보상 참고', confidence: '신뢰도 참고', lockedAi: ['AI 분석 · 예정', 'AI 뉴스 요약 · 예정', '심층 분석 · 예정'], lockedHelp: '실제 AI는 아직 연결되지 않았습니다. 향후 유료 플랜의 크레딧이 필요할 수 있습니다.' },
 } as const
 
-export function CryptoWatchCandidates({ candidates, language, mode, newsSource, horizon, horizonProfile, onHorizonChange, loading = false, error = null, onOpenInstrument, onOpenMarket, onModeChange, onRetry }: CryptoWatchCandidatesProps) {
+export function CryptoWatchCandidates({ candidates, language, mode, newsSource, horizon, horizonProfile, onHorizonChange, loading = false, error = null, onOpenInstrument, onOpenMarket, onModeChange, onRetry, newsInsights = [] }: CryptoWatchCandidatesProps) {
   const t = text[language]
   const { feedback, setStatus, setNote, resetStatus, resetAll } = useCandidateFeedback()
   const [filter, setFilter] = useState<CandidateReviewFilter>('all')
@@ -48,6 +51,7 @@ export function CryptoWatchCandidates({ candidates, language, mode, newsSource, 
   return <main className={styles.page}>
     <header className={styles.heading}><div><span>{t.eyebrow}</span><h1>{t.title}</h1><p>{t.subtitle}</p></div><div className={styles.mode} aria-label={language === 'ko' ? '시장 데이터 모드' : 'Market data mode'}><button className={mode === 'live' ? styles.active : ''} onClick={() => onModeChange('live')}>{t.live}</button><button className={mode === 'mock' ? styles.active : ''} onClick={() => onModeChange('mock')}>{t.mock}</button></div></header>
     <p className={styles.trust}>{t.trust}</p>
+    <NewsDrivenCandidateContext insights={newsInsights} language={language} />
     <section className={styles.horizonPanel}><div className={styles.horizonTabs} role="tablist" aria-label={t.analysisHorizon}>{candidateHorizons.map((item) => <button key={item} role="tab" aria-selected={horizon === item} onClick={() => onHorizonChange(item)}>{getCandidateHorizonProfile(item, language).label}</button>)}</div><div><strong>{horizonProfile.label} · {horizonProfile.reviewCadence}</strong><p>{horizonProfile.description}</p><small>{t.cadenceGuidance}: {horizonProfile.reviewCadence}. {t.realtimeGuidance}</small></div></section>
     {!loading && !error && candidates.length > 0 && <><section className={styles.reviewSummary} aria-label={t.today}><div><span>{t.today}</span><strong>{candidates.length} {t.candidates}</strong></div>{statusOrder.map((status) => <div key={status}><span>{t.statuses[status]}</span><strong>{counts[status]}</strong></div>)}<div><span>{t.dataMode}</span><strong>{mode.toUpperCase()}</strong></div><div><span>{t.newsSource}</span><strong>{newsSource}</strong></div><div><span>{t.realAi}</span><strong>{t.inactive}</strong></div></section><nav className={styles.filters} aria-label={t.reviewFilter}>{(['all', ...statusOrder] as const).map((status) => <button key={status} aria-pressed={filter === status} onClick={() => setFilter(status)}>{status === 'all' ? t.all : t.statuses[status]}<span>{status === 'all' ? candidates.length : counts[status]}</span></button>)}<button className={styles.reset} onClick={resetFeedback}>{t.reset}</button></nav></>}
     {loading && <section className={styles.state} role="status">{t.loading}</section>}

@@ -17,6 +17,8 @@
 .symbols button { border-color: #3a605c; color: #b6d6cc; cursor: pointer; }
 .symbols button:hover, .symbols button:focus-visible { border-color: #83aca1; color: #e0f2ec; }
 .detailsToggle { justify-self: start; margin-top: 10px; padding: 3px 0; border: 0; color: #9ebcb7; background: transparent; font-size: 9px; cursor: pointer; }
+.insightToggle { justify-self: start; margin-top: 6px; padding: 5px 8px; border: 1px solid #385956; color: #afd0c9; background: #10201f; font: 650 8px ui-monospace, monospace; cursor: pointer; }
+.insightToggle:hover, .insightToggle:focus-visible { border-color: #759d96; color: #e1efeb; }
 .details { margin-top: 8px; padding: 10px; border-top: 1px solid #2a3b46; background: #111b24; }
 .details dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; margin: 0; }
 .details dt { color: #80929f; font-size: 9px; }

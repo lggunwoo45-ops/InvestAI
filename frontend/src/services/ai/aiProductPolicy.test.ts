@@ -17,6 +17,7 @@ describe('AI product and usage policy', () => {
     expect(free.cryptoWatchCandidates).toBe('available')
     expect(free.candidatePlanningZones).toBe('available')
     expect(free.localNotes).toBe('available')
+    expect(free.newsInsight).toBe('available')
     expect(free.aiNewsSummary).toBe('locked')
     expect(free.aiCandidateAnalysis).toBe('locked')
   })
@@ -32,12 +33,14 @@ describe('AI product and usage policy', () => {
     expect(getAiUsageEstimate('candidateAnalysis').estimatedCredits).toBe(2)
     expect(getAiUsageEstimate('deepDive').estimatedCredits).toBe(5)
     expect(getAiUsageEstimate('portfolioAnalysis').estimatedCredits).toBe(8)
-    expect(listAiUsageEstimates()).toHaveLength(6)
+    expect(getAiUsageEstimate('candidateReport').estimatedCredits).toBe(3)
+    expect(listAiUsageEstimates()).toHaveLength(7)
   })
 
   it('never marks a planned request executable', () => {
     expect(evaluateAiUsage('free', 'candidateAnalysis')).toMatchObject({ access: 'locked', executable: false, estimatedCredits: 2 })
     expect(evaluateAiUsage('pro', 'deepDive')).toMatchObject({ access: 'limited', executable: false, estimatedCredits: 5 })
     expect(evaluateAiUsage('pro', 'sectorPicks')).toMatchObject({ access: 'planned', executable: false })
+    expect(evaluateAiUsage('basic', 'candidateReport')).toMatchObject({ access: 'limited', executable: false })
   })
 })

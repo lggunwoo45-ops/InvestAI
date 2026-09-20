@@ -12,6 +12,7 @@ import { useNewsProviderMode } from '@/hooks/useNewsProviderMode'
 import { useLanguage } from '@/i18n/useLanguage'
 import { uiText } from '@/i18n/translations'
 import { filterNews } from '@/services/news/newsSelectors'
+import { marketDataService } from '@/services/market/marketDataService'
 import type { NewsCategory, NewsImportance, NewsMarket, NewsSentiment } from '@/types/dashboard'
 import styles from './NewsPage.module.css'
 
@@ -46,6 +47,12 @@ export function NewsPage() {
   const { category, query, market, sentiment, importance, symbolFilter } = filters
   const updateFilters = (next: Partial<NewsPageState>) => setSavedFilters({ ...filters, ...next })
   const articles = useMemo(() => filterNews(feed?.articles ?? [], { query, category, market, sentiment, importance, symbol: symbolFilter ? selectedInstrument?.symbol : null }), [feed?.articles, query, category, market, sentiment, importance, selectedInstrument?.symbol, symbolFilter])
+  const insightInstruments = useMemo(() => {
+    const ids = new Set(['upbit-btc', 'upbit-eth'])
+    for (const article of feed?.articles ?? []) for (const id of Object.values(article.relatedInstrumentIds ?? {})) ids.add(id)
+    if (selectedInstrument) ids.add(selectedInstrument.id)
+    return [...marketDataService.getKnownInstruments([...ids]).values()]
+  }, [feed?.articles, selectedInstrument])
   const activeFilters: ActiveNewsFilter[] = []
   if (query.trim()) activeFilters.push({ id: 'query', label: text.filterLabels.search, value: query.trim(), onRemove: () => updateFilters({ query: '' }) })
   if (category !== 'all') activeFilters.push({ id: 'category', label: text.filterLabels.topic, value: text.categories[category], onRemove: () => updateFilters({ category: 'all' }) })
@@ -77,7 +84,7 @@ export function NewsPage() {
       <NewsFilterSummary filters={activeFilters} title={text.activeFilters} clearAllLabel={text.clearAll} removeLabel={text.removeFilter} onClearAll={clearFilters} />
       <p className={styles.trust}>{uiText[language].briefing.trust} {uiText[language].briefing.finalDecision}</p>
       <div className={styles.resultBar} aria-live="polite"><span>{articles.length} {text.articles}</span><strong>{selectedInstrument && symbolFilter ? `${text.filteredFor} ${selectedInstrument.symbol}` : market !== 'all' ? `${text.filteredFor} ${market === 'macro' ? text.categories.macro : uiText[language].sessions[market]}` : text.allCoverage}</strong></div>
-      <div className={styles.grid}>{articles.map((article) => <NewsCard key={article.id} article={article} />)}</div>
+      <div className={styles.grid}>{articles.map((article) => <NewsCard key={article.id} article={article} availableInstruments={insightInstruments} />)}</div>
       {!feed ? <div className={styles.empty}>{text.loading}</div> : articles.length === 0 && <div className={styles.empty}>{text.noResults}</div>}
     </div>
   )
