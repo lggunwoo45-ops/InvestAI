@@ -57,6 +57,7 @@ export function buildMarketRadar(input: MarketRadarInput): MarketRadarSnapshot {
     ...(valid.length ? [] : [ko ? '시장 데이터가 없어 레이더가 불완전합니다.' : 'Market data is unavailable, so the radar is incomplete.']),
     ...(volatilityRadar.some((item) => item.status === 'caution') ? [ko ? '급격한 변동 종목은 추가 위험 검토가 필요합니다.' : 'Extreme movement requires additional risk review.'] : []),
     ...(macroArticles.length ? [ko ? '거시 뉴스는 특정 종목 근거가 아닙니다.' : 'Macro news is not instrument-specific evidence.'] : []),
+    ko ? '주식 후보 베타: 한국·미국 주식 데이터는 현재 모의·제한 범위입니다.' : 'Stock candidate beta: Korea and US stock data currently has mock or limited coverage.',
     ko ? '실제 AI는 연결되지 않았습니다.' : 'Real AI is not connected.',
   ]
   if (!articles.length) riskNotes.push(ko ? '사용 가능한 뉴스 데이터가 없습니다.' : 'No news data is available.')
