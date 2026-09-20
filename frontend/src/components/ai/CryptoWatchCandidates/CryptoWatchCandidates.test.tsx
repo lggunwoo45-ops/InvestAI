@@ -106,6 +106,13 @@ describe('CryptoWatchCandidates', () => {
     expect(changeHorizon).toHaveBeenCalledWith('swing')
   })
 
+  it('renders disabled AI action placeholders', () => {
+    renderCandidates()
+    for (const label of ['AI Analyze · Planned', 'AI News Summary · Planned', 'Deep Dive · Planned']) {
+      expect((screen.getByRole('button', { name: new RegExp(label) }) as HTMLButtonElement).disabled).toBe(true)
+    }
+  })
+
   it('shows an actionable empty state', () => {
     const openMarket = vi.fn()
     render(<CryptoWatchCandidates candidates={[]} language="en" mode="live" newsSource="none" horizon="short" horizonProfile={getCandidateHorizonProfile('short', 'en')} onHorizonChange={vi.fn()} onOpenInstrument={vi.fn()} onOpenMarket={openMarket} onModeChange={vi.fn()} onRetry={vi.fn()} />)
