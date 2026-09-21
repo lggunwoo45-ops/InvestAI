@@ -2,7 +2,6 @@ import type { Language } from '@/i18n/translations'
 import type { MarketInstrument } from '@/types/market'
 import type { SimplePlanningLevel, SimplePlanningReference } from '@/types/simpleMode'
 import type { WatchCandidateHorizon } from '@/types/watchCandidate'
-import { formatMarketPrice } from '@/utils/formatMarketValue'
 
 interface PlanningReferenceInput {
   instrument: MarketInstrument
@@ -11,43 +10,47 @@ interface PlanningReferenceInput {
 }
 
 const bands = {
-  short: { observations: [-0.015, -0.03, -0.05], risk: -0.07, profit: [0.03, 0.06] },
-  swing: { observations: [-0.03, -0.06, -0.09], risk: -0.12, profit: [0.06, 0.12] },
-  long: { observations: [-0.05, -0.1, -0.15], risk: -0.2, profit: [0.1, 0.2] },
+  short: { observation: [1.5, 5], risk: 7, upside: [3, 6] },
+  swing: { observation: [3, 9], risk: 12, upside: [6, 12] },
+  long: { observation: [5, 15], risk: 20, upside: [10, 20] },
 } as const
 
 const copy = {
   en: {
-    labels: ['1st Observation Price', '2nd Observation Price', '3rd Observation Price'], risk: 'Risk Reference Price', profit: 'Profit-Taking Reference Range',
-    note: 'These levels are rule-based planning references from the current price. They are not entry, stop-loss, or target-price instructions.',
-    levelNote: 'Observation level · planning reference only', unavailable: 'A reliable current price is unavailable, so numeric planning references are disabled.',
+    observation: 'Observation area', risk: 'Risk check area', upside: 'Upside check area',
+    belowRange: (low: number, high: number) => `About ${low}% to ${high}% below current price`,
+    below: (value: number) => `About ${value}% below current price`,
+    aboveRange: (low: number, high: number) => `About ${low}% to ${high}% above current price`,
+    note: 'These are fixed-percentage distances from the current price, not calculated support/resistance levels.',
+    levelNote: 'Fixed-percentage distance · planning reference only',
+    unavailable: 'A reliable current price is unavailable, so the percentage planning summary is disabled.',
   },
   ko: {
-    labels: ['1차 관찰가', '2차 관찰가', '3차 관찰가'], risk: '위험 기준가', profit: '수익 실현 참고 구간',
-    note: '이 구간은 현재가 기준의 규칙 기반 계획 참고값입니다. 진입가, 손절가, 목표가 지시가 아닙니다.',
-    levelNote: '관찰 구간 · 계획 참고용', unavailable: '신뢰할 수 있는 현재가가 없어 숫자 계획 참고값을 표시하지 않습니다.',
+    observation: '관찰 구간', risk: '위험 확인 구간', upside: '상승 확인 구간',
+    belowRange: (low: number, high: number) => `현재가보다 약 ${low}%~${high}% 아래`,
+    below: (value: number) => `현재가보다 약 ${value}% 아래`,
+    aboveRange: (low: number, high: number) => `현재가보다 약 ${low}%~${high}% 위`,
+    note: '이 구간은 현재가 기준의 고정 비율 거리이며, 계산된 지지·저항선이 아닙니다.',
+    levelNote: '고정 비율 거리 · 계획 참고용',
+    unavailable: '신뢰할 수 있는 현재가가 없어 비율 계획 요약을 표시하지 않습니다.',
   },
 } as const
 
 export function unavailablePlanningReference(reason: string): SimplePlanningReference {
-  return { available: false, reason, firstObservationPrice: null, secondObservationPrice: null, thirdObservationPrice: null, riskReferencePrice: null, profitTakingReferenceRange: null, notes: [] }
+  return { available: false, reason, observationArea: null, riskCheckArea: null, upsideCheckArea: null, notes: [] }
 }
 
 export function buildPlanningReference({ instrument, horizon, language }: PlanningReferenceInput): SimplePlanningReference {
-  const current = instrument.lastPrice
   const t = copy[language]
-  if (!Number.isFinite(current) || current <= 0) return unavailablePlanningReference(t.unavailable)
+  if (!Number.isFinite(instrument.lastPrice) || instrument.lastPrice <= 0) return unavailablePlanningReference(t.unavailable)
   const profile = bands[horizon]
-  const format = (ratio: number) => formatMarketPrice({ ...instrument, lastPrice: current * (1 + ratio) })
-  const level = (label: string, ratio: number): SimplePlanningLevel => ({ label, value: format(ratio), note: t.levelNote })
+  const level = (label: string, value: string): SimplePlanningLevel => ({ label, value, note: t.levelNote })
   return {
     available: true,
-    reason: language === 'ko' ? '현재가를 기준으로 기간별 간격을 적용했습니다.' : 'Horizon spacing is applied to the current price.',
-    firstObservationPrice: level(t.labels[0], profile.observations[0]),
-    secondObservationPrice: level(t.labels[1], profile.observations[1]),
-    thirdObservationPrice: level(t.labels[2], profile.observations[2]),
-    riskReferencePrice: level(t.risk, profile.risk),
-    profitTakingReferenceRange: { label: t.profit, value: `${format(profile.profit[0])} – ${format(profile.profit[1])}`, note: t.levelNote },
+    reason: language === 'ko' ? '현재가에서 떨어진 고정 비율 거리입니다.' : 'Fixed-percentage distances from the current price.',
+    observationArea: level(t.observation, t.belowRange(profile.observation[0], profile.observation[1])),
+    riskCheckArea: level(t.risk, t.below(profile.risk)),
+    upsideCheckArea: level(t.upside, t.aboveRange(profile.upside[0], profile.upside[1])),
     notes: [t.note],
   }
 }

@@ -223,15 +223,18 @@ describe('Market Copilot application shell', () => {
     expect(screen.getByRole('complementary', { name: '1.5 Beta scope' })).toBeTruthy()
   })
 
-  it('renders the Simple Mode route and navigation item without replacing expert mode', async () => {
+  it('renders the Simple Mode route as a mode switch without adding primary navigation', async () => {
     window.history.pushState({}, '', '/simple')
     render(<App />)
     expect(await screen.findByRole('heading', { name: 'Market Copilot Simple Mode' })).toBeTruthy()
-    expect(screen.getByRole('link', { name: 'Simple' })).toBeTruthy()
-    expect(screen.getAllByRole('link', { name: /Open Expert Mode/ }).length).toBeGreaterThan(0)
-    fireEvent.click(screen.getAllByRole('link', { name: /Open Expert Mode/ })[0])
+    expect(screen.queryByRole('link', { name: 'Simple' })).toBeNull()
+    const simpleSwitcher = screen.getByRole('navigation', { name: 'Analysis view mode' })
+    expect(within(simpleSwitcher).getByRole('link', { name: /Simple Mode/ }).getAttribute('aria-current')).toBe('page')
+    fireEvent.click(within(simpleSwitcher).getByRole('link', { name: /Expert Mode/ }))
     expect(await screen.findByRole('tab', { name: 'Crypto' })).toBeTruthy()
-    expect(screen.getByRole('link', { name: /Switch to Simple Mode/ })).toBeTruthy()
+    const expertSwitcher = screen.getByRole('navigation', { name: 'Analysis view mode' })
+    expect(within(expertSwitcher).getByRole('link', { name: /Expert Mode/ }).getAttribute('aria-current')).toBe('page')
+    expect(within(expertSwitcher).getByRole('link', { name: /Simple Mode/ }).getAttribute('href')).toBe('/simple')
   })
 
   it('searches stocks globally and opens their market context', async () => {

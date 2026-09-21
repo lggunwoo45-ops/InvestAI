@@ -12,13 +12,13 @@ export interface SimplePlanningLevel {
 export interface SimplePlanningReference {
   available: boolean
   reason: string
-  firstObservationPrice: SimplePlanningLevel | null
-  secondObservationPrice: SimplePlanningLevel | null
-  thirdObservationPrice: SimplePlanningLevel | null
-  riskReferencePrice: SimplePlanningLevel | null
-  profitTakingReferenceRange: SimplePlanningLevel | null
+  observationArea: SimplePlanningLevel | null
+  riskCheckArea: SimplePlanningLevel | null
+  upsideCheckArea: SimplePlanningLevel | null
   notes: readonly string[]
 }
+
+export type SimpleAttentionBand = 'high' | 'medium' | 'low'
 
 export interface SimpleCandidate {
   id: string

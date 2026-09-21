@@ -1,0 +1,5 @@
+.switcher { display: grid; flex: 0 0 224px; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 224px; padding: 2px; border: 1px solid #30454d; border-radius: 999px; background: #091218; }
+.switcher a { overflow: hidden; padding: 7px 10px; border-radius: 999px; color: #82949b; font-size: 8px; font-weight: 700; line-height: 1; text-align: center; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
+.switcher a[aria-current='page'] { background: #203432; color: #c8dad6; box-shadow: inset 0 0 0 1px #456963; }
+.switcher a:focus-visible { outline: 2px solid #789f97; outline-offset: 2px; }
+@media (max-width: 620px) { .switcher { width: 100%; max-width: 320px; flex-basis: auto; } }
