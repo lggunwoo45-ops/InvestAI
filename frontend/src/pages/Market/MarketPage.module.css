@@ -1,4 +1,6 @@
 .page { min-width: 0; min-height: 0; height: 100%; padding: 14px; overflow: hidden; background: #080d13; }
+.navigator { display: grid; min-width: 0; min-height: 0; grid-template-rows: auto minmax(0, 1fr); overflow: hidden; }
+.navigator > [role='note'] { margin: 8px 8px 0; }
 .pendingWorkspace { display: grid; min-width: 0; min-height: 0; height: 100%; grid-template-columns: minmax(230px, 30fr) minmax(0, 70fr); overflow: hidden; }
 .detailState { display: grid; min-width: 0; place-items: center; padding: 20px; color: #8091a2; background: #090e14; font: 11px ui-monospace, monospace; text-align: center; }
 @media (max-width: 1400px) { .page { padding: 8px; } }

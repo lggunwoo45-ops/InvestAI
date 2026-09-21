@@ -1,21 +1,27 @@
-import { render, screen } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
+import { DisplayModeProvider } from '@/app/displayMode/DisplayModeProvider'
+import { LanguageProvider } from '@/i18n/LanguageProvider'
 import { ModeSwitcher } from './ModeSwitcher'
 
 describe('ModeSwitcher', () => {
-  it('renders compact English labels and marks only Simple Mode selected', () => {
-    render(<MemoryRouter><ModeSwitcher activeMode="simple" language="en" /></MemoryRouter>)
-    expect(screen.getByText('Simple')).toBeTruthy()
-    expect(screen.getByText('Expert')).toBeTruthy()
-    expect(screen.getByRole('link', { name: /Simple Mode/ }).getAttribute('aria-current')).toBe('page')
-    expect(screen.getByRole('link', { name: /Expert Mode/ }).getAttribute('aria-current')).toBeNull()
-    expect(screen.getByRole('link', { name: /Expert Mode/ }).getAttribute('href')).toBe('/ai-analysis')
+  it('renders stable English segments and changes the global selected state', () => {
+    window.localStorage.clear()
+    render(<LanguageProvider><DisplayModeProvider><ModeSwitcher /></DisplayModeProvider></LanguageProvider>)
+    const simple = screen.getByRole('button', { name: /Simple Mode/ })
+    const expert = screen.getByRole('button', { name: /Expert Mode/ })
+    expect(simple.textContent).toBe('Simple')
+    expect(expert.textContent).toBe('Expert')
+    expect(expert.getAttribute('aria-pressed')).toBe('true')
+    fireEvent.click(simple)
+    expect(simple.getAttribute('aria-pressed')).toBe('true')
+    expect(expert.getAttribute('aria-pressed')).toBe('false')
   })
-  it('keeps both Korean segments in place and marks only Expert Mode selected', () => {
-    render(<MemoryRouter><ModeSwitcher activeMode="expert" language="ko" /></MemoryRouter>)
-    expect(screen.getByRole('link', { name: /간편모드/ }).getAttribute('aria-current')).toBeNull()
-    expect(screen.getByRole('link', { name: /전문가모드/ }).getAttribute('aria-current')).toBe('page')
+  it('renders Korean labels without changing the segment structure', () => {
+    window.localStorage.setItem('market-copilot.language', 'ko')
+    render(<LanguageProvider><DisplayModeProvider><ModeSwitcher /></DisplayModeProvider></LanguageProvider>)
+    expect(screen.getByRole('button', { name: /간편모드/ }).textContent).toBe('간편모드')
+    expect(screen.getByRole('button', { name: /전문가모드/ }).textContent).toBe('전문가모드')
   })
 })

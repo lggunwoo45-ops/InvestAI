@@ -1,5 +1,7 @@
 import { useCallback, useState } from 'react'
 
+import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
+import { DisplayModeNotice } from '@/components/displayMode/DisplayModeNotice/DisplayModeNotice'
 import { MarketDetailWorkspace } from '@/components/market-detail/MarketDetailWorkspace/MarketDetailWorkspace'
 import { MarketExplorer } from '@/components/market/MarketExplorer/MarketExplorer'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
@@ -8,6 +10,7 @@ import { useMarketDetailData } from '@/hooks/useMarketDetailData'
 import { useMarketWorkspace } from '@/hooks/useMarketWorkspace'
 import { useWatchlists } from '@/hooks/useWatchlists'
 import { useLanguage } from '@/i18n/useLanguage'
+import { uiText } from '@/i18n/translations'
 import { marketDataService } from '@/services/market/marketDataService'
 import { venueForStockId } from '@/services/market/explorer/StockCatalogProvider'
 import type { MarketInstrument, MarketVenue } from '@/types/market'
@@ -27,6 +30,7 @@ function initialVenue(instrument: MarketInstrument): MarketVenue {
 
 export function MarketPage() {
   const { language } = useLanguage()
+  const { displayMode } = useDisplayMode()
   useDocumentTitle(marketExplorerText[language].title)
   const { selectedInstrument, selectedTimeframe, marketDataMode, selectInstrument, clearInstrument, selectTimeframe, setMarketDataMode } = useMarketWorkspace()
   const { favoriteIds, toggleFavorite, trackRecentlyViewed } = useWatchlists()
@@ -66,7 +70,7 @@ export function MarketPage() {
     setSortDirection(next.direction)
   }, [sortField, sortDirection])
 
-  const explorer = (
+  const explorerPanel = (
     <MarketExplorer
       venue={venue}
       mode={marketDataMode}
@@ -95,6 +99,7 @@ export function MarketPage() {
       compact={Boolean(selectedInstrument)}
     />
   )
+  const explorer = <div className={styles.navigator}>{displayMode === 'simple' && <DisplayModeNotice>{uiText[language].displayMode.marketHint}</DisplayModeNotice>}{explorerPanel}</div>
 
   if (!selectedInstrument) return <main className={styles.page}>{explorer}</main>
 

@@ -4,6 +4,7 @@
 .hero > span, .candidates > header span, .guide > header span { color: #79a199; font: 700 8px ui-monospace, monospace; letter-spacing: .14em; }
 .hero h1 { margin: 7px 0 5px; color: #e1eaea; font-size: 28px; letter-spacing: -.035em; }
 .hero p { max-width: 720px; margin: 0; color: #8b9da2; font-size: 10px; line-height: 1.6; }
+.modeNote { margin-bottom: 9px; padding: 8px 11px; border: 1px solid #35484d; background: #0d171d; color: #81949a; font-size: 8px; }
 .safety { margin-top: 9px; padding: 11px 13px; border-left: 3px solid #a38a55; background: #171710; color: #a49a7d; font-size: 9px; line-height: 1.5; }
 .candidates, .guide { margin-top: 13px; border: 1px solid #293e46; }
 .candidates > header, .guide > header { display: flex; justify-content: space-between; align-items: baseline; padding: 11px 13px; border-bottom: 1px solid #293e46; background: #0d181e; }

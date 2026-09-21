@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 
 import { Icon } from '@/components/Icon/Icon'
+import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
+import { DisplayModeNotice } from '@/components/displayMode/DisplayModeNotice/DisplayModeNotice'
 import { NewsCard } from '@/components/news/NewsCard/NewsCard'
 import { NewsFilterSummary, type ActiveNewsFilter } from '@/components/news/NewsFilterSummary/NewsFilterSummary'
 import { NewsProviderStatus } from '@/components/news/NewsProviderStatus/NewsProviderStatus'
@@ -33,6 +35,7 @@ interface NewsPageState {
 
 export function NewsPage() {
   const { language } = useLanguage()
+  const { displayMode } = useDisplayMode()
   const text = uiText[language].news
   useDocumentTitle(text.title)
   const location = useLocation()
@@ -65,6 +68,7 @@ export function NewsPage() {
   return (
     <div className={styles.page}>
       <header className={styles.heading}><div><span>MARKET INTELLIGENCE</span><h1>{text.title}</h1><p>{text.subtitle}</p>{feed?.source === 'mock' && <strong className={styles.demo}>{text.demo}</strong>}{feed?.source === 'rss' && <strong className={styles.demo}>{text.provider.realRss}</strong>}{feed?.source === 'local-proxy' && <strong className={styles.demo}>{text.provider.localProxyRealRss}</strong>}</div><div className={styles.context}><span>{text.relatedMarket}</span><button type="button" disabled={!selectedInstrument} aria-pressed={symbolFilter} onClick={() => updateFilters({ symbolFilter: !symbolFilter })}>{selectedInstrument ? `${selectedInstrument.symbol} ${symbolFilter ? text.on : text.off}` : text.noSymbol}</button></div></header>
+      {displayMode === 'simple' && <DisplayModeNotice>{uiText[language].displayMode.newsHint}</DisplayModeNotice>}
       <NewsProviderStatus mode={providerMode} result={feed} onModeChange={setProviderMode} />
       <div className={styles.controls}>
         <div className={styles.search}><span>{text.filterLabels.search}</span><label><Icon name="search" size={14} /><input type="search" value={query} onChange={(event) => updateFilters({ query: event.target.value })} placeholder={text.search} aria-label="Search news" /></label></div>
