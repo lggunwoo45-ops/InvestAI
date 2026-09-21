@@ -1,1 +1,4 @@
-.notice { padding: 8px 11px; border: 1px solid #30464a; border-left: 3px solid #638d85; background: #0d181c; color: #91a6a5; font-size: 8px; line-height: 1.5; }
+.notice { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 11px; border: 1px solid #30464a; border-left: 3px solid #638d85; background: #0d181c; color: #91a6a5; font-size: 8px; line-height: 1.5; }
+.notice[data-variant='panel'] { padding: 11px 13px; background: #102024; font-size: 9px; }
+.notice a { flex: 0 0 auto; padding: 5px 7px; border: 1px solid #45635e; color: #b0cbc5; text-decoration: none; }
+@media (max-width: 700px) { .notice { align-items: flex-start; flex-direction: column; } }

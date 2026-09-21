@@ -66,9 +66,9 @@ export function NewsPage() {
   const clearFilters = () => updateFilters({ category: 'all', query: '', market: 'all', sentiment: 'all', importance: 'all', symbolFilter: false })
 
   return (
-    <div className={styles.page}>
+    <div className={styles.page} data-display-mode={displayMode}>
       <header className={styles.heading}><div><span>MARKET INTELLIGENCE</span><h1>{text.title}</h1><p>{text.subtitle}</p>{feed?.source === 'mock' && <strong className={styles.demo}>{text.demo}</strong>}{feed?.source === 'rss' && <strong className={styles.demo}>{text.provider.realRss}</strong>}{feed?.source === 'local-proxy' && <strong className={styles.demo}>{text.provider.localProxyRealRss}</strong>}</div><div className={styles.context}><span>{text.relatedMarket}</span><button type="button" disabled={!selectedInstrument} aria-pressed={symbolFilter} onClick={() => updateFilters({ symbolFilter: !symbolFilter })}>{selectedInstrument ? `${selectedInstrument.symbol} ${symbolFilter ? text.on : text.off}` : text.noSymbol}</button></div></header>
-      {displayMode === 'simple' && <DisplayModeNotice>{uiText[language].displayMode.newsHint}</DisplayModeNotice>}
+      {displayMode === 'simple' && <DisplayModeNotice variant="panel">{uiText[language].displayMode.newsHint}</DisplayModeNotice>}
       <NewsProviderStatus mode={providerMode} result={feed} onModeChange={setProviderMode} />
       <div className={styles.controls}>
         <div className={styles.search}><span>{text.filterLabels.search}</span><label><Icon name="search" size={14} /><input type="search" value={query} onChange={(event) => updateFilters({ query: event.target.value })} placeholder={text.search} aria-label="Search news" /></label></div>

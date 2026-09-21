@@ -26,4 +26,9 @@ describe('MarketRadar', () => {
     expect(screen.getByText('Market-level signal')).toBeTruthy()
     expect(screen.queryByRole('button', { name: /Open in Market/ })).toBeNull()
   })
+  it('collapses detailed signals but keeps risk notes present in Simple Mode', () => {
+    render(<MarketRadar snapshot={snapshot} language="en" simpleMode onOpenInstrument={() => undefined} />)
+    expect(screen.getByText('Show detailed radar')).toBeTruthy()
+    expect(screen.getByText('Real AI is not connected.')).toBeTruthy()
+  })
 })

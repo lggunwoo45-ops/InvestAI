@@ -1,5 +1,5 @@
 .page { min-width: 0; min-height: 100%; padding: 18px 20px 34px; color: #9cabb3; }
-.page > [role='note'] { margin-bottom: 10px; }
+.simplePath { margin-bottom: 10px; border: 1px solid #30464a; background: #0d191d; }.simplePath > header { padding: 9px 11px; border-bottom: 1px solid #293e43; }.simplePath header span { color: #718f8b; font: 700 7px ui-monospace, monospace; }.simplePath h2 { margin: 3px 0 0; color: #cedbda; font-size: 13px; }.simplePath ol { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0; padding: 0; list-style: none; }.simplePath li { display: flex; align-items: center; gap: 8px; padding: 10px; border-left: 1px solid #293e43; color: #91a3a5; font-size: 8px; }.simplePath li:first-child { border-left: 0; }.simplePath li b { color: #6e9690; font: 700 10px ui-monospace, monospace; }.simplePath a { color: #a9c7c1; text-decoration: none; }
 .hero { padding: 24px 26px; border: 1px solid #30464a; background: linear-gradient(120deg, #102021, #0b141a 58%, #141713); }
 .hero > span, .section > header span, .split article > span { color: #7da09a; font: 700 9px ui-monospace, monospace; letter-spacing: .14em; }
 .hero h1 { margin: 7px 0 3px; color: #e3ecec; font-size: 34px; letter-spacing: -.04em; }
@@ -65,5 +65,5 @@
 .guidance article[data-guidance='present'] h3 { color: #87afa6; }
 @media (max-width: 1400px) { .capabilities { grid-template-columns: repeat(2, minmax(0, 1fr)); }.capabilities article:nth-child(3n) { border-right: 1px solid #22343d; }.capabilities article:nth-child(2n) { border-right: 0; }.split { grid-template-columns: 1fr; } }
 @media (max-width: 900px) { .readinessGrid { grid-template-columns: 1fr; }.readinessGrid article { border-right: 0; border-bottom: 1px solid #22343d; }.presenter ul { grid-template-columns: 1fr; } }
-@media (max-width: 760px) { .page { padding: 14px; }.hero { padding: 18px; }.hero h1 { font-size: 27px; }.capabilities, .flow, .script, .guidance > div { grid-template-columns: 1fr; }.capabilities article, .flow li, .script li { border-right: 0; }.flow p { grid-template-columns: 1fr; }.guidance article + article { border-left: 0; border-top: 1px solid #263a43; } }
+@media (max-width: 760px) { .page { padding: 14px; }.hero { padding: 18px; }.hero h1 { font-size: 27px; }.simplePath ol, .capabilities, .flow, .script, .guidance > div { grid-template-columns: 1fr; }.simplePath li { border-top: 1px solid #293e43; border-left: 0; }.capabilities article, .flow li, .script li { border-right: 0; }.flow p { grid-template-columns: 1fr; }.guidance article + article { border-left: 0; border-top: 1px solid #263a43; } }
 
