@@ -4,6 +4,7 @@ export const primaryNavigation: readonly NavigationItem[] = [
   { label: 'Market', path: '/market', icon: 'markets' },
   { label: 'Market Briefing', path: '/briefing', icon: 'briefing' },
   { label: 'Dashboard', path: '/dashboard', icon: 'dashboard' },
+  { label: 'Simple', path: '/simple', icon: 'simple' },
   { label: 'Discover', path: '/discover', icon: 'discover' },
   { label: 'Portfolio', path: '/portfolio', icon: 'portfolio' },
   { label: 'Trading', path: '/trading', icon: 'trading' },
