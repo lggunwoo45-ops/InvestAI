@@ -99,7 +99,7 @@ export function MarketPage() {
       compact={Boolean(selectedInstrument)}
     />
   )
-  const explorer = <div className={styles.navigator}>{displayMode === 'simple' && <DisplayModeNotice>{uiText[language].displayMode.marketHint}</DisplayModeNotice>}{explorerPanel}</div>
+  const explorer = <div className={styles.navigator}>{displayMode === 'simple' && <DisplayModeNotice variant="panel">{uiText[language].displayMode.marketHint}</DisplayModeNotice>}{explorerPanel}</div>
 
   if (!selectedInstrument) return <main className={styles.page}>{explorer}</main>
 

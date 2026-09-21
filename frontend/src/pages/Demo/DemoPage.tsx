@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom'
 
 import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
-import { DisplayModeNotice } from '@/components/displayMode/DisplayModeNotice/DisplayModeNotice'
 import { BetaScopeBanner } from '@/components/demo/BetaScopeBanner/BetaScopeBanner'
 import { DemoHealthChecklist } from '@/components/demo/DemoHealthChecklist/DemoHealthChecklist'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
@@ -100,9 +99,10 @@ export function DemoPage() {
   const p = readinessCopy[language]
   useDocumentTitle(scope.versionLabel)
 
-  return <div className={styles.page}>
+  const simpleRoutes = ['/dashboard', '/simple', '/news'] as const
+  return <div className={styles.page} data-display-mode={displayMode}>
     <BetaScopeBanner language={language} />
-    {displayMode === 'simple' && <DisplayModeNotice>{uiText[language].displayMode.demoHint}</DisplayModeNotice>}
+    {displayMode === 'simple' && <section className={styles.simplePath} aria-labelledby="simple-demo-path"><header><span>{uiText[language].displayMode.simpleFirst}</span><h2 id="simple-demo-path">{uiText[language].displayMode.simpleDemoPath}</h2></header><ol>{uiText[language].displayMode.simpleDemoSteps.map((step, index) => <li key={step}><b>{index + 1}</b>{simpleRoutes[index] ? <Link to={simpleRoutes[index]}>{step}</Link> : <span>{step}</span>}</li>)}</ol></section>}
     <header className={styles.hero}><span>{t.eyebrow}</span><h1>{scope.versionLabel}</h1><h2>{t.subtitle}</h2><p>{scope.positioning}</p><div><b>{t.crypto}</b><b>{t.stock}</b><b>{t.ai}</b><b>{t.rule}</b></div></header>
     <nav className={styles.quick} aria-label={t.quick}><span>{t.quick}</span>{t.quickLinks.map((link) => <Link key={link.label} to={link.route}><strong>{link.label} →</strong>{'hint' in link && <small>{link.hint}</small>}</Link>)}</nav>
 

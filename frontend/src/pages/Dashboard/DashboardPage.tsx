@@ -2,10 +2,10 @@ import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { DiscoverTable } from '@/components/discover/DiscoverTable/DiscoverTable'
-import { DisplayModeNotice } from '@/components/displayMode/DisplayModeNotice/DisplayModeNotice'
 import { BetaScopeBanner } from '@/components/demo/BetaScopeBanner/BetaScopeBanner'
 import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
 import { MarketRadar } from '@/components/market/MarketRadar/MarketRadar'
+import { SimpleMarketSummary } from '@/components/market/SimpleMarketSummary/SimpleMarketSummary'
 import { NewsCard } from '@/components/news/NewsCard/NewsCard'
 import { MarketPulseBoard } from '@/components/smart-dashboard/MarketPulseBoard/MarketPulseBoard'
 import { WatchlistManager } from '@/components/smart-dashboard/WatchlistManager/WatchlistManager'
@@ -19,7 +19,6 @@ import { useResolvedInstruments } from '@/hooks/useResolvedInstruments'
 import { useMarketWorkspace } from '@/hooks/useMarketWorkspace'
 import { useWatchlists } from '@/hooks/useWatchlists'
 import { useLanguage } from '@/i18n/useLanguage'
-import { uiText } from '@/i18n/translations'
 import { buildCryptoWatchCandidates } from '@/services/ai/cryptoWatchCandidateEngine'
 import { buildMarketRadar } from '@/services/market/marketRadarEngine'
 import type { MarketInstrument } from '@/types/market'
@@ -52,8 +51,8 @@ export function DashboardPage() {
   return (
     <div className={styles.page}>
       <BetaScopeBanner language={language} />
-      {displayMode === 'simple' && <DisplayModeNotice>{uiText[language].displayMode.dashboardHint}</DisplayModeNotice>}
-      <MarketRadar snapshot={radar} language={language} onOpenInstrument={openInstrument} />
+      {displayMode === 'simple' && <SimpleMarketSummary snapshot={radar} language={language} />}
+      <MarketRadar snapshot={radar} language={language} simpleMode={displayMode === 'simple'} onOpenInstrument={openInstrument} />
       <header className={styles.heading}>
         <div><span>DAILY INVESTMENT WORKSPACE</span><h2>Smart Market Dashboard</h2><p>Your watchlists, global sessions, discovery signals, and market-aware news.</p></div>
         <div className={styles.session}><span>SESSION SUMMARY</span><strong>Crypto {marketSessionLabel(getMarketSessionStatus('crypto'))} · KR {marketSessionLabel(getMarketSessionStatus('korea'))} · US {marketSessionLabel(getMarketSessionStatus('us'))}</strong></div>

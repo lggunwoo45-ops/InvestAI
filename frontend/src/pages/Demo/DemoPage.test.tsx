@@ -4,8 +4,9 @@ import { describe, expect, it } from 'vitest'
 import { AppProviders } from '@/app/providers/AppProviders'
 import { DemoPage } from './DemoPage'
 
-const renderPage = (language?: 'ko') => {
+const renderPage = (language?: 'ko', mode: 'simple' | 'expert' = 'expert') => {
   window.localStorage.setItem('market-copilot.language', language ?? 'en')
+  window.localStorage.setItem('market-copilot.displayMode.v1', mode)
   return render(<MemoryRouter><AppProviders><DemoPage /></AppProviders></MemoryRouter>)
 }
 
@@ -37,6 +38,12 @@ describe('DemoPage', () => {
     expect(screen.getByRole('heading', { name: '신뢰 경계' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: '데모 상태 체크리스트' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: '말하지 말아야 할 표현' })).toBeTruthy()
+  })
+  it('renders the short bilingual-safe path before detailed content in Simple Mode', () => {
+    renderPage(undefined, 'simple')
+    expect(screen.getByRole('heading', { name: 'Simple demo path' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Open Simple Candidate View' }).getAttribute('href')).toBe('/simple')
+    expect(screen.getByRole('heading', { name: 'Trust boundary' })).toBeTruthy()
   })
   it('contains unsafe claims only as explicit presenter warnings', () => {
     renderPage()

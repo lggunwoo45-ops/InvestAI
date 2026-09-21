@@ -26,6 +26,8 @@ describe('SimpleModePage', () => {
     expect(screen.getByRole('heading', { name: 'Market Copilot Simple Mode' })).toBeTruthy()
     expect(screen.getByText(/planning and review only/)).toBeTruthy()
     expect(screen.queryByRole('group', { name: 'Display mode' })).toBeNull()
+    expect(screen.queryByText(/Watch Score/)).toBeNull()
+    expect(screen.queryByText(/^#1$/)).toBeNull()
   })
   it('renders Korean labels', () => {
     renderPage('ko')
