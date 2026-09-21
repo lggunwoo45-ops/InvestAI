@@ -10,6 +10,7 @@ const DashboardPage = lazy(() => import('@/pages/Dashboard/DashboardPage').then(
 const DiscoverPage = lazy(() => import('@/pages/Discover/DiscoverPage').then((module) => ({ default: module.DiscoverPage })))
 const DemoPage = lazy(() => import('@/pages/Demo/DemoPage').then((module) => ({ default: module.DemoPage })))
 const MarketPage = lazy(() => import('@/pages/Market/MarketPage').then((module) => ({ default: module.MarketPage })))
+const MyAnalysisPage = lazy(() => import('@/pages/MyAnalysis/MyAnalysisPage').then((module) => ({ default: module.MyAnalysisPage })))
 const NewsPage = lazy(() => import('@/pages/News/NewsPage').then((module) => ({ default: module.NewsPage })))
 const NotFoundPage = lazy(() => import('@/pages/NotFound/NotFoundPage').then((module) => ({ default: module.NotFoundPage })))
 const PortfolioPage = lazy(() => import('@/pages/Portfolio/PortfolioPage').then((module) => ({ default: module.PortfolioPage })))
@@ -34,6 +35,7 @@ export function AppRoutes() {
           <Route path="portfolio" element={<PortfolioPage />} />
           <Route path="trading" element={<TradingPage />} />
           <Route path="ai-analysis" element={<AiAnalysisPage />} />
+          <Route path="my-analysis" element={<MyAnalysisPage />} />
           <Route path="strategies" element={<StrategiesPage />} />
           <Route path="news" element={<NewsPage />} />
           <Route path="settings" element={<SettingsPage />} />

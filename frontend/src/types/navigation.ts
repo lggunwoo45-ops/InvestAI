@@ -4,6 +4,7 @@ export type NavigationIcon =
   | 'portfolio'
   | 'trading'
   | 'ai'
+  | 'analyze'
   | 'strategies'
   | 'news'
   | 'discover'
