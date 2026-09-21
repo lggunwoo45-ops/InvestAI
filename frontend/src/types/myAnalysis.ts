@@ -1,16 +1,14 @@
-import type { DisplayMode } from '@/types/displayMode'
 import type { MarketInstrument } from '@/types/market'
 
 export type AnalysisIntent = 'watching' | 'holding' | 'longTerm' | 'swing' | 'shortTerm'
 export type AnalysisAssetType = 'crypto' | 'stock'
 export type AnalysisDataQuality = 'live' | 'mock' | 'limited' | 'unavailable'
-export type AnalysisEvidenceType = 'price' | 'change' | 'volume' | 'candidate' | 'news' | 'market' | 'user-note' | 'filing' | 'earnings' | 'fundamentals' | 'ratings'
+export type AnalysisEvidenceType = 'price' | 'change' | 'volume' | 'candidate' | 'news' | 'market' | 'filing' | 'earnings' | 'fundamentals' | 'ratings'
 export type AnalysisSignalLevel = 'available' | 'context' | 'missing' | 'demo'
 
 export interface MyAnalysisInput {
   instrument: MarketInstrument
   intent: AnalysisIntent
-  displayMode: DisplayMode
   userNote: string
   averagePrice: number | null
 }
@@ -29,6 +27,14 @@ export interface MyAnalysisSection {
   items: readonly string[]
 }
 
+export interface MyAnalysisUserContext {
+  intent: string
+  userNote: string | null
+  averagePrice: string | null
+  notice: string
+  intentNotice: string
+}
+
 export interface MyAnalysisResult {
   instrumentId: string
   assetType: AnalysisAssetType
@@ -37,6 +43,7 @@ export interface MyAnalysisResult {
   summary: string
   evidence: readonly MyAnalysisEvidence[]
   missingEvidence: readonly MyAnalysisEvidence[]
+  userContext: MyAnalysisUserContext
   simpleModeSections: readonly MyAnalysisSection[]
   expertModeSections: readonly MyAnalysisSection[]
   disclaimer: string

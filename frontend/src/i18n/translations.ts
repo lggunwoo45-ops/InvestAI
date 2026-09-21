@@ -102,7 +102,7 @@ interface UiStrings {
 /** English remains the safe default; this dictionary covers the primary workspace UI. */
 export const uiText = {
   en: {
-    navigation: { markets: 'Market', briefing: 'Market Briefing', dashboard: 'Dashboard', discover: 'Discover', portfolio: 'Portfolio', trading: 'Trading', ai: 'AI Analysis', analyze: 'Analyze', strategies: 'Strategies', news: 'News', demo: 'Demo', settings: 'Settings' },
+    navigation: { markets: 'Market', briefing: 'Market Briefing', dashboard: 'Dashboard', discover: 'Discover', portfolio: 'Portfolio', trading: 'Trading', ai: 'AI Analysis', analyze: 'My Analysis', strategies: 'Strategies', news: 'News', demo: 'Demo', settings: 'Settings' },
     workspace: 'Workspace', localEnvironment: 'Local environment', collapseSidebar: 'Collapse sidebar', expandSidebar: 'Expand sidebar',
     language: 'Language',
     displayMode: {
@@ -191,7 +191,7 @@ export const uiText = {
     },
   },
   ko: {
-    navigation: { markets: '마켓', briefing: '시장 브리핑', dashboard: '대시보드', discover: '발견', portfolio: '포트폴리오', trading: '거래', ai: 'AI 분석', analyze: '종목 분석', strategies: '전략', news: '뉴스', demo: '데모', settings: '설정' },
+    navigation: { markets: '마켓', briefing: '시장 브리핑', dashboard: '대시보드', discover: '발견', portfolio: '포트폴리오', trading: '거래', ai: 'AI 분석', analyze: '내 종목 분석', strategies: '전략', news: '뉴스', demo: '데모', settings: '설정' },
     workspace: '워크스페이스', localEnvironment: '로컬 환경', collapseSidebar: '사이드바 접기', expandSidebar: '사이드바 펼치기',
     language: '언어',
     displayMode: {
