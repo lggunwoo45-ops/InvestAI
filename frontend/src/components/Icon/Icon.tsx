@@ -11,6 +11,7 @@ export type IconName =
   | 'discover'
   | 'briefing'
   | 'demo'
+  | 'simple'
   | 'settings'
   | 'search'
   | 'menu'
@@ -38,6 +39,7 @@ export function Icon({ name, size = 20, ...props }: IconProps) {
     discover: <><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="3" /><path d="M12 3v3M12 18v3M3 12h3M18 12h3" /></>,
     briefing: <><path d="M4 5h16v14H4z" /><path d="M8 9h8M8 13h8M8 17h5" /></>,
     demo: <><path d="M4 4h16v12H4z" /><path d="m9 20 3-4 3 4" /><path d="M8 20h8" /><path d="m10 8 5 2-5 2Z" /></>,
+    simple: <><path d="M5 6h14M5 12h10M5 18h7" /><path d="m17 15 2 2 3-4" /></>,
     settings: <><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06a1.7 1.7 0 0 0-1.88-.34A1.7 1.7 0 0 0 14 20.91V21h-4v-.09A1.7 1.7 0 0 0 8.94 19.4a1.7 1.7 0 0 0-1.88.34L7 19.8 4.2 17l.06-.06A1.7 1.7 0 0 0 4.6 15.06 1.7 1.7 0 0 0 3.09 14H3v-4h.09A1.7 1.7 0 0 0 4.6 8.94a1.7 1.7 0 0 0-.34-1.88L4.2 7 7 4.2l.06.06A1.7 1.7 0 0 0 8.94 4.6 1.7 1.7 0 0 0 10 3.09V3h4v.09a1.7 1.7 0 0 0 1.06 1.51 1.7 1.7 0 0 0 1.88-.34L17 4.2 19.8 7l-.06.06a1.7 1.7 0 0 0-.34 1.88A1.7 1.7 0 0 0 20.91 10H21v4h-.09A1.7 1.7 0 0 0 19.4 15Z" /></>,
     search: <><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></>,
     menu: <><path d="M4 7h16M4 12h16M4 17h16" /></>,

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 import { CryptoWatchCandidates } from '@/components/ai/CryptoWatchCandidates/CryptoWatchCandidates'
 import { AiUsagePlans } from '@/components/ai/AiUsagePlans/AiUsagePlans'
@@ -49,7 +49,7 @@ export function AiAnalysisPage() {
   const retryCatalog = useCallback(() => setRetry((value) => value + 1), [])
 
   const tabs = language === 'ko' ? { crypto: '가상자산', korea: '한국 주식', us: '미국 주식' } : { crypto: 'Crypto', korea: 'Korea Stocks', us: 'US Stocks' }
-  return <><div className={styles.betaBanner}><BetaScopeBanner language={language} /></div><nav className={styles.assetTabs} role="tablist" aria-label={language === 'ko' ? '후보 자산 유형' : 'Candidate asset type'}>{(Object.keys(tabs) as CandidateAssetTab[]).map((tab) => <button key={tab} type="button" role="tab" aria-selected={assetTab === tab} onClick={() => setAssetTab(tab)}>{tabs[tab]}</button>)}</nav>
+  return <><div className={styles.betaBanner}><BetaScopeBanner language={language} /><Link className={styles.simpleModeLink} to="/simple">{language === 'ko' ? '간편모드로 보기' : 'Switch to Simple Mode'} →</Link></div><nav className={styles.assetTabs} role="tablist" aria-label={language === 'ko' ? '후보 자산 유형' : 'Candidate asset type'}>{(Object.keys(tabs) as CandidateAssetTab[]).map((tab) => <button key={tab} type="button" role="tab" aria-selected={assetTab === tab} onClick={() => setAssetTab(tab)}>{tabs[tab]}</button>)}</nav>
     {assetTab === 'crypto' && <CryptoWatchCandidates candidates={candidates} language={language} mode={marketDataMode} newsSource={newsSource} horizon={horizon} horizonProfile={horizonProfile} onHorizonChange={setHorizon} loading={catalog.loading} error={catalog.error}
       onOpenInstrument={openInstrument} onOpenMarket={() => navigate('/market')} onModeChange={setMarketDataMode} onRetry={retryCatalog} newsInsights={newsInsights} />}
     {assetTab === 'korea' && <StockWatchCandidates candidates={koreaCandidates} region="korea" language={language} horizon={horizon} supportedInstrumentIds={new Set(koreaInstruments.map((instrument) => instrument.id))} loading={kospi.loading || kosdaq.loading} onOpenInstrument={openInstrument} />}

@@ -223,6 +223,17 @@ describe('Market Copilot application shell', () => {
     expect(screen.getByRole('complementary', { name: '1.5 Beta scope' })).toBeTruthy()
   })
 
+  it('renders the Simple Mode route and navigation item without replacing expert mode', async () => {
+    window.history.pushState({}, '', '/simple')
+    render(<App />)
+    expect(await screen.findByRole('heading', { name: 'Market Copilot Simple Mode' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Simple' })).toBeTruthy()
+    expect(screen.getAllByRole('link', { name: /Open Expert Mode/ }).length).toBeGreaterThan(0)
+    fireEvent.click(screen.getAllByRole('link', { name: /Open Expert Mode/ })[0])
+    expect(await screen.findByRole('tab', { name: 'Crypto' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: /Switch to Simple Mode/ })).toBeTruthy()
+  })
+
   it('searches stocks globally and opens their market context', async () => {
     render(<App />)
     const globalSearch = screen.getByRole('searchbox', { name: 'Global search' })
