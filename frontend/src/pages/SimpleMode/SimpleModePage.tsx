@@ -1,8 +1,8 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
+import { ModeSwitcher } from '@/components/mode/ModeSwitcher/ModeSwitcher'
 import { SimpleCandidateCard } from '@/components/simple/SimpleCandidateCard/SimpleCandidateCard'
-import { useCandidateFeedback } from '@/hooks/useCandidateFeedback'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { useMarketCatalog } from '@/hooks/useMarketCatalog'
 import { useMarketWorkspace } from '@/hooks/useMarketWorkspace'
@@ -12,37 +12,38 @@ import { useLanguage } from '@/i18n/useLanguage'
 import { buildCryptoWatchCandidates } from '@/services/ai/cryptoWatchCandidateEngine'
 import { buildStockWatchCandidates } from '@/services/ai/stockWatchCandidateEngine'
 import { buildSimpleCandidates } from '@/services/simple/simpleCandidateEngine'
+import type { SimpleCandidateDataQuality } from '@/types/simpleMode'
 import styles from './SimpleModePage.module.css'
 
 const copy = {
   en: {
-    eyebrow: 'FOR BEGINNERS', title: 'Market Copilot Simple Mode', subtitle: 'A beginner-friendly view that shows what to watch, why it matters, and which price zones to observe.',
-    safety: 'This screen is for planning and review only. It is not investment advice, a buy/sell signal, or a guarantee of profit. The final decision is yours.',
-    explanation: ['This is not investment advice.', 'This is not a buy/sell signal.', 'This is a planning reference screen.', 'Crypto plans can show price zones when current price is available.', 'Stock plans remain limited until real stock data is connected.'],
-    candidates: "Today’s Watch Candidates", generated: 'Rule-based shortlist · top 5', loading: 'Preparing current watch candidates…', empty: 'No candidates are available from the current catalog. No placeholder candidates were created.',
-    how: 'How to read this screen', howItems: ['Watch Score is not a probability.', 'Observation prices are not buy instructions.', 'Risk Reference Price is not a stop-loss instruction.', 'Profit-Taking Reference Range is not a guaranteed target.', 'Open Expert Mode to review detailed evidence.'],
-    stockTitle: 'Stock Beta Notice', stockBody: 'The stock candidate workflow is available in early beta. Price planning is disabled for mock or limited stock data. A real stock provider and reliable live price are required before numeric stock planning levels can appear.',
-    quick: 'Continue exploring', expert: 'Open Expert Mode', radar: 'Open Market Radar', news: 'Open News Center', demo: 'Open Demo', limitations: 'No real AI, trading, account, payment, or production backend is connected.',
+    eyebrow: 'FOR BEGINNERS', title: 'Market Copilot Simple Mode', subtitle: 'A clear view of what needs attention, why it appeared, and what to check next.',
+    safety: 'Simple Mode is for planning and review only. It is not investment advice, a buy/sell signal, or a guarantee of profit.',
+    cryptoTitle: 'Crypto Watch Candidates', cryptoStatus: 'ACTIVE BETA · UP TO 3', cryptoOrder: 'Crypto candidates are shown first when available.', cryptoLoading: 'Preparing crypto watch candidates…', cryptoEmpty: 'No crypto candidates are available from the current catalog.',
+    cryptoError: 'Crypto data could not be loaded. Stock beta preview is shown separately and should not replace crypto candidates.', retry: 'Retry crypto data', useMock: 'Use MOCK data',
+    stockTitle: 'Stock Beta Preview', stockStatus: 'EARLY BETA · KOREA + US', stockOrder: 'Stock candidates are shown as early beta.', stockLoading: 'Preparing the stock beta preview…', stockEmpty: 'No stock beta candidates are available.', stockNotice: 'Price planning stays disabled for mock or limited stock data. Reliable real stock data is required before numeric planning can be considered.',
+    how: 'How to read this screen', howItems: ['Attention level is a sorting aid, not a probability.', 'Percentage areas are fixed distances, not calculated support or resistance.', 'Check whether the movement continues before making any decision.', 'Open Expert Mode for the full evidence and controls.'],
+    quick: 'Continue exploring', radar: 'Open Market Radar', news: 'Open News Center', demo: 'Open Demo', limitations: 'No real AI, trading, account, payment, or production backend is connected.',
   },
   ko: {
-    eyebrow: '초보자용', title: 'Market Copilot 간편모드', subtitle: '오늘 볼 후보, 보는 이유, 관찰할 가격 구간을 쉽게 정리한 초보자용 화면입니다.',
-    safety: '이 화면은 계획과 검토를 위한 참고용입니다. 투자 조언, 매수·매도 신호, 수익 보장이 아닙니다. 최종 판단은 사용자가 직접 해야 합니다.',
-    explanation: ['투자 조언 화면이 아닙니다.', '매수·매도 신호 화면이 아닙니다.', '계획 참고용 화면입니다.', '가상자산은 현재가가 있을 때 가격 구간을 표시할 수 있습니다.', '주식 계획은 실제 주식 데이터가 연결될 때까지 제한됩니다.'],
-    candidates: '오늘의 관찰 후보', generated: '규칙 기반 목록 · 상위 5개', loading: '현재 관찰 후보를 준비하고 있습니다…', empty: '현재 카탈로그에서 표시할 후보가 없습니다. 임의 후보를 만들지 않았습니다.',
-    how: '이 화면을 읽는 방법', howItems: ['관찰 점수는 확률이 아닙니다.', '관찰가는 매수 지시가 아닙니다.', '위험 기준가는 손절 지시가 아닙니다.', '수익 실현 참고 구간은 보장된 목표가가 아닙니다.', '상세 근거는 전문모드에서 확인하세요.'],
-    stockTitle: '주식 베타 안내', stockBody: '주식 후보 흐름은 초기 베타로 제공됩니다. 모의·제한 주식 데이터에는 가격 계획이 비활성화됩니다. 숫자 주식 계획 구간을 표시하려면 실제 주식 공급자와 신뢰할 수 있는 실시간 가격이 필요합니다.',
-    quick: '계속 살펴보기', expert: '전문모드 열기', radar: 'Market Radar 열기', news: '뉴스 센터 열기', demo: '데모 열기', limitations: '실제 AI, 거래, 계정, 결제 및 운영 백엔드는 연결되지 않았습니다.',
+    eyebrow: '초보자용', title: 'Market Copilot 간편모드', subtitle: '무엇을 살펴볼지, 왜 보이는지, 다음에 무엇을 확인할지 쉽게 정리한 화면입니다.',
+    safety: '간편모드는 계획과 검토를 위한 참고용입니다. 투자 조언, 매수·매도 신호, 수익 보장이 아닙니다.',
+    cryptoTitle: '가상자산 관찰 후보', cryptoStatus: '활성 베타 · 최대 3개', cryptoOrder: '가상자산 후보가 있으면 먼저 표시됩니다.', cryptoLoading: '가상자산 관찰 후보를 준비하고 있습니다…', cryptoEmpty: '현재 카탈로그에서 표시할 가상자산 후보가 없습니다.',
+    cryptoError: '가상자산 데이터를 불러오지 못했습니다. 주식 베타 미리보기는 별도로 표시되며, 가상자산 후보를 대체하지 않습니다.', retry: '가상자산 데이터 다시 시도', useMock: 'MOCK 데이터 사용',
+    stockTitle: '주식 베타 미리보기', stockStatus: '초기 베타 · 한국 + 미국', stockOrder: '주식 후보는 초기 베타로 표시됩니다.', stockLoading: '주식 베타 미리보기를 준비하고 있습니다…', stockEmpty: '표시할 주식 베타 후보가 없습니다.', stockNotice: '모의·제한 주식 데이터에는 가격 계획이 계속 비활성화됩니다. 숫자 계획을 검토하려면 신뢰할 수 있는 실제 주식 데이터가 필요합니다.',
+    how: '이 화면을 읽는 방법', howItems: ['관심도는 정렬 참고값이며 확률이 아닙니다.', '비율 구간은 고정 거리이며 계산된 지지선·저항선이 아닙니다.', '판단 전 움직임이 이어지는지 확인해야 합니다.', '전체 근거와 설정은 전문가모드에서 확인하세요.'],
+    quick: '계속 살펴보기', radar: 'Market Radar 열기', news: '뉴스 센터 열기', demo: '데모 열기', limitations: '실제 AI, 거래, 계정, 결제 및 운영 백엔드는 연결되지 않았습니다.',
   },
 } as const
 
 export function SimpleModePage() {
   const navigate = useNavigate()
   const { language } = useLanguage()
-  const { marketDataMode } = useMarketWorkspace()
+  const { marketDataMode, setMarketDataMode } = useMarketWorkspace()
   const { result: newsResult } = useNewsProviderMode()
   const { openInstrument, canOpenInstrument } = useOpenNewsInstrument()
-  const { feedback, setStatus } = useCandidateFeedback()
-  const cryptoCatalog = useMarketCatalog('upbit-krw', marketDataMode, 0)
+  const [cryptoRetry, setCryptoRetry] = useState(0)
+  const cryptoCatalog = useMarketCatalog('upbit-krw', marketDataMode, cryptoRetry)
   const kospi = useMarketCatalog('kospi', marketDataMode, 0)
   const kosdaq = useMarketCatalog('kosdaq', marketDataMode, 0)
   const nasdaq = useMarketCatalog('nasdaq', marketDataMode, 0)
@@ -53,24 +54,28 @@ export function SimpleModePage() {
   const cryptoInstruments = useMemo(() => cryptoCatalog.catalog?.instruments ?? [], [cryptoCatalog.catalog?.instruments])
   const koreaInstruments = useMemo(() => [...(kospi.catalog?.instruments ?? []), ...(kosdaq.catalog?.instruments ?? [])], [kosdaq.catalog?.instruments, kospi.catalog?.instruments])
   const usInstruments = useMemo(() => [...(nasdaq.catalog?.instruments ?? []), ...(nyse.catalog?.instruments ?? [])], [nasdaq.catalog?.instruments, nyse.catalog?.instruments])
-  const cryptoCandidates = useMemo(() => buildCryptoWatchCandidates({ instruments: cryptoInstruments, newsResult, language, horizon: 'short', limit: 5 }), [cryptoInstruments, language, newsResult])
-  const koreaCandidates = useMemo(() => buildStockWatchCandidates({ instruments: koreaInstruments, region: 'korea', newsResult, language, horizon: 'short', limit: 5 }), [koreaInstruments, language, newsResult])
-  const usCandidates = useMemo(() => buildStockWatchCandidates({ instruments: usInstruments, region: 'us', newsResult, language, horizon: 'short', limit: 5 }), [language, newsResult, usInstruments])
+  const cryptoCandidates = useMemo(() => buildCryptoWatchCandidates({ instruments: cryptoInstruments, newsResult, language, horizon: 'short', limit: 3 }), [cryptoInstruments, language, newsResult])
+  const koreaCandidates = useMemo(() => buildStockWatchCandidates({ instruments: koreaInstruments, region: 'korea', newsResult, language, horizon: 'short', limit: 1 }), [koreaInstruments, language, newsResult])
+  const usCandidates = useMemo(() => buildStockWatchCandidates({ instruments: usInstruments, region: 'us', newsResult, language, horizon: 'short', limit: 1 }), [language, newsResult, usInstruments])
   const instruments = useMemo(() => [...cryptoInstruments, ...koreaInstruments, ...usInstruments], [cryptoInstruments, koreaInstruments, usInstruments])
-  const candidates = useMemo(() => buildSimpleCandidates({ cryptoCandidates, koreaStockCandidates: koreaCandidates, usStockCandidates: usCandidates, marketInstruments: instruments, language, maxCandidates: 5, cryptoDataQuality: marketDataMode === 'live' ? 'live' : 'mock' }), [cryptoCandidates, instruments, koreaCandidates, language, marketDataMode, usCandidates])
-  const loading = [cryptoCatalog, kospi, kosdaq, nasdaq, nyse].some((catalog) => catalog.loading)
+  const cryptoDataQuality: SimpleCandidateDataQuality = cryptoCatalog.catalog?.source === 'live' ? 'live' : cryptoCatalog.catalog?.source === 'mock' ? 'mock' : cryptoCatalog.error ? 'unavailable' : 'limited'
+  const candidates = useMemo(() => buildSimpleCandidates({ cryptoCandidates, koreaStockCandidates: koreaCandidates, usStockCandidates: usCandidates, marketInstruments: instruments, language, maxCandidates: 5, cryptoDataQuality }), [cryptoCandidates, cryptoDataQuality, instruments, koreaCandidates, language, usCandidates])
+  const simpleCrypto = candidates.filter((candidate) => candidate.assetType === 'crypto').slice(0, 3)
+  const simpleStocks = candidates.filter((candidate) => candidate.assetType === 'stock').slice(0, 2)
+  const stockLoading = [kospi, kosdaq, nasdaq, nyse].some((catalog) => catalog.loading)
   const handleOpenMarket = (instrumentId: string) => canOpenInstrument(instrumentId) ? openInstrument(instrumentId) : navigate('/market')
 
   return <div className={styles.page}>
-    <header className={styles.hero}><div><span>{t.eyebrow}</span><h1>{t.title}</h1><p>{t.subtitle}</p></div><Link to="/ai-analysis">{t.expert} →</Link></header>
-    <aside className={styles.safety} role="note"><strong>{language === 'ko' ? '계획 참고용' : 'Planning reference only'}</strong><p>{t.safety}</p></aside>
-    <ul className={styles.explanation}>{t.explanation.map((item) => <li key={item}>{item}</li>)}</ul>
+    <ModeSwitcher activeMode="simple" language={language} />
+    <header className={styles.hero}><span>{t.eyebrow}</span><h1>{t.title}</h1><p>{t.subtitle}</p></header>
+    <aside className={styles.safety} role="note">{t.safety}</aside>
 
-    <section className={styles.candidates} aria-labelledby="simple-candidates-title"><header><div><span>01</span><h2 id="simple-candidates-title">{t.candidates}</h2></div><small>{t.generated}</small></header>{loading && <div className={styles.state} role="status">{t.loading}</div>}{!loading && candidates.length === 0 && <div className={styles.state} role="status">{t.empty}</div>}{!loading && candidates.length > 0 && <div className={styles.list}>{candidates.map((candidate, index) => <SimpleCandidateCard key={candidate.id} candidate={candidate} rank={index + 1} language={language} reviewStatus={feedback[candidate.instrumentId]?.status ?? 'unreviewed'} onOpenMarket={handleOpenMarket} onSetStatus={setStatus} />)}</div>}</section>
+    <section className={styles.candidates} aria-labelledby="simple-crypto-title"><header><div><span>01</span><h2 id="simple-crypto-title">{t.cryptoTitle}</h2><p>{t.cryptoOrder}</p></div><small>{t.cryptoStatus}</small></header>{cryptoCatalog.error && <div className={styles.error} role="alert"><strong>{t.cryptoError}</strong><small>{cryptoCatalog.error}</small><div><button type="button" onClick={() => setCryptoRetry((value) => value + 1)}>{t.retry}</button>{marketDataMode === 'live' && <button type="button" onClick={() => setMarketDataMode('mock')}>{t.useMock}</button>}</div></div>}{cryptoCatalog.loading && <div className={styles.state} role="status">{t.cryptoLoading}</div>}{!cryptoCatalog.loading && !cryptoCatalog.error && simpleCrypto.length === 0 && <div className={styles.state} role="status">{t.cryptoEmpty}</div>}{!cryptoCatalog.loading && !cryptoCatalog.error && simpleCrypto.length > 0 && <div className={styles.list}>{simpleCrypto.map((candidate) => <SimpleCandidateCard key={candidate.id} candidate={candidate} language={language} onOpenMarket={handleOpenMarket} />)}</div>}</section>
 
-    <section className={styles.guide} aria-labelledby="simple-guide-title"><header><span>02</span><h2 id="simple-guide-title">{t.how}</h2></header><ol>{t.howItems.map((item) => <li key={item}>{item}</li>)}</ol></section>
-    <section className={styles.stockNotice} aria-labelledby="stock-beta-title"><span>EARLY BETA</span><h2 id="stock-beta-title">{t.stockTitle}</h2><p>{t.stockBody}</p></section>
-    <nav className={styles.quick} aria-label={t.quick}><span>{t.quick}</span><Link to="/ai-analysis">{t.expert}</Link><Link to="/dashboard">{t.radar}</Link><Link to="/news">{t.news}</Link><Link to="/demo">{t.demo}</Link></nav>
+    <section className={`${styles.candidates} ${styles.stockSection}`} aria-labelledby="simple-stock-title"><header><div><span>02</span><h2 id="simple-stock-title">{t.stockTitle}</h2><p>{t.stockOrder}</p></div><small>{t.stockStatus}</small></header><p className={styles.stockNotice}>{t.stockNotice}</p>{stockLoading && <div className={styles.state} role="status">{t.stockLoading}</div>}{!stockLoading && simpleStocks.length === 0 && <div className={styles.state} role="status">{t.stockEmpty}</div>}{!stockLoading && simpleStocks.length > 0 && <div className={styles.list}>{simpleStocks.map((candidate) => <SimpleCandidateCard key={candidate.id} candidate={candidate} language={language} onOpenMarket={handleOpenMarket} />)}</div>}</section>
+
+    <section className={styles.guide} aria-labelledby="simple-guide-title"><header><span>03</span><h2 id="simple-guide-title">{t.how}</h2></header><ol>{t.howItems.map((item) => <li key={item}>{item}</li>)}</ol></section>
+    <nav className={styles.quick} aria-label={t.quick}><span>{t.quick}</span><Link to="/dashboard">{t.radar}</Link><Link to="/news">{t.news}</Link><Link to="/demo">{t.demo}</Link></nav>
     <footer className={styles.boundary}>{t.limitations}</footer>
   </div>
 }

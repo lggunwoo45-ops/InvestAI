@@ -1,0 +1,8 @@
+.switcher { display: grid; grid-template-columns: repeat(2, minmax(0, 220px)); gap: 0; }
+.switcher a { display: grid; gap: 3px; padding: 9px 12px; border: 1px solid #30454d; background: #0b151b; color: #82949b; text-decoration: none; }
+.switcher a + a { border-left: 0; }
+.switcher strong { color: #9caeb1; font-size: 9px; }
+.switcher small { color: #687b82; font-size: 7px; }
+.switcher a[aria-current='page'] { background: #182a29; box-shadow: inset 0 -2px #719991; }
+.switcher a[aria-current='page'] strong { color: #c0d3cf; }
+@media (max-width: 560px) { .switcher { grid-template-columns: repeat(2, 1fr); }.switcher small { display: none; } }
