@@ -50,7 +50,10 @@ export function AiAnalysisPage() {
   const retryCatalog = useCallback(() => setRetry((value) => value + 1), [])
 
   const tabs = language === 'ko' ? { crypto: '가상자산', korea: '한국 주식', us: '미국 주식' } : { crypto: 'Crypto', korea: 'Korea Stocks', us: 'US Stocks' }
-  return <><div className={styles.betaBanner}><BetaScopeBanner language={language} /><ModeSwitcher activeMode="expert" language={language} /></div><nav className={styles.assetTabs} role="tablist" aria-label={language === 'ko' ? '후보 자산 유형' : 'Candidate asset type'}>{(Object.keys(tabs) as CandidateAssetTab[]).map((tab) => <button key={tab} type="button" role="tab" aria-selected={assetTab === tab} onClick={() => setAssetTab(tab)}>{tabs[tab]}</button>)}</nav>
+  const pageCopy = language === 'ko'
+    ? { eyebrow: '상세 분석', title: 'Market Copilot 전문가모드', description: '관찰 후보의 근거, 시간 범위와 세부 설정을 검토합니다.' }
+    : { eyebrow: 'DETAILED ANALYSIS', title: 'Market Copilot Expert Mode', description: 'Review watch-candidate evidence, time horizons, and detailed controls.' }
+  return <><div className={styles.pageHeader}><header><span>{pageCopy.eyebrow}</span><h1>{pageCopy.title}</h1><p>{pageCopy.description}</p></header><ModeSwitcher activeMode="expert" language={language} /></div><div className={styles.betaBanner}><BetaScopeBanner language={language} /></div><nav className={styles.assetTabs} role="tablist" aria-label={language === 'ko' ? '후보 자산 유형' : 'Candidate asset type'}>{(Object.keys(tabs) as CandidateAssetTab[]).map((tab) => <button key={tab} type="button" role="tab" aria-selected={assetTab === tab} onClick={() => setAssetTab(tab)}>{tabs[tab]}</button>)}</nav>
     {assetTab === 'crypto' && <CryptoWatchCandidates candidates={candidates} language={language} mode={marketDataMode} newsSource={newsSource} horizon={horizon} horizonProfile={horizonProfile} onHorizonChange={setHorizon} loading={catalog.loading} error={catalog.error}
       onOpenInstrument={openInstrument} onOpenMarket={() => navigate('/market')} onModeChange={setMarketDataMode} onRetry={retryCatalog} newsInsights={newsInsights} />}
     {assetTab === 'korea' && <StockWatchCandidates candidates={koreaCandidates} region="korea" language={language} horizon={horizon} supportedInstrumentIds={new Set(koreaInstruments.map((instrument) => instrument.id))} loading={kospi.loading || kosdaq.loading} onOpenInstrument={openInstrument} />}

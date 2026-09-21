@@ -66,8 +66,10 @@ export function SimpleModePage() {
   const handleOpenMarket = (instrumentId: string) => canOpenInstrument(instrumentId) ? openInstrument(instrumentId) : navigate('/market')
 
   return <div className={styles.page}>
-    <ModeSwitcher activeMode="simple" language={language} />
-    <header className={styles.hero}><span>{t.eyebrow}</span><h1>{t.title}</h1><p>{t.subtitle}</p></header>
+    <div className={styles.pageHeader}>
+      <header className={styles.hero}><span>{t.eyebrow}</span><h1>{t.title}</h1><p>{t.subtitle}</p></header>
+      <ModeSwitcher activeMode="simple" language={language} />
+    </div>
     <aside className={styles.safety} role="note">{t.safety}</aside>
 
     <section className={styles.candidates} aria-labelledby="simple-crypto-title"><header><div><span>01</span><h2 id="simple-crypto-title">{t.cryptoTitle}</h2><p>{t.cryptoOrder}</p></div><small>{t.cryptoStatus}</small></header>{cryptoCatalog.error && <div className={styles.error} role="alert"><strong>{t.cryptoError}</strong><small>{cryptoCatalog.error}</small><div><button type="button" onClick={() => setCryptoRetry((value) => value + 1)}>{t.retry}</button>{marketDataMode === 'live' && <button type="button" onClick={() => setMarketDataMode('mock')}>{t.useMock}</button>}</div></div>}{cryptoCatalog.loading && <div className={styles.state} role="status">{t.cryptoLoading}</div>}{!cryptoCatalog.loading && !cryptoCatalog.error && simpleCrypto.length === 0 && <div className={styles.state} role="status">{t.cryptoEmpty}</div>}{!cryptoCatalog.loading && !cryptoCatalog.error && simpleCrypto.length > 0 && <div className={styles.list}>{simpleCrypto.map((candidate) => <SimpleCandidateCard key={candidate.id} candidate={candidate} language={language} onOpenMarket={handleOpenMarket} />)}</div>}</section>
