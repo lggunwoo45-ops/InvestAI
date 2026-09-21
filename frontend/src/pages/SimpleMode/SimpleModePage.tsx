@@ -1,13 +1,14 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
-import { ModeSwitcher } from '@/components/mode/ModeSwitcher/ModeSwitcher'
+import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
 import { SimpleCandidateCard } from '@/components/simple/SimpleCandidateCard/SimpleCandidateCard'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { useMarketCatalog } from '@/hooks/useMarketCatalog'
 import { useMarketWorkspace } from '@/hooks/useMarketWorkspace'
 import { useNewsProviderMode } from '@/hooks/useNewsProviderMode'
 import { useOpenNewsInstrument } from '@/hooks/useOpenNewsInstrument'
+import { uiText } from '@/i18n/translations'
 import { useLanguage } from '@/i18n/useLanguage'
 import { buildCryptoWatchCandidates } from '@/services/ai/cryptoWatchCandidateEngine'
 import { buildStockWatchCandidates } from '@/services/ai/stockWatchCandidateEngine'
@@ -39,6 +40,7 @@ const copy = {
 export function SimpleModePage() {
   const navigate = useNavigate()
   const { language } = useLanguage()
+  const { displayMode } = useDisplayMode()
   const { marketDataMode, setMarketDataMode } = useMarketWorkspace()
   const { result: newsResult } = useNewsProviderMode()
   const { openInstrument, canOpenInstrument } = useOpenNewsInstrument()
@@ -68,8 +70,8 @@ export function SimpleModePage() {
   return <div className={styles.page}>
     <div className={styles.pageHeader}>
       <header className={styles.hero}><span>{t.eyebrow}</span><h1>{t.title}</h1><p>{t.subtitle}</p></header>
-      <ModeSwitcher activeMode="simple" language={language} />
     </div>
+    {displayMode === 'expert' && <aside className={styles.modeNote} role="note">{uiText[language].displayMode.simpleExpertNote}</aside>}
     <aside className={styles.safety} role="note">{t.safety}</aside>
 
     <section className={styles.candidates} aria-labelledby="simple-crypto-title"><header><div><span>01</span><h2 id="simple-crypto-title">{t.cryptoTitle}</h2><p>{t.cryptoOrder}</p></div><small>{t.cryptoStatus}</small></header>{cryptoCatalog.error && <div className={styles.error} role="alert"><strong>{t.cryptoError}</strong><small>{cryptoCatalog.error}</small><div><button type="button" onClick={() => setCryptoRetry((value) => value + 1)}>{t.retry}</button>{marketDataMode === 'live' && <button type="button" onClick={() => setMarketDataMode('mock')}>{t.useMock}</button>}</div></div>}{cryptoCatalog.loading && <div className={styles.state} role="status">{t.cryptoLoading}</div>}{!cryptoCatalog.loading && !cryptoCatalog.error && simpleCrypto.length === 0 && <div className={styles.state} role="status">{t.cryptoEmpty}</div>}{!cryptoCatalog.loading && !cryptoCatalog.error && simpleCrypto.length > 0 && <div className={styles.list}>{simpleCrypto.map((candidate) => <SimpleCandidateCard key={candidate.id} candidate={candidate} language={language} onOpenMarket={handleOpenMarket} />)}</div>}</section>

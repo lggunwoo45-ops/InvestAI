@@ -1,9 +1,12 @@
 import { Link } from 'react-router-dom'
 
+import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
+import { DisplayModeNotice } from '@/components/displayMode/DisplayModeNotice/DisplayModeNotice'
 import { BetaScopeBanner } from '@/components/demo/BetaScopeBanner/BetaScopeBanner'
 import { DemoHealthChecklist } from '@/components/demo/DemoHealthChecklist/DemoHealthChecklist'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { useLanguage } from '@/i18n/useLanguage'
+import { uiText } from '@/i18n/translations'
 import { getDemoScopeSummary } from '@/services/demo/demoScopeConfig'
 import styles from './DemoPage.module.css'
 
@@ -91,6 +94,7 @@ const readinessCopy = {
 
 export function DemoPage() {
   const { language } = useLanguage()
+  const { displayMode } = useDisplayMode()
   const scope = getDemoScopeSummary(language)
   const t = copy[language]
   const p = readinessCopy[language]
@@ -98,6 +102,7 @@ export function DemoPage() {
 
   return <div className={styles.page}>
     <BetaScopeBanner language={language} />
+    {displayMode === 'simple' && <DisplayModeNotice>{uiText[language].displayMode.demoHint}</DisplayModeNotice>}
     <header className={styles.hero}><span>{t.eyebrow}</span><h1>{scope.versionLabel}</h1><h2>{t.subtitle}</h2><p>{scope.positioning}</p><div><b>{t.crypto}</b><b>{t.stock}</b><b>{t.ai}</b><b>{t.rule}</b></div></header>
     <nav className={styles.quick} aria-label={t.quick}><span>{t.quick}</span>{t.quickLinks.map((link) => <Link key={link.label} to={link.route}><strong>{link.label} →</strong>{'hint' in link && <small>{link.hint}</small>}</Link>)}</nav>
 

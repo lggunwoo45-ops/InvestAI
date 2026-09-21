@@ -1,6 +1,7 @@
 import { GlobalSearch } from '@/components/GlobalSearch/GlobalSearch'
 import { Icon } from '@/components/Icon/Icon'
 import { MarketStatusStrip } from '@/components/MarketStatusStrip/MarketStatusStrip'
+import { ModeSwitcher } from '@/components/mode/ModeSwitcher/ModeSwitcher'
 import { StatusBadge } from '@/components/StatusBadge/StatusBadge'
 import { useCurrentTime } from '@/hooks/useCurrentTime'
 import { useMarketWorkspace } from '@/hooks/useMarketWorkspace'
@@ -36,6 +37,7 @@ export function Header() {
           <StatusBadge label={text.publicApi} health={activeMarketState?.snapshot ? 'online' : 'unconfigured'} />
         </div>
         <MarketStatusStrip now={now} />
+        <ModeSwitcher />
         <select className={styles.languageSelect} aria-label="Language" title={text.language} value={language} onChange={(event) => setLanguage(event.target.value as Language)}>
           <option value="en">English</option>
           <option value="ko">한국어</option>

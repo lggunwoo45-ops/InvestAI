@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -21,13 +21,11 @@ const renderPage = (language: 'en' | 'ko' = 'en') => {
 
 describe('SimpleModePage', () => {
   beforeEach(() => { window.localStorage.clear(); catalogControl.cryptoError = null })
-  it('shows beginner safety copy and the selected Simple Mode switch', () => {
+  it('shows beginner safety copy without a duplicate page-local mode switch', () => {
     renderPage()
     expect(screen.getByRole('heading', { name: 'Market Copilot Simple Mode' })).toBeTruthy()
     expect(screen.getByText(/planning and review only/)).toBeTruthy()
-    const switcher = screen.getByRole('navigation', { name: 'Analysis view mode' })
-    expect(within(switcher).getByRole('link', { name: /Simple Mode/ }).getAttribute('aria-current')).toBe('page')
-    expect(within(switcher).getByRole('link', { name: /Expert Mode/ }).getAttribute('href')).toBe('/ai-analysis')
+    expect(screen.queryByRole('group', { name: 'Display mode' })).toBeNull()
   })
   it('renders Korean labels', () => {
     renderPage('ko')

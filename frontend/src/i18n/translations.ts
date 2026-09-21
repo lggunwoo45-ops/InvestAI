@@ -10,6 +10,12 @@ interface UiStrings {
   collapseSidebar: string
   expandSidebar: string
   language: string
+  displayMode: {
+    label: string; simple: string; expert: string; simpleMode: string; expertMode: string
+    simpleDescription: string; expertDescription: string; viewingSimple: string; viewingExpert: string
+    simpleFirst: string; expertDetailed: string; openSimple: string; openExpert: string
+    dashboardHint: string; marketHint: string; newsHint: string; aiSimpleHint: string; demoHint: string; simpleExpertNote: string
+  }
   globalSearch: string
   searchMarkets: string
   searchNews: string
@@ -95,7 +101,15 @@ export const uiText = {
   en: {
     navigation: { markets: 'Market', briefing: 'Market Briefing', dashboard: 'Dashboard', discover: 'Discover', portfolio: 'Portfolio', trading: 'Trading', ai: 'AI Analysis', strategies: 'Strategies', news: 'News', demo: 'Demo', settings: 'Settings' },
     workspace: 'Workspace', localEnvironment: 'Local environment', collapseSidebar: 'Collapse sidebar', expandSidebar: 'Expand sidebar',
-    language: 'Language', globalSearch: 'Search coins, stocks, or news', searchMarkets: 'MARKETS', searchNews: 'NEWS', searchEmpty: 'No results across markets or news.', marketSessions: 'Market sessions',
+    language: 'Language',
+    displayMode: {
+      label: 'Display mode', simple: 'Simple', expert: 'Expert', simpleMode: 'Simple Mode', expertMode: 'Expert Mode',
+      simpleDescription: 'Easy view for beginners', expertDescription: 'Detailed evidence and controls', viewingSimple: 'You are viewing the app in Simple Mode', viewingExpert: 'You are viewing the app in Expert Mode',
+      simpleFirst: 'Simple Mode shows key points first', expertDetailed: 'Expert Mode keeps detailed evidence visible', openSimple: 'Open Simple Candidate View', openExpert: 'Open Expert Workspace',
+      dashboardHint: 'Simple Mode shows the key market points first.', marketHint: 'Search a coin or stock to review the basic market context.', newsHint: 'Start with the headline and why it may matter.',
+      aiSimpleHint: 'For a simpler candidate view, open Simple Candidate View.', demoHint: 'Simple Mode highlights the core demo flow while keeping trust boundaries visible.', simpleExpertNote: 'You are in Expert display mode. This page remains the beginner candidate view.',
+    },
+    globalSearch: 'Search coins, stocks, or news', searchMarkets: 'MARKETS', searchNews: 'NEWS', searchEmpty: 'No results across markets or news.', marketSessions: 'Market sessions',
     sessions: { crypto: 'Crypto', korea: 'Korea', us: 'US', 'always-open': 'Always open', open: 'Open', closed: 'Closed' },
     market: 'Market', publicApi: 'Public API', health: { online: 'online', degraded: 'degraded', offline: 'offline', unconfigured: 'Not configured' }, operator: 'Operator', workspaceOwner: 'Workspace owner',
     dataMode: 'Market data mode', live: 'LIVE', mock: 'MOCK', active: 'Active',
@@ -173,7 +187,15 @@ export const uiText = {
   ko: {
     navigation: { markets: '마켓', briefing: '시장 브리핑', dashboard: '대시보드', discover: '발견', portfolio: '포트폴리오', trading: '거래', ai: 'AI 분석', strategies: '전략', news: '뉴스', demo: '데모', settings: '설정' },
     workspace: '워크스페이스', localEnvironment: '로컬 환경', collapseSidebar: '사이드바 접기', expandSidebar: '사이드바 펼치기',
-    language: '언어', globalSearch: '코인, 주식 또는 뉴스 검색', searchMarkets: '마켓', searchNews: '뉴스', searchEmpty: '마켓 또는 뉴스 검색 결과가 없습니다.', marketSessions: '시장 운영 상태',
+    language: '언어',
+    displayMode: {
+      label: '표시 모드', simple: '간편모드', expert: '전문가모드', simpleMode: '간편모드', expertMode: '전문가모드',
+      simpleDescription: '초보자를 위한 쉬운 보기', expertDescription: '상세 근거와 설정 보기', viewingSimple: '현재 간편모드로 보고 있습니다', viewingExpert: '현재 전문가모드로 보고 있습니다',
+      simpleFirst: '간편모드는 핵심 내용을 먼저 보여줍니다', expertDetailed: '전문가모드는 상세 근거를 유지합니다', openSimple: '간편 후보 보기 열기', openExpert: '전문가 작업공간 열기',
+      dashboardHint: '간편모드는 핵심 시장 포인트를 먼저 보여줍니다.', marketHint: '코인이나 주식을 검색해 기본 시장 맥락을 확인하세요.', newsHint: '헤드라인과 중요한 이유부터 확인하세요.',
+      aiSimpleHint: '더 쉬운 후보 화면은 간편 후보 보기에서 확인할 수 있습니다.', demoHint: '간편모드는 신뢰 경계를 유지하면서 핵심 데모 흐름을 먼저 보여줍니다.', simpleExpertNote: '현재 전문가모드입니다. 이 화면은 초보자용 후보 보기입니다.',
+    },
+    globalSearch: '코인, 주식 또는 뉴스 검색', searchMarkets: '마켓', searchNews: '뉴스', searchEmpty: '마켓 또는 뉴스 검색 결과가 없습니다.', marketSessions: '시장 운영 상태',
     sessions: { crypto: '암호화폐', korea: '한국', us: '미국', 'always-open': '상시 개장', open: '개장', closed: '폐장' },
     market: '마켓', publicApi: '공개 API', health: { online: '연결됨', degraded: '연결 중', offline: '연결 끊김', unconfigured: '미설정' }, operator: '운영자', workspaceOwner: '워크스페이스 소유자',
     dataMode: '마켓 데이터 모드', live: '실시간', mock: '모의', active: '분석 중',
