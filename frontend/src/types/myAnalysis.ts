@@ -6,6 +6,29 @@ export type AnalysisDataQuality = 'live' | 'mock' | 'limited' | 'unavailable'
 export type AnalysisEvidenceType = 'price' | 'change' | 'volume' | 'candidate' | 'news' | 'market' | 'filing' | 'earnings' | 'fundamentals' | 'ratings'
 export type AnalysisSignalLevel = 'available' | 'context' | 'missing' | 'demo'
 export type MyAnalysisSectionId = 'simple-current' | 'simple-check' | 'simple-caution' | 'evidence' | 'missing' | 'checklist'
+export type ActionReadinessStatus = 'decisionPending' | 'waiting' | 'watchZone' | 'conditionalApproach' | 'stagedApproach' | 'chaseCaution' | 'sharpDropReboundCaution' | 'invalidationCheck' | 'profitProtectionReview'
+export type ActionReadinessStrength = 'low' | 'medium' | 'high'
+
+export interface ActionReadinessZone {
+  id: string
+  label: string
+  description: string
+  distanceLabel: string
+  note: string
+}
+
+export interface ActionReadinessPlan {
+  status: ActionReadinessStatus
+  strength: ActionReadinessStrength
+  title: string
+  summary: string
+  whyThisStatus: string
+  approachConditions: readonly string[]
+  avoidConditions: readonly string[]
+  nextChecks: readonly string[]
+  zones: readonly ActionReadinessZone[]
+  disclaimer: string
+}
 
 export interface MyAnalysisInput {
   instrument: MarketInstrument
@@ -51,5 +74,6 @@ export interface MyAnalysisResult {
   simpleModeSections: readonly MyAnalysisSection[]
   expertModeSections: readonly MyAnalysisSection[]
   reviewChecklist: readonly string[]
+  actionReadiness: ActionReadinessPlan
   disclaimer: string
 }

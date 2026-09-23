@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest'
 
 import type { NewsLoadResult } from '@/services/news/newsService'
 import type { MarketInstrument } from '@/types/market'
+import type { WatchCandidate } from '@/types/watchCandidate'
 import { buildMyInstrumentAnalysis } from './myAnalysisEngine'
 
 const crypto: MarketInstrument = { id: 'upbit-btc', marketId: 'upbit', marketType: 'upbit-krw', providerType: 'upbit', providerSymbol: 'KRW-BTC', symbol: 'BTC/KRW', name: 'Bitcoin', quoteCurrency: 'KRW', lastPrice: 100, change24hPercent: 2, volume24h: 10_000 }
 const stock: MarketInstrument = { id: 'krx-005930', marketId: 'korea-stock', marketType: 'kospi', providerType: 'mock-krx', providerSymbol: '005930', symbol: '005930', name: 'Samsung Electronics', quoteCurrency: 'KRW', lastPrice: 70_000, change24hPercent: 1, volume24h: 1_000_000 }
 const base = { userNote: '', averagePrice: null, newsResult: null, language: 'en' as const }
+const candidate = { instrumentId: crypto.id } as WatchCandidate
 
 describe('buildMyInstrumentAnalysis', () => {
   it('is deterministic and keeps simple sections to three app-authored items', () => {
@@ -118,5 +120,57 @@ describe('buildMyInstrumentAnalysis', () => {
     expect(risks).toContain('하방 위험과 본인의 판단 기준을 확인하세요.')
     expect(result.currentRead).toContain('보통 수준의 상승 움직임')
     expect(result.evidence.find((entry) => entry.type === 'price')?.reviewMeaning).toContain('가치평가 판단은 아닙니다')
+  })
+
+  it('always returns a typed action-readiness plan', () => {
+    const result = buildMyInstrumentAnalysis({ ...base, instrument: crypto, intent: 'watching', catalogSource: 'live' })
+    expect(result.actionReadiness).toMatchObject({ status: 'waiting', strength: 'low' })
+    expect(result.actionReadiness.disclaimer).toContain('not a trade instruction')
+  })
+
+  it('keeps mock stocks pending and disables numeric review zones', () => {
+    const result = buildMyInstrumentAnalysis({ ...base, instrument: stock, intent: 'watching', catalogSource: 'mock' })
+    expect(result.actionReadiness.status).toBe('decisionPending')
+    expect(result.actionReadiness.zones).toEqual([])
+    expect(result.actionReadiness.whyThisStatus).toContain('stock demo workflow')
+  })
+
+  it('uses candidate and movement context for watch and conditional states', () => {
+    const flat = buildMyInstrumentAnalysis({ ...base, instrument: { ...crypto, change24hPercent: 0.5 }, intent: 'watching', catalogSource: 'live', candidate })
+    const moderate = buildMyInstrumentAnalysis({ ...base, instrument: { ...crypto, change24hPercent: 3 }, intent: 'watching', catalogSource: 'live', candidate })
+    expect(flat.actionReadiness.status).toBe('watchZone')
+    expect(moderate.actionReadiness.status).toBe('conditionalApproach')
+  })
+
+  it('turns extreme movement into caution states without an order signal', () => {
+    const upward = buildMyInstrumentAnalysis({ ...base, instrument: { ...crypto, change24hPercent: 10 }, intent: 'watching', catalogSource: 'live', candidate })
+    const downward = buildMyInstrumentAnalysis({ ...base, instrument: { ...crypto, change24hPercent: -10 }, intent: 'watching', catalogSource: 'live', candidate })
+    expect(upward.actionReadiness.status).toBe('chaseCaution')
+    expect(downward.actionReadiness.status).toBe('sharpDropReboundCaution')
+  })
+
+  it('uses holding intent only for safe invalidation and protection reviews', () => {
+    const adverse = buildMyInstrumentAnalysis({ ...base, instrument: { ...crypto, change24hPercent: -4 }, intent: 'holding', catalogSource: 'live', candidate })
+    const positive = buildMyInstrumentAnalysis({ ...base, instrument: { ...crypto, change24hPercent: 10 }, intent: 'holding', catalogSource: 'live', candidate })
+    expect(adverse.actionReadiness.status).toBe('invalidationCheck')
+    expect(positive.actionReadiness.status).toBe('profitProtectionReview')
+    expect(adverse.actionReadiness.nextChecks[0]).toBe('Compare your original reason with currently available evidence.')
+  })
+
+  it('creates percentage-distance crypto zones without absolute currency prices', () => {
+    const result = buildMyInstrumentAnalysis({ ...base, instrument: crypto, intent: 'watching', catalogSource: 'live', candidate })
+    const zones = JSON.stringify(result.actionReadiness.zones)
+    expect(result.actionReadiness.zones).toHaveLength(5)
+    expect(zones).toContain('About 1.5% below current price')
+    expect(zones).toContain('About 3% to 6% above current price')
+    expect(zones).not.toMatch(/KRW|USD|USDT|100/)
+  })
+
+  it('keeps Korean action copy free from unsafe recommendation labels', () => {
+    const result = buildMyInstrumentAnalysis({ ...base, instrument: { ...crypto, change24hPercent: 10 }, intent: 'holding', catalogSource: 'live', candidate, language: 'ko' })
+    const copy = JSON.stringify(result.actionReadiness)
+    expect(result.actionReadiness.title).toBe('수익 보호 검토')
+    expect(copy).toContain('거래 지시가 아닙니다')
+    expect(copy).not.toMatch(/매수가|손절가|익절가|목표가|매수 추천/)
   })
 })
