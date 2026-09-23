@@ -149,7 +149,7 @@ export function MyAnalysisPage() {
         <div className={styles.quote}><small>{t.availableData}</small><strong>{Number.isFinite(selected.lastPrice) ? formatMarketPrice(selected) : t.qualities.unavailable}</strong>{Number.isFinite(selected.change24hPercent) && <span data-direction={selected.change24hPercent >= 0 ? 'positive' : 'negative'}>{formatMarketChange(selected.change24hPercent)}</span>}</div>
         <div className={styles.quality}><small>{t.quality}</small><b data-quality={analysis.dataQuality}>{analysis.dataQualityLabel}</b></div>
       </section>
-      <ActionReadinessCard plan={analysis.actionReadiness} assetType={analysis.assetType} language={language} mode={displayMode} />
+      <ActionReadinessCard plan={analysis.actionReadiness} language={language} mode={displayMode} />
       <section className={styles.analysis} data-mode={displayMode}>
         <div className={styles.analysisHeading}><div><span>{displayMode === 'simple' ? t.simple : t.expert}</span><h2>{t.analyze}</h2><p className={styles.currentRead}>{analysis.currentRead}</p><small>{analysis.summary}</small></div><Link to="/market" onClick={openMarket}>{t.market} →</Link></div>
         {displayMode === 'simple' ? <div className={styles.sections}>

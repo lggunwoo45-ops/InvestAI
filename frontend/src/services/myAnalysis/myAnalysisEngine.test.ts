@@ -128,11 +128,15 @@ describe('buildMyInstrumentAnalysis', () => {
     expect(result.actionReadiness.disclaimer).toContain('not a trade instruction')
   })
 
-  it('keeps mock stocks pending and disables numeric review zones', () => {
-    const result = buildMyInstrumentAnalysis({ ...base, instrument: stock, intent: 'watching', catalogSource: 'mock' })
-    expect(result.actionReadiness.status).toBe('decisionPending')
-    expect(result.actionReadiness.zones).toEqual([])
-    expect(result.actionReadiness.whyThisStatus).toContain('stock demo workflow')
+  it('gates mock crypto, mock stock, and unavailable data from action-ready states', () => {
+    const mockCrypto = buildMyInstrumentAnalysis({ ...base, instrument: { ...crypto, change24hPercent: 3 }, intent: 'watching', catalogSource: 'mock', candidate })
+    const mockStock = buildMyInstrumentAnalysis({ ...base, instrument: stock, intent: 'watching', catalogSource: 'mock' })
+    const unavailable = buildMyInstrumentAnalysis({ ...base, instrument: { ...crypto, lastPrice: Number.NaN, change24hPercent: Number.NaN, volume24h: Number.NaN }, intent: 'watching', catalogSource: 'live', candidate })
+    expect(mockCrypto.actionReadiness.status).toBe('decisionPending')
+    expect(mockStock.actionReadiness.status).toBe('decisionPending')
+    expect(unavailable.actionReadiness.status).toBe('decisionPending')
+    expect(mockCrypto.actionReadiness.whyThisStatus).toBe('Action readiness is limited because this uses mock/demo data.')
+    expect(mockStock.actionReadiness.whyThisStatus).toBe('Action readiness is limited because this uses mock/demo data.')
   })
 
   it('uses candidate and movement context for watch and conditional states', () => {
@@ -149,28 +153,26 @@ describe('buildMyInstrumentAnalysis', () => {
     expect(downward.actionReadiness.status).toBe('sharpDropReboundCaution')
   })
 
-  it('uses holding intent only for safe invalidation and protection reviews', () => {
-    const adverse = buildMyInstrumentAnalysis({ ...base, instrument: { ...crypto, change24hPercent: -4 }, intent: 'holding', catalogSource: 'live', candidate })
-    const positive = buildMyInstrumentAnalysis({ ...base, instrument: { ...crypto, change24hPercent: 10 }, intent: 'holding', catalogSource: 'live', candidate })
-    expect(adverse.actionReadiness.status).toBe('invalidationCheck')
-    expect(positive.actionReadiness.status).toBe('profitProtectionReview')
-    expect(adverse.actionReadiness.nextChecks[0]).toBe('Compare your original reason with currently available evidence.')
+  it('keeps action status independent from intent while checklist wording changes', () => {
+    const intents = ['watching', 'holding', 'longTerm', 'swing', 'shortTerm'] as const
+    const results = intents.map((intent) => buildMyInstrumentAnalysis({ ...base, instrument: { ...crypto, change24hPercent: 3 }, intent, catalogSource: 'live', candidate }))
+    expect(new Set(results.map((result) => result.actionReadiness.status))).toEqual(new Set(['conditionalApproach']))
+    expect(new Set(results.map((result) => result.reviewChecklist[0])).size).toBe(5)
+    expect(new Set(results.map((result) => JSON.stringify(result.actionReadiness))).size).toBe(1)
   })
 
-  it('creates percentage-distance crypto zones without absolute currency prices', () => {
+  it('does not emit a zone ladder or percentage-distance plan', () => {
     const result = buildMyInstrumentAnalysis({ ...base, instrument: crypto, intent: 'watching', catalogSource: 'live', candidate })
-    const zones = JSON.stringify(result.actionReadiness.zones)
-    expect(result.actionReadiness.zones).toHaveLength(5)
-    expect(zones).toContain('About 1.5% below current price')
-    expect(zones).toContain('About 3% to 6% above current price')
-    expect(zones).not.toMatch(/KRW|USD|USDT|100/)
+    const plan = JSON.stringify(result.actionReadiness)
+    expect('zones' in result.actionReadiness).toBe(false)
+    expect(plan).not.toMatch(/1\.5%|3\.0%|5\.0%|7\.0%|3% to 6%|approach review zone|profit protection review/i)
   })
 
   it('keeps Korean action copy free from unsafe recommendation labels', () => {
     const result = buildMyInstrumentAnalysis({ ...base, instrument: { ...crypto, change24hPercent: 10 }, intent: 'holding', catalogSource: 'live', candidate, language: 'ko' })
     const copy = JSON.stringify(result.actionReadiness)
-    expect(result.actionReadiness.title).toBe('수익 보호 검토')
+    expect(result.actionReadiness.title).toBe('추격 접근 주의')
     expect(copy).toContain('거래 지시가 아닙니다')
-    expect(copy).not.toMatch(/매수가|손절가|익절가|목표가|매수 추천/)
+    expect(copy).not.toMatch(/매수가|손절가|익절가|목표가|매수 추천|분할 접근|무효화 기준|수익 보호/)
   })
 })

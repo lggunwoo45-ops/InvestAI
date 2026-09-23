@@ -2,34 +2,40 @@
 
 ## What was added
 
-My Analysis now includes a deterministic Action Readiness plan between the selected instrument header and the analysis result. It translates existing evidence conditions into a review status, rationale, conditions, next checks, and safe percentage-distance zones. It does not execute, recommend, or price an order.
+My Analysis includes a deterministic Action Readiness plan between the selected instrument header and the analysis result. It translates existing evidence conditions into a review status, rationale, conditions, and next checks. It does not execute, recommend, price, or stage an order.
+
+## Safety repair after external review
+
+The pre-merge safety review identified two presentation risks in the original implementation: a five-step percentage zone ladder could resemble an execution plan, and review intent could change the action status. Both were removed.
+
+- The plan no longer contains or renders review zones, percentage-distance ladders, entry levels, invalidation levels, or profit-protection levels.
+- Review intent changes only the existing review-checklist wording. It never changes Action Readiness status, clarity, rationale, conditions, or next checks.
+- Mock/demo data is limited to Decision pending. Unavailable data is also Decision pending, and limited data remains Waiting.
+- Stocks remain Decision pending until reliable stock data is connected.
+- The former Strength label is presented as Signal clarity / 판단 명확도 and explicitly states that it is not confidence or expected return.
 
 ## Status model and rules
 
-The typed model supports Decision pending, Waiting, Watch zone, Conditional approach, Staged approach review, Chase caution, Sharp-drop rebound caution, Invalidation check, and Profit protection review with low, medium, or high rule strength.
+The typed model supports Decision pending, Waiting, Watch zone, Conditional approach, Chase caution, and Sharp-drop rebound caution with low, medium, or high rule clarity.
 
-- Missing core data and mock stock workflows remain Decision pending.
-- Flat crypto with a deterministic candidate becomes Watch zone.
-- Moderate crypto with a candidate can become Conditional approach.
-- Strong upward and downward movement become Chase caution and Sharp-drop rebound caution.
-- Holding intent changes adverse movement to Invalidation check and strong positive movement to Profit protection review.
-- Average price and personal notes never participate in status calculation.
-
-## Review zones
-
-Crypto with available core data receives five fixed percentage-distance references: 1.5%, 3%, 5%, and 7% below current price plus 3%–6% above current price for protection review. No absolute KRW, USD, or USDT zone price is calculated or displayed. Stock zones remain disabled until reliable stock data is connected.
+- Missing or unavailable core data becomes Decision pending.
+- Mock/demo crypto and stock data becomes Decision pending.
+- Limited live-source context remains Waiting.
+- Live crypto with a deterministic candidate can become Watch zone or Conditional approach when movement is not extreme.
+- Strong live crypto movement becomes Chase caution or Sharp-drop rebound caution.
+- Average price, personal notes, and review intent never participate in status calculation.
 
 ## Simple and Expert modes
 
-Simple Mode leads with Current action status, followed by the current read, observations, cautions, next checks, optional personal context, and safety notes. Expert Mode leads with Action readiness and rule basis, then review summary, evidence, missing evidence, checklist, and user inputs. Both modes show conditions to check, conditions to avoid, and the rule-based non-instruction disclaimer.
+Simple Mode leads with Current action status. Expert Mode leads with Action readiness. Both modes show a neutral summary, why the status was selected, conditions to check, conditions to avoid, next checks, Signal clarity, and the rule-based non-instruction disclaimer. Neither mode displays an execution-like zone ladder.
 
 ## Language and safety
 
-All statuses, conditions, zones, strength labels, explanations, and caveats are available in English and Korean. No direct recommendation, exact order-price signal, execution behavior, or personalized calculation was added.
+Statuses, conditions, clarity labels, explanations, and caveats are available in English and Korean. The wording avoids direct recommendations, exact order-price signals, staged-entry framing, personalized calculations, probability claims, and execution behavior.
 
 ## Tests
 
-Tests cover plan presence, mock-stock pending state, flat and moderate candidate states, strong upward and downward cautions, holding-intent invalidation and protection reviews, percentage-only crypto zones, disabled stock zones, UI rendering in both modes, bilingual copy, and forbidden-label absence.
+Tests cover plan presence, mock/demo and unavailable-data gating, candidate-based live states, strong-movement cautions, intent-independent status calculation, intent-specific checklist wording, zone-ladder absence, bilingual clarity copy, UI rendering, and forbidden-label absence.
 
 ## Deferred
 
