@@ -5,6 +5,7 @@ export type AnalysisAssetType = 'crypto' | 'stock'
 export type AnalysisDataQuality = 'live' | 'mock' | 'limited' | 'unavailable'
 export type AnalysisEvidenceType = 'price' | 'change' | 'volume' | 'candidate' | 'news' | 'market' | 'filing' | 'earnings' | 'fundamentals' | 'ratings'
 export type AnalysisSignalLevel = 'available' | 'context' | 'missing' | 'demo'
+export type MyAnalysisSectionId = 'simple-current' | 'simple-check' | 'simple-caution' | 'evidence' | 'missing' | 'checklist'
 
 export interface MyAnalysisInput {
   instrument: MarketInstrument
@@ -23,6 +24,7 @@ export interface MyAnalysisEvidence {
 }
 
 export interface MyAnalysisSection {
+  id: MyAnalysisSectionId
   title: string
   items: readonly string[]
 }
@@ -46,5 +48,6 @@ export interface MyAnalysisResult {
   userContext: MyAnalysisUserContext
   simpleModeSections: readonly MyAnalysisSection[]
   expertModeSections: readonly MyAnalysisSection[]
+  reviewChecklist: readonly string[]
   disclaimer: string
 }
