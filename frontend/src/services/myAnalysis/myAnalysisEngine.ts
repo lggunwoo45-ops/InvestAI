@@ -1,7 +1,7 @@
 import type { Language } from '@/i18n/translations'
 import { newsForInstrument } from '@/services/news/newsSelectors'
 import type { NewsLoadResult } from '@/services/news/newsService'
-import type { ActionReadinessPlan, ActionReadinessStatus, MyAnalysisEvidence, MyAnalysisInput, MyAnalysisResult } from '@/types/myAnalysis'
+import type { ActionReadinessPlan, ActionReadinessStatus, ActionRuleBasisItem, MyAnalysisEvidence, MyAnalysisInput, MyAnalysisResult } from '@/types/myAnalysis'
 import type { WatchCandidate } from '@/types/watchCandidate'
 
 export interface MyAnalysisEngineInput extends MyAnalysisInput {
@@ -114,11 +114,11 @@ const text = {
 const actionText = {
   en: {
     statuses: {
-      decisionPending: { title: 'Decision pending', summary: 'Current evidence is not reliable enough to set an action-ready state.' },
-      waiting: { title: 'Waiting / checking conditions', summary: 'Checking additional conditions takes priority over an immediate approach.' },
-      watchZone: { title: 'Watch zone', summary: 'This asset is worth continued review, but no action condition is complete yet.' },
+      decisionPending: { title: 'Decision pending', summary: 'There is not enough reliable data to form a useful action state.' },
+      waiting: { title: 'Waiting / checking conditions', summary: 'More confirmation is needed before treating this as an actionable setup.' },
+      watchZone: { title: 'Watch zone', summary: 'This is worth watching, but the conditions are not complete.' },
       conditionalApproach: { title: 'Conditional approach possible', summary: 'Some review conditions are present, but confirmation is still required.' },
-      chaseCaution: { title: 'Chase caution', summary: 'Recent movement is large, so following the move requires caution.' },
+      chaseCaution: { title: 'Chase caution', summary: 'Recent movement is already large, so following the move requires caution.' },
       sharpDropReboundCaution: { title: 'Sharp-drop rebound caution', summary: 'A rebound after a sharp drop needs extra confirmation.' },
     },
     reasons: {
@@ -133,25 +133,35 @@ const actionText = {
       crypto: ['Core market data remains available.', 'Movement is checked together with activity and related news.'],
       stock: ['Reliable stock data and disclosures become available.', 'Earnings and fundamentals are verified from primary sources.'],
       unavailable: ['Core price, movement, and volume data become available.', 'The data source and freshness can be verified.'],
+      mock: ['Connect live data before using action readiness.', 'Review whether price, movement, and volume are available.', 'Confirm whether related news is source-linked.'],
     },
     avoid: {
       crypto: ['Do not rely on movement direction alone.', 'Pause the review if core data becomes unavailable.'],
       stock: ['Do not treat demo movement as live stock evidence.', 'Do not infer missing disclosures, earnings, or fundamentals.'],
       volatility: ['Avoid following a large move without confirmation.', 'Do not treat a short rebound as proof that conditions improved.'],
+      mock: ['Do not treat demo data as live market context.', 'Do not use mock stock movement as evidence.'],
     },
     recheckEvidence: 'Recheck data quality, movement, activity, and news context together.',
     waitForEvidence: 'Wait for new evidence or a meaningful change in conditions before reviewing the status.',
-    mockLimit: 'Action readiness is limited because this uses mock/demo data.',
+    mockLimit: 'This is a workflow preview using mock/demo data. Use it to understand the analysis structure, not to act on market conditions.',
     limitedReason: 'Action readiness remains conservative because the available data is limited.',
     disclaimer: 'Action status is generated from rule-based evidence conditions. This is not a trade instruction.',
+    dataModes: { live: 'Live', mock: 'Workflow preview', limited: 'Limited', unavailable: 'Live data required' },
+    ruleLabels: { dataQuality: 'Data quality', movementBand: 'Movement state', candidateState: 'Candidate evidence', newsState: 'News state', assetKind: 'Asset type' },
+    ruleValues: {
+      movementBand: { strongUp: 'Large upward movement', moderateUp: 'Moderate upward movement', flat: 'Limited movement', moderateDown: 'Moderate downward movement', strongDown: 'Large downward movement', unknown: 'Unavailable' },
+      candidateState: { candidateAvailable: 'Available', noCandidate: 'Not available' },
+      newsState: { explicitlyRelated: 'Source-linked', marketOnly: 'Market-level only', missing: 'Not available' },
+      assetKind: { crypto: 'Crypto', stock: 'Stock' },
+    },
   },
   ko: {
     statuses: {
-      decisionPending: { title: '판단 보류', summary: '현재 데이터만으로 행동 상태를 정하기 어렵습니다.' },
-      waiting: { title: '대기 / 조건 확인 중', summary: '즉시 접근보다 추가 조건 확인이 우선입니다.' },
-      watchZone: { title: '관심 구간', summary: '계속 살펴볼 만하지만, 행동 조건이 완성된 상태는 아닙니다.' },
-      conditionalApproach: { title: '조건부 접근 가능', summary: '일부 검토 조건은 확인되지만, 추가 확인이 필요합니다.' },
-      chaseCaution: { title: '추격 접근 주의', summary: '최근 움직임이 커진 상태라 따라붙는 판단은 주의가 필요합니다.' },
+      decisionPending: { title: '판단 보류', summary: '유의미한 액션 상태를 정하기에는 신뢰 가능한 데이터가 부족합니다.' },
+      waiting: { title: '대기 / 조건 확인 중', summary: '행동 가능한 흐름으로 보기 전에 추가 확인이 필요합니다.' },
+      watchZone: { title: '관심 구간', summary: '계속 볼 만하지만 조건이 완성된 상태는 아닙니다.' },
+      conditionalApproach: { title: '조건부 접근 가능', summary: '일부 검토 조건은 확인되지만 추가 확인이 필요합니다.' },
+      chaseCaution: { title: '추격 접근 주의', summary: '최근 움직임이 이미 커진 상태라 따라붙는 판단은 주의가 필요합니다.' },
       sharpDropReboundCaution: { title: '급락 반등 접근 주의', summary: '급락 이후 반등은 추가 확인이 필요합니다.' },
     },
     reasons: {
@@ -166,17 +176,27 @@ const actionText = {
       crypto: ['핵심 시장 데이터를 계속 확인할 수 있어야 합니다.', '움직임을 거래 활동과 관련 뉴스 맥락과 함께 확인해야 합니다.'],
       stock: ['신뢰할 수 있는 주식 데이터와 공시가 연결되어야 합니다.', '실적과 재무 정보를 1차 출처에서 확인해야 합니다.'],
       unavailable: ['핵심 가격·움직임·거래량 데이터를 확인할 수 있어야 합니다.', '데이터 출처와 최신성을 검증할 수 있어야 합니다.'],
+      mock: ['실시간 데이터 연결 후 액션 상태를 확인하세요.', '가격, 움직임, 거래량이 확인되는지 보세요.', '관련 뉴스가 출처와 함께 연결되는지 확인하세요.'],
     },
     avoid: {
       crypto: ['움직임 방향만으로 판단하지 마세요.', '핵심 데이터를 확인할 수 없으면 검토를 보류하세요.'],
       stock: ['데모 움직임을 실제 주식 근거로 취급하지 마세요.', '누락된 공시·실적·재무 정보를 추정하지 마세요.'],
       volatility: ['큰 움직임을 추가 확인 없이 따라가지 마세요.', '짧은 반등을 조건 개선의 증거로 취급하지 마세요.'],
+      mock: ['데모 데이터를 실시간 시장 맥락으로 보지 마세요.', '모의 주식 움직임을 실제 근거로 사용하지 마세요.'],
     },
     recheckEvidence: '데이터 품질, 움직임, 거래 활동, 뉴스 맥락을 함께 다시 확인하세요.',
     waitForEvidence: '새로운 근거나 의미 있는 조건 변화가 생긴 뒤 상태를 다시 검토하세요.',
-    mockLimit: '모의/데모 데이터이므로 액션 상태는 제한적으로 표시됩니다.',
+    mockLimit: '모의/데모 데이터를 사용하는 흐름 미리보기입니다. 시장 상황 판단이 아니라 분석 구조를 확인하는 용도로 보세요.',
     limitedReason: '사용 가능한 데이터가 제한적이므로 액션 상태를 보수적으로 표시합니다.',
     disclaimer: '액션 상태는 규칙 기반 근거 조건으로 생성되며, 거래 지시가 아닙니다.',
+    dataModes: { live: '실시간', mock: '흐름 미리보기', limited: '제한됨', unavailable: '실시간 데이터 필요' },
+    ruleLabels: { dataQuality: '데이터 품질', movementBand: '움직임 상태', candidateState: '후보 근거', newsState: '뉴스 상태', assetKind: '자산 유형' },
+    ruleValues: {
+      movementBand: { strongUp: '큰 상승 움직임', moderateUp: '보통 상승 움직임', flat: '제한된 움직임', moderateDown: '보통 하락 움직임', strongDown: '큰 하락 움직임', unknown: '확인 불가' },
+      candidateState: { candidateAvailable: '있음', noCandidate: '없음' },
+      newsState: { explicitlyRelated: '출처 연결됨', marketOnly: '시장 수준만', missing: '없음' },
+      assetKind: { crypto: '가상자산', stock: '주식' },
+    },
   },
 } as const
 
@@ -236,18 +256,29 @@ function buildActionReadiness(profile: MyAnalysisProfile, input: MyAnalysisEngin
   const strength = highStrength.includes(status) ? 'high' : mediumStrength.includes(status) ? 'medium' : 'low'
   const unavailable = profile.dataTrust === 'unavailable'
   const volatile = profile.riskState === 'highVolatility'
-  const approachConditions = unavailable ? t.conditions.unavailable : profile.assetKind === 'stock' ? t.conditions.stock : t.conditions.crypto
-  const avoidConditions = profile.assetKind === 'stock' ? t.avoid.stock : volatile ? t.avoid.volatility : t.avoid.crypto
+  const mock = profile.dataTrust === 'mock'
+  const approachConditions = mock ? t.conditions.mock : unavailable ? t.conditions.unavailable : profile.assetKind === 'stock' ? t.conditions.stock : t.conditions.crypto
+  const avoidConditions = mock ? t.avoid.mock : profile.assetKind === 'stock' ? t.avoid.stock : volatile ? t.avoid.volatility : t.avoid.crypto
+  const ruleBasis: ActionRuleBasisItem[] = [
+    { key: 'dataQuality', label: t.ruleLabels.dataQuality, value: t.dataModes[profile.dataTrust] },
+    { key: 'movementBand', label: t.ruleLabels.movementBand, value: t.ruleValues.movementBand[profile.movementBand] },
+    { key: 'candidateState', label: t.ruleLabels.candidateState, value: t.ruleValues.candidateState[profile.candidateState] },
+    { key: 'newsState', label: t.ruleLabels.newsState, value: t.ruleValues.newsState[profile.newsState] },
+    { key: 'assetKind', label: t.ruleLabels.assetKind, value: t.ruleValues.assetKind[profile.assetKind] },
+  ]
 
   return {
     status,
     strength,
+    dataQuality: profile.dataTrust,
+    dataQualityLabel: t.dataModes[profile.dataTrust],
     title: t.statuses[status].title,
     summary: t.statuses[status].summary,
     whyThisStatus: profile.dataTrust === 'mock' ? t.mockLimit : profile.dataTrust === 'limited' ? t.limitedReason : t.reasons[status],
     approachConditions,
     avoidConditions,
     nextChecks: [t.recheckEvidence, t.waitForEvidence],
+    ruleBasis,
     disclaimer: t.disclaimer,
   }
 }

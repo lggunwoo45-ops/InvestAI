@@ -8,16 +8,26 @@ export type AnalysisSignalLevel = 'available' | 'context' | 'missing' | 'demo'
 export type MyAnalysisSectionId = 'simple-current' | 'simple-check' | 'simple-caution' | 'evidence' | 'missing' | 'checklist'
 export type ActionReadinessStatus = 'decisionPending' | 'waiting' | 'watchZone' | 'conditionalApproach' | 'chaseCaution' | 'sharpDropReboundCaution'
 export type ActionReadinessStrength = 'low' | 'medium' | 'high'
+export type ActionRuleBasisKey = 'dataQuality' | 'movementBand' | 'candidateState' | 'newsState' | 'assetKind'
+
+export interface ActionRuleBasisItem {
+  key: ActionRuleBasisKey
+  label: string
+  value: string
+}
 
 export interface ActionReadinessPlan {
   status: ActionReadinessStatus
   strength: ActionReadinessStrength
+  dataQuality: AnalysisDataQuality
+  dataQualityLabel: string
   title: string
   summary: string
   whyThisStatus: string
   approachConditions: readonly string[]
   avoidConditions: readonly string[]
   nextChecks: readonly string[]
+  ruleBasis: readonly ActionRuleBasisItem[]
   disclaimer: string
 }
 
