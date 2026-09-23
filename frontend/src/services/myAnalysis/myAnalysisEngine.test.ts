@@ -135,8 +135,11 @@ describe('buildMyInstrumentAnalysis', () => {
     expect(mockCrypto.actionReadiness.status).toBe('decisionPending')
     expect(mockStock.actionReadiness.status).toBe('decisionPending')
     expect(unavailable.actionReadiness.status).toBe('decisionPending')
-    expect(mockCrypto.actionReadiness.whyThisStatus).toBe('Action readiness is limited because this uses mock/demo data.')
-    expect(mockStock.actionReadiness.whyThisStatus).toBe('Action readiness is limited because this uses mock/demo data.')
+    expect(mockCrypto.actionReadiness.whyThisStatus).toBe('This is a workflow preview using mock/demo data. Use it to understand the analysis structure, not to act on market conditions.')
+    expect(mockStock.actionReadiness.whyThisStatus).toBe('This is a workflow preview using mock/demo data. Use it to understand the analysis structure, not to act on market conditions.')
+    expect(mockCrypto.actionReadiness.approachConditions).toContain('Connect live data before using action readiness.')
+    expect(mockCrypto.actionReadiness.avoidConditions).toContain('Do not treat demo data as live market context.')
+    expect(mockCrypto.actionReadiness.dataQualityLabel).toBe('Workflow preview')
   })
 
   it('uses candidate and movement context for watch and conditional states', () => {
@@ -144,12 +147,19 @@ describe('buildMyInstrumentAnalysis', () => {
     const moderate = buildMyInstrumentAnalysis({ ...base, instrument: { ...crypto, change24hPercent: 3 }, intent: 'watching', catalogSource: 'live', candidate })
     expect(flat.actionReadiness.status).toBe('watchZone')
     expect(moderate.actionReadiness.status).toBe('conditionalApproach')
+    expect(moderate.actionReadiness.ruleBasis).toEqual(expect.arrayContaining([
+      expect.objectContaining({ key: 'dataQuality', label: 'Data quality', value: 'Live' }),
+      expect.objectContaining({ key: 'movementBand', label: 'Movement state', value: 'Moderate upward movement' }),
+      expect.objectContaining({ key: 'candidateState', label: 'Candidate evidence', value: 'Available' }),
+    ]))
+    expect(JSON.stringify(moderate.actionReadiness)).not.toMatch(/buy signal|sell signal|entry price|stop loss|target price|take profit/i)
   })
 
   it('turns extreme movement into caution states without an order signal', () => {
     const upward = buildMyInstrumentAnalysis({ ...base, instrument: { ...crypto, change24hPercent: 10 }, intent: 'watching', catalogSource: 'live', candidate })
     const downward = buildMyInstrumentAnalysis({ ...base, instrument: { ...crypto, change24hPercent: -10 }, intent: 'watching', catalogSource: 'live', candidate })
     expect(upward.actionReadiness.status).toBe('chaseCaution')
+    expect(upward.actionReadiness.summary).toBe('Recent movement is already large, so following the move requires caution.')
     expect(downward.actionReadiness.status).toBe('sharpDropReboundCaution')
   })
 
