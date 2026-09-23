@@ -21,6 +21,7 @@ export interface MyAnalysisEvidence {
   detail: string
   level: AnalysisSignalLevel
   source: string
+  reviewMeaning: string
 }
 
 export interface MyAnalysisSection {
@@ -43,6 +44,7 @@ export interface MyAnalysisResult {
   dataQuality: AnalysisDataQuality
   dataQualityLabel: string
   summary: string
+  currentRead: string
   evidence: readonly MyAnalysisEvidence[]
   missingEvidence: readonly MyAnalysisEvidence[]
   userContext: MyAnalysisUserContext
