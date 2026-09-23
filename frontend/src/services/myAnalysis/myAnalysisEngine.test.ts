@@ -15,7 +15,10 @@ describe('buildMyInstrumentAnalysis', () => {
     expect(buildMyInstrumentAnalysis(input)).toEqual(first)
     expect(first.dataQuality).toBe('live')
     expect(first.simpleModeSections.every((section) => section.items.length <= 3)).toBe(true)
-    expect(first.simpleModeSections[0].items).toContain('24H movement: +2%')
+    expect(first.simpleModeSections.find((section) => section.id === 'simple-current')?.items).toContain('24H movement: +2%')
+    expect(first.simpleModeSections.find((section) => section.id === 'simple-current')?.items).toContain('Data quality: Live public market data')
+    expect(first.simpleModeSections.find((section) => section.id === 'simple-caution')?.items).not.toContain('Large recent move — review volatility before making any decision.')
+    expect(first.simpleModeSections.flatMap((section) => section.items).join(' ')).not.toContain('No extreme-move penalty applied')
   })
 
   it('labels mock crypto values as demo and adds a large-move caution', () => {
@@ -23,8 +26,9 @@ describe('buildMyInstrumentAnalysis', () => {
     expect(result.dataQuality).toBe('mock')
     expect(result.evidence.filter((entry) => ['price', 'change', 'volume'].includes(entry.type)).every((entry) => entry.level === 'demo')).toBe(true)
     expect(result.evidence.find((entry) => entry.type === 'price')?.detail).toContain('Simulated market value')
-    expect(result.simpleModeSections[0].items).toContain('24H movement: -12.4%')
-    expect(result.simpleModeSections[2].items).toContain('Large recent move — review volatility before making any decision.')
+    const cautions = result.simpleModeSections.find((section) => section.id === 'simple-caution')?.items ?? []
+    expect(result.simpleModeSections.find((section) => section.id === 'simple-current')?.items).toContain('24H movement: -12.4%')
+    expect(cautions).toEqual(expect.arrayContaining(['Simulated market value is shown for workflow testing.', 'Large recent move — review volatility before making any decision.', 'Check downside risk and your own decision criteria.']))
   })
 
   it('keeps stock gaps explicit and separates user context from evidence', () => {
@@ -44,12 +48,29 @@ describe('buildMyInstrumentAnalysis', () => {
   })
 
   it('changes only safe checklist wording for each review intent in English and Korean', () => {
-    const watching = buildMyInstrumentAnalysis({ ...base, instrument: crypto, intent: 'watching', catalogSource: 'live' })
-    const holding = buildMyInstrumentAnalysis({ ...base, instrument: crypto, intent: 'holding', catalogSource: 'live' })
+    const intents = ['watching', 'holding', 'longTerm', 'swing', 'shortTerm'] as const
+    const results = intents.map((intent) => buildMyInstrumentAnalysis({ ...base, instrument: crypto, intent, catalogSource: 'live' }))
+    const holding = results[1]
     const korean = buildMyInstrumentAnalysis({ ...base, instrument: crypto, intent: 'longTerm', catalogSource: 'live', language: 'ko' })
-    expect(watching.expertModeSections[2].items[0]).not.toBe(holding.expertModeSections[2].items[0])
-    expect(holding.expertModeSections[2].items.join(' ')).not.toMatch(/buy|sell|hold advice/i)
-    expect(korean.expertModeSections[2].items[0]).toContain('공시·실적·재무')
+    expect(new Set(results.map((result) => result.reviewChecklist[0])).size).toBe(5)
+    expect(holding.reviewChecklist.join(' ')).not.toMatch(/buy|sell|hold advice/i)
+    expect(korean.reviewChecklist[0]).toContain('공시·실적·재무')
+    expect(korean.userContext.intentNotice).toBe('검토 목적은 체크리스트 문구만 바꾸며 개인 투자 조언을 생성하지 않습니다.')
+    expect(korean.expertModeSections.find((section) => section.id === 'checklist')?.title).toBe('검토 체크리스트')
     expect(korean.expertModeSections.flatMap((section) => section.items).join(' ')).not.toMatch(/추천 매수|매수 신호|매도 신호|매수가|손절가|익절가|목표가|수익 보장/)
+  })
+
+  it.each([11.2, -11.2])('keeps volatility and general risk cautions for a large %s%% move', (change24hPercent) => {
+    const result = buildMyInstrumentAnalysis({ ...base, instrument: { ...crypto, change24hPercent }, intent: 'watching', catalogSource: 'live' })
+    const cautions = result.simpleModeSections.find((section) => section.id === 'simple-caution')?.items ?? []
+    expect(cautions).toContain('Large recent move — review volatility before making any decision.')
+    expect(cautions).toContain('Check downside risk and your own decision criteria.')
+  })
+
+  it('does not render reassurance-like Korean risk wording', () => {
+    const result = buildMyInstrumentAnalysis({ ...base, instrument: crypto, intent: 'watching', catalogSource: 'live', language: 'ko' })
+    const risks = result.simpleModeSections.find((section) => section.id === 'simple-caution')?.items.join(' ') ?? ''
+    expect(risks).not.toMatch(/감점 없음|위험 없음|안전|문제 없음/)
+    expect(risks).toContain('하방 위험과 본인의 판단 기준을 확인하세요.')
   })
 })
