@@ -1,7 +1,7 @@
 import type { Language } from '@/i18n/translations'
 import { newsForInstrument } from '@/services/news/newsSelectors'
 import type { NewsLoadResult } from '@/services/news/newsService'
-import type { MyAnalysisEvidence, MyAnalysisInput, MyAnalysisResult } from '@/types/myAnalysis'
+import type { ActionReadinessPlan, ActionReadinessStatus, MyAnalysisEvidence, MyAnalysisInput, MyAnalysisResult } from '@/types/myAnalysis'
 import type { WatchCandidate } from '@/types/watchCandidate'
 
 export interface MyAnalysisEngineInput extends MyAnalysisInput {
@@ -111,6 +111,75 @@ const text = {
   },
 } as const
 
+const actionText = {
+  en: {
+    statuses: {
+      decisionPending: { title: 'Decision pending', summary: 'Current evidence is not reliable enough to set an action-ready state.' },
+      waiting: { title: 'Waiting / checking conditions', summary: 'Checking additional conditions takes priority over an immediate approach.' },
+      watchZone: { title: 'Watch zone', summary: 'This asset is worth continued review, but no action condition is complete yet.' },
+      conditionalApproach: { title: 'Conditional approach possible', summary: 'Some review conditions are present, but confirmation is still required.' },
+      chaseCaution: { title: 'Chase caution', summary: 'Recent movement is large, so following the move requires caution.' },
+      sharpDropReboundCaution: { title: 'Sharp-drop rebound caution', summary: 'A rebound after a sharp drop needs extra confirmation.' },
+    },
+    reasons: {
+      decisionPending: 'Core data is missing, unreliable, or limited to a stock demo workflow.',
+      waiting: 'Market data is available, but candidate or confirmation context is not sufficient yet.',
+      watchZone: 'Movement is not extreme and a deterministic candidate record is available.',
+      conditionalApproach: 'Moderate movement and candidate context are both present, but confirmation is still required.',
+      chaseCaution: 'A large upward move can reverse quickly and should not be followed without confirmation.',
+      sharpDropReboundCaution: 'A large downward move can stay volatile even if a rebound begins.',
+    },
+    conditions: {
+      crypto: ['Core market data remains available.', 'Movement is checked together with activity and related news.'],
+      stock: ['Reliable stock data and disclosures become available.', 'Earnings and fundamentals are verified from primary sources.'],
+      unavailable: ['Core price, movement, and volume data become available.', 'The data source and freshness can be verified.'],
+    },
+    avoid: {
+      crypto: ['Do not rely on movement direction alone.', 'Pause the review if core data becomes unavailable.'],
+      stock: ['Do not treat demo movement as live stock evidence.', 'Do not infer missing disclosures, earnings, or fundamentals.'],
+      volatility: ['Avoid following a large move without confirmation.', 'Do not treat a short rebound as proof that conditions improved.'],
+    },
+    recheckEvidence: 'Recheck data quality, movement, activity, and news context together.',
+    waitForEvidence: 'Wait for new evidence or a meaningful change in conditions before reviewing the status.',
+    mockLimit: 'Action readiness is limited because this uses mock/demo data.',
+    limitedReason: 'Action readiness remains conservative because the available data is limited.',
+    disclaimer: 'Action status is generated from rule-based evidence conditions. This is not a trade instruction.',
+  },
+  ko: {
+    statuses: {
+      decisionPending: { title: '판단 보류', summary: '현재 데이터만으로 행동 상태를 정하기 어렵습니다.' },
+      waiting: { title: '대기 / 조건 확인 중', summary: '즉시 접근보다 추가 조건 확인이 우선입니다.' },
+      watchZone: { title: '관심 구간', summary: '계속 살펴볼 만하지만, 행동 조건이 완성된 상태는 아닙니다.' },
+      conditionalApproach: { title: '조건부 접근 가능', summary: '일부 검토 조건은 확인되지만, 추가 확인이 필요합니다.' },
+      chaseCaution: { title: '추격 접근 주의', summary: '최근 움직임이 커진 상태라 따라붙는 판단은 주의가 필요합니다.' },
+      sharpDropReboundCaution: { title: '급락 반등 접근 주의', summary: '급락 이후 반등은 추가 확인이 필요합니다.' },
+    },
+    reasons: {
+      decisionPending: '핵심 데이터가 없거나 신뢰하기 어렵고, 주식은 데모 흐름으로만 제공됩니다.',
+      waiting: '시장 데이터는 있지만 후보 또는 확인 맥락이 아직 충분하지 않습니다.',
+      watchZone: '움직임이 극단적이지 않고 결정론적 후보 기록이 있습니다.',
+      conditionalApproach: '보통 수준의 움직임과 후보 맥락이 있지만 추가 확인이 필요합니다.',
+      chaseCaution: '큰 상승 움직임은 빠르게 반전될 수 있어 확인 없이 따라가면 안 됩니다.',
+      sharpDropReboundCaution: '큰 하락 뒤 반등이 시작돼도 변동성이 계속될 수 있습니다.',
+    },
+    conditions: {
+      crypto: ['핵심 시장 데이터를 계속 확인할 수 있어야 합니다.', '움직임을 거래 활동과 관련 뉴스 맥락과 함께 확인해야 합니다.'],
+      stock: ['신뢰할 수 있는 주식 데이터와 공시가 연결되어야 합니다.', '실적과 재무 정보를 1차 출처에서 확인해야 합니다.'],
+      unavailable: ['핵심 가격·움직임·거래량 데이터를 확인할 수 있어야 합니다.', '데이터 출처와 최신성을 검증할 수 있어야 합니다.'],
+    },
+    avoid: {
+      crypto: ['움직임 방향만으로 판단하지 마세요.', '핵심 데이터를 확인할 수 없으면 검토를 보류하세요.'],
+      stock: ['데모 움직임을 실제 주식 근거로 취급하지 마세요.', '누락된 공시·실적·재무 정보를 추정하지 마세요.'],
+      volatility: ['큰 움직임을 추가 확인 없이 따라가지 마세요.', '짧은 반등을 조건 개선의 증거로 취급하지 마세요.'],
+    },
+    recheckEvidence: '데이터 품질, 움직임, 거래 활동, 뉴스 맥락을 함께 다시 확인하세요.',
+    waitForEvidence: '새로운 근거나 의미 있는 조건 변화가 생긴 뒤 상태를 다시 검토하세요.',
+    mockLimit: '모의/데모 데이터이므로 액션 상태는 제한적으로 표시됩니다.',
+    limitedReason: '사용 가능한 데이터가 제한적이므로 액션 상태를 보수적으로 표시합니다.',
+    disclaimer: '액션 상태는 규칙 기반 근거 조건으로 생성되며, 거래 지시가 아닙니다.',
+  },
+} as const
+
 function movementBand(value: number): MovementBand {
   if (!finite(value)) return 'unknown'
   if (value >= 8) return 'strongUp'
@@ -146,6 +215,41 @@ function item(id: string, type: MyAnalysisEvidence['type'], label: string, detai
 
 function number(value: number, language: Language, maximumFractionDigits = 2) {
   return new Intl.NumberFormat(language === 'ko' ? 'ko-KR' : 'en-US', { maximumFractionDigits }).format(value)
+}
+
+function buildActionReadiness(profile: MyAnalysisProfile, input: MyAnalysisEngineInput): ActionReadinessPlan {
+  const t = actionText[input.language]
+  let status: ActionReadinessStatus
+
+  if (profile.dataTrust === 'unavailable') status = 'decisionPending'
+  else if (profile.dataTrust === 'mock') status = 'decisionPending'
+  else if (profile.assetKind === 'stock') status = 'decisionPending'
+  else if (profile.dataTrust === 'limited') status = 'waiting'
+  else if (profile.movementBand === 'strongDown') status = 'sharpDropReboundCaution'
+  else if (profile.movementBand === 'strongUp') status = 'chaseCaution'
+  else if (profile.candidateState === 'candidateAvailable' && (profile.movementBand === 'moderateUp' || profile.movementBand === 'moderateDown')) status = 'conditionalApproach'
+  else if (profile.candidateState === 'candidateAvailable' && profile.movementBand === 'flat') status = 'watchZone'
+  else status = 'waiting'
+
+  const highStrength: readonly ActionReadinessStatus[] = ['chaseCaution', 'sharpDropReboundCaution']
+  const mediumStrength: readonly ActionReadinessStatus[] = ['watchZone', 'conditionalApproach']
+  const strength = highStrength.includes(status) ? 'high' : mediumStrength.includes(status) ? 'medium' : 'low'
+  const unavailable = profile.dataTrust === 'unavailable'
+  const volatile = profile.riskState === 'highVolatility'
+  const approachConditions = unavailable ? t.conditions.unavailable : profile.assetKind === 'stock' ? t.conditions.stock : t.conditions.crypto
+  const avoidConditions = profile.assetKind === 'stock' ? t.avoid.stock : volatile ? t.avoid.volatility : t.avoid.crypto
+
+  return {
+    status,
+    strength,
+    title: t.statuses[status].title,
+    summary: t.statuses[status].summary,
+    whyThisStatus: profile.dataTrust === 'mock' ? t.mockLimit : profile.dataTrust === 'limited' ? t.limitedReason : t.reasons[status],
+    approachConditions,
+    avoidConditions,
+    nextChecks: [t.recheckEvidence, t.waitForEvidence],
+    disclaimer: t.disclaimer,
+  }
 }
 
 /** Pure and deterministic: this function never fetches, calls an AI model, or issues a trading instruction. */
@@ -221,6 +325,7 @@ export function buildMyInstrumentAnalysis(input: MyAnalysisEngineInput): MyAnaly
   }
 
   const checklist = [t.intentChecks[input.intent], t.verify, t.revisit]
+  const actionReadiness = buildActionReadiness(profile, input)
   return {
     instrumentId: instrument.id,
     assetType: profile.assetKind,
@@ -248,6 +353,7 @@ export function buildMyInstrumentAnalysis(input: MyAnalysisEngineInput): MyAnaly
       { id: 'checklist', title: t.checklist, items: checklist },
     ],
     reviewChecklist: checklist,
+    actionReadiness,
     disclaimer: t.disclaimer,
   }
 }

@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest'
 
 import type { NewsLoadResult } from '@/services/news/newsService'
 import type { MarketInstrument } from '@/types/market'
+import type { WatchCandidate } from '@/types/watchCandidate'
 import { buildMyInstrumentAnalysis } from './myAnalysisEngine'
 
 const crypto: MarketInstrument = { id: 'upbit-btc', marketId: 'upbit', marketType: 'upbit-krw', providerType: 'upbit', providerSymbol: 'KRW-BTC', symbol: 'BTC/KRW', name: 'Bitcoin', quoteCurrency: 'KRW', lastPrice: 100, change24hPercent: 2, volume24h: 10_000 }
 const stock: MarketInstrument = { id: 'krx-005930', marketId: 'korea-stock', marketType: 'kospi', providerType: 'mock-krx', providerSymbol: '005930', symbol: '005930', name: 'Samsung Electronics', quoteCurrency: 'KRW', lastPrice: 70_000, change24hPercent: 1, volume24h: 1_000_000 }
 const base = { userNote: '', averagePrice: null, newsResult: null, language: 'en' as const }
+const candidate = { instrumentId: crypto.id } as WatchCandidate
 
 describe('buildMyInstrumentAnalysis', () => {
   it('is deterministic and keeps simple sections to three app-authored items', () => {
@@ -118,5 +120,59 @@ describe('buildMyInstrumentAnalysis', () => {
     expect(risks).toContain('하방 위험과 본인의 판단 기준을 확인하세요.')
     expect(result.currentRead).toContain('보통 수준의 상승 움직임')
     expect(result.evidence.find((entry) => entry.type === 'price')?.reviewMeaning).toContain('가치평가 판단은 아닙니다')
+  })
+
+  it('always returns a typed action-readiness plan', () => {
+    const result = buildMyInstrumentAnalysis({ ...base, instrument: crypto, intent: 'watching', catalogSource: 'live' })
+    expect(result.actionReadiness).toMatchObject({ status: 'waiting', strength: 'low' })
+    expect(result.actionReadiness.disclaimer).toContain('not a trade instruction')
+  })
+
+  it('gates mock crypto, mock stock, and unavailable data from action-ready states', () => {
+    const mockCrypto = buildMyInstrumentAnalysis({ ...base, instrument: { ...crypto, change24hPercent: 3 }, intent: 'watching', catalogSource: 'mock', candidate })
+    const mockStock = buildMyInstrumentAnalysis({ ...base, instrument: stock, intent: 'watching', catalogSource: 'mock' })
+    const unavailable = buildMyInstrumentAnalysis({ ...base, instrument: { ...crypto, lastPrice: Number.NaN, change24hPercent: Number.NaN, volume24h: Number.NaN }, intent: 'watching', catalogSource: 'live', candidate })
+    expect(mockCrypto.actionReadiness.status).toBe('decisionPending')
+    expect(mockStock.actionReadiness.status).toBe('decisionPending')
+    expect(unavailable.actionReadiness.status).toBe('decisionPending')
+    expect(mockCrypto.actionReadiness.whyThisStatus).toBe('Action readiness is limited because this uses mock/demo data.')
+    expect(mockStock.actionReadiness.whyThisStatus).toBe('Action readiness is limited because this uses mock/demo data.')
+  })
+
+  it('uses candidate and movement context for watch and conditional states', () => {
+    const flat = buildMyInstrumentAnalysis({ ...base, instrument: { ...crypto, change24hPercent: 0.5 }, intent: 'watching', catalogSource: 'live', candidate })
+    const moderate = buildMyInstrumentAnalysis({ ...base, instrument: { ...crypto, change24hPercent: 3 }, intent: 'watching', catalogSource: 'live', candidate })
+    expect(flat.actionReadiness.status).toBe('watchZone')
+    expect(moderate.actionReadiness.status).toBe('conditionalApproach')
+  })
+
+  it('turns extreme movement into caution states without an order signal', () => {
+    const upward = buildMyInstrumentAnalysis({ ...base, instrument: { ...crypto, change24hPercent: 10 }, intent: 'watching', catalogSource: 'live', candidate })
+    const downward = buildMyInstrumentAnalysis({ ...base, instrument: { ...crypto, change24hPercent: -10 }, intent: 'watching', catalogSource: 'live', candidate })
+    expect(upward.actionReadiness.status).toBe('chaseCaution')
+    expect(downward.actionReadiness.status).toBe('sharpDropReboundCaution')
+  })
+
+  it('keeps action status independent from intent while checklist wording changes', () => {
+    const intents = ['watching', 'holding', 'longTerm', 'swing', 'shortTerm'] as const
+    const results = intents.map((intent) => buildMyInstrumentAnalysis({ ...base, instrument: { ...crypto, change24hPercent: 3 }, intent, catalogSource: 'live', candidate }))
+    expect(new Set(results.map((result) => result.actionReadiness.status))).toEqual(new Set(['conditionalApproach']))
+    expect(new Set(results.map((result) => result.reviewChecklist[0])).size).toBe(5)
+    expect(new Set(results.map((result) => JSON.stringify(result.actionReadiness))).size).toBe(1)
+  })
+
+  it('does not emit a zone ladder or percentage-distance plan', () => {
+    const result = buildMyInstrumentAnalysis({ ...base, instrument: crypto, intent: 'watching', catalogSource: 'live', candidate })
+    const plan = JSON.stringify(result.actionReadiness)
+    expect('zones' in result.actionReadiness).toBe(false)
+    expect(plan).not.toMatch(/1\.5%|3\.0%|5\.0%|7\.0%|3% to 6%|approach review zone|profit protection review/i)
+  })
+
+  it('keeps Korean action copy free from unsafe recommendation labels', () => {
+    const result = buildMyInstrumentAnalysis({ ...base, instrument: { ...crypto, change24hPercent: 10 }, intent: 'holding', catalogSource: 'live', candidate, language: 'ko' })
+    const copy = JSON.stringify(result.actionReadiness)
+    expect(result.actionReadiness.title).toBe('추격 접근 주의')
+    expect(copy).toContain('거래 지시가 아닙니다')
+    expect(copy).not.toMatch(/매수가|손절가|익절가|목표가|매수 추천|분할 접근|무효화 기준|수익 보호/)
   })
 })
