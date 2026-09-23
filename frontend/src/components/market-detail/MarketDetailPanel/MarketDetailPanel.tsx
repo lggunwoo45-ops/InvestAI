@@ -1,4 +1,5 @@
 import { memo, useMemo } from 'react'
+import { Link } from 'react-router-dom'
 
 import { ConnectionIndicator } from '@/components/market-data/ConnectionIndicator/ConnectionIndicator'
 import { DataModeControl } from '@/components/market-data/DataModeControl/DataModeControl'
@@ -51,6 +52,7 @@ export const MarketDetailPanel = memo(function MarketDetailPanel({ snapshot, con
           </span>
         </div>
         <div className={styles.feedControl}>
+          <Link className={styles.analysisLink} to={`/my-analysis?instrumentId=${encodeURIComponent(instrument.id)}`}>{language === 'ko' ? '이 종목 분석' : 'Analyze instrument'} →</Link>
           <DataModeControl value={marketDataMode} onChange={onMarketDataModeChange} />
           <ConnectionIndicator connection={connection} />
         </div>
