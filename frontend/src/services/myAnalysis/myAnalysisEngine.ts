@@ -102,7 +102,7 @@ export function buildMyInstrumentAnalysis(input: MyAnalysisEngineInput): MyAnaly
     },
     simpleModeSections: [
       { id: 'simple-current', title: t.current, items: firstThree([movement, `${t.dataQuality}: ${t.qualities[dataQuality]}`, finite(instrument.lastPrice) ? `${t.price}: ${number(instrument.lastPrice, input.language)} ${instrument.quoteCurrency}` : null].filter((value): value is string => Boolean(value))) },
-      { id: 'simple-check', title: t.good, items: firstThree([input.candidate?.watchReason, relatedNews.length ? `${t.directNews} ${sourceLabel}.` : t.noNews, t.verify].filter((value): value is string => Boolean(value))) },
+      { id: 'simple-check', title: t.good, items: firstThree([input.candidate?.watchReason, relatedNews.length ? `${t.directNews} ${sourceLabel}.` : t.noNews].filter((value): value is string => Boolean(value))) },
       { id: 'simple-caution', title: t.caution, items: firstThree(risks) },
     ],
     expertModeSections: [
