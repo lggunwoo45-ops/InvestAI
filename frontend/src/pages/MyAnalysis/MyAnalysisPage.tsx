@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 
 import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
+import { ActionBrief } from '@/components/my-analysis/ActionBrief/ActionBrief'
 import { ActionReadinessCard } from '@/components/my-analysis/ActionReadinessCard/ActionReadinessCard'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { useMarketCatalog } from '@/hooks/useMarketCatalog'
@@ -149,6 +150,7 @@ export function MyAnalysisPage() {
         <div className={styles.quote}><small>{t.availableData}</small><strong>{Number.isFinite(selected.lastPrice) ? formatMarketPrice(selected) : t.qualities.unavailable}</strong>{Number.isFinite(selected.change24hPercent) && <span data-direction={selected.change24hPercent >= 0 ? 'positive' : 'negative'}>{formatMarketChange(selected.change24hPercent)}</span>}</div>
         <div className={styles.quality}><small>{t.quality}</small><b data-quality={analysis.dataQuality}>{analysis.dataQualityLabel}</b></div>
       </section>
+      <ActionBrief analysis={analysis} language={language} mode={displayMode} />
       <ActionReadinessCard plan={analysis.actionReadiness} language={language} mode={displayMode} />
       <section className={styles.analysis} data-mode={displayMode}>
         <div className={styles.analysisHeading}><div><span>{displayMode === 'simple' ? t.simple : t.expert}</span><h2>{t.analyze}</h2><p className={styles.currentRead}>{analysis.currentRead}</p><small>{analysis.summary}</small></div><Link to="/market" onClick={openMarket}>{t.market} →</Link></div>
@@ -160,7 +162,6 @@ export function MyAnalysisPage() {
           <article><span className={styles.sectionLabel}>{t.missingData}</span><h3>{expertTitles.missing ?? t.missing}</h3><div className={styles.evidenceList}>{analysis.missingEvidence.map((entry) => <div key={entry.id} className={styles.evidenceItem}><header><strong>{entry.label}</strong><span data-level={entry.level}>{t.levels[entry.level]}</span></header><small className={styles.evidenceType}>{t.type}: {entry.type}</small><p>{entry.detail}</p><p className={styles.reviewMeaning}>{entry.reviewMeaning}</p><small>{t.source}: {entry.source}</small></div>)}</div></article>
           <article><span className={styles.sectionLabel}>{t.nextChecks}</span><h3>{expertTitles.checklist ?? t.checklist}</h3><ul>{analysis.reviewChecklist.map((entry) => <li key={entry}>{entry}</li>)}</ul></article>
         </div>}
-        <footer>{analysis.disclaimer}</footer>
       </section>
       <details className={styles.inputs} open>
         <summary>{t.optionalContext}</summary>
@@ -172,6 +173,7 @@ export function MyAnalysisPage() {
         </div>
       </details>
       <section className={styles.userContext} aria-label={t.yourInputs}><h2>{t.yourInputs}</h2><dl><div><dt>{t.intent}</dt><dd>{analysis.userContext.intent}</dd></div>{analysis.userContext.userNote && <div><dt>{t.note}</dt><dd>{analysis.userContext.userNote}</dd></div>}{analysis.userContext.averagePrice && <div><dt>{t.average}</dt><dd>{analysis.userContext.averagePrice}</dd></div>}</dl><p>{analysis.userContext.notice}</p><small>{analysis.userContext.intentNotice}</small></section>
+      <footer className={styles.pageSafety}>{analysis.disclaimer}</footer>
     </>}
   </main>
 }
