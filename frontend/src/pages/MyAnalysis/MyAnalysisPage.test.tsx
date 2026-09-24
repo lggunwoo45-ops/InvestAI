@@ -16,6 +16,7 @@ const instruments: MarketInstrument[] = [
 ]
 
 vi.mock('@/hooks/useMarketCatalog', () => ({ useMarketCatalog: (venue: MarketVenue) => ({ catalog: catalogMockState.failedVenue === venue ? null : { venue, source: venue === 'upbit-krw' ? 'live' : 'mock', fetchedAt: 0, instruments: instruments.filter((item) => item.marketType === venue) }, loading: false, error: catalogMockState.failedVenue === venue ? 'Catalog failed' : null, loadingMilliseconds: 0 }) }))
+vi.mock('@/hooks/useDartDisclosures', () => ({ useDartDisclosures: (stockCode: string | null) => stockCode ? { status: 'mapping_unavailable', sourceMode: 'disabled', message: 'Mapping unavailable.', disclosures: [], fetchedAt: null } : { status: 'unavailable', sourceMode: 'disabled', message: 'Korean stocks only.', disclosures: [], fetchedAt: null } }))
 
 describe('MyAnalysisPage', () => {
   beforeEach(() => { window.localStorage.clear(); catalogMockState.failedVenue = null })
@@ -41,6 +42,7 @@ describe('MyAnalysisPage', () => {
     expect(screen.getByRole('region', { name: 'Review mode' })).toBeTruthy()
     expect(screen.getByRole('region', { name: 'Interest stage' })).toBeTruthy()
     expect(screen.getByRole('region', { name: 'Analysis baseline locked' })).toBeTruthy()
+    expect(screen.getByRole('region', { name: 'Recent DART disclosures' }).textContent).toContain('corporation code mapping')
     const brief = screen.getByRole('region', { name: 'Review summary' })
     const actionStatus = screen.getByRole('region', { name: 'Current action status' })
     expect(brief.textContent).toContain('Mock/demo data')
@@ -62,6 +64,7 @@ describe('MyAnalysisPage', () => {
     expect(screen.getByRole('region', { name: 'Rule basis' })).toBeTruthy()
     expect(screen.getByRole('region', { name: 'Interest stage' })).toBeTruthy()
     expect(screen.getByRole('region', { name: 'Position review' })).toBeTruthy()
+    expect(screen.getByRole('region', { name: 'Recent DART disclosures' })).toBeTruthy()
     expect(screen.getByText('Candidate evidence')).toBeTruthy()
     expect(screen.getByText('News state')).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Evidence board' })).toBeTruthy()
@@ -100,6 +103,7 @@ describe('MyAnalysisPage', () => {
   it('supports direct instrument query selection and bilingual navigation', async () => {
     render(<AppProviders><MemoryRouter initialEntries={['/my-analysis?instrumentId=upbit-btc']}><AppRoutes /></MemoryRouter></AppProviders>)
     expect(await screen.findByRole('heading', { name: 'BTC/KRW' })).toBeTruthy()
+    expect(screen.queryByRole('region', { name: 'Recent DART disclosures' })).toBeNull()
     expect(screen.getAllByText(/moderate upward movement/).length).toBeGreaterThan(0)
     expect(screen.getByText('Opened from Market workspace.')).toBeTruthy()
     const readiness = screen.getByRole('region', { name: 'Action readiness' })

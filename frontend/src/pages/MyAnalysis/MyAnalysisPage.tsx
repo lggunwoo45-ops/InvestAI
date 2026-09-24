@@ -6,10 +6,12 @@ import { ActionReadinessCard } from '@/components/my-analysis/ActionReadinessCar
 import { AnalysisBaselinePanel } from '@/components/my-analysis/AnalysisBaselinePanel/AnalysisBaselinePanel'
 import { BeginnerInterestZone } from '@/components/my-analysis/BeginnerInterestZone/BeginnerInterestZone'
 import { deriveBeginnerInterestStage } from '@/components/my-analysis/BeginnerInterestZone/beginnerInterestZoneModel'
+import { DartDisclosurePanel } from '@/components/my-analysis/DartDisclosurePanel/DartDisclosurePanel'
 import { MyAnalysisReportSummary } from '@/components/my-analysis/MyAnalysisReportSummary/MyAnalysisReportSummary'
 import { PositionReviewPanel } from '@/components/my-analysis/PositionReviewPanel/PositionReviewPanel'
 import { ReviewModeSelector, type MyAnalysisReviewMode } from '@/components/my-analysis/ReviewModeSelector/ReviewModeSelector'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
+import { useDartDisclosures } from '@/hooks/useDartDisclosures'
 import { useMarketCatalog } from '@/hooks/useMarketCatalog'
 import { useMarketWorkspace } from '@/hooks/useMarketWorkspace'
 import { useNewsProviderMode } from '@/hooks/useNewsProviderMode'
@@ -89,6 +91,7 @@ export function MyAnalysisPage() {
   const catalogErrors = states.filter((state) => state.error !== null)
   const loadedCatalogCount = states.filter((state) => state.catalog !== null).length
   const selected = instruments.find((instrument) => instrument.id === selectedId) ?? null
+  const dartResult = useDartDisclosures(selected?.marketId === 'korea-stock' ? selected.symbol : null)
   const normalized = query.trim().toLocaleLowerCase()
   const matchingResults = useMemo(() => normalized.length < 1 ? [] : instruments.filter((instrument) => {
     const matchesQuery = `${instrument.symbol} ${instrument.displaySymbol ?? ''} ${instrument.name} ${instrument.koreanName ?? ''} ${instrument.englishName ?? ''}`.toLocaleLowerCase().includes(normalized)
@@ -169,6 +172,7 @@ export function MyAnalysisPage() {
           {parsedAverage !== null && Number.isFinite(parsedAverage) && <PositionReviewPanel basisPrice={parsedAverage} currentPrice={currentPrice} dataQuality={analysis.dataQuality} language={language} nextCheck={analysis.reviewChecklist[0] ?? analysis.actionReadiness.nextChecks[0]} quoteCurrency={selected.quoteCurrency} />}
         </div>}
       <ActionReadinessCard plan={analysis.actionReadiness} language={language} mode={displayMode} showRuleBasis={false} />
+      {displayMode === 'simple' && selected.marketId === 'korea-stock' && <DartDisclosurePanel compact language={language} result={dartResult} />}
       <section className={styles.analysis} data-mode={displayMode}>
         <div className={styles.analysisHeading}><div><span>{displayMode === 'simple' ? t.simple : t.expert}</span><h2>{displayMode === 'simple' ? t.analyze : t.detailedReport}</h2>{displayMode === 'expert' && <small>{analysis.summary}</small>}</div><Link to="/market" onClick={openMarket}>{t.market} →</Link></div>
         {displayMode === 'simple' ? <div className={styles.sections}>
@@ -176,6 +180,7 @@ export function MyAnalysisPage() {
           <article><h3>{t.nextChecks}</h3>{analysis.reviewChecklist.length > 1 ? <ul>{analysis.reviewChecklist.slice(1, 3).map((entry) => <li key={entry}>{entry}</li>)}</ul> : <p>{t.noItems}</p>}</article>
         </div> : <div className={styles.expertGrid}>
           <article><span className={styles.sectionLabel}>{t.availableData}</span><h3>{expertTitles.evidence ?? t.evidence}</h3><div className={styles.evidenceList}>{analysis.evidence.map((entry) => <div key={entry.id} className={styles.evidenceItem}><header><strong>{entry.label}</strong><span data-level={entry.level}>{t.levels[entry.level]}</span></header><small className={styles.evidenceType}>{t.type}: {entry.type}</small><p>{entry.detail}</p><p className={styles.reviewMeaning}>{entry.reviewMeaning}</p><small>{t.source}: {entry.source}</small></div>)}</div></article>
+          {selected.marketId === 'korea-stock' && <div className={styles.dartPanel}><DartDisclosurePanel language={language} result={dartResult} /></div>}
           <article><span className={styles.sectionLabel}>{t.missingData}</span><h3>{expertTitles.missing ?? t.missing}</h3><div className={styles.evidenceList}>{analysis.missingEvidence.map((entry) => <div key={entry.id} className={styles.evidenceItem}><header><strong>{entry.label}</strong><span data-level={entry.level}>{t.levels[entry.level]}</span></header><small className={styles.evidenceType}>{t.type}: {entry.type}</small><p>{entry.detail}</p><p className={styles.reviewMeaning}>{entry.reviewMeaning}</p><small>{t.source}: {entry.source}</small></div>)}</div></article>
           <article className={styles.ruleBasis} role="region" aria-label={t.ruleBasis}><span className={styles.sectionLabel}>{t.ruleBasis}</span><h3>{t.ruleBasis}</h3><dl>{analysis.actionReadiness.ruleBasis.map((item) => <div key={item.key}><dt>{item.label}</dt><dd>{item.value}</dd></div>)}</dl></article>
           <article><span className={styles.sectionLabel}>{t.nextChecks}</span><h3>{expertTitles.checklist ?? t.checklist}</h3><ul>{analysis.reviewChecklist.map((entry) => <li key={entry}>{entry}</li>)}</ul></article>

@@ -9,9 +9,10 @@
     "lint": "oxlint",
     "typecheck": "tsc --build --force",
     "test": "vitest run",
-    "test:proxy": "node --test tools/news-proxy/*.test.mjs",
+    "test:proxy": "node --test tools/news-proxy/*.test.mjs tools/dart-proxy/*.test.mjs",
     "check": "npm run lint && npm run typecheck && npm run test && npm run build",
     "news:proxy": "node tools/news-proxy/server.mjs",
+    "dart:proxy": "node tools/dart-proxy/server.mjs",
     "build:windows-demo": "powershell -ExecutionPolicy Bypass -File ./scripts/build-windows-demo.ps1",
     "preview": "vite preview"
   },

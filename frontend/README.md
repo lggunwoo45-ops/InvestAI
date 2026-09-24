@@ -21,6 +21,22 @@ npm run build:windows-demo
 `npm run check` runs linting, strict TypeScript validation, UI smoke tests, and
 a production build.
 
+### Optional local DART proxy
+
+The Korean-stock disclosure panel can use the localhost-only DART proxy. The
+credential is read by Node from `DART_API_KEY`; it is never a `VITE_` variable
+and is not included in the browser bundle.
+
+```powershell
+$env:DART_API_KEY="your_key_here"
+npm run dart:proxy
+```
+
+The proxy listens on `http://localhost:8788`. Without a key it returns an
+explicit disabled state. Instruments without a verified corporation-code
+mapping return `mapping_unavailable`. Never commit a populated `.env` file or
+print the credential in logs.
+
 `npm run build:windows-demo` creates `InvestAI_v0.6.2_demo.exe` and
 `InvestAI_v0.6.2_portable.zip` in `frontend/release`. The launcher serves the production bundle on
 a private loopback port and opens it in the default browser; LIVE mode requires
