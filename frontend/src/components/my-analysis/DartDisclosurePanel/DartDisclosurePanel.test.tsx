@@ -10,9 +10,14 @@ const state = (status: DartDisclosureResult['status']): DartDisclosureResult => 
 describe('DartDisclosurePanel', () => {
   it('renders disabled and mapping-unavailable states safely', () => {
     const { rerender } = render(<DartDisclosurePanel language="en" result={state('disabled')} />)
-    expect(screen.getByRole('status').textContent).toContain('DART API key is not configured')
+    expect(screen.getByRole('status').textContent).toContain('The app still works, but disclosure evidence is not shown')
     rerender(<DartDisclosurePanel language="en" result={state('mapping_unavailable')} />)
-    expect(screen.getByRole('status').textContent).toContain('corporation code mapping')
+    expect(screen.getByRole('status').textContent).toContain('corporation-code mapping')
+  })
+
+  it('renders a clear no-recent-disclosures state', () => {
+    render(<DartDisclosurePanel language="en" result={{ ...state('ready'), sourceMode: 'live' }} />)
+    expect(screen.getByRole('status').textContent).toBe('No recent disclosures were loaded.')
   })
 
   it('renders disclosure evidence and Korean labels without unsafe interpretation', () => {

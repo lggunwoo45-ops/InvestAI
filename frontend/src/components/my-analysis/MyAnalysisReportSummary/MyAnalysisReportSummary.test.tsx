@@ -2,6 +2,8 @@ import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 import { buildMyInstrumentAnalysis } from '@/services/myAnalysis/myAnalysisEngine'
+import { buildDartDisclosureReview } from '@/services/dart/dartDisclosureReview'
+import { dartMockResult } from '@/services/dart/dartFixtures'
 import type { MarketInstrument } from '@/types/market'
 import { MyAnalysisReportSummary } from './MyAnalysisReportSummary'
 
@@ -53,5 +55,14 @@ describe('MyAnalysisReportSummary', () => {
     expect(text).toContain('Current price: 100 KRW')
     expect(text).not.toContain('private note')
     expect(text).not.toMatch(/buy signal|sell signal|entry price|stop loss|target price|take profit/i)
+  })
+
+  it('adds a safe disclosure line without personal context or directional interpretation', () => {
+    const disclosureReview = buildDartDisclosureReview(dartMockResult, 'en')
+    render(<MyAnalysisReportSummary analysis={analysis()} language="en" mode="simple" symbol="005930" name="Samsung Electronics" disclosureReview={disclosureReview} />)
+    const text = (screen.getByRole('textbox', { name: 'Plain-text summary' }) as HTMLTextAreaElement).value
+    expect(text).toContain('Disclosure review: Correction or material disclosures are included, so the original disclosures should be checked.')
+    expect(text).not.toContain('private note')
+    expect(text).not.toMatch(/positive|negative|buy|sell|target|stop|price impact/i)
   })
 })
