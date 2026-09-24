@@ -8,7 +8,11 @@ export function deriveBeginnerInterestStage(analysis: MyAnalysisResult): Beginne
   const plan = analysis.actionReadiness
   switch (plan.status) {
     case 'watchZone': return 'first'
-    case 'conditionalApproach': return plan.strength === 'high' ? 'third' : 'second'
+    case 'conditionalApproach': {
+      const candidateEvidence = analysis.evidence.some((item) => item.type === 'candidate')
+      const relatedNewsEvidence = analysis.evidence.some((item) => item.type === 'news' && item.level === 'available')
+      return candidateEvidence && relatedNewsEvidence ? 'third' : 'second'
+    }
     case 'chaseCaution': return 'chaseCaution'
     case 'sharpDropReboundCaution': return 'reboundCaution'
     default: return 'waiting'

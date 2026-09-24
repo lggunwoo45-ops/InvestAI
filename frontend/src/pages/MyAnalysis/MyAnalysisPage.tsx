@@ -20,6 +20,7 @@ import { useLanguage } from '@/i18n/useLanguage'
 import { buildCryptoWatchCandidates } from '@/services/ai/cryptoWatchCandidateEngine'
 import { buildStockWatchCandidates } from '@/services/ai/stockWatchCandidateEngine'
 import { buildDartDisclosureReview } from '@/services/dart/dartDisclosureReview'
+import { findCandidateSnapshot } from '@/services/candidateSnapshot/candidateSnapshotStorage'
 import { buildMyInstrumentAnalysis } from '@/services/myAnalysis/myAnalysisEngine'
 import type { MarketGroup, MarketInstrument } from '@/types/market'
 import type { AnalysisIntent } from '@/types/myAnalysis'
@@ -30,13 +31,13 @@ const copy = {
   en: {
     eyebrow: 'PERSONAL RESEARCH WORKSPACE', title: 'My Instrument Analysis', description: 'Select one instrument and organize what is known, what is missing, and what to review next.',
     search: 'Search instrument', searchPlaceholder: 'Search by symbol, Korean name, or English name', searchResults: 'Search results', emptyTitle: 'Start by selecting a coin or stock.', emptyCopy: 'Search by symbol, Korean name, or English name. This page reviews available evidence and missing data. It does not give buy or sell signals.', emptySteps: ['Search an asset', 'Choose review intent', 'Read Simple or Expert result'], noResults: 'No matching instrument in the loaded catalogs.', loading: 'Loading market catalogs…', unavailable: 'The requested instrument is not available in the loaded catalogs.', catalogLimit: 'Catalog limitation', catalogError: 'Some market catalogs could not be loaded. Search results may be incomplete.', topResults: 'Showing top matching results only.', loadedCatalogs: 'Loaded catalogs', openedFromMarket: 'Opened from Market workspace.',
-    filters: { all: 'All', crypto: 'Crypto', korea: 'Korea', us: 'US' }, groups: { crypto: 'Crypto', korea: 'Korea Stocks', us: 'US Stocks' }, qualities: { live: 'Live', mock: 'Mock', limited: 'Limited', unavailable: 'Unavailable' },
+    snapshotOpened: 'Opened from a candidate snapshot record.', snapshotMissing: 'Snapshot record was not found, so current data is used.', filters: { all: 'All', crypto: 'Crypto', korea: 'Korea', us: 'US' }, groups: { crypto: 'Crypto', korea: 'Korea Stocks', us: 'US Stocks' }, qualities: { live: 'Live', mock: 'Mock', limited: 'Limited', unavailable: 'Unavailable' },
     intent: 'My intent', intentHelp: 'Review intent changes checklist wording only.', intents: { watching: 'Watching', holding: 'Holding', longTerm: 'Long-term review', swing: 'Swing review', shortTerm: 'Short-term review' }, note: 'My note (optional)', notePlaceholder: 'Personal context only — not treated as market evidence', average: 'Average price (optional)', analyze: 'Analysis context', simple: 'Simple view', expert: 'Expert view', switchExpert: 'Switch to Expert view', switchSimple: 'Switch to Simple view', optionalContext: 'Optional personal context', userContextNotice: 'User-provided context only. Not market evidence.', yourInputs: 'Your inputs', market: 'Open in Market', quality: 'Data quality', noItems: 'Nothing available yet.', selected: 'Selected instrument', source: 'Source', type: 'Evidence type', availableData: 'Available data', missingData: 'Missing data', evidence: 'Evidence board', missing: 'Missing evidence', checklist: 'Review checklist', nextChecks: 'Next checks', detailedReport: 'Detailed evidence report', ruleBasis: 'Rule basis', assetTypes: { crypto: 'Crypto', stock: 'Stock' }, levels: { available: 'Available', context: 'Context', demo: 'Demo', missing: 'Missing' },
   },
   ko: {
     eyebrow: '개인 리서치 작업공간', title: '내 종목 분석', description: '종목 하나를 선택하고 확인된 내용, 부족한 근거, 다음 검토 항목을 정리합니다.',
     search: '종목 검색', searchPlaceholder: '심볼, 한국어 이름, 영어 이름으로 검색', searchResults: '검색 결과', emptyTitle: '코인이나 주식을 선택해 분석을 시작하세요.', emptyCopy: '심볼, 한국어 이름, 영어 이름으로 검색할 수 있습니다. 이 화면은 확인 가능한 근거와 부족한 데이터를 정리하며, 매수·매도 신호를 제공하지 않습니다.', emptySteps: ['종목 검색', '검토 목적 선택', '간편/전문 결과 확인'], noResults: '불러온 카탈로그에서 일치하는 종목이 없습니다.', loading: '시장 카탈로그를 불러오는 중…', unavailable: '요청한 종목을 불러온 카탈로그에서 찾을 수 없습니다.', catalogLimit: '카탈로그 제한', catalogError: '일부 시장 카탈로그를 불러오지 못했습니다. 검색 결과가 일부 누락될 수 있습니다.', topResults: '일부 상위 검색 결과만 표시됩니다.', loadedCatalogs: '불러온 카탈로그', openedFromMarket: '마켓 작업공간에서 이동했습니다.',
-    filters: { all: '전체', crypto: '가상자산', korea: '한국', us: '미국' }, groups: { crypto: '가상자산', korea: '한국 주식', us: '미국 주식' }, qualities: { live: '실시간', mock: '모의', limited: '제한됨', unavailable: '이용 불가' },
+    snapshotOpened: '관심 후보 기준 기록에서 이동했습니다.', snapshotMissing: '기준 기록을 찾을 수 없어 현재 데이터 기준으로 표시합니다.', filters: { all: '전체', crypto: '가상자산', korea: '한국', us: '미국' }, groups: { crypto: '가상자산', korea: '한국 주식', us: '미국 주식' }, qualities: { live: '실시간', mock: '모의', limited: '제한됨', unavailable: '이용 불가' },
     intent: '나의 목적', intentHelp: '검토 목적은 체크리스트 문구만 바꿉니다.', intents: { watching: '관찰 중', holding: '보유 중', longTerm: '장기 검토', swing: '스윙 검토', shortTerm: '단기 검토' }, note: '내 메모 (선택)', notePlaceholder: '개인 참고 맥락이며 시장 근거로 취급하지 않습니다', average: '평균 가격 (선택)', analyze: '분석 맥락', simple: '간편 보기', expert: '전문가 보기', switchExpert: '전문가 보기로 전환', switchSimple: '간편 보기로 전환', optionalContext: '선택 개인 참고 정보', userContextNotice: '사용자 입력 참고값입니다. 시장 근거가 아닙니다.', yourInputs: '내 입력값', market: '마켓에서 열기', quality: '데이터 품질', noItems: '아직 확인된 항목이 없습니다.', selected: '선택 종목', source: '출처', type: '근거 유형', availableData: '사용 가능한 데이터', missingData: '부족한 데이터', evidence: '근거 보드', missing: '부족한 근거', checklist: '검토 체크리스트', nextChecks: '다음 확인 항목', detailedReport: '상세 근거 리포트', ruleBasis: '규칙 근거', assetTypes: { crypto: '가상자산', stock: '주식' }, levels: { available: '사용 가능', context: '참고', demo: '데모', missing: '부족' },
   },
 } as const
@@ -64,6 +65,10 @@ export function MyAnalysisPage() {
   const [params, setParams] = useSearchParams()
   const [query, setQuery] = useState('')
   const [requestedInstrumentId] = useState<string | null>(() => params.get('instrumentId'))
+  const [requestedSnapshotId] = useState<string | null>(() => params.get('snapshotId'))
+  const [requestedSnapshotItemId] = useState<string | null>(() => params.get('snapshotItemId'))
+  const [openedAt] = useState(() => new Date().toISOString())
+  const [requestedSnapshot] = useState(() => requestedSnapshotId ? findCandidateSnapshot(requestedSnapshotId) : null)
   const [selectedId, setSelectedId] = useState<string | null>(requestedInstrumentId)
   const [searchFilter, setSearchFilter] = useState<SearchFilter>('all')
   const [intent, setIntent] = useState<AnalysisIntent>('watching')
@@ -111,7 +116,10 @@ export function MyAnalysisPage() {
   const analysis = selected ? buildMyInstrumentAnalysis({ instrument: selected, intent, userNote: note, averagePrice: parsedAverage !== null && Number.isFinite(parsedAverage) ? parsedAverage : null, catalogSource: sourceById.get(selected.id) ?? null, candidate, newsResult, language }) : null
   const expertTitles = analysis ? Object.fromEntries(analysis.expertModeSections.map((section) => [section.id, section.title])) : {}
   const selectedGroup = selected ? groupForInstrument(selected) : null
-  const openedFromMarket = requestedInstrumentId !== null && selected?.id === requestedInstrumentId
+  const openedFromMarket = requestedSnapshotId === null && requestedInstrumentId !== null && selected?.id === requestedInstrumentId
+  const snapshotItem = requestedSnapshot && Date.parse(requestedSnapshot.expiresAt) >= Date.parse(openedAt) ? requestedSnapshot.items.find((item) => item.instrumentId === (requestedSnapshotItemId ?? requestedInstrumentId)) ?? null : null
+  const openedFromSnapshot = requestedSnapshotId !== null && snapshotItem !== null && selected?.id === snapshotItem.instrumentId
+  const missingSnapshot = requestedSnapshotId !== null && !openedFromSnapshot
   const interestStage = analysis ? deriveBeginnerInterestStage(analysis) : 'waiting'
   const currentPrice = selected && Number.isFinite(selected.lastPrice) ? selected.lastPrice : Number.NaN
 
@@ -159,6 +167,8 @@ export function MyAnalysisPage() {
     </section>
     {selected && analysis && <>
       {openedFromMarket && <p className={styles.marketContext} role="status">{t.openedFromMarket}</p>}
+      {openedFromSnapshot && <p className={styles.marketContext} role="status">{t.snapshotOpened}</p>}
+      {missingSnapshot && <p className={styles.marketContext} role="status">{t.snapshotMissing}</p>}
       <section className={styles.instrumentHeader} aria-label={t.selected}>
         <div><span>{selected.marketType?.toUpperCase() ?? selected.marketId}</span><h2>{selected.displaySymbol ?? selected.symbol}</h2><p>{instrumentNames(selected).join(' · ')}</p><div className={styles.instrumentMeta}><b>{selectedGroup ? t.groups[selectedGroup] : t.assetTypes[analysis.assetType]}</b><small>{t.assetTypes[analysis.assetType]}</small></div></div>
         <div className={styles.quote}><small>{t.availableData}</small><strong>{Number.isFinite(selected.lastPrice) ? formatMarketPrice(selected) : t.qualities.unavailable}</strong>{Number.isFinite(selected.change24hPercent) && <span data-direction={selected.change24hPercent >= 0 ? 'positive' : 'negative'}>{formatMarketChange(selected.change24hPercent)}</span>}</div>
@@ -166,7 +176,7 @@ export function MyAnalysisPage() {
       </section>
       <MyAnalysisReportSummary analysis={analysis} language={language} mode={displayMode} symbol={selected.displaySymbol ?? selected.symbol} name={selected.name} reviewMode={reviewMode} basisPrice={parsedAverage !== null && Number.isFinite(parsedAverage) ? parsedAverage : null} currentPrice={currentPrice} quoteCurrency={selected.quoteCurrency} disclosureReview={selected.marketId === 'korea-stock' ? dartReview : null} />
       <ReviewModeSelector language={language} mode={reviewMode} onChange={setReviewMode} />
-      <AnalysisBaselinePanel key={selected.id} actionStatus={analysis.actionReadiness.status} currentPrice={currentPrice} instrumentId={selected.id} interestStage={interestStage} language={language} quoteCurrency={selected.quoteCurrency} />
+      <AnalysisBaselinePanel key={`${selected.id}:${snapshotItem?.instrumentId ?? 'current'}`} actionStatus={analysis.actionReadiness.status} currentPrice={currentPrice} instrumentId={selected.id} interestStage={interestStage} language={language} quoteCurrency={selected.quoteCurrency} initialSnapshot={snapshotItem ? { actionStatus: snapshotItem.actionStatus, capturedAt: requestedSnapshot?.generatedAt ?? openedAt, interestStage: snapshotItem.interestStage, price: snapshotItem.basisPrice } : null} />
       {displayMode === 'simple' ? reviewMode === 'interest'
         ? <BeginnerInterestZone analysis={analysis} language={language} />
         : <PositionReviewPanel basisPrice={parsedAverage !== null && Number.isFinite(parsedAverage) ? parsedAverage : null} currentPrice={currentPrice} dataQuality={analysis.dataQuality} language={language} nextCheck={analysis.reviewChecklist[0] ?? analysis.actionReadiness.nextChecks[0]} quoteCurrency={selected.quoteCurrency} />

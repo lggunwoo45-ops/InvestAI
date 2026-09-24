@@ -12,7 +12,7 @@ describe('StockWatchCandidates', () => {
   beforeEach(() => window.localStorage.clear())
   it('renders Korea candidates with mock quality and local feedback', () => {
     render(<StockWatchCandidates candidates={candidates} region="korea" language="en" horizon="short" supportedInstrumentIds={new Set([instrument.id])} onOpenInstrument={vi.fn()} />)
-    expect(screen.getByRole('heading', { name: 'Korea Stock Candidates' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Korea Stock Interest Candidates' })).toBeTruthy()
     expect(screen.getAllByText('Mock / preview data').length).toBeGreaterThan(0)
     fireEvent.click(screen.getByRole('button', { name: 'Mark as Watching' }))
     fireEvent.change(screen.getByRole('textbox', { name: 'Local note 005930' }), { target: { value: 'Review later' } })
@@ -20,8 +20,8 @@ describe('StockWatchCandidates', () => {
   })
   it('renders US and Korean labels', () => {
     render(<StockWatchCandidates candidates={[]} region="us" language="ko" horizon="swing" supportedInstrumentIds={new Set()} onOpenInstrument={vi.fn()} />)
-    expect(screen.getByRole('heading', { name: '미국 주식 관찰 후보' })).toBeTruthy()
-    expect(screen.getByText(/주식 관찰 후보는 아직 준비 중입니다/)).toBeTruthy()
+    expect(screen.getByRole('heading', { name: '미국 주식 관심 후보' })).toBeTruthy()
+    expect(screen.getByText(/주식 관심 후보는 아직 준비 중입니다/)).toBeTruthy()
   })
   it('only exposes Open in Market for a supported instrument', () => {
     const open = vi.fn()

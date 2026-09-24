@@ -20,7 +20,7 @@ describe('ActionBrief', () => {
     expect(brief.textContent).toContain('Status is based on currently loaded public market data.')
     const guide = within(brief).getByText('How to read action status').closest('details')
     expect(guide).not.toBeNull()
-    for (const status of ['Decision pending', 'Waiting / checking conditions', 'Watch zone', 'Conditional approach possible', 'Chase caution', 'Sharp-drop rebound caution']) {
+    for (const status of ['Decision pending', 'Waiting / checking conditions', 'Watch zone', 'Conditional approach possible', 'Movement expansion caution', 'Sharp-drop rebound caution']) {
       expect(within(guide as HTMLElement).getByText(status)).toBeTruthy()
     }
     expect(guide?.textContent).not.toMatch(/buy signal|sell signal|entry price|stop loss|target price|take profit/i)

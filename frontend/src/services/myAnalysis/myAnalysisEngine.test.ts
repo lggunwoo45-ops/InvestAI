@@ -181,7 +181,7 @@ describe('buildMyInstrumentAnalysis', () => {
   it('keeps Korean action copy free from unsafe recommendation labels', () => {
     const result = buildMyInstrumentAnalysis({ ...base, instrument: { ...crypto, change24hPercent: 10 }, intent: 'holding', catalogSource: 'live', candidate, language: 'ko' })
     const copy = JSON.stringify(result.actionReadiness)
-    expect(result.actionReadiness.title).toBe('추격 접근 주의')
+    expect(result.actionReadiness.title).toBe('변동 확대 주의')
     expect(copy).toContain('거래 지시가 아닙니다')
     expect(copy).not.toMatch(/매수가|손절가|익절가|목표가|매수 추천|분할 접근|무효화 기준|수익 보호/)
   })

@@ -4,6 +4,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { AppRoutes } from '@/app/AppRoutes'
 import { AppProviders } from '@/app/providers/AppProviders'
+import { saveCandidateSnapshotRecord } from '@/services/candidateSnapshot/candidateSnapshotStorage'
+import type { CandidateSnapshot } from '@/types/candidateSnapshot'
 import type { MarketInstrument, MarketVenue } from '@/types/market'
 
 const catalogMockState = vi.hoisted(() => ({ failedVenue: null as string | null }))
@@ -14,6 +16,8 @@ const instruments: MarketInstrument[] = [
   { id: 'us-aapl', marketId: 'us-stock', marketType: 'nasdaq', providerType: 'mock-us', symbol: 'AAPL', name: 'Apple', englishName: 'Apple', quoteCurrency: 'USD', lastPrice: 230, change24hPercent: -1, volume24h: 6000 },
   { id: 'binance-spot-btcusdt', marketId: 'binance-spot', marketType: 'binance-spot', providerType: 'binance-spot', symbol: 'BTCUSDT', name: 'Bitcoin / Tether', englishName: 'Bitcoin / Tether', quoteCurrency: 'USDT', lastPrice: 95000, change24hPercent: -9, volume24h: 9000 },
 ]
+
+const candidateSnapshot = (expiresAt = '2099-09-26T00:00:00Z'): CandidateSnapshot => ({ schemaVersion: 1, snapshotId: 'snapshot-1', generatedAt: '2026-09-25T00:00:00Z', expiresAt, engineVersion: 'v1', catalogSource: 'live', providerLabel: 'Upbit KRW · short', items: [{ instrumentId: 'upbit-btc', symbol: 'BTC/KRW', displayName: 'Bitcoin', assetType: 'crypto', marketId: 'upbit', quoteCurrency: 'KRW', order: 1, basisPrice: 90, basisChange24hPercent: 1, basisVolume24h: 1000, basisMovementBand: 'Limited', interestStage: 'first', actionStatus: 'watchZone', clarity: 'medium', reasonText: 'Recorded reason', ruleBasis: [{ key: 'dataQuality', label: 'Data quality', value: 'Live' }], dataQuality: 'live', newsState: 'Unavailable', disclosureCount: 0, latestDisclosureAt: null }] })
 
 vi.mock('@/hooks/useMarketCatalog', () => ({ useMarketCatalog: (venue: MarketVenue) => ({ catalog: catalogMockState.failedVenue === venue ? null : { venue, source: venue === 'upbit-krw' ? 'live' : 'mock', fetchedAt: 0, instruments: instruments.filter((item) => item.marketType === venue) }, loading: false, error: catalogMockState.failedVenue === venue ? 'Catalog failed' : null, loadingMilliseconds: 0 }) }))
 vi.mock('@/hooks/useDartDisclosures', () => ({ useDartDisclosures: (stockCode: string | null) => stockCode ? { status: 'mapping_unavailable', sourceMode: 'disabled', message: 'Mapping unavailable.', disclosures: [], fetchedAt: null } : { status: 'unavailable', sourceMode: 'disabled', message: 'Korean stocks only.', disclosures: [], fetchedAt: null } }))
@@ -143,6 +147,22 @@ describe('MyAnalysisPage', () => {
     expect(screen.queryByRole('alert')).toBeNull()
     expect(screen.getByText('Mock / demo data')).toBeTruthy()
     expect(document.body.textContent).not.toMatch(/strong buy|buy signal|sell signal|entry price|stop loss|target price|guaranteed profit|profit expected/i)
+  })
+
+  it('opens from a candidate snapshot and initializes the analysis baseline', async () => {
+    saveCandidateSnapshotRecord(candidateSnapshot())
+    render(<AppProviders><MemoryRouter initialEntries={['/my-analysis?instrumentId=upbit-btc&snapshotId=snapshot-1&snapshotItemId=upbit-btc']}><AppRoutes /></MemoryRouter></AppProviders>)
+    expect(await screen.findByText('Opened from a candidate snapshot record.')).toBeTruthy()
+    const baseline = screen.getByRole('region', { name: 'Analysis baseline locked' })
+    expect(baseline.textContent).toContain('90 KRW')
+    expect(baseline.textContent).toContain('Observation start')
+  })
+
+  it('falls back to current data when a snapshot record is missing', async () => {
+    render(<AppProviders><MemoryRouter initialEntries={['/my-analysis?instrumentId=upbit-btc&snapshotId=missing']}><AppRoutes /></MemoryRouter></AppProviders>)
+    expect(await screen.findByText('Snapshot record was not found, so current data is used.')).toBeTruthy()
+    const baseline = screen.getByRole('region', { name: 'Analysis baseline locked' })
+    expect(baseline.textContent).toContain('100 KRW')
   })
 
   it('does not show disclosure review for a US stock', async () => {

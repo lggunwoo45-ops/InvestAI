@@ -17,7 +17,7 @@ const copy = {
     title: 'Position review', helper: 'Enter your basis price to review the asset from your holding perspective.', basis: 'My basis price', current: 'Current price', change: 'Change from basis', state: 'Position state', next: 'Next check', caution: 'This is not a trade instruction.', states: { waiting: 'Waiting / checking conditions', baselineValid: 'Baseline still valid', invalidationReview: 'Invalidation basis review', profitProtection: 'Profit protection review' },
   },
   ko: {
-    title: '보유 종목 점검', helper: '내 기준가를 입력하면 보유 종목 기준으로 점검할 수 있습니다.', basis: '내 기준가', current: '현재가', change: '기준가 대비', state: '보유 상태', next: '다음 확인', caution: '이 내용은 거래 지시가 아닙니다.', states: { waiting: '대기 / 조건 확인 중', baselineValid: '기준 유지 점검', invalidationReview: '무효화 기준 점검', profitProtection: '수익 보호 검토' },
+    title: '보유 종목 점검', helper: '내가 적은 참고 가격을 입력하면 보유 종목 맥락으로 점검할 수 있습니다.', basis: '내가 적은 참고 가격', current: '현재가', change: '참고 가격 대비', state: '보유 상태', next: '다음 확인', caution: '이 내용은 거래 지시가 아닙니다.', states: { waiting: '대기 / 조건 확인 중', baselineValid: '기준 유지 점검', invalidationReview: '무효화 기준 점검', profitProtection: '수익 보호 검토' },
   },
 } as const
 

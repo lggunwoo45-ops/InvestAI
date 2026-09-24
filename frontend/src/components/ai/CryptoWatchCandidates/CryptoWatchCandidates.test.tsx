@@ -22,10 +22,10 @@ function renderCandidates(language: 'en' | 'ko' = 'en') {
 describe('CryptoWatchCandidates', () => {
   beforeEach(() => window.localStorage.clear())
 
-  it('renders candidate score, evidence, trust language, and news provenance', () => {
+  it('renders candidate evidence, trust language, and news provenance without a score', () => {
     renderCandidates()
-    expect(screen.getByRole('heading', { name: 'Crypto Watch Candidates' })).toBeTruthy()
-    expect(screen.getByText('78')).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Crypto Interest Candidates' })).toBeTruthy()
+    expect(screen.queryByText('78')).toBeNull()
     expect(screen.getByText(/no AI model/i)).toBeTruthy()
     fireEvent.click(screen.getByText('Inspect evidence'))
     expect(screen.getAllByText(/local-proxy/).length).toBeGreaterThan(0)
@@ -40,7 +40,7 @@ describe('CryptoWatchCandidates', () => {
 
   it('renders Korean trust and action labels', () => {
     renderCandidates('ko')
-    expect(screen.getByRole('heading', { name: '가상자산 관찰 후보' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: '가상자산 관심 후보 목록' })).toBeTruthy()
     expect(screen.getByText(/AI 모델 없음/)).toBeTruthy()
     expect(screen.getByRole('button', { name: '마켓에서 열기' })).toBeTruthy()
   })
@@ -97,10 +97,10 @@ describe('CryptoWatchCandidates', () => {
     expect(document.body.textContent?.toLowerCase()).not.toMatch(/buy here|sell here|strong buy|strong sell|guaranteed target|profit expected/)
   })
 
-  it('renders horizon tabs, cadence guidance, and planning zones', () => {
+  it('renders horizon tabs and cadence guidance without price-zone guidance', () => {
     const changeHorizon = vi.fn()
     render(<CryptoWatchCandidates candidates={[candidate]} language="en" mode="live" newsSource="local-proxy" horizon="short" horizonProfile={getCandidateHorizonProfile('short', 'en')} onHorizonChange={changeHorizon} onOpenInstrument={vi.fn()} onOpenMarket={vi.fn()} onModeChange={vi.fn()} onRetry={vi.fn()} />)
-    expect(screen.getByText('98 – 100 KRW')).toBeTruthy()
+    expect(screen.queryByText('98 – 100 KRW')).toBeNull()
     expect(screen.getAllByText(/Review daily or intraday/).length).toBeGreaterThan(0)
     fireEvent.click(screen.getByRole('tab', { name: 'Swing' }))
     expect(changeHorizon).toHaveBeenCalledWith('swing')
