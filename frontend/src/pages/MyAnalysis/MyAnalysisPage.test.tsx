@@ -42,7 +42,8 @@ describe('MyAnalysisPage', () => {
     expect(screen.getByRole('region', { name: 'Review mode' })).toBeTruthy()
     expect(screen.getByRole('region', { name: 'Interest stage' })).toBeTruthy()
     expect(screen.getByRole('region', { name: 'Analysis baseline locked' })).toBeTruthy()
-    expect(screen.getByRole('region', { name: 'Recent DART disclosures' }).textContent).toContain('corporation code mapping')
+    expect(screen.getByRole('region', { name: 'Disclosure review' }).textContent).toContain('corporation-code mapping')
+    expect(screen.getByRole('region', { name: 'Recent DART disclosures' }).textContent).toContain('corporation-code mapping')
     const brief = screen.getByRole('region', { name: 'Review summary' })
     const actionStatus = screen.getByRole('region', { name: 'Current action status' })
     expect(brief.textContent).toContain('Mock/demo data')
@@ -65,6 +66,7 @@ describe('MyAnalysisPage', () => {
     expect(screen.getByRole('region', { name: 'Interest stage' })).toBeTruthy()
     expect(screen.getByRole('region', { name: 'Position review' })).toBeTruthy()
     expect(screen.getByRole('region', { name: 'Recent DART disclosures' })).toBeTruthy()
+    expect(screen.getByRole('region', { name: 'Disclosure review' })).toBeTruthy()
     expect(screen.getByText('Candidate evidence')).toBeTruthy()
     expect(screen.getByText('News state')).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Evidence board' })).toBeTruthy()
@@ -103,6 +105,7 @@ describe('MyAnalysisPage', () => {
   it('supports direct instrument query selection and bilingual navigation', async () => {
     render(<AppProviders><MemoryRouter initialEntries={['/my-analysis?instrumentId=upbit-btc']}><AppRoutes /></MemoryRouter></AppProviders>)
     expect(await screen.findByRole('heading', { name: 'BTC/KRW' })).toBeTruthy()
+    expect(screen.queryByRole('region', { name: 'Disclosure review' })).toBeNull()
     expect(screen.queryByRole('region', { name: 'Recent DART disclosures' })).toBeNull()
     expect(screen.getAllByText(/moderate upward movement/).length).toBeGreaterThan(0)
     expect(screen.getByText('Opened from Market workspace.')).toBeTruthy()
@@ -140,6 +143,13 @@ describe('MyAnalysisPage', () => {
     expect(screen.queryByRole('alert')).toBeNull()
     expect(screen.getByText('Mock / demo data')).toBeTruthy()
     expect(document.body.textContent).not.toMatch(/strong buy|buy signal|sell signal|entry price|stop loss|target price|guaranteed profit|profit expected/i)
+  })
+
+  it('does not show disclosure review for a US stock', async () => {
+    render(<AppProviders><MemoryRouter initialEntries={['/my-analysis?instrumentId=us-aapl']}><AppRoutes /></MemoryRouter></AppProviders>)
+    expect(await screen.findByRole('heading', { name: 'AAPL' })).toBeTruthy()
+    expect(screen.queryByRole('region', { name: 'Disclosure review' })).toBeNull()
+    expect(screen.queryByRole('region', { name: 'Recent DART disclosures' })).toBeNull()
   })
 
   it('surfaces a venue failure while keeping loaded catalogs searchable', async () => {

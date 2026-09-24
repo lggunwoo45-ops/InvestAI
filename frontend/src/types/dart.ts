@@ -25,3 +25,24 @@ export interface DartDisclosureResult {
   fetchedAt: string | null
   sourceMode: DartSourceMode
 }
+
+export type DartDisclosureReviewStatus = 'no_data' | 'disabled' | 'mapping_unavailable' | 'no_recent_disclosures' | 'review_available' | 'review_needed'
+
+export interface DartDisclosureCounts {
+  total: number
+  periodic: number
+  material: number
+  correction: number
+  other: number
+}
+
+export interface DartDisclosureReview {
+  status: DartDisclosureReviewStatus
+  headline: string
+  summary: string
+  reviewPoints: readonly string[]
+  caution: string
+  counts: DartDisclosureCounts
+  mostRecentSubmittedAt: string | null
+  sourceMode: DartSourceMode
+}
