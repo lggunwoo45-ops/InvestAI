@@ -44,4 +44,14 @@ describe('MyAnalysisReportSummary', () => {
     expect(await within(report).findByText('요약을 복사했습니다')).toBeTruthy()
     expect(writeText).toHaveBeenCalledOnce()
   })
+
+  it('switches the plain text to safe position context without including a personal note', () => {
+    render(<MyAnalysisReportSummary analysis={analysis()} language="en" mode="simple" symbol="BTC/KRW" name="Bitcoin" reviewMode="position" basisPrice={95} currentPrice={100} quoteCurrency="KRW" />)
+    const text = (screen.getByRole('textbox', { name: 'Plain-text summary' }) as HTMLTextAreaElement).value
+    expect(text).toContain('Position state: Profit protection review')
+    expect(text).toContain('My basis price: 95 KRW')
+    expect(text).toContain('Current price: 100 KRW')
+    expect(text).not.toContain('private note')
+    expect(text).not.toMatch(/buy signal|sell signal|entry price|stop loss|target price|take profit/i)
+  })
 })

@@ -3,7 +3,12 @@ import { Link, useSearchParams } from 'react-router-dom'
 
 import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
 import { ActionReadinessCard } from '@/components/my-analysis/ActionReadinessCard/ActionReadinessCard'
+import { AnalysisBaselinePanel } from '@/components/my-analysis/AnalysisBaselinePanel/AnalysisBaselinePanel'
+import { BeginnerInterestZone } from '@/components/my-analysis/BeginnerInterestZone/BeginnerInterestZone'
+import { deriveBeginnerInterestStage } from '@/components/my-analysis/BeginnerInterestZone/beginnerInterestZoneModel'
 import { MyAnalysisReportSummary } from '@/components/my-analysis/MyAnalysisReportSummary/MyAnalysisReportSummary'
+import { PositionReviewPanel } from '@/components/my-analysis/PositionReviewPanel/PositionReviewPanel'
+import { ReviewModeSelector, type MyAnalysisReviewMode } from '@/components/my-analysis/ReviewModeSelector/ReviewModeSelector'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { useMarketCatalog } from '@/hooks/useMarketCatalog'
 import { useMarketWorkspace } from '@/hooks/useMarketWorkspace'
@@ -60,6 +65,7 @@ export function MyAnalysisPage() {
   const [intent, setIntent] = useState<AnalysisIntent>('watching')
   const [note, setNote] = useState('')
   const [averagePrice, setAveragePrice] = useState('')
+  const [reviewMode, setReviewMode] = useState<MyAnalysisReviewMode>('interest')
   const t = copy[language]
   useDocumentTitle(t.title)
 
@@ -100,6 +106,8 @@ export function MyAnalysisPage() {
   const expertTitles = analysis ? Object.fromEntries(analysis.expertModeSections.map((section) => [section.id, section.title])) : {}
   const selectedGroup = selected ? groupForInstrument(selected) : null
   const openedFromMarket = requestedInstrumentId !== null && selected?.id === requestedInstrumentId
+  const interestStage = analysis ? deriveBeginnerInterestStage(analysis) : 'waiting'
+  const currentPrice = selected && Number.isFinite(selected.lastPrice) ? selected.lastPrice : Number.NaN
 
   const choose = (instrument: MarketInstrument) => {
     setSelectedId(instrument.id)
@@ -150,7 +158,16 @@ export function MyAnalysisPage() {
         <div className={styles.quote}><small>{t.availableData}</small><strong>{Number.isFinite(selected.lastPrice) ? formatMarketPrice(selected) : t.qualities.unavailable}</strong>{Number.isFinite(selected.change24hPercent) && <span data-direction={selected.change24hPercent >= 0 ? 'positive' : 'negative'}>{formatMarketChange(selected.change24hPercent)}</span>}</div>
         <div className={styles.quality}><small>{t.quality}</small><b data-quality={analysis.dataQuality}>{analysis.dataQualityLabel}</b></div>
       </section>
-      <MyAnalysisReportSummary analysis={analysis} language={language} mode={displayMode} symbol={selected.displaySymbol ?? selected.symbol} name={selected.name} />
+      <MyAnalysisReportSummary analysis={analysis} language={language} mode={displayMode} symbol={selected.displaySymbol ?? selected.symbol} name={selected.name} reviewMode={reviewMode} basisPrice={parsedAverage !== null && Number.isFinite(parsedAverage) ? parsedAverage : null} currentPrice={currentPrice} quoteCurrency={selected.quoteCurrency} />
+      <ReviewModeSelector language={language} mode={reviewMode} onChange={setReviewMode} />
+      <AnalysisBaselinePanel key={selected.id} actionStatus={analysis.actionReadiness.status} currentPrice={currentPrice} instrumentId={selected.id} interestStage={interestStage} language={language} quoteCurrency={selected.quoteCurrency} />
+      {displayMode === 'simple' ? reviewMode === 'interest'
+        ? <BeginnerInterestZone analysis={analysis} language={language} />
+        : <PositionReviewPanel basisPrice={parsedAverage !== null && Number.isFinite(parsedAverage) ? parsedAverage : null} currentPrice={currentPrice} dataQuality={analysis.dataQuality} language={language} nextCheck={analysis.reviewChecklist[0] ?? analysis.actionReadiness.nextChecks[0]} quoteCurrency={selected.quoteCurrency} />
+        : <div className={styles.reviewPanels}>
+          <BeginnerInterestZone analysis={analysis} language={language} />
+          {parsedAverage !== null && Number.isFinite(parsedAverage) && <PositionReviewPanel basisPrice={parsedAverage} currentPrice={currentPrice} dataQuality={analysis.dataQuality} language={language} nextCheck={analysis.reviewChecklist[0] ?? analysis.actionReadiness.nextChecks[0]} quoteCurrency={selected.quoteCurrency} />}
+        </div>}
       <ActionReadinessCard plan={analysis.actionReadiness} language={language} mode={displayMode} showRuleBasis={false} />
       <section className={styles.analysis} data-mode={displayMode}>
         <div className={styles.analysisHeading}><div><span>{displayMode === 'simple' ? t.simple : t.expert}</span><h2>{displayMode === 'simple' ? t.analyze : t.detailedReport}</h2>{displayMode === 'expert' && <small>{analysis.summary}</small>}</div><Link to="/market" onClick={openMarket}>{t.market} →</Link></div>
