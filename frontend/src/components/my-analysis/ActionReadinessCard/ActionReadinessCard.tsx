@@ -6,6 +6,7 @@ interface ActionReadinessCardProps {
   plan: ActionReadinessPlan
   language: Language
   mode: 'simple' | 'expert'
+  showRuleBasis?: boolean
 }
 
 const copy = {
@@ -17,7 +18,7 @@ const copy = {
   },
 } as const
 
-export function ActionReadinessCard({ plan, language, mode }: ActionReadinessCardProps) {
+export function ActionReadinessCard({ plan, language, mode, showRuleBasis = true }: ActionReadinessCardProps) {
   const t = copy[language]
   const title = mode === 'simple' ? t.current : t.readiness
   const limit = (items: readonly string[]) => mode === 'simple' ? items.slice(0, 3) : items
@@ -32,13 +33,13 @@ export function ActionReadinessCard({ plan, language, mode }: ActionReadinessCar
       <div className={styles.heading}><span>{t.ruleBased}</span><h2>{title}</h2><p>{t.clarityHelp}</p></div>
     </header>
     <p className={styles.summary}>{plan.summary}</p>
-    <div className={styles.detailGrid}>
+    {mode === 'expert' && <div className={styles.detailGrid}>
       <article className={styles.reason}><h3>{t.why}</h3><p>{plan.whyThisStatus}</p></article>
       <article><h3>{t.check}</h3><ul>{limit(plan.approachConditions).map((item) => <li key={item}>{item}</li>)}</ul></article>
       <article><h3>{t.avoid}</h3><ul>{limit(plan.avoidConditions).map((item) => <li key={item}>{item}</li>)}</ul></article>
-    </div>
-    {mode === 'expert' && <section className={styles.ruleBasis} aria-label={t.ruleBasis}><h3>{t.ruleBasis}</h3><dl>{plan.ruleBasis.map((item) => <div key={item.key}><dt>{item.label}</dt><dd>{item.value}</dd></div>)}</dl></section>}
-    <section className={styles.nextChecks}><h3>{t.next}</h3><ul>{limit(plan.nextChecks).map((item) => <li key={item}>{item}</li>)}</ul></section>
+    </div>}
+    {mode === 'expert' && showRuleBasis && <section className={styles.ruleBasis} aria-label={t.ruleBasis}><h3>{t.ruleBasis}</h3><dl>{plan.ruleBasis.map((item) => <div key={item.key}><dt>{item.label}</dt><dd>{item.value}</dd></div>)}</dl></section>}
+    {mode === 'expert' && <section className={styles.nextChecks}><h3>{t.next}</h3><ul>{limit(plan.nextChecks).map((item) => <li key={item}>{item}</li>)}</ul></section>}
     <footer><strong>{t.safety}</strong><span>{plan.disclaimer}</span></footer>
   </section>
 }

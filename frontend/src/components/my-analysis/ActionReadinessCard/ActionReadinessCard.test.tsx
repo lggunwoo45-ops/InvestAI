@@ -32,8 +32,8 @@ describe('ActionReadinessCard', () => {
     expect(within(card).getAllByText('Decision pending')).toHaveLength(1)
     expect(within(card).getByText('Signal clarity: Low clarity')).toBeTruthy()
     expect(card.textContent).toContain('This describes how clearly the rule-based status is classified, not expected return.')
-    expect(card.textContent).toContain('This is a workflow preview using mock/demo data.')
-    expect(card.textContent).toContain('Connect live data before using action readiness.')
+    expect(card.textContent).toContain('There is not enough reliable data to form a useful action state.')
+    expect(card.textContent).not.toContain('Connect live data before using action readiness.')
     expect(card.textContent).not.toMatch(/review zones|1\.5%|3\.0%|5\.0%|7\.0%|buy signal|sell signal|entry price|stop loss|target price|take profit/i)
   })
 
