@@ -6,7 +6,7 @@
 
 ## Beginner Interest Zone
 
-The new beginner card maps existing Action Readiness and data quality to a qualitative observation stage. Non-live data and pending/waiting states remain Waiting / checking conditions. Live Watch zone maps to the 1st interest zone, Conditional approach maps to the 2nd or 3rd interest zone according to existing signal clarity, and caution states remain Chase caution or Sharp-drop rebound caution. The card shows one meaning, one next check, one caution, and an explicit decision-support boundary without prices.
+The beginner card maps existing Action Readiness and data quality to qualitative observation stages: Waiting / checking conditions, Observation start, Conditions forming, and Conditions clear. The clearest stage requires existing candidate evidence plus related verified news evidence; signal clarity alone cannot advance it. Caution states remain Movement expansion caution or Sharp-drop rebound caution. The card shows one meaning, one next check, one caution, and an explicit decision-support boundary without future action prices.
 
 ## Position Review
 

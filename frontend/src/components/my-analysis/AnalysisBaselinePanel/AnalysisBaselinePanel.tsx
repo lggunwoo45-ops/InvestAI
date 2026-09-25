@@ -12,9 +12,10 @@ interface AnalysisBaselinePanelProps {
   interestStage: BeginnerInterestStage
   language: Language
   quoteCurrency: string
+  initialSnapshot?: AnalysisBaselineSnapshot | null
 }
 
-interface BaselineSnapshot {
+export interface AnalysisBaselineSnapshot {
   actionStatus: ActionReadinessStatus
   capturedAt: string
   interestStage: BeginnerInterestStage
@@ -22,32 +23,38 @@ interface BaselineSnapshot {
 }
 
 const copy = {
-  en: { title: 'Analysis baseline locked', time: 'Baseline time', price: 'Baseline price', current: 'Current price', change: 'Change since baseline', status: 'Baseline status', stage: 'Baseline interest stage', refresh: 'Refresh baseline', notice: 'Current price can change, but the analysis baseline stays fixed until refreshed.', statuses: { decisionPending: 'Decision pending', waiting: 'Waiting / checking conditions', watchZone: 'Watch zone', conditionalApproach: 'Conditional approach possible', chaseCaution: 'Chase caution', sharpDropReboundCaution: 'Sharp-drop rebound caution' }, stages: { waiting: 'Waiting / checking conditions', first: '1st interest zone', second: '2nd interest zone', third: '3rd interest zone', chaseCaution: 'Chase caution', reboundCaution: 'Sharp-drop rebound caution' } },
-  ko: { title: '분석 기준 고정', time: '기준 시점', price: '기준 가격', current: '현재 가격', change: '기준 이후 변화', status: '기준 상태', stage: '기준 관심 단계', refresh: '기준 새로고침', notice: '현재 가격은 바뀔 수 있지만, 분석 기준은 새로고침 전까지 유지됩니다.', statuses: { decisionPending: '판단 보류', waiting: '대기 / 조건 확인 중', watchZone: '관심 구간', conditionalApproach: '조건부 접근 가능', chaseCaution: '추격 접근 주의', sharpDropReboundCaution: '급락 반등 주의' }, stages: { waiting: '대기 / 조건 확인 중', first: '1차 관심구간', second: '2차 관심구간', third: '3차 관심구간', chaseCaution: '추격 접근 주의', reboundCaution: '급락 반등 주의' } },
+  en: { title: 'Analysis baseline locked', time: 'Baseline time', price: 'Recorded price', current: 'Current price', change: 'Change since baseline', status: 'Baseline status', stage: 'Baseline interest stage', refresh: 'Refresh baseline', notice: 'Current price can change, but the analysis baseline stays fixed until refreshed.', unavailable: 'A baseline cannot be recorded until a valid current price is available.', statuses: { decisionPending: 'Decision pending', waiting: 'Waiting / checking conditions', watchZone: 'Watch zone', conditionalApproach: 'Conditional approach possible', chaseCaution: 'Movement expansion caution', sharpDropReboundCaution: 'Sharp-drop rebound caution' }, stages: { waiting: 'Waiting / checking conditions', first: 'Observation start', second: 'Conditions forming', third: 'Conditions clear', chaseCaution: 'Movement expansion caution', reboundCaution: 'Sharp-drop rebound caution' } },
+  ko: { title: '분석 기준 고정', time: '기준 시점', price: '기록한 가격', current: '현재 가격', change: '기준 이후 변화', status: '기준 상태', stage: '기준 관심 단계', refresh: '기준 새로고침', notice: '현재 가격은 바뀔 수 있지만, 분석 기준은 새로고침 전까지 유지됩니다.', unavailable: '유효한 현재 가격을 확인하기 전에는 기준을 기록하지 않습니다.', statuses: { decisionPending: '판단 보류', waiting: '대기 / 조건 확인 중', watchZone: '관심 구간', conditionalApproach: '조건부 접근 가능', chaseCaution: '변동 확대 주의', sharpDropReboundCaution: '급락 반등 주의' }, stages: { waiting: '대기 / 조건 확인 중', first: '관찰 시작', second: '조건 확인', third: '조건 뚜렷', chaseCaution: '변동 확대 주의', reboundCaution: '급락 반등 주의' } },
 } as const
 
-function createSnapshot(currentPrice: number, actionStatus: ActionReadinessStatus, interestStage: BeginnerInterestStage): BaselineSnapshot {
-  return { actionStatus, interestStage, capturedAt: new Date().toISOString(), price: currentPrice }
+function validSnapshot(snapshot: AnalysisBaselineSnapshot | null | undefined): snapshot is AnalysisBaselineSnapshot {
+  return Boolean(snapshot && Number.isFinite(snapshot.price) && snapshot.price > 0 && !Number.isNaN(Date.parse(snapshot.capturedAt)))
+}
+
+function createSnapshot(currentPrice: number, actionStatus: ActionReadinessStatus, interestStage: BeginnerInterestStage): AnalysisBaselineSnapshot | null {
+  return Number.isFinite(currentPrice) && currentPrice > 0 ? { actionStatus, interestStage, capturedAt: new Date().toISOString(), price: currentPrice } : null
 }
 
 function number(value: number, language: Language) {
   return Number.isFinite(value) ? new Intl.NumberFormat(language === 'ko' ? 'ko-KR' : 'en-US', { maximumFractionDigits: 4 }).format(value) : '—'
 }
 
-export function AnalysisBaselinePanel({ actionStatus, currentPrice, instrumentId, interestStage, language, quoteCurrency }: AnalysisBaselinePanelProps) {
+export function AnalysisBaselinePanel({ actionStatus, currentPrice, instrumentId, interestStage, language, quoteCurrency, initialSnapshot = null }: AnalysisBaselinePanelProps) {
   const t = copy[language]
-  const [baseline, setBaseline] = useState(() => createSnapshot(currentPrice, actionStatus, interestStage))
-  const difference = Number.isFinite(currentPrice) && Number.isFinite(baseline.price) ? currentPrice - baseline.price : null
+  const [baseline, setBaseline] = useState<AnalysisBaselineSnapshot | null>(() => validSnapshot(initialSnapshot) ? initialSnapshot : createSnapshot(currentPrice, actionStatus, interestStage))
+  const difference = baseline && Number.isFinite(currentPrice) ? currentPrice - baseline.price : null
+  const refresh = () => { const next = createSnapshot(currentPrice, actionStatus, interestStage); if (next) setBaseline(next) }
 
   return <section className={styles.panel} aria-label={t.title} data-instrument={instrumentId}>
-    <header><div><span>{t.title}</span><strong>{t.notice}</strong></div><button type="button" onClick={() => setBaseline(createSnapshot(currentPrice, actionStatus, interestStage))}>{t.refresh}</button></header>
-    <dl>
+    <header><div><span>{t.title}</span><strong>{t.notice}</strong></div><button type="button" disabled={!Number.isFinite(currentPrice) || currentPrice <= 0} onClick={refresh}>{t.refresh}</button></header>
+    {!baseline && <p role="status">{t.unavailable}</p>}
+    {baseline && <dl>
       <div><dt>{t.time}</dt><dd>{new Intl.DateTimeFormat(language === 'ko' ? 'ko-KR' : 'en-US', { dateStyle: 'short', timeStyle: 'medium' }).format(new Date(baseline.capturedAt))}</dd></div>
       <div><dt>{t.price}</dt><dd>{number(baseline.price, language)} {quoteCurrency}</dd></div>
       <div><dt>{t.current}</dt><dd>{number(currentPrice, language)} {quoteCurrency}</dd></div>
       <div><dt>{t.change}</dt><dd>{difference === null ? '—' : `${difference >= 0 ? '+' : ''}${number(difference, language)} ${quoteCurrency}`}</dd></div>
       <div><dt>{t.status}</dt><dd>{t.statuses[baseline.actionStatus]}</dd></div>
       <div><dt>{t.stage}</dt><dd>{t.stages[baseline.interestStage]}</dd></div>
-    </dl>
+    </dl>}
   </section>
 }

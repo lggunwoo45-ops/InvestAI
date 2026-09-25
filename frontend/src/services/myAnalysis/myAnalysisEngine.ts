@@ -118,7 +118,7 @@ const actionText = {
       waiting: { title: 'Waiting / checking conditions', summary: 'More confirmation is needed before treating this as an actionable setup.' },
       watchZone: { title: 'Watch zone', summary: 'This is worth watching, but the conditions are not complete.' },
       conditionalApproach: { title: 'Conditional approach possible', summary: 'Some review conditions are present, but confirmation is still required.' },
-      chaseCaution: { title: 'Chase caution', summary: 'Recent movement is already large, so following the move requires caution.' },
+      chaseCaution: { title: 'Movement expansion caution', summary: 'Recent movement is already large, so following the move requires caution.' },
       sharpDropReboundCaution: { title: 'Sharp-drop rebound caution', summary: 'A rebound after a sharp drop needs extra confirmation.' },
     },
     reasons: {
@@ -161,7 +161,7 @@ const actionText = {
       waiting: { title: '대기 / 조건 확인 중', summary: '행동 가능한 흐름으로 보기 전에 추가 확인이 필요합니다.' },
       watchZone: { title: '관심 구간', summary: '계속 볼 만하지만 조건이 완성된 상태는 아닙니다.' },
       conditionalApproach: { title: '조건부 접근 가능', summary: '일부 검토 조건은 확인되지만 추가 확인이 필요합니다.' },
-      chaseCaution: { title: '추격 접근 주의', summary: '최근 움직임이 이미 커진 상태라 따라붙는 판단은 주의가 필요합니다.' },
+      chaseCaution: { title: '변동 확대 주의', summary: '최근 움직임이 이미 커진 상태라 따라붙는 판단은 주의가 필요합니다.' },
       sharpDropReboundCaution: { title: '급락 반등 접근 주의', summary: '급락 이후 반등은 추가 확인이 필요합니다.' },
     },
     reasons: {

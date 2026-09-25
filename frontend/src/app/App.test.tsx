@@ -212,10 +212,10 @@ describe('Market Copilot application shell', () => {
     render(<App />)
     expect(await screen.findByRole('tab', { name: 'Crypto' })).toBeTruthy()
     fireEvent.click(screen.getByRole('tab', { name: 'Korea Stocks' }))
-    expect(await screen.findByRole('heading', { name: 'Korea Stock Candidates' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Korea Stock Interest Candidates' })).toBeTruthy()
     expect(screen.getByText(/Stock data coverage · Early beta/)).toBeTruthy()
     fireEvent.click(screen.getByRole('tab', { name: 'US Stocks' }))
-    expect(await screen.findByRole('heading', { name: 'US Stock Candidates' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'US Stock Interest Candidates' })).toBeTruthy()
   })
 
   it('renders the Investor Demo route and keeps internal demo links navigable', async () => {
