@@ -158,6 +158,16 @@ describe('MyAnalysisPage', () => {
     expect(baseline.textContent).toContain('Observation start')
   })
 
+  it('keeps an expired snapshot as historical basis and shows a clear warning', async () => {
+    saveCandidateSnapshotRecord(candidateSnapshot('2020-01-01T00:00:00Z'))
+    render(<AppProviders><MemoryRouter initialEntries={['/my-analysis?instrumentId=upbit-btc&snapshotId=snapshot-1&snapshotItemId=upbit-btc']}><AppRoutes /></MemoryRouter></AppProviders>)
+    const notice = await screen.findByText('Opened from an expired snapshot record. Current data may differ.')
+    expect(notice.getAttribute('data-snapshot-state')).toBe('expired')
+    const baseline = screen.getByRole('region', { name: 'Analysis baseline locked' })
+    expect(baseline.textContent).toContain('90 KRW')
+    expect(baseline.textContent).toContain('Observation start')
+  })
+
   it('falls back to current data when a snapshot record is missing', async () => {
     render(<AppProviders><MemoryRouter initialEntries={['/my-analysis?instrumentId=upbit-btc&snapshotId=missing']}><AppRoutes /></MemoryRouter></AppProviders>)
     expect(await screen.findByText('Snapshot record was not found, so current data is used.')).toBeTruthy()

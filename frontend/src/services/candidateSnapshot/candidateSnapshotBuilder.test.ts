@@ -25,7 +25,7 @@ describe('buildCandidateSnapshot', () => {
   it('does not persist personal or transaction planning fields', () => {
     const snapshot = buildCandidateSnapshot({ sources: [source('btc', 'BTC/KRW', 100)], generatedAt: '2026-09-25T00:00:00.000Z', expiresAt: '2026-09-26T00:00:00.000Z', snapshotId: 'snapshot-1', catalogSource: 'live', providerLabel: 'Upbit KRW' })!
     const json = JSON.stringify(snapshot)
-    expect(json).not.toMatch(/averagePrice|userNote|memo|targetPrice|stopPrice|takeProfit|watchScore/)
+    expect(json).not.toMatch(/averagePrice|userNote|memo|holdingStatus|positionReview|targetPrice|stopPrice|takeProfit|profitLoss|personalData|watchScore|rawScore|confidenceScore/)
   })
 
   it('records no more than five candidates', () => {
