@@ -6,7 +6,7 @@ The post-merge review covered the Candidate Snapshot panel, its local data bound
 
 ## User-facing copy
 
-The list-level wording now consistently calls the list a snapshot record or 기준 기록. “Recommendation” appears in this flow only inside the explicit negative disclaimer. The current labels remain Interest candidates / 관심 후보 목록, Refresh candidates / 후보 새로고침, Change check needed / 변화 확인 필요, and Current state unavailable / 현재 상태 확인 불가.
+The top explanation area is titled Candidate snapshot record / 후보 기준 기록, while the cards are grouped under Interest candidate list / 관심 후보 목록. This prevents the header and cards from looking like two competing candidate lists. “Recommendation” appears in this flow only inside the explicit negative disclaimer. Refresh candidates / 후보 새로고침, Change check needed / 변화 확인 필요, and Current state unavailable / 현재 상태 확인 불가 remain unchanged.
 
 ## Disclaimer visibility
 

@@ -6,13 +6,15 @@ import { CandidateSnapshotPanel } from './CandidateSnapshotPanel'
 
 const snapshot: CandidateSnapshot = { schemaVersion: 1, snapshotId: 'snapshot-1', generatedAt: '2026-09-25T00:00:00Z', expiresAt: '2026-09-26T00:00:00Z', engineVersion: 'v1', catalogSource: 'live', providerLabel: 'Upbit', items: ['BTC', 'ETH'].map((symbol, index) => ({ instrumentId: symbol.toLowerCase(), symbol, displayName: symbol, assetType: 'crypto' as const, marketId: 'upbit', quoteCurrency: 'KRW', order: index + 1, basisPrice: 100 - index * 20, basisChange24hPercent: 1, basisVolume24h: 100, basisMovementBand: 'Limited', interestStage: index ? 'second' as const : 'first' as const, actionStatus: index ? 'conditionalApproach' as const : 'watchZone' as const, clarity: 'medium' as const, reasonText: `${symbol} evidence`, ruleBasis: [{ key: 'dataQuality' as const, label: 'Data quality', value: 'Live' }], dataQuality: 'live' as const, newsState: 'Unavailable', disclosureCount: 0, latestDisclosureAt: null })) }
 const states = (btcPrice: number) => new Map<string, CandidateSnapshotCurrentState>(snapshot.items.map((item) => [item.instrumentId, { instrumentId: item.instrumentId, currentPrice: item.instrumentId === 'btc' ? btcPrice : 80, interestStage: item.interestStage, actionStatus: item.actionStatus, clarity: item.clarity, ruleBasis: item.ruleBasis, dataQuality: item.dataQuality }]))
-const renderedSymbols = () => Array.from(screen.getByRole('region', { name: 'Interest candidates' }).querySelectorAll('ol > li')).map((item) => item.textContent?.slice(0, 3))
+const renderedSymbols = () => Array.from(screen.getByRole('region', { name: 'Candidate snapshot record' }).querySelectorAll('ol > li')).map((item) => item.textContent?.slice(0, 3))
 
 describe('CandidateSnapshotPanel', () => {
   it('shows a visible snapshot disclaimer, safe stages, and stable order as current data changes', () => {
     const props = { snapshot, language: 'en' as const, now: '2026-09-25T01:00:00Z', canRefresh: true, onRefresh: vi.fn(), onOpenAnalysis: vi.fn() }
     const { rerender } = render(<CandidateSnapshotPanel {...props} currentStates={states(110)} />)
-    const panel = screen.getByRole('region', { name: 'Interest candidates' })
+    const panel = screen.getByRole('region', { name: 'Candidate snapshot record' })
+    expect(screen.getByRole('heading', { name: 'Candidate snapshot record' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Interest candidate list' })).toBeTruthy()
     expect(panel.textContent).toContain('This list is a snapshot record from')
     expect(panel.textContent).toContain('It is not a current investment recommendation. It does not update automatically until refreshed.')
     expect(renderedSymbols()).toEqual(['BTC', 'ETH'])
@@ -31,7 +33,7 @@ describe('CandidateSnapshotPanel', () => {
     expect(renderedSymbols()).toEqual(['BTC', 'ETH'])
     rerender(<CandidateSnapshotPanel {...props} now="2026-09-27T01:00:00Z" />)
     expect(renderedSymbols()).toEqual(['BTC', 'ETH'])
-    expect(screen.getByRole('region', { name: 'Interest candidates' }).getAttribute('data-expired')).toBe('true')
+    expect(screen.getByRole('region', { name: 'Candidate snapshot record' }).getAttribute('data-expired')).toBe('true')
     expect(screen.getByText('Refresh candidates to create a current snapshot record.')).toBeTruthy()
     expect(screen.getByText('This record reflects the earlier basis and should not be read as a current judgment.')).toBeTruthy()
     fireEvent.click(screen.getAllByRole('button', { name: /Open analysis/ })[0])
@@ -58,7 +60,8 @@ describe('CandidateSnapshotPanel', () => {
     expect(refresh).not.toHaveBeenCalled()
     fireEvent.click(screen.getByRole('button', { name: '후보 새로고침' }))
     expect(refresh).toHaveBeenCalledOnce()
-    expect(screen.getByRole('region', { name: '관심 후보 목록' }).textContent).toContain('시점의 기준 기록이며, 현재 시점의 투자 권유가 아닙니다. 후보 새로고침 전까지 자동으로 갱신되지 않습니다.')
+    expect(screen.getByRole('region', { name: '후보 기준 기록' }).textContent).toContain('시점의 기준 기록이며, 현재 시점의 투자 권유가 아닙니다. 후보 새로고침 전까지 자동으로 갱신되지 않습니다.')
+    expect(screen.getByRole('heading', { name: '관심 후보 목록' })).toBeTruthy()
     expect(document.body.textContent).toContain('관찰 시작')
     expect(document.body.textContent).not.toMatch(/추천종목|매수|매도|손절가|익절가|목표가|1차|2차|3차/)
   })
