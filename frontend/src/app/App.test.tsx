@@ -1,7 +1,14 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { saveCandidateSnapshotRecord } from '@/services/candidateSnapshot/candidateSnapshotStorage'
+import type { CandidateSnapshot } from '@/types/candidateSnapshot'
 import { App } from './App'
+
+function candidateSnapshot(providerLabel: string, symbol: string, assetType: 'crypto' | 'stock' = 'crypto'): CandidateSnapshot {
+  const instrumentId = `${providerLabel}-${symbol}`
+  return { schemaVersion: 1, snapshotId: `snapshot-${instrumentId}`, generatedAt: '2026-09-26T01:00:00.000Z', expiresAt: '2099-09-27T01:00:00.000Z', engineVersion: 'v1', catalogSource: assetType === 'crypto' ? 'live' : 'mock', providerLabel, items: [{ instrumentId, symbol, displayName: symbol, assetType, marketId: assetType === 'crypto' ? 'upbit' : 'mock-stock', quoteCurrency: assetType === 'crypto' ? 'KRW' : 'USD', order: 1, basisPrice: 100, basisChange24hPercent: 1, basisVolume24h: 1000, basisMovementBand: 'Limited', interestStage: 'first', actionStatus: 'watchZone', clarity: 'medium', reasonText: 'Saved snapshot evidence', ruleBasis: [{ key: 'dataQuality', label: 'Data quality', value: 'Recorded' }], dataQuality: assetType === 'crypto' ? 'live' : 'mock', newsState: 'Unavailable', disclosureCount: 0, latestDisclosureAt: null }] }
+}
 
 describe('Market Copilot application shell', () => {
   beforeEach(() => {
@@ -207,16 +214,33 @@ describe('Market Copilot application shell', () => {
     expect(window.localStorage.getItem('investai.watchlists.v2')).toContain('us-nvda')
   })
 
-  it('switches between crypto, Korea stock, and US stock candidate workspaces', async () => {
+  it('shows only one fixed candidate list for every horizon and asset workspace', async () => {
+    saveCandidateSnapshotRecord(candidateSnapshot('Upbit KRW · short', 'SHORT/KRW'))
+    saveCandidateSnapshotRecord(candidateSnapshot('Upbit KRW · swing', 'SWING/KRW'))
+    saveCandidateSnapshotRecord(candidateSnapshot('Upbit KRW · long', 'LONG/KRW'))
+    saveCandidateSnapshotRecord(candidateSnapshot('Korea Stock · long', '005930', 'stock'))
+    saveCandidateSnapshotRecord(candidateSnapshot('US Stock · long', 'NVDA', 'stock'))
     window.history.pushState({}, '', '/ai-analysis')
     render(<App />)
-    expect(await screen.findByRole('tab', { name: 'Crypto' })).toBeTruthy()
+    expect(await screen.findByRole('tab', { name: 'Crypto' }, { timeout: 5000 })).toBeTruthy()
+    const snapshotPanel = () => screen.getByRole('region', { name: 'Candidate snapshot record' })
+    expect(snapshotPanel().querySelectorAll('ol')).toHaveLength(1)
+    expect(screen.getAllByRole('heading', { name: 'Interest candidate list' })).toHaveLength(1)
+    expect(screen.getByText('SHORT/KRW')).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: 'Crypto Interest Candidates' })).toBeNull()
+    fireEvent.click(screen.getByRole('tab', { name: 'Swing' }))
+    expect(screen.getByText('SWING/KRW')).toBeTruthy()
+    expect(snapshotPanel().querySelectorAll('ol')).toHaveLength(1)
+    fireEvent.click(screen.getByRole('tab', { name: 'Long-term' }))
+    expect(screen.getByText('LONG/KRW')).toBeTruthy()
+    expect(snapshotPanel().querySelectorAll('ol')).toHaveLength(1)
     fireEvent.click(screen.getByRole('tab', { name: 'Korea Stocks' }))
-    expect(await screen.findByRole('heading', { name: 'Korea Stock Interest Candidates' })).toBeTruthy()
-    expect(screen.getByText(/Stock data coverage · Early beta/)).toBeTruthy()
+    expect(await screen.findByText('005930')).toBeTruthy()
+    expect(snapshotPanel().querySelectorAll('ol')).toHaveLength(1)
     fireEvent.click(screen.getByRole('tab', { name: 'US Stocks' }))
-    expect(await screen.findByRole('heading', { name: 'US Stock Interest Candidates' })).toBeTruthy()
-  })
+    expect(await screen.findByText('NVDA')).toBeTruthy()
+    expect(snapshotPanel().querySelectorAll('ol')).toHaveLength(1)
+  }, 15000)
 
   it('renders the Investor Demo route and keeps internal demo links navigable', async () => {
     window.history.pushState({}, '', '/demo')

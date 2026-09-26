@@ -24,6 +24,10 @@ Basis, Current, and Change since basis remain separate fields. The change value 
 
 Snapshot cards continue to render by saved `order`. Tests now cover current-price updates, rule/freshness changes, and expiration without reordering. A replacement order appears only after the explicit refresh callback supplies a new snapshot. Automatic re-ranking was not added.
 
+## Single-list workspace
+
+AI Analysis now renders one candidate list for the selected asset and Short-term, Swing, or Long-term horizon. The continuously calculated candidates are internal refresh input only and are no longer rendered as a second list. No snapshot is created automatically: the visible items and saved order change only when the user selects Refresh candidates. Local storage retains the latest snapshot for each asset-and-horizon context so moving between tabs restores that context's fixed list.
+
 ## My Analysis handoff
 
 My Analysis distinguishes active, expired, and missing snapshot links. Active records show the normal snapshot-origin note. Expired records remain usable as historical baseline context and show a warning that current data may differ. Missing records fall back to current data. Snapshot basis remains separate from the existing average-price and personal-note inputs.

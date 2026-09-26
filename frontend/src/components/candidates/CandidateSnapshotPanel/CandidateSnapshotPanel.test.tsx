@@ -54,6 +54,13 @@ describe('CandidateSnapshotPanel', () => {
     expect(renderedSymbols()).toEqual(['ETH', 'BTC'])
   })
 
+  it('shows current price as reference data without requiring the item to remain in the live candidate ranking', () => {
+    render(<CandidateSnapshotPanel snapshot={snapshot} currentStates={new Map()} currentPrices={new Map([['btc', 105], ['eth', 79]])} language="en" now="2026-09-25T01:00:00Z" canRefresh onRefresh={vi.fn()} onOpenAnalysis={vi.fn()} />)
+    expect(screen.getByText('105 KRW')).toBeTruthy()
+    expect(screen.getByText('79 KRW')).toBeTruthy()
+    expect(renderedSymbols()).toEqual(['BTC', 'ETH'])
+  })
+
   it('refreshes only after the explicit button is clicked and uses safe Korean labels', () => {
     const refresh = vi.fn()
     render(<CandidateSnapshotPanel snapshot={snapshot} currentStates={states(100)} language="ko" now="2026-09-25T01:00:00Z" canRefresh onRefresh={refresh} onOpenAnalysis={vi.fn()} />)
