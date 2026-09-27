@@ -9,8 +9,8 @@ interface BitcoinMarketAnchorCardProps {
 }
 
 const copy = {
-  en: { eyebrow: 'CRYPTO MARKET CONTEXT', title: 'Bitcoin market anchor', flow: 'Current BTC flow', current: 'Current price', change: '24H change', decision: 'Current read', context: 'Market context before reviewing crypto candidates', caution: 'Market context only, not a trade instruction.', states: { ready: 'Anchor available', limited: 'Anchor data limited', unavailable: 'Bitcoin anchor unavailable' } },
-  ko: { eyebrow: '코인 시장 맥락', title: '비트코인 시장 기준', flow: '현재 BTC 흐름', current: '현재가', change: '24시간 변화', decision: '지금 판단', context: '코인 후보 확인 전 참고 기준', caution: '거래 지시가 아닌 시장 기준 정보입니다.', states: { ready: '기준 확인 가능', limited: '기준 데이터 제한', unavailable: '비트코인 기준 확인 불가' } },
+  en: { eyebrow: 'CRYPTO MARKET CONTEXT', title: 'Bitcoin market anchor', flow: 'Current BTC flow', current: 'Current price', change: '24H change', decision: 'Current read', context: 'Market context before reviewing crypto candidates', caution: 'Market context before reviewing crypto candidates. Not a trade instruction.', states: { ready: 'Anchor available', limited: 'Anchor data limited', unavailable: 'Bitcoin anchor unavailable' } },
+  ko: { eyebrow: '코인 시장 맥락', title: '비트코인 시장 기준', flow: '현재 BTC 흐름', current: '현재가', change: '24시간 변화', decision: '지금 판단', context: '코인 후보 확인 전 참고 기준', caution: '코인 후보 확인 전 참고하는 시장 기준 정보입니다. 거래 지시가 아닙니다.', states: { ready: '기준 확인 가능', limited: '기준 데이터 제한', unavailable: '비트코인 기준 확인 불가' } },
 } as const
 
 function number(value: number | null, language: Language, maximumFractionDigits = 4) {
@@ -20,7 +20,7 @@ function number(value: number | null, language: Language, maximumFractionDigits 
 
 export function BitcoinMarketAnchorCard({ anchor, language }: BitcoinMarketAnchorCardProps) {
   const t = copy[language]
-  return <section className={styles.card} data-status={anchor.status} aria-label={t.title}>
+  return <section className={styles.card} data-status={anchor.status} data-market-bucket={anchor.marketBucket} aria-label={t.title}>
     <header>
       <div><span>{t.eyebrow}</span><h2>{t.title}</h2><p>{t.context}</p></div>
       <b>{t.states[anchor.status]}</b>

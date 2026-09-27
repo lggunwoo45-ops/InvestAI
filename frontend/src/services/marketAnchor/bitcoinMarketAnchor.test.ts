@@ -20,7 +20,31 @@ describe('bitcoinMarketAnchor', () => {
     const result = buildBitcoinMarketAnchor({ marketBucket: 'upbit', instruments: [], catalogSource: null, newsResult: null, language: 'ko' })
     expect(result).toMatchObject({ status: 'unavailable', instrumentId: null, currentPrice: null, dataQuality: 'unavailable' })
     expect(result.reviewScore.score).toBeNull()
-    expect(result.summary).toContain('확인할 수 없습니다')
+    expect(result.summary).toBe('BTC 기준 데이터를 찾을 수 없습니다. 코인 후보는 계속 확인할 수 있지만, 시장 기준 정보는 제한됩니다.')
+
+    const binance = buildBitcoinMarketAnchor({ marketBucket: 'binance', instruments: [], catalogSource: null, newsResult: null, language: 'en' })
+    expect(binance).toMatchObject({ status: 'unavailable', instrumentId: null, symbol: 'BTC/USDT' })
+    expect(binance.summary).toBe('BTC anchor data could not be found. Crypto candidates can still be reviewed, but market-anchor context is limited.')
+  })
+
+  it('finds anchors from provider and market metadata when identifiers are not exact', () => {
+    const looseUpbit = {
+      ...instrument('catalog-bitcoin-krw', 'BTC', 'upbit', 'KRW'),
+      displaySymbol: 'Bitcoin',
+      providerSymbol: 'KRW-BTC',
+      marketType: 'upbit-krw',
+      providerType: 'upbit',
+    } satisfies MarketInstrument
+    const looseBinance = {
+      ...instrument('catalog-bitcoin-usdt', 'BTC', 'binance-futures', 'USDT'),
+      displaySymbol: 'Bitcoin perpetual',
+      providerSymbol: 'BTCUSDT',
+      marketType: 'binance-futures',
+      providerType: 'binance-futures',
+    } satisfies MarketInstrument
+
+    expect(buildBitcoinMarketAnchor({ marketBucket: 'upbit', instruments: [looseUpbit], catalogSource: 'live', newsResult: null, language: 'en' }).instrumentId).toBe(looseUpbit.id)
+    expect(buildBitcoinMarketAnchor({ marketBucket: 'binance', instruments: [looseBinance], catalogSource: 'live', newsResult: null, language: 'en' }).instrumentId).toBe(looseBinance.id)
   })
 
   it('marks mock context as limited', () => {

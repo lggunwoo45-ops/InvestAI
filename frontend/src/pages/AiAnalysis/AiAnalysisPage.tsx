@@ -142,7 +142,7 @@ export function AiAnalysisPage() {
     <div className={styles.pageHeader}><header><span>{pageCopy.eyebrow}</span><h1>{pageCopy.title}</h1><p>{pageCopy.description}</p></header></div>
     <MarketBucketSelector selected={bucketId} language={language} onChange={setBucketId} />
     {displayMode === 'expert' && <details className={styles.advanced}><summary>{pageCopy.advanced}</summary><p>{pageCopy.advancedHelp}</p><CandidateHorizonSelector horizon={horizon} language={language} onChange={setHorizon} /></details>}
-    {bitcoinAnchor && <BitcoinMarketAnchorCard anchor={bitcoinAnchor} language={language} />}
+    {bitcoinAnchor !== null && <BitcoinMarketAnchorCard anchor={bitcoinAnchor} language={language} />}
     <MarketBucketSummary bucketLabel={bucketLabel} displayedCount={displayedCount} excludedCount={excludedCount} reasonCounts={exclusionReasons} language={language} />
     <CandidateSnapshotPanel snapshot={displaySnapshot} currentStates={currentStates} currentPrices={currentPrices} horizon={horizon} language={language} now={clock} canRefresh={!basis.isBeforeTodayBasis && activeInstruments.length > 0} onRefresh={createSnapshot} onOpenAnalysis={openSnapshotAnalysis} variant="daily" beforeTodayBasis={basis.isBeforeTodayBasis} />
     <AiUsagePlans language={language} />

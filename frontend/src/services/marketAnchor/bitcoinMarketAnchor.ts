@@ -38,31 +38,50 @@ const copy = {
   en: {
     available: 'Bitcoin context is available for the current crypto market review.',
     limited: 'Bitcoin context is available with limited or demo data.',
-    unavailable: 'Bitcoin anchor data is not available for this market bucket.',
+    unavailable: 'BTC anchor data could not be found. Crypto candidates can still be reviewed, but market-anchor context is limited.',
     caution: 'If BTC is unstable, alt candidate review should be treated more conservatively.',
   },
   ko: {
     available: '현재 코인 시장 검토를 위한 비트코인 기준 흐름을 확인할 수 있습니다.',
     limited: '제한되거나 모의 데이터로 비트코인 기준 흐름을 표시합니다.',
-    unavailable: '이 시장군의 비트코인 기준을 확인할 수 없습니다.',
+    unavailable: 'BTC 기준 데이터를 찾을 수 없습니다. 코인 후보는 계속 확인할 수 있지만, 시장 기준 정보는 제한됩니다.',
     caution: 'BTC 흐름이 불안정하면 알트 후보 검토도 보수적으로 봐야 합니다.',
   },
 } as const
 
-function normalizedSymbols(instrument: MarketInstrument) {
-  return [instrument.symbol, instrument.displaySymbol, instrument.providerSymbol].filter(Boolean).map((value) => String(value).toUpperCase().replace(/[^A-Z0-9]/g, ''))
+function normalize(value: string | undefined) {
+  return (value ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '')
 }
 
-function isBitcoinQuote(instrument: MarketInstrument, quote: 'KRW' | 'USDT') {
-  if (instrument.quoteCurrency.toUpperCase() !== quote) return false
-  return normalizedSymbols(instrument).some((symbol) => symbol === `BTC${quote}` || symbol === `${quote}BTC`)
+function normalizedSymbols(instrument: MarketInstrument) {
+  return [instrument.symbol, instrument.displaySymbol, instrument.providerSymbol, instrument.id].filter(Boolean).map((value) => normalize(String(value)))
+}
+
+function anchorMatchScore(instrument: MarketInstrument, bucket: BitcoinMarketAnchorInput['marketBucket']) {
+  const quote = bucket === 'upbit' ? 'KRW' : 'USDT'
+  const symbols = normalizedSymbols(instrument)
+  const venue = normalize([instrument.marketId, instrument.providerType, instrument.marketType, instrument.id].filter(Boolean).join(' '))
+  const providerMatches = venue.includes(bucket === 'upbit' ? 'UPBIT' : 'BINANCE')
+  const quoteMatches = normalize(instrument.quoteCurrency) === quote || symbols.some((symbol) => symbol.includes(quote))
+  const exactPair = symbols.some((symbol) => symbol === `BTC${quote}` || symbol === `${quote}BTC`)
+  const bitcoinMatches = exactPair || symbols.some((symbol) => symbol.includes('BTC'))
+
+  if (!providerMatches || !quoteMatches || !bitcoinMatches) return null
+
+  let score = exactPair ? 100 : 20
+  if (normalize(instrument.quoteCurrency) === quote) score += 20
+  if (bucket === 'upbit' && normalize(instrument.marketType) === 'UPBITKRW') score += 30
+  if (bucket === 'binance' && normalize(instrument.marketType) === 'BINANCESPOT') score += 30
+  if (bucket === 'binance' && normalize(instrument.marketType) === 'BINANCEFUTURES') score += 10
+  if (Number.isFinite(instrument.lastPrice) && instrument.lastPrice > 0) score += 5
+  return score
 }
 
 function findAnchorInstrument(bucket: BitcoinMarketAnchorInput['marketBucket'], instruments: readonly MarketInstrument[]) {
-  if (bucket === 'upbit') return instruments.find((instrument) => instrument.marketId === 'upbit' && isBitcoinQuote(instrument, 'KRW')) ?? null
-  return [...instruments]
-    .filter((instrument) => (instrument.marketId === 'binance-spot' || instrument.marketId === 'binance-futures') && isBitcoinQuote(instrument, 'USDT'))
-    .sort((left, right) => Number(left.marketId === 'binance-futures') - Number(right.marketId === 'binance-futures'))[0] ?? null
+  return instruments
+    .map((instrument) => ({ instrument, score: anchorMatchScore(instrument, bucket) }))
+    .filter((entry): entry is { instrument: MarketInstrument; score: number } => entry.score !== null)
+    .sort((left, right) => right.score - left.score)[0]?.instrument ?? null
 }
 
 function unavailableDecision(language: Language, bucket: BitcoinMarketAnchorInput['marketBucket']) {
