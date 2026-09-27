@@ -1,13 +1,16 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { saveCandidateSnapshotRecord } from '@/services/candidateSnapshot/candidateSnapshotStorage'
-import type { CandidateSnapshot } from '@/types/candidateSnapshot'
+import { getDailyBasisTime } from '@/services/candidateSnapshot/dailyBasisTime'
+import { loadDailyBucketSnapshots, saveDailyBucketSnapshot } from '@/services/candidateSnapshot/dailyBucketSnapshotStorage'
+import type { DailyBucketSnapshot } from '@/services/candidateSnapshot/dailyBucketSnapshot'
+import type { MarketBucketId } from '@/types/marketBucket'
 import { App } from './App'
 
-function candidateSnapshot(providerLabel: string, symbol: string, assetType: 'crypto' | 'stock' = 'crypto'): CandidateSnapshot {
-  const instrumentId = `${providerLabel}-${symbol}`
-  return { schemaVersion: 1, snapshotId: `snapshot-${instrumentId}`, generatedAt: '2026-09-26T01:00:00.000Z', expiresAt: '2099-09-27T01:00:00.000Z', engineVersion: 'v1', catalogSource: assetType === 'crypto' ? 'live' : 'mock', providerLabel, items: [{ instrumentId, symbol, displayName: symbol, assetType, marketId: assetType === 'crypto' ? 'upbit' : 'mock-stock', quoteCurrency: assetType === 'crypto' ? 'KRW' : 'USD', order: 1, basisPrice: 100, basisChange24hPercent: 1, basisVolume24h: 1000, basisMovementBand: 'Limited', interestStage: 'first', actionStatus: 'watchZone', clarity: 'medium', reasonText: 'Saved snapshot evidence', ruleBasis: [{ key: 'dataQuality', label: 'Data quality', value: 'Recorded' }], dataQuality: assetType === 'crypto' ? 'live' : 'mock', newsState: 'Unavailable', disclosureCount: 0, latestDisclosureAt: null }] }
+function dailyBucketSnapshot(bucketId: MarketBucketId, symbol: string, assetType: 'crypto' | 'stock' = 'crypto'): DailyBucketSnapshot {
+  const basis = getDailyBasisTime(new Date())
+  const instrumentId = `${bucketId}-${symbol}`
+  return { schemaVersion: 1, snapshotId: `daily-${bucketId}-${basis.tradingDateLabel}`, tradingDate: basis.tradingDateLabel, bucketId, basisTimeLabel: '08:00', generatedAt: basis.currentDailyBasisAt, basisAt: basis.currentDailyBasisAt, expiresAt: basis.nextDailyBasisAt, itemLimit: 5, items: [{ instrumentId, symbol, displayName: symbol, assetType, marketId: assetType === 'crypto' ? bucketId : assetType === 'stock' && bucketId === 'usStocks' ? 'us-stock' : 'korea-stock', quoteCurrency: assetType === 'crypto' ? 'USDT' : 'USD', order: 1, basisPrice: 100, basisChange24hPercent: 1, basisVolume24h: 1000, basisMovementBand: 'Limited', interestStage: 'first', actionStatus: 'watchZone', clarity: 'medium', reasonText: 'Saved daily evidence', ruleBasis: [{ key: 'dataQuality', label: 'Data quality', value: 'Recorded' }], dataQuality: assetType === 'crypto' ? 'live' : 'mock', newsState: 'Unavailable', disclosureCount: 0, latestDisclosureAt: null }] }
 }
 
 function openRoute(path: string) {
@@ -219,32 +222,48 @@ describe('Market Copilot application shell', () => {
     expect(window.localStorage.getItem('investai.watchlists.v2')).toContain('us-nvda')
   })
 
-  it('shows only one fixed candidate list for every horizon and asset workspace', async () => {
-    saveCandidateSnapshotRecord(candidateSnapshot('Upbit KRW · short', 'SHORT/KRW'))
-    saveCandidateSnapshotRecord(candidateSnapshot('Upbit KRW · swing', 'SWING/KRW'))
-    saveCandidateSnapshotRecord(candidateSnapshot('Upbit KRW · long', 'LONG/KRW'))
-    saveCandidateSnapshotRecord(candidateSnapshot('Korea Stock · long', '005930', 'stock'))
-    saveCandidateSnapshotRecord(candidateSnapshot('US Stock · long', 'NVDA', 'stock'))
+  it('shows only one fixed daily candidate list while switching market buckets', async () => {
+    saveDailyBucketSnapshot(dailyBucketSnapshot('upbit', 'UPBIT/KRW'))
+    saveDailyBucketSnapshot(dailyBucketSnapshot('binance', 'BINANCE/USDT'))
+    saveDailyBucketSnapshot(dailyBucketSnapshot('kospi', '005930', 'stock'))
+    saveDailyBucketSnapshot(dailyBucketSnapshot('kosdaq', '035720', 'stock'))
+    saveDailyBucketSnapshot(dailyBucketSnapshot('usStocks', 'NVDA', 'stock'))
     window.history.pushState({}, '', '/ai-analysis')
     render(<App />)
-    expect(await screen.findByRole('tab', { name: 'Crypto' }, { timeout: 5000 })).toBeTruthy()
-    const snapshotPanel = () => screen.getByRole('region', { name: 'Candidate snapshot record' })
+    expect(await screen.findByRole('tab', { name: 'Upbit' }, { timeout: 5000 })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Today’s interest candidates' })).toBeTruthy()
+    const snapshotPanel = () => screen.getByRole('region', { name: 'Today’s 08:00 snapshot record' })
     expect(snapshotPanel().querySelectorAll('ol')).toHaveLength(1)
-    expect(screen.getAllByRole('heading', { name: 'Interest candidate list' })).toHaveLength(1)
-    expect(screen.getByText('SHORT/KRW')).toBeTruthy()
+    expect(screen.getAllByRole('heading', { name: 'Today’s 5 interest candidates' })).toHaveLength(1)
+    expect(screen.getByText('UPBIT/KRW')).toBeTruthy()
     expect(screen.queryByRole('heading', { name: 'Crypto Interest Candidates' })).toBeNull()
-    fireEvent.click(screen.getByRole('tab', { name: 'Swing' }))
-    expect(screen.getByText('SWING/KRW')).toBeTruthy()
+    fireEvent.click(screen.getByRole('tab', { name: 'Binance' }))
+    expect(screen.getByText('BINANCE/USDT')).toBeTruthy()
     expect(snapshotPanel().querySelectorAll('ol')).toHaveLength(1)
-    fireEvent.click(screen.getByRole('tab', { name: 'Long-term' }))
-    expect(screen.getByText('LONG/KRW')).toBeTruthy()
-    expect(snapshotPanel().querySelectorAll('ol')).toHaveLength(1)
-    fireEvent.click(screen.getByRole('tab', { name: 'Korea Stocks' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'KOSPI' }))
     expect(await screen.findByText('005930')).toBeTruthy()
     expect(snapshotPanel().querySelectorAll('ol')).toHaveLength(1)
-    fireEvent.click(screen.getByRole('tab', { name: 'US Stocks' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'KOSDAQ' }))
+    expect(await screen.findByText('035720')).toBeTruthy()
+    fireEvent.click(screen.getByRole('tab', { name: 'US stocks' }))
     expect(await screen.findByText('NVDA')).toBeTruthy()
     expect(snapshotPanel().querySelectorAll('ol')).toHaveLength(1)
+  }, 15000)
+
+  it('refreshes only the selected daily market bucket', async () => {
+    const upbitBefore = dailyBucketSnapshot('upbit', 'UPBIT/KRW')
+    const binanceBefore = dailyBucketSnapshot('binance', 'BINANCE/USDT')
+    saveDailyBucketSnapshot(upbitBefore)
+    saveDailyBucketSnapshot(binanceBefore)
+    window.history.pushState({}, '', '/ai-analysis')
+    render(<App />)
+    const refresh = await screen.findByRole('button', { name: 'Refresh today’s candidates' }, { timeout: 5000 })
+    await waitFor(() => expect((refresh as HTMLButtonElement).disabled).toBe(false))
+    fireEvent.click(refresh)
+    await waitFor(() => expect(loadDailyBucketSnapshots().find((snapshot) => snapshot.bucketId === 'upbit')?.generatedAt).not.toBe(upbitBefore.generatedAt))
+    expect(loadDailyBucketSnapshots().find((snapshot) => snapshot.bucketId === 'binance')?.snapshotId).toBe(binanceBefore.snapshotId)
+    const panel = screen.getByRole('region', { name: 'Today’s 08:00 snapshot record' })
+    expect(panel.textContent).not.toMatch(/buy candidate|buy signal|top pick|best pick/i)
   }, 15000)
 
   it('renders the Investor Demo route and keeps internal demo links navigable', async () => {
@@ -266,15 +285,16 @@ describe('Market Copilot application shell', () => {
     fireEvent.click(screen.getByRole('button', { name: /Simple Mode/ }))
     expect(document.querySelector('[data-display-mode]')?.getAttribute('data-display-mode')).toBe('simple')
     fireEvent.click(screen.getByRole('link', { name: 'AI Analysis' }))
-    expect(await screen.findByRole('tab', { name: 'Crypto' })).toBeTruthy()
-    expect(screen.getByRole('region', { name: 'Candidate snapshot record' })).toBeTruthy()
+    expect(await screen.findByRole('tab', { name: 'Upbit' })).toBeTruthy()
+    expect(screen.getByRole('region', { name: 'Today’s 08:00 snapshot record' })).toBeTruthy()
     expect(screen.getAllByRole('group', { name: 'Display mode' })).toHaveLength(1)
     expect(document.querySelector('[data-display-mode]')?.getAttribute('data-display-mode')).toBe('simple')
-    expect(screen.getByRole('link', { name: /Open Simple Candidate View/ }).getAttribute('href')).toBe('/simple')
-    expect(screen.getByText(/You are in Simple Mode. For the easiest candidate view/)).toBeTruthy()
+    expect(screen.queryByText('Advanced criteria')).toBeNull()
+    expect(screen.getByRole('heading', { name: 'Today’s interest candidates' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: /Expert Mode/ }))
     expect(document.querySelector('[data-display-mode]')?.getAttribute('data-display-mode')).toBe('expert')
-    expect(screen.getByRole('region', { name: 'Candidate snapshot record' })).toBeTruthy()
+    expect(screen.getByRole('region', { name: 'Today’s 08:00 snapshot record' })).toBeTruthy()
+    expect(screen.getByText('Advanced criteria')).toBeTruthy()
     expect(window.localStorage.getItem('market-copilot.displayMode.v1')).toBe('expert')
   })
 

@@ -5,11 +5,12 @@ import { evaluateCandidateSnapshotFreshness } from '@/services/candidateSnapshot
 import { buildPracticalDecision } from '@/services/practicalDecision/practicalDecisionModel'
 import { buildReviewRanges } from '@/services/practicalDecision/reviewRangeModel'
 import type { CandidateSnapshot, CandidateSnapshotCurrentState } from '@/types/candidateSnapshot'
+import type { DailyBucketSnapshot } from '@/services/candidateSnapshot/dailyBucketSnapshot'
 import type { WatchCandidateHorizon } from '@/types/watchCandidate'
 import styles from './CandidateSnapshotPanel.module.css'
 
 interface CandidateSnapshotPanelProps {
-  snapshot: CandidateSnapshot | null
+  snapshot: CandidateSnapshot | DailyBucketSnapshot | null
   currentStates: ReadonlyMap<string, CandidateSnapshotCurrentState>
   currentPrices?: ReadonlyMap<string, number>
   horizon?: WatchCandidateHorizon
@@ -18,6 +19,8 @@ interface CandidateSnapshotPanelProps {
   canRefresh: boolean
   onRefresh: () => void
   onOpenAnalysis: (instrumentId: string, snapshotId: string) => void
+  variant?: 'standard' | 'daily'
+  beforeTodayBasis?: boolean
 }
 
 const copy = {
@@ -29,18 +32,26 @@ const copy = {
   },
 } as const
 
+const dailyCopy = {
+  en: { title: 'Today’s 08:00 snapshot record', listTitle: 'Today’s 5 interest candidates', eyebrow: 'DAILY MARKET BUCKET', disclaimer: 'This list is today’s 08:00 snapshot record. It does not change automatically until refreshed.', refresh: 'Refresh today’s candidates', notReady: 'Today’s interest candidates are not available yet. Use Refresh today’s candidates to create today’s snapshot record for this market bucket.', before: 'Today’s 08:00 snapshot record is not ready yet. Review the previous record or refresh after 08:00.', limited: 'Only candidates available from the current data are shown.' },
+  ko: { title: '오늘 08:00 기준 기록', listTitle: '오늘의 관심 후보 5개', eyebrow: '일일 시장군 기준', disclaimer: '이 목록은 오늘 08:00 기준 기록입니다. 후보 새로고침 전까지 자동으로 바뀌지 않습니다.', refresh: '오늘 후보 새로고침', notReady: '오늘의 관심 후보가 아직 없습니다. 오늘 후보 새로고침을 눌러 이 시장군의 오늘 기준 기록을 만들 수 있습니다.', before: '오늘 08:00 기준 기록은 아직 준비되지 않았습니다. 이전 기준 기록을 확인하거나 08:00 이후 새로고침하세요.', limited: '현재 데이터에서 확인 가능한 후보만 표시합니다.' },
+} as const
+
 function number(value: number, language: Language) { return Number.isFinite(value) ? new Intl.NumberFormat(language === 'ko' ? 'ko-KR' : 'en-US', { maximumFractionDigits: 4 }).format(value) : '—' }
 function time(value: string, language: Language) { return new Intl.DateTimeFormat(language === 'ko' ? 'ko-KR' : 'en-US', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(value)) }
 
-export function CandidateSnapshotPanel({ snapshot, currentStates, currentPrices, horizon = 'short', language, now, canRefresh, onRefresh, onOpenAnalysis }: CandidateSnapshotPanelProps) {
+export function CandidateSnapshotPanel({ snapshot, currentStates, currentPrices, horizon = 'short', language, now, canRefresh, onRefresh, onOpenAnalysis, variant = 'standard', beforeTodayBasis = false }: CandidateSnapshotPanelProps) {
   const t = copy[language]
+  const daily = dailyCopy[language]
+  const isDaily = variant === 'daily'
   const expired = Boolean(snapshot && Date.parse(now) > Date.parse(snapshot.expiresAt))
-  return <section className={styles.panel} aria-label={t.title} data-expired={expired || undefined}>
-    <header><div><span>{t.eyebrow}</span><h2>{t.title}</h2>{snapshot && <p>{t.disclaimer(time(snapshot.generatedAt, language))}</p>}</div><button type="button" disabled={!canRefresh} onClick={onRefresh}>{t.refresh}</button></header>
+  const basisTime = snapshot && 'basisAt' in snapshot ? snapshot.basisAt : snapshot?.generatedAt
+  return <section className={styles.panel} aria-label={isDaily ? daily.title : t.title} data-expired={expired || undefined} data-snapshot-variant={variant}>
+    <header><div><span>{isDaily ? daily.eyebrow : t.eyebrow}</span><h2>{isDaily ? daily.title : t.title}</h2>{snapshot && <p>{isDaily ? daily.disclaimer : t.disclaimer(time(basisTime ?? snapshot.generatedAt, language))}</p>}</div><button type="button" disabled={!canRefresh} onClick={onRefresh}>{isDaily ? daily.refresh : t.refresh}</button></header>
     <p className={styles.safety}>{t.safety}</p>
-    {!snapshot && <p className={styles.empty} role="status">{t.notReady}</p>}
+    {!snapshot && <p className={styles.empty} role="status">{isDaily && beforeTodayBasis ? daily.before : isDaily ? daily.notReady : t.notReady}</p>}
     {snapshot && expired && <aside className={styles.staleNotice} role="status"><strong>{t.expiredTitle}</strong><span>{t.expiredHelp}</span><small>{t.expiredBoundary}</small></aside>}
-    {snapshot && <section className={styles.listSection} aria-labelledby="candidate-snapshot-list-title"><h3 id="candidate-snapshot-list-title">{t.listTitle}</h3><ol className={styles.list}>{[...snapshot.items].sort((left, right) => left.order - right.order).slice(0, 5).map((item) => {
+    {snapshot && <section className={styles.listSection} aria-labelledby="candidate-snapshot-list-title"><h3 id="candidate-snapshot-list-title">{isDaily ? daily.listTitle : t.listTitle}</h3>{isDaily && snapshot.items.length < 5 && <p className={styles.empty} role="status">{daily.limited}</p>}<ol className={styles.list}>{[...snapshot.items].sort((left, right) => left.order - right.order).slice(0, 5).map((item) => {
       const current = currentStates.get(item.instrumentId) ?? null
       const statePrice = current?.currentPrice ?? null
       const referencePrice = currentPrices?.get(item.instrumentId) ?? null
