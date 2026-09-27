@@ -6,7 +6,7 @@ The AI Analysis candidate workspace now starts from a stable local snapshot inst
 
 ## Snapshot lifecycle
 
-The first snapshot is created only after candidate data is ready. It remains unchanged across ordinary re-renders and market-value updates. A user must select **Refresh candidates / 후보 새로고침** to replace it. The UI states the capture time and explains that the record does not update automatically. Storage is runtime-validated, retains at most two snapshots, and treats records as expired after 24 hours.
+A snapshot is created only when candidate data is ready and the user selects **Refresh candidates / 후보 새로고침**. It remains unchanged across ordinary re-renders and market-value updates, and the UI states the capture time and explains that the record does not update automatically. Storage is runtime-validated, retains the latest snapshot for each asset-and-horizon context, and treats records as expired after 24 hours.
 
 ## Freshness comparison
 

@@ -2,7 +2,7 @@ import type { CandidateSnapshot, CandidateSnapshotInterestStage } from '@/types/
 import type { ActionReadinessStatus, ActionReadinessStrength, ActionRuleBasisItem, ActionRuleBasisKey, AnalysisDataQuality } from '@/types/myAnalysis'
 
 export const CANDIDATE_SNAPSHOT_STORAGE_KEY = 'market-copilot.candidateSnapshots.v1'
-const MAX_SNAPSHOTS = 2
+const MAX_SNAPSHOT_CONTEXTS = 9
 const stages = new Set<CandidateSnapshotInterestStage>(['waiting', 'first', 'second', 'third', 'chaseCaution', 'reboundCaution'])
 const statuses = new Set<ActionReadinessStatus>(['decisionPending', 'waiting', 'watchZone', 'conditionalApproach', 'chaseCaution', 'sharpDropReboundCaution'])
 const strengths = new Set<ActionReadinessStrength>(['low', 'medium', 'high'])
@@ -30,7 +30,7 @@ export function loadCandidateSnapshotRecords(storage: ReadStorage = window.local
     if (!raw) return []
     const parsed: unknown = JSON.parse(raw)
     if (!isRecord(parsed) || parsed.schemaVersion !== 1 || !Array.isArray(parsed.snapshots) || !parsed.snapshots.every(validSnapshot)) throw new Error('invalid snapshots')
-    return [...parsed.snapshots].sort((left, right) => Date.parse(right.generatedAt) - Date.parse(left.generatedAt)).slice(0, MAX_SNAPSHOTS)
+    return [...parsed.snapshots].sort((left, right) => Date.parse(right.generatedAt) - Date.parse(left.generatedAt)).slice(0, MAX_SNAPSHOT_CONTEXTS)
   } catch {
     try { storage.removeItem(CANDIDATE_SNAPSHOT_STORAGE_KEY) } catch { /* Keep the application usable. */ }
     return []
@@ -39,8 +39,8 @@ export function loadCandidateSnapshotRecords(storage: ReadStorage = window.local
 
 export function saveCandidateSnapshotRecord(snapshot: CandidateSnapshot, storage: WriteStorage = window.localStorage): readonly CandidateSnapshot[] {
   if (!validSnapshot(snapshot)) return loadCandidateSnapshotRecords(storage)
-  const retained = [snapshot, ...loadCandidateSnapshotRecords(storage).filter((item) => item.snapshotId !== snapshot.snapshotId)]
-    .sort((left, right) => Date.parse(right.generatedAt) - Date.parse(left.generatedAt)).slice(0, MAX_SNAPSHOTS)
+  const retained = [snapshot, ...loadCandidateSnapshotRecords(storage).filter((item) => item.providerLabel !== snapshot.providerLabel)]
+    .sort((left, right) => Date.parse(right.generatedAt) - Date.parse(left.generatedAt)).slice(0, MAX_SNAPSHOT_CONTEXTS)
   try { storage.setItem(CANDIDATE_SNAPSHOT_STORAGE_KEY, JSON.stringify({ schemaVersion: 1, snapshots: retained })) } catch { /* Keep the current UI usable. */ }
   return retained
 }
