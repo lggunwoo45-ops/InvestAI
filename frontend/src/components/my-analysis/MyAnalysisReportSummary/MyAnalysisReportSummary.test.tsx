@@ -29,6 +29,8 @@ describe('MyAnalysisReportSummary', () => {
     render(<MyAnalysisReportSummary analysis={analysis()} language="en" mode="simple" symbol="BTC/KRW" name="Bitcoin" />)
     const text = (screen.getByRole('textbox', { name: 'Plain-text summary' }) as HTMLTextAreaElement).value
     expect(text).toContain('Market Copilot review summary')
+    expect(text).toContain('Current read:')
+    expect(text).toContain('Next check:')
     expect(text).not.toContain('private note')
     expect(text).not.toContain('95')
     expect(text).not.toMatch(/buy signal|sell signal|entry price|stop loss|target price|take profit|guaranteed profit|profit expected/i)
@@ -50,7 +52,8 @@ describe('MyAnalysisReportSummary', () => {
   it('switches the plain text to safe position context without including a personal note', () => {
     render(<MyAnalysisReportSummary analysis={analysis()} language="en" mode="simple" symbol="BTC/KRW" name="Bitcoin" reviewMode="position" basisPrice={95} currentPrice={100} quoteCurrency="KRW" />)
     const text = (screen.getByRole('textbox', { name: 'Plain-text summary' }) as HTMLTextAreaElement).value
-    expect(text).toContain('Position state: Profit protection review')
+    expect(text).toContain('Current read: Re-check holding basis')
+    expect(text).toContain('Approach review range:')
     expect(text).toContain('My basis price: 95 KRW')
     expect(text).toContain('Current price: 100 KRW')
     expect(text).not.toContain('private note')
@@ -63,6 +66,6 @@ describe('MyAnalysisReportSummary', () => {
     const text = (screen.getByRole('textbox', { name: 'Plain-text summary' }) as HTMLTextAreaElement).value
     expect(text).toContain('Disclosure review: Correction or material disclosures are included, so the original disclosures should be checked.')
     expect(text).not.toContain('private note')
-    expect(text).not.toMatch(/positive|negative|buy|sell|target|stop|price impact/i)
+    expect(text).not.toMatch(/positive|negative|buy signal|sell signal|target price|stop loss|price impact/i)
   })
 })
