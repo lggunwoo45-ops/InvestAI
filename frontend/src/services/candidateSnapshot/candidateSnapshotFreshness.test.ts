@@ -7,9 +7,15 @@ const item: CandidateSnapshotItem = { instrumentId: 'btc', symbol: 'BTC/KRW', di
 const current: CandidateSnapshotCurrentState = { instrumentId: 'btc', currentPrice: 100, interestStage: 'first', actionStatus: 'watchZone', clarity: 'medium', ruleBasis: item.ruleBasis, dataQuality: 'live' }
 
 describe('evaluateCandidateSnapshotFreshness', () => {
-  it('returns expired after TTL and unavailable without current data', () => {
+  it('returns expired after TTL and price unavailable without a valid current price', () => {
     expect(evaluateCandidateSnapshotFreshness(item, current, '2026-09-25T00:00:00Z', '2026-09-26T00:00:00Z').state).toBe('expired')
-    expect(evaluateCandidateSnapshotFreshness(item, null, '2026-09-27T00:00:00Z', '2026-09-26T00:00:00Z').state).toBe('unavailable')
+    expect(evaluateCandidateSnapshotFreshness(item, null, '2026-09-27T00:00:00Z', '2026-09-26T00:00:00Z').state).toBe('priceUnavailable')
+    expect(evaluateCandidateSnapshotFreshness(item, { ...current, currentPrice: 0 }, '2026-09-27T00:00:00Z', '2026-09-26T00:00:00Z').state).toBe('priceUnavailable')
+  })
+
+  it('distinguishes an available price from an unavailable current review basis', () => {
+    expect(evaluateCandidateSnapshotFreshness(item, null, '2026-09-27T00:00:00Z', '2026-09-26T00:00:00Z', 105).state).toBe('reviewBasisUnavailable')
+    expect(evaluateCandidateSnapshotFreshness(item, { ...current, ruleBasis: [] }, '2026-09-27T00:00:00Z', '2026-09-26T00:00:00Z').state).toBe('reviewBasisUnavailable')
   })
 
   it('holds the basis despite price movement when evidence state is unchanged', () => {

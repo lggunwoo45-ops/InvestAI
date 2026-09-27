@@ -2,7 +2,7 @@ import type { MarketInstrument } from '@/types/market'
 import type { ActionReadinessStatus, ActionReadinessStrength, ActionRuleBasisItem, AnalysisDataQuality, MyAnalysisResult } from '@/types/myAnalysis'
 import type { WatchCandidate } from '@/types/watchCandidate'
 
-export type SnapshotFreshness = 'basisHeld' | 'changeReview' | 'expired' | 'unavailable'
+export type SnapshotFreshness = 'basisHeld' | 'changeReview' | 'expired' | 'priceUnavailable' | 'reviewBasisUnavailable'
 export type CandidateSnapshotInterestStage = 'waiting' | 'first' | 'second' | 'third' | 'chaseCaution' | 'reboundCaution'
 
 export interface CandidateSnapshotItem {
