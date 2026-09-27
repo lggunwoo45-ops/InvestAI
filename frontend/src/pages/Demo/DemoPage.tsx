@@ -49,8 +49,8 @@ const readinessCopy = {
     scriptTitle: '5-minute investor demo script', presenterNotes: 'Presenter notes',
     script: [
       ['Open Market Radar', 'Start with the daily market-awareness view and explain the deterministic evidence cards.'],
-      ['Review Crypto Watch Candidates', 'Show the shortlist as research support, never as a buy or sell instruction.'],
-      ['Compare planning horizons', 'Explain how Short, Swing, and Long views separate time horizons without predicting returns.'],
+      ['Choose a market bucket', 'Open Upbit, Binance, KOSPI, KOSDAQ, or US stocks without displaying all daily cards at once.'],
+      ['Review today’s five candidates', 'Show the fixed daily shortlist as research support, never as an instruction.'],
       ['Inspect planning zones', 'Present zones as rule-based review references, not executable orders.'],
       ['Connect News Insight', 'Show which normalized evidence supports context while retaining source transparency.'],
       ['Preview stock candidate beta', 'Open Korea and US tabs and state that stock coverage is intentionally early beta.'],
@@ -68,8 +68,8 @@ const readinessCopy = {
     scriptTitle: '5분 투자자 데모 스크립트', presenterNotes: '발표자 메모',
     script: [
       ['Market Radar 열기', '결정론적 근거 카드로 구성된 일일 시장 인지 화면부터 설명합니다.'],
-      ['가상자산 관찰 후보 검토', '매수·매도 지시가 아닌 조사 지원 목록이라는 점을 보여줍니다.'],
-      ['계획 기간 비교', '수익 예측 없이 단기·스윙·장기 관점을 구분하는 방식을 설명합니다.'],
+      ['시장군 선택', '업비트·바이낸스·코스피·코스닥·미국주식 중 하나를 선택해 모든 카드를 한꺼번에 표시하지 않습니다.'],
+      ['오늘의 후보 5개 검토', '거래 지시가 아닌 고정된 일일 조사 지원 목록이라는 점을 보여줍니다.'],
       ['계획 구간 확인', '실행 주문이 아닌 규칙 기반 검토 기준으로 소개합니다.'],
       ['뉴스 인사이트 연결', '출처 투명성을 유지하면서 정규화된 근거가 맥락을 보강하는 방식을 보여줍니다.'],
       ['주식 후보 베타 미리보기', '한국·미국 탭을 열고 주식 범위가 의도적인 초기 베타임을 밝힙니다.'],

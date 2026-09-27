@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 import type { CandidateSnapshot, CandidateSnapshotCurrentState } from '@/types/candidateSnapshot'
@@ -9,6 +9,21 @@ const states = (btcPrice: number) => new Map<string, CandidateSnapshotCurrentSta
 const renderedSymbols = () => Array.from(screen.getByRole('region', { name: 'Candidate snapshot record' }).querySelectorAll('ol > li')).map((item) => item.textContent?.slice(0, 3))
 
 describe('CandidateSnapshotPanel', () => {
+  it('renders one daily list with fixed 08:00 wording and no raw score', () => {
+    const daily = { schemaVersion: 1 as const, snapshotId: 'daily-upbit', tradingDate: '2026-09-25', bucketId: 'upbit' as const, basisTimeLabel: '08:00' as const, generatedAt: snapshot.generatedAt, basisAt: snapshot.generatedAt, expiresAt: snapshot.expiresAt, itemLimit: 5 as const, items: snapshot.items }
+    render(<CandidateSnapshotPanel snapshot={daily} currentStates={states(100)} currentPrices={new Map()} language="en" now="2026-09-25T01:00:00Z" canRefresh onRefresh={() => undefined} onOpenAnalysis={() => undefined} variant="daily" />)
+    const panel = screen.getByRole('region', { name: 'Today’s 08:00 snapshot record' })
+    expect(within(panel).getByRole('heading', { name: 'Today’s 5 interest candidates' })).toBeTruthy()
+    expect(panel.querySelectorAll('ol')).toHaveLength(1)
+    expect(panel.textContent).toContain('does not change automatically until refreshed')
+    expect(panel.textContent).not.toMatch(/watch score|raw score/i)
+  })
+
+  it('explains the before-08:00 empty state', () => {
+    render(<CandidateSnapshotPanel snapshot={null} currentStates={new Map()} language="en" now="2026-09-25T00:00:00Z" canRefresh={false} onRefresh={() => undefined} onOpenAnalysis={() => undefined} variant="daily" beforeTodayBasis />)
+    expect(screen.getByRole('status').textContent).toContain('not ready yet')
+    expect((screen.getByRole('button', { name: 'Refresh today’s candidates' }) as HTMLButtonElement).disabled).toBe(true)
+  })
   it('shows a visible snapshot disclaimer, safe stages, and stable order as current data changes', () => {
     const props = { snapshot, language: 'en' as const, now: '2026-09-25T01:00:00Z', canRefresh: true, onRefresh: vi.fn(), onOpenAnalysis: vi.fn() }
     const { rerender } = render(<CandidateSnapshotPanel {...props} currentStates={states(110)} />)

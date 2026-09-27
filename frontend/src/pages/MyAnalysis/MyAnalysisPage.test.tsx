@@ -5,6 +5,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { AppRoutes } from '@/app/AppRoutes'
 import { AppProviders } from '@/app/providers/AppProviders'
 import { saveCandidateSnapshotRecord } from '@/services/candidateSnapshot/candidateSnapshotStorage'
+import { getDailyBasisTime } from '@/services/candidateSnapshot/dailyBasisTime'
+import { saveDailyBucketSnapshot } from '@/services/candidateSnapshot/dailyBucketSnapshotStorage'
 import type { CandidateSnapshot } from '@/types/candidateSnapshot'
 import type { MarketInstrument, MarketVenue } from '@/types/market'
 
@@ -171,6 +173,17 @@ describe('MyAnalysisPage', () => {
     const baseline = screen.getByRole('region', { name: 'Analysis baseline locked' })
     expect(baseline.textContent).toContain('90 KRW')
     expect(baseline.textContent).toContain('Observation start')
+  })
+
+  it('opens from today’s daily bucket record without mixing personal context', async () => {
+    const basis = getDailyBasisTime(new Date())
+    const original = candidateSnapshot()
+    saveDailyBucketSnapshot({ schemaVersion: 1, snapshotId: 'daily-upbit', tradingDate: basis.tradingDateLabel, bucketId: 'upbit', basisTimeLabel: '08:00', generatedAt: basis.currentDailyBasisAt, basisAt: basis.currentDailyBasisAt, expiresAt: basis.nextDailyBasisAt, itemLimit: 5, items: original.items })
+    render(<AppProviders><MemoryRouter initialEntries={['/my-analysis?instrumentId=upbit-btc&bucketId=upbit&snapshotId=daily-upbit']}><AppRoutes /></MemoryRouter></AppProviders>)
+    expect(await screen.findByText('Opened from today’s interest candidate record.')).toBeTruthy()
+    expect(screen.getByRole('region', { name: 'Analysis baseline locked' }).textContent).toContain('90 KRW')
+    expect((screen.getByRole('textbox', { name: 'My note (optional)' }) as HTMLTextAreaElement).value).toBe('')
+    expect((screen.getByRole('spinbutton', { name: 'Average price (optional)' }) as HTMLInputElement).value).toBe('')
   })
 
   it('keeps an expired snapshot as historical basis and shows a clear warning', async () => {
