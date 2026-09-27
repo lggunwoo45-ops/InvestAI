@@ -5,7 +5,6 @@ import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
 import { AiUsagePlans } from '@/components/ai/AiUsagePlans/AiUsagePlans'
 import { CandidateHorizonSelector } from '@/components/candidates/CandidateHorizonSelector/CandidateHorizonSelector'
 import { CandidateSnapshotPanel } from '@/components/candidates/CandidateSnapshotPanel/CandidateSnapshotPanel'
-import { BetaScopeBanner } from '@/components/demo/BetaScopeBanner/BetaScopeBanner'
 import { DisplayModeNotice } from '@/components/displayMode/DisplayModeNotice/DisplayModeNotice'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { useMarketCatalog } from '@/hooks/useMarketCatalog'
@@ -75,7 +74,7 @@ export function AiAnalysisPage() {
   const pageCopy = language === 'ko'
     ? { eyebrow: '상세 분석', title: 'Market Copilot 전문가모드', description: '관찰 후보의 근거, 시간 범위와 세부 설정을 검토합니다.' }
     : { eyebrow: 'DETAILED ANALYSIS', title: 'Market Copilot Expert Mode', description: 'Review watch-candidate evidence, time horizons, and detailed controls.' }
-  return <><div className={styles.pageHeader}><header><span>{pageCopy.eyebrow}</span><h1>{pageCopy.title}</h1><p>{pageCopy.description}</p></header></div>{displayMode === 'simple' && <div className={styles.modeNote}><DisplayModeNotice variant="panel" action={{ label: uiText[language].displayMode.openSimple, to: '/simple' }}>{uiText[language].displayMode.aiSimpleHint} {uiText[language].displayMode.expertDetailed}.</DisplayModeNotice></div>}<div className={styles.betaBanner}><BetaScopeBanner language={language} /></div><nav className={styles.assetTabs} data-display-mode={displayMode} role="tablist" aria-label={language === 'ko' ? '후보 자산 유형' : 'Candidate asset type'}>{(Object.keys(tabs) as CandidateAssetTab[]).map((tab) => <button key={tab} type="button" role="tab" aria-selected={assetTab === tab} onClick={() => setAssetTab(tab)}>{tabs[tab]}</button>)}</nav>
+  return <><div className={styles.pageHeader}><header><span>{pageCopy.eyebrow}</span><h1>{pageCopy.title}</h1><p>{pageCopy.description}</p></header></div>{displayMode === 'simple' && <div className={styles.modeNote}><DisplayModeNotice variant="panel" action={{ label: uiText[language].displayMode.openSimple, to: '/simple' }}>{uiText[language].displayMode.aiSimpleHint} {uiText[language].displayMode.expertDetailed}.</DisplayModeNotice></div>}<nav className={styles.assetTabs} data-display-mode={displayMode} role="tablist" aria-label={language === 'ko' ? '후보 자산 유형' : 'Candidate asset type'}>{(Object.keys(tabs) as CandidateAssetTab[]).map((tab) => <button key={tab} type="button" role="tab" aria-selected={assetTab === tab} onClick={() => setAssetTab(tab)}>{tabs[tab]}</button>)}</nav>
     <CandidateHorizonSelector horizon={horizon} language={language} onChange={setHorizon} />
     <CandidateSnapshotPanel snapshot={activeSnapshot} currentStates={currentStates} currentPrices={currentPrices} horizon={horizon} language={language} now={snapshotNow} canRefresh={snapshotSources.length > 0} onRefresh={createSnapshot} onOpenAnalysis={openSnapshotAnalysis} />
     <AiUsagePlans language={language} /></>

@@ -2,7 +2,7 @@ import type { PracticalDecisionInput, PracticalDecisionResult, PracticalDecision
 
 const copy = {
   en: {
-    caution: 'This screen provides review information for decision support. It is not a buy/sell instruction or a profit guarantee.',
+    caution: 'Decision-support information, not a trade instruction or profit guarantee.',
     states: {
       wait: ['Wait for now', 'Evidence is not strong enough yet, so this needs more observation.'],
       watch: ['Add to watch', 'This is worth keeping on the watch list and reviewing over time.'],
@@ -17,7 +17,7 @@ const copy = {
     next: { wait: 'Wait for stronger price, volume, or evidence confirmation.', watch: 'Review whether the flow remains consistent over time.', approachReview: 'Review volume, market context, and related news before deciding.', extendedCaution: 'Check whether movement stabilizes before drawing a conclusion.', postDropReview: 'Confirm whether the rebound has broader supporting evidence.', changeCheck: 'Compare the changed rule basis with the snapshot record.', holdingRecheck: 'Check whether the original reason still holds from your recorded price.', unavailable: 'Confirm reliable price and evidence data first.' },
   },
   ko: {
-    caution: '이 화면은 투자 판단을 돕는 검토 정보이며, 매수·매도 지시나 수익 보장이 아닙니다.',
+    caution: '판단 보조 정보이며, 거래 지시나 수익 보장이 아닙니다.',
     states: {
       wait: ['아직 대기', '근거가 충분하지 않아 바로 판단하기보다 더 지켜볼 단계입니다.'],
       watch: ['관심 등록', '관심 후보로 기록해두고 흐름을 확인할 단계입니다.'],
