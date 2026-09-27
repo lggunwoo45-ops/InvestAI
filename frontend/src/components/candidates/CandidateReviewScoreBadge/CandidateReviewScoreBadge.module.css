@@ -1,0 +1,7 @@
+.badge { display: grid; gap: 2px; min-width: 142px; padding: 6px 9px; border: 1px solid var(--color-border-strong); background: var(--color-surface-primary); color: var(--color-text-secondary); text-align: right; }
+.badge strong { font: 650 10px/1.25 var(--font-mono); }
+.badge span { color: var(--color-text-muted); font-size: 8px; line-height: 1.3; }
+.badge[data-level='moderate'] { border-color: #5d625f; }
+.badge[data-level='strong'] { border-color: #64706c; }
+.badge[data-level='unavailable'] { opacity: .72; }
+@media (max-width: 760px) { .badge { min-width: 0; text-align: left; } }

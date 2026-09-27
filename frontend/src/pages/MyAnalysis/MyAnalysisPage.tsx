@@ -21,6 +21,7 @@ import { useNewsProviderMode } from '@/hooks/useNewsProviderMode'
 import { useLanguage } from '@/i18n/useLanguage'
 import { buildCryptoWatchCandidates } from '@/services/ai/cryptoWatchCandidateEngine'
 import { buildStockWatchCandidates } from '@/services/ai/stockWatchCandidateEngine'
+import { buildCandidateReviewScore } from '@/services/candidateScore/candidateReviewScore'
 import { buildDartDisclosureReview } from '@/services/dart/dartDisclosureReview'
 import { findCandidateSnapshot } from '@/services/candidateSnapshot/candidateSnapshotStorage'
 import { getLocalDateLabel } from '@/services/candidateSnapshot/dailyBasisTime'
@@ -142,6 +143,7 @@ export function MyAnalysisPage() {
   const practicalHorizon = candidate?.horizon ?? (intent === 'swing' ? 'swing' : intent === 'longTerm' ? 'long' : 'short')
   const practicalDecision = analysis ? buildPracticalDecision({ language, horizon: practicalHorizon, dataQuality: analysis.dataQuality, actionStatus: analysis.actionReadiness.status, interestStage, hasAveragePrice: validAveragePrice !== null, source: 'analysis', reason: analysis.actionReadiness.whyThisStatus, nextCheck: analysis.reviewChecklist[0] ?? analysis.actionReadiness.nextChecks[0] }) : null
   const reviewRanges = analysis ? buildReviewRanges({ language, horizon: practicalHorizon, dataQuality: analysis.dataQuality, anchorPrice: validAveragePrice ?? currentPrice, source: 'current' }) : []
+  const candidateReviewScore = analysis && practicalDecision ? buildCandidateReviewScore({ language, dataQuality: analysis.dataQuality, practicalDecisionState: practicalDecision.state, clarity: analysis.actionReadiness.strength, hasReviewRanges: reviewRanges.length > 0, freshness: snapshotExpired ? 'expired' : null, evidenceCount: analysis.evidence.length, missingEvidenceCount: analysis.missingEvidence.length, hasNewsEvidence: analysis.evidence.some((entry) => entry.type === 'news' || entry.type === 'market'), hasDisclosureEvidence: dartReview.counts.total > 0 }) : null
 
   const choose = (instrument: MarketInstrument) => {
     setSelectedId(instrument.id)
@@ -194,7 +196,7 @@ export function MyAnalysisPage() {
         <div className={styles.quote}><small>{t.availableData}</small><strong>{Number.isFinite(selected.lastPrice) ? formatMarketPrice(selected) : t.qualities.unavailable}</strong>{Number.isFinite(selected.change24hPercent) && <span data-direction={selected.change24hPercent >= 0 ? 'positive' : 'negative'}>{formatMarketChange(selected.change24hPercent)}</span>}</div>
         <div className={styles.quality}><small>{t.quality}</small><b data-quality={analysis.dataQuality}>{analysis.dataQualityLabel}</b><small>{t.qualityHelp[analysis.dataQuality]}</small></div>
       </section>
-      <MyAnalysisReportSummary analysis={analysis} language={language} mode={displayMode} symbol={selected.displaySymbol ?? selected.symbol} name={selected.name} reviewMode={reviewMode} basisPrice={validAveragePrice} currentPrice={currentPrice} quoteCurrency={selected.quoteCurrency} disclosureReview={selected.marketId === 'korea-stock' ? dartReview : null} practicalDecision={practicalDecision ?? undefined} reviewRanges={reviewRanges} />
+      <MyAnalysisReportSummary analysis={analysis} language={language} mode={displayMode} symbol={selected.displaySymbol ?? selected.symbol} name={selected.name} reviewMode={reviewMode} basisPrice={validAveragePrice} currentPrice={currentPrice} quoteCurrency={selected.quoteCurrency} disclosureReview={selected.marketId === 'korea-stock' ? dartReview : null} practicalDecision={practicalDecision ?? undefined} reviewRanges={reviewRanges} candidateReviewScore={candidateReviewScore ?? undefined} />
       {practicalDecision && <PracticalDecisionCard result={practicalDecision} language={language} />}
       <ReviewRangePanel ranges={reviewRanges} language={language} quoteCurrency={selected.quoteCurrency} />
       <ReviewModeSelector language={language} mode={reviewMode} onChange={setReviewMode} />

@@ -282,7 +282,8 @@ describe('Market Copilot application shell', () => {
     expect(screen.queryByText('035720')).toBeNull()
     const panel = screen.getByRole('region', { name: 'Today’s 08:00 snapshot record' })
     expect(panel.querySelectorAll('ol')).toHaveLength(1)
-    expect(panel.textContent).not.toMatch(/buy candidate|buy signal|top pick|best pick/i)
+    const visibleProductCopy = panel.textContent.replace('It is not a profit probability or buy signal.', '')
+    expect(visibleProductCopy).not.toMatch(/buy candidate|buy signal|top pick|best pick/i)
   }, 15000)
 
   it('renders the Investor Demo route and keeps internal demo links navigable', async () => {

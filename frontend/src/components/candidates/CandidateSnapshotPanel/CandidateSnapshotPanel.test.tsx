@@ -48,6 +48,9 @@ describe('CandidateSnapshotPanel', () => {
     expect(screen.getByRole('heading', { name: 'Interest candidate list' })).toBeTruthy()
     expect(panel.textContent).toContain('This list is a snapshot record from')
     expect(panel.textContent).toContain('It is not a current investment recommendation. It does not update automatically until refreshed.')
+    expect(panel.textContent).toContain('What is the review score?')
+    expect(panel.textContent).toContain('It is not a profit probability or buy signal.')
+    expect(screen.getAllByText(/Review score \d+\/100/)).toHaveLength(2)
     expect(renderedSymbols()).toEqual(['BTC', 'ETH'])
     rerender(<CandidateSnapshotPanel {...props} currentStates={states(50)} />)
     expect(renderedSymbols()).toEqual(['BTC', 'ETH'])
@@ -58,6 +61,7 @@ describe('CandidateSnapshotPanel', () => {
     expect(screen.getAllByText('Review ranges are decision-support areas, not order prices.')).toHaveLength(2)
     expect(screen.getAllByText('Decision-support information, not a trade instruction or profit guarantee.')).toHaveLength(1)
     expect(document.body.textContent).not.toMatch(/1st interest|2nd interest|3rd interest/i)
+    expect(document.body.textContent).not.toMatch(/rank #|1st place|2nd place/i)
   })
 
   it('keeps saved order when freshness changes or the snapshot expires', () => {
@@ -140,6 +144,8 @@ describe('CandidateSnapshotPanel', () => {
     expect(screen.getByRole('region', { name: '후보 기준 기록' }).textContent).toContain('시점의 기준 기록이며, 현재 시점의 투자 권유가 아닙니다. 후보 새로고침 전까지 자동으로 갱신되지 않습니다.')
     expect(screen.getByRole('heading', { name: '관심 후보 목록' })).toBeTruthy()
     expect(screen.getByRole('button', { name: '후보 새로고침' })).toBeTruthy()
+    expect(screen.getByText('검토 점수란?')).toBeTruthy()
+    expect(screen.getAllByText(/검토 점수 \d+\/100/)).toHaveLength(2)
     expect(document.body.textContent).toContain('지금 판단: 관심 등록')
     expect(screen.getAllByText('검토 범위는 주문가가 아니라 판단 보조용입니다.')).toHaveLength(2)
     expect(document.body.textContent).not.toMatch(/추천종목|매수가|손절가|익절가|목표가|지금 사세요|팔아야 합니다|1차|2차|3차/)
@@ -147,7 +153,8 @@ describe('CandidateSnapshotPanel', () => {
 
   it('does not expose direct action or future order-price wording', () => {
     render(<CandidateSnapshotPanel snapshot={snapshot} currentStates={states(100)} language="en" now="2026-09-25T01:00:00Z" canRefresh onRefresh={vi.fn()} onOpenAnalysis={vi.fn()} />)
-    expect(document.body.textContent?.toLowerCase()).not.toMatch(/buy signal|sell signal|entry price|target price|stop loss|take profit/)
+    const visibleProductCopy = document.body.textContent?.toLowerCase().replace('it is not a profit probability or buy signal.', '')
+    expect(visibleProductCopy).not.toMatch(/buy signal|sell signal|entry price|target price|stop loss|take profit/)
   })
 
   it('explains how to create the first snapshot without exposing technical errors', () => {
