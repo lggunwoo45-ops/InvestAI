@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { AppRoutes } from '@/app/AppRoutes'
 import { AppProviders } from '@/app/providers/AppProviders'
 import { saveCandidateSnapshotRecord } from '@/services/candidateSnapshot/candidateSnapshotStorage'
-import { getDailyBasisTime } from '@/services/candidateSnapshot/dailyBasisTime'
+import { getDailyBasisTime, getLocalDateLabel } from '@/services/candidateSnapshot/dailyBasisTime'
 import { saveDailyBucketSnapshot } from '@/services/candidateSnapshot/dailyBucketSnapshotStorage'
 import type { CandidateSnapshot } from '@/types/candidateSnapshot'
 import type { MarketInstrument, MarketVenue } from '@/types/market'
@@ -184,6 +184,16 @@ describe('MyAnalysisPage', () => {
     expect(screen.getByRole('region', { name: 'Analysis baseline locked' }).textContent).toContain('90 KRW')
     expect((screen.getByRole('textbox', { name: 'My note (optional)' }) as HTMLTextAreaElement).value).toBe('')
     expect((screen.getByRole('spinbutton', { name: 'Average price (optional)' }) as HTMLInputElement).value).toBe('')
+  })
+
+  it('keeps a previous daily record available with an explicit handoff note', async () => {
+    const basis = getDailyBasisTime(new Date())
+    const previousBasis = new Date(Date.parse(basis.currentDailyBasisAt) - 24 * 60 * 60 * 1000)
+    const original = candidateSnapshot()
+    saveDailyBucketSnapshot({ schemaVersion: 1, snapshotId: 'daily-upbit-previous', tradingDate: getLocalDateLabel(previousBasis), bucketId: 'upbit', basisTimeLabel: '08:00', generatedAt: previousBasis.toISOString(), basisAt: previousBasis.toISOString(), expiresAt: basis.currentDailyBasisAt, itemLimit: 5, items: original.items })
+    render(<AppProviders><MemoryRouter initialEntries={['/my-analysis?instrumentId=upbit-btc&bucketId=upbit&snapshotId=daily-upbit-previous']}><AppRoutes /></MemoryRouter></AppProviders>)
+    expect(await screen.findByText('Opened from a previous daily candidate record. Current data may differ.')).toBeTruthy()
+    expect(screen.getByRole('region', { name: 'Analysis baseline locked' }).textContent).toContain('90 KRW')
   })
 
   it('keeps an expired snapshot as historical basis and shows a clear warning', async () => {
