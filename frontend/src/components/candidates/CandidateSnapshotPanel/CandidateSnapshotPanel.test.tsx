@@ -20,7 +20,10 @@ describe('CandidateSnapshotPanel', () => {
     expect(renderedSymbols()).toEqual(['BTC', 'ETH'])
     rerender(<CandidateSnapshotPanel {...props} currentStates={states(50)} />)
     expect(renderedSymbols()).toEqual(['BTC', 'ETH'])
-    expect(document.body.textContent).toContain('Observation start')
+    expect(document.body.textContent).toContain('Current read: Add to watch')
+    expect(document.body.textContent).toContain('Reason')
+    expect(document.body.textContent).toContain('Next check')
+    expect(document.body.textContent).toContain('Approach review range')
     expect(document.body.textContent).not.toMatch(/1st interest|2nd interest|3rd interest/i)
   })
 
@@ -104,8 +107,8 @@ describe('CandidateSnapshotPanel', () => {
     expect(screen.getByRole('region', { name: '후보 기준 기록' }).textContent).toContain('시점의 기준 기록이며, 현재 시점의 투자 권유가 아닙니다. 후보 새로고침 전까지 자동으로 갱신되지 않습니다.')
     expect(screen.getByRole('heading', { name: '관심 후보 목록' })).toBeTruthy()
     expect(screen.getByRole('button', { name: '후보 새로고침' })).toBeTruthy()
-    expect(document.body.textContent).toContain('관찰 시작')
-    expect(document.body.textContent).not.toMatch(/추천종목|매수|매도|손절가|익절가|목표가|1차|2차|3차/)
+    expect(document.body.textContent).toContain('지금 판단: 관심 등록')
+    expect(document.body.textContent).not.toMatch(/추천종목|매수가|손절가|익절가|목표가|지금 사세요|팔아야 합니다|1차|2차|3차/)
   })
 
   it('does not expose direct action or future order-price wording', () => {

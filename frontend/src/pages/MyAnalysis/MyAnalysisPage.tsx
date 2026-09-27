@@ -11,6 +11,8 @@ import { DartDisclosureReviewCard } from '@/components/my-analysis/DartDisclosur
 import { MyAnalysisReportSummary } from '@/components/my-analysis/MyAnalysisReportSummary/MyAnalysisReportSummary'
 import { PositionReviewPanel } from '@/components/my-analysis/PositionReviewPanel/PositionReviewPanel'
 import { ReviewModeSelector, type MyAnalysisReviewMode } from '@/components/my-analysis/ReviewModeSelector/ReviewModeSelector'
+import { PracticalDecisionCard } from '@/components/practicalDecision/PracticalDecisionCard/PracticalDecisionCard'
+import { ReviewRangePanel } from '@/components/practicalDecision/ReviewRangePanel/ReviewRangePanel'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { useDartDisclosures } from '@/hooks/useDartDisclosures'
 import { useMarketCatalog } from '@/hooks/useMarketCatalog'
@@ -22,6 +24,8 @@ import { buildStockWatchCandidates } from '@/services/ai/stockWatchCandidateEngi
 import { buildDartDisclosureReview } from '@/services/dart/dartDisclosureReview'
 import { findCandidateSnapshot } from '@/services/candidateSnapshot/candidateSnapshotStorage'
 import { buildMyInstrumentAnalysis } from '@/services/myAnalysis/myAnalysisEngine'
+import { buildPracticalDecision } from '@/services/practicalDecision/practicalDecisionModel'
+import { buildReviewRanges } from '@/services/practicalDecision/reviewRangeModel'
 import type { MarketGroup, MarketInstrument } from '@/types/market'
 import type { AnalysisIntent } from '@/types/myAnalysis'
 import { formatMarketChange, formatMarketPrice } from '@/utils/formatMarketValue'
@@ -123,6 +127,10 @@ export function MyAnalysisPage() {
   const missingSnapshot = requestedSnapshotId !== null && !openedFromSnapshot
   const interestStage = analysis ? deriveBeginnerInterestStage(analysis) : 'waiting'
   const currentPrice = selected && Number.isFinite(selected.lastPrice) ? selected.lastPrice : Number.NaN
+  const validAveragePrice = parsedAverage !== null && Number.isFinite(parsedAverage) && parsedAverage > 0 ? parsedAverage : null
+  const practicalHorizon = candidate?.horizon ?? (intent === 'swing' ? 'swing' : intent === 'longTerm' ? 'long' : 'short')
+  const practicalDecision = analysis ? buildPracticalDecision({ language, horizon: practicalHorizon, dataQuality: analysis.dataQuality, actionStatus: analysis.actionReadiness.status, interestStage, hasAveragePrice: validAveragePrice !== null, source: 'analysis', reason: analysis.actionReadiness.whyThisStatus, nextCheck: analysis.reviewChecklist[0] ?? analysis.actionReadiness.nextChecks[0] }) : null
+  const reviewRanges = analysis ? buildReviewRanges({ language, horizon: practicalHorizon, dataQuality: analysis.dataQuality, anchorPrice: validAveragePrice ?? currentPrice, source: 'current' }) : []
 
   const choose = (instrument: MarketInstrument) => {
     setSelectedId(instrument.id)
@@ -175,15 +183,17 @@ export function MyAnalysisPage() {
         <div className={styles.quote}><small>{t.availableData}</small><strong>{Number.isFinite(selected.lastPrice) ? formatMarketPrice(selected) : t.qualities.unavailable}</strong>{Number.isFinite(selected.change24hPercent) && <span data-direction={selected.change24hPercent >= 0 ? 'positive' : 'negative'}>{formatMarketChange(selected.change24hPercent)}</span>}</div>
         <div className={styles.quality}><small>{t.quality}</small><b data-quality={analysis.dataQuality}>{analysis.dataQualityLabel}</b></div>
       </section>
-      <MyAnalysisReportSummary analysis={analysis} language={language} mode={displayMode} symbol={selected.displaySymbol ?? selected.symbol} name={selected.name} reviewMode={reviewMode} basisPrice={parsedAverage !== null && Number.isFinite(parsedAverage) ? parsedAverage : null} currentPrice={currentPrice} quoteCurrency={selected.quoteCurrency} disclosureReview={selected.marketId === 'korea-stock' ? dartReview : null} />
+      <MyAnalysisReportSummary analysis={analysis} language={language} mode={displayMode} symbol={selected.displaySymbol ?? selected.symbol} name={selected.name} reviewMode={reviewMode} basisPrice={validAveragePrice} currentPrice={currentPrice} quoteCurrency={selected.quoteCurrency} disclosureReview={selected.marketId === 'korea-stock' ? dartReview : null} practicalDecision={practicalDecision ?? undefined} reviewRanges={reviewRanges} />
+      {practicalDecision && <PracticalDecisionCard result={practicalDecision} language={language} />}
+      <ReviewRangePanel ranges={reviewRanges} language={language} quoteCurrency={selected.quoteCurrency} />
       <ReviewModeSelector language={language} mode={reviewMode} onChange={setReviewMode} />
       <AnalysisBaselinePanel key={`${selected.id}:${snapshotItem?.instrumentId ?? 'current'}`} actionStatus={analysis.actionReadiness.status} currentPrice={currentPrice} instrumentId={selected.id} interestStage={interestStage} language={language} quoteCurrency={selected.quoteCurrency} initialSnapshot={snapshotItem ? { actionStatus: snapshotItem.actionStatus, capturedAt: requestedSnapshot?.generatedAt ?? openedAt, interestStage: snapshotItem.interestStage, price: snapshotItem.basisPrice } : null} />
       {displayMode === 'simple' ? reviewMode === 'interest'
         ? <BeginnerInterestZone analysis={analysis} language={language} />
-        : <PositionReviewPanel basisPrice={parsedAverage !== null && Number.isFinite(parsedAverage) ? parsedAverage : null} currentPrice={currentPrice} dataQuality={analysis.dataQuality} language={language} nextCheck={analysis.reviewChecklist[0] ?? analysis.actionReadiness.nextChecks[0]} quoteCurrency={selected.quoteCurrency} />
+        : <PositionReviewPanel basisPrice={validAveragePrice} currentPrice={currentPrice} dataQuality={analysis.dataQuality} language={language} nextCheck={analysis.reviewChecklist[0] ?? analysis.actionReadiness.nextChecks[0]} quoteCurrency={selected.quoteCurrency} />
         : <div className={styles.reviewPanels}>
           <BeginnerInterestZone analysis={analysis} language={language} />
-          {parsedAverage !== null && Number.isFinite(parsedAverage) && <PositionReviewPanel basisPrice={parsedAverage} currentPrice={currentPrice} dataQuality={analysis.dataQuality} language={language} nextCheck={analysis.reviewChecklist[0] ?? analysis.actionReadiness.nextChecks[0]} quoteCurrency={selected.quoteCurrency} />}
+          {validAveragePrice !== null && <PositionReviewPanel basisPrice={validAveragePrice} currentPrice={currentPrice} dataQuality={analysis.dataQuality} language={language} nextCheck={analysis.reviewChecklist[0] ?? analysis.actionReadiness.nextChecks[0]} quoteCurrency={selected.quoteCurrency} />}
         </div>}
       {displayMode === 'simple' && selected.marketId === 'korea-stock' && <DartDisclosureReviewCard language={language} review={dartReview} disclosurePanelId="dart-disclosures" />}
       <ActionReadinessCard plan={analysis.actionReadiness} language={language} mode={displayMode} showRuleBasis={false} />

@@ -1,12 +1,18 @@
 import type { Language } from '@/i18n/translations'
+import { PracticalDecisionCard } from '@/components/practicalDecision/PracticalDecisionCard/PracticalDecisionCard'
+import { ReviewRangePanel } from '@/components/practicalDecision/ReviewRangePanel/ReviewRangePanel'
 import { evaluateCandidateSnapshotFreshness } from '@/services/candidateSnapshot/candidateSnapshotFreshness'
+import { buildPracticalDecision } from '@/services/practicalDecision/practicalDecisionModel'
+import { buildReviewRanges } from '@/services/practicalDecision/reviewRangeModel'
 import type { CandidateSnapshot, CandidateSnapshotCurrentState } from '@/types/candidateSnapshot'
+import type { WatchCandidateHorizon } from '@/types/watchCandidate'
 import styles from './CandidateSnapshotPanel.module.css'
 
 interface CandidateSnapshotPanelProps {
   snapshot: CandidateSnapshot | null
   currentStates: ReadonlyMap<string, CandidateSnapshotCurrentState>
   currentPrices?: ReadonlyMap<string, number>
+  horizon?: WatchCandidateHorizon
   language: Language
   now: string
   canRefresh: boolean
@@ -26,7 +32,7 @@ const copy = {
 function number(value: number, language: Language) { return Number.isFinite(value) ? new Intl.NumberFormat(language === 'ko' ? 'ko-KR' : 'en-US', { maximumFractionDigits: 4 }).format(value) : '—' }
 function time(value: string, language: Language) { return new Intl.DateTimeFormat(language === 'ko' ? 'ko-KR' : 'en-US', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(value)) }
 
-export function CandidateSnapshotPanel({ snapshot, currentStates, currentPrices, language, now, canRefresh, onRefresh, onOpenAnalysis }: CandidateSnapshotPanelProps) {
+export function CandidateSnapshotPanel({ snapshot, currentStates, currentPrices, horizon = 'short', language, now, canRefresh, onRefresh, onOpenAnalysis }: CandidateSnapshotPanelProps) {
   const t = copy[language]
   const expired = Boolean(snapshot && Date.parse(now) > Date.parse(snapshot.expiresAt))
   return <section className={styles.panel} aria-label={t.title} data-expired={expired || undefined}>
@@ -41,12 +47,15 @@ export function CandidateSnapshotPanel({ snapshot, currentStates, currentPrices,
         : referencePrice !== null && Number.isFinite(referencePrice) && referencePrice > 0 ? referencePrice : null
       const freshness = evaluateCandidateSnapshotFreshness(item, current, snapshot.expiresAt, now, currentPrice)
       const difference = currentPrice !== null && Number.isFinite(currentPrice) ? currentPrice - item.basisPrice : null
+      const decision = buildPracticalDecision({ language, horizon, dataQuality: item.dataQuality, actionStatus: item.actionStatus, interestStage: item.interestStage, freshness: freshness.state, movementBand: item.basisMovementBand, source: 'snapshot', reason: item.reasonText })
+      const ranges = buildReviewRanges({ language, horizon, dataQuality: item.dataQuality, anchorPrice: item.basisPrice, source: 'snapshot', expired: freshness.state === 'expired' })
       return <li key={item.instrumentId} className={styles.card} data-freshness={freshness.state}>
-        <div className={styles.identity}><div><strong>{item.symbol}</strong><span>{item.displayName} · {item.assetType}</span></div><b>{t.stages[item.interestStage]}</b></div>
+        <div className={styles.identity}><div><strong>{item.symbol}</strong><span>{item.displayName} · {item.assetType}</span></div></div>
         <div className={styles.freshness}><span>{t.basisTime}: {time(snapshot.generatedAt, language)}</span><strong>{t.freshness[freshness.state]}</strong></div>
         {freshness.state === 'reviewBasisUnavailable' && <p className={styles.freshnessHelp}>{t.reviewBasisHelp}</p>}
-        <p className={styles.reason}><b>{t.reason}</b>{item.reasonText}</p>
+        <PracticalDecisionCard result={decision} language={language} compact />
         <div className={styles.values}><div><span>{t.basis}</span><strong>{number(item.basisPrice, language)} {item.quoteCurrency}</strong></div><div><span>{t.current}</span><strong>{currentPrice !== null ? `${number(currentPrice, language)} ${item.quoteCurrency}` : '—'}</strong></div><div><span>{t.change}</span><strong data-tone="neutral">{difference === null ? '—' : `${difference >= 0 ? '+' : ''}${number(difference, language)} ${item.quoteCurrency}`}</strong></div></div>
+        <ReviewRangePanel ranges={ranges} language={language} quoteCurrency={item.quoteCurrency} compact />
         <details><summary>{t.details}</summary><dl>{item.ruleBasis.map((entry) => <div key={entry.key}><dt>{entry.label}</dt><dd>{entry.value}</dd></div>)}</dl><h3>{freshness.changes.length ? t.changes : t.none}</h3>{freshness.changes.length > 0 && <ul>{freshness.changes.map((change) => <li key={change.field}>{t.fields[change.field]}: {change.previousValue} → {change.currentValue}</li>)}</ul>}</details>
         <footer><button type="button" onClick={() => onOpenAnalysis(item.instrumentId, snapshot.snapshotId)}>{t.open} →</button></footer>
       </li>

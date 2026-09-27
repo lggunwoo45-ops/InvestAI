@@ -1,6 +1,6 @@
 import type { AnalysisDataQuality } from '@/types/myAnalysis'
 
-export type PositionReviewState = 'waiting' | 'baselineValid' | 'invalidationReview' | 'profitProtection'
+export type PositionReviewState = 'waiting' | 'basisReview'
 
 export interface PositionReviewResult {
   state: PositionReviewState
@@ -15,6 +15,5 @@ export function derivePositionReview(currentPrice: number, basisPrice: number | 
 
   const difference = currentPrice - basisPrice
   const percentChange = (difference / basisPrice) * 100
-  const state: PositionReviewState = percentChange >= 3 ? 'profitProtection' : percentChange <= -3 ? 'invalidationReview' : 'baselineValid'
-  return { state, difference, percentChange }
+  return { state: 'basisReview', difference, percentChange }
 }
