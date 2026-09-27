@@ -1,9 +1,10 @@
 import type { NewsArticle, NewsCategory, NewsImportance, NewsMarket, NewsSentiment } from '@/types/dashboard'
+import { runtimeConfig } from '@/config/runtimeConfig'
 import { safeNewsUrl } from '@/utils/safeNewsUrl'
 import type { NewsLoadOptions, NewsProvider } from './NewsProvider'
 import { RssProviderError } from './RssNewsProvider'
 
-export const localNewsProxyEndpoint = 'http://localhost:8787/api/news/rss?source=fed-press'
+export const localNewsProxyEndpoint = `${runtimeConfig.newsProxyUrl}/api/news/rss?source=fed-press`
 const timeoutMs = 9_000
 const categories = new Set<NewsCategory>(['crypto', 'korea-stock', 'us-stock', 'macro', 'technology', 'ai', 'earnings', 'regulation'])
 const markets = new Set<NewsMarket>(['crypto', 'korea', 'us', 'macro'])
