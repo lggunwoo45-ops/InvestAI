@@ -5,9 +5,11 @@ function ruleValue(items: CandidateSnapshotItem['ruleBasis'] | CandidateSnapshot
 }
 
 /** Compares evidence state only. Price direction and return thresholds are intentionally ignored. */
-export function evaluateCandidateSnapshotFreshness(item: CandidateSnapshotItem, current: CandidateSnapshotCurrentState | null, expiresAt: string, now: string): CandidateSnapshotFreshnessResult {
+export function evaluateCandidateSnapshotFreshness(item: CandidateSnapshotItem, current: CandidateSnapshotCurrentState | null, expiresAt: string, now: string, currentPriceOverride: number | null = null): CandidateSnapshotFreshnessResult {
   if (Date.parse(now) > Date.parse(expiresAt)) return { state: 'expired', changes: [] }
-  if (!current || !Number.isFinite(current.currentPrice) || current.currentPrice <= 0 || current.ruleBasis.length === 0) return { state: 'unavailable', changes: [] }
+  const currentPrice = currentPriceOverride ?? current?.currentPrice ?? null
+  if (currentPrice === null || !Number.isFinite(currentPrice) || currentPrice <= 0) return { state: 'priceUnavailable', changes: [] }
+  if (!current || current.ruleBasis.length === 0) return { state: 'reviewBasisUnavailable', changes: [] }
   const changes: CandidateSnapshotFreshnessResult['changes'][number][] = []
   const previousRules = ruleValue(item.ruleBasis)
   const currentRules = ruleValue(current.ruleBasis)

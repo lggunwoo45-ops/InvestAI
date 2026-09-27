@@ -58,7 +58,41 @@ describe('CandidateSnapshotPanel', () => {
     render(<CandidateSnapshotPanel snapshot={snapshot} currentStates={new Map()} currentPrices={new Map([['btc', 105], ['eth', 79]])} language="en" now="2026-09-25T01:00:00Z" canRefresh onRefresh={vi.fn()} onOpenAnalysis={vi.fn()} />)
     expect(screen.getByText('105 KRW')).toBeTruthy()
     expect(screen.getByText('79 KRW')).toBeTruthy()
+    expect(screen.getAllByText('Current review basis unavailable')).toHaveLength(2)
+    expect(screen.getAllByText('Current price is available, but the current review basis could not be compared with the snapshot record.')).toHaveLength(2)
+    expect(screen.queryByText('Current state unavailable')).toBeNull()
     expect(renderedSymbols()).toEqual(['BTC', 'ETH'])
+  })
+
+  it('distinguishes current price availability from review-basis availability in both languages', () => {
+    const props = { snapshot, currentStates: new Map<string, CandidateSnapshotCurrentState>(), currentPrices: new Map<string, number>(), now: '2026-09-25T01:00:00Z', canRefresh: true, onRefresh: vi.fn(), onOpenAnalysis: vi.fn() }
+    const { rerender } = render(<CandidateSnapshotPanel {...props} language="en" />)
+    expect(screen.getAllByText('Current price unavailable')).toHaveLength(2)
+    rerender(<CandidateSnapshotPanel {...props} language="ko" />)
+    expect(screen.getAllByText('현재 가격 확인 불가')).toHaveLength(2)
+    rerender(<CandidateSnapshotPanel {...props} currentPrices={new Map([['btc', 105], ['eth', 79]])} language="ko" />)
+    expect(screen.getAllByText('현재 판단 근거 확인 불가')).toHaveLength(2)
+    expect(screen.getAllByText('현재 가격은 표시되지만, 기준 기록과 비교할 현재 판단 근거를 불러오지 못했습니다.')).toHaveLength(2)
+    expect(screen.queryByText('현재 상태 확인 불가')).toBeNull()
+  })
+
+  it('uses a valid catalog reference price when a comparison state carries an invalid price', () => {
+    const invalidStates = states(0)
+    render(<CandidateSnapshotPanel snapshot={snapshot} currentStates={invalidStates} currentPrices={new Map([['btc', 105], ['eth', 79]])} language="en" now="2026-09-25T01:00:00Z" canRefresh onRefresh={vi.fn()} onOpenAnalysis={vi.fn()} />)
+    expect(screen.getByText('105 KRW')).toBeTruthy()
+    expect(screen.queryByText('Current price unavailable')).toBeNull()
+  })
+
+  it('keeps expired, changed, and held status labels precise', () => {
+    const changedStates = states(110)
+    changedStates.set('btc', { ...changedStates.get('btc')!, ruleBasis: [{ key: 'dataQuality', label: 'Data quality', value: 'Limited' }] })
+    const props = { snapshot, language: 'en' as const, canRefresh: true, onRefresh: vi.fn(), onOpenAnalysis: vi.fn() }
+    const { rerender } = render(<CandidateSnapshotPanel {...props} currentStates={states(110)} now="2026-09-25T01:00:00Z" />)
+    expect(screen.getAllByText('Baseline held')).toHaveLength(2)
+    rerender(<CandidateSnapshotPanel {...props} currentStates={changedStates} now="2026-09-25T01:00:00Z" />)
+    expect(screen.getByText('Change check needed')).toBeTruthy()
+    rerender(<CandidateSnapshotPanel {...props} currentStates={changedStates} language="ko" now="2026-09-27T01:00:00Z" />)
+    expect(screen.getAllByText('기준 시점이 오래됨').length).toBeGreaterThan(0)
   })
 
   it('refreshes only after the explicit button is clicked and uses safe Korean labels', () => {
@@ -69,7 +103,13 @@ describe('CandidateSnapshotPanel', () => {
     expect(refresh).toHaveBeenCalledOnce()
     expect(screen.getByRole('region', { name: '후보 기준 기록' }).textContent).toContain('시점의 기준 기록이며, 현재 시점의 투자 권유가 아닙니다. 후보 새로고침 전까지 자동으로 갱신되지 않습니다.')
     expect(screen.getByRole('heading', { name: '관심 후보 목록' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: '후보 새로고침' })).toBeTruthy()
     expect(document.body.textContent).toContain('관찰 시작')
     expect(document.body.textContent).not.toMatch(/추천종목|매수|매도|손절가|익절가|목표가|1차|2차|3차/)
+  })
+
+  it('does not expose direct action or future order-price wording', () => {
+    render(<CandidateSnapshotPanel snapshot={snapshot} currentStates={states(100)} language="en" now="2026-09-25T01:00:00Z" canRefresh onRefresh={vi.fn()} onOpenAnalysis={vi.fn()} />)
+    expect(document.body.textContent?.toLowerCase()).not.toMatch(/buy signal|sell signal|entry price|target price|stop loss|take profit/)
   })
 })
