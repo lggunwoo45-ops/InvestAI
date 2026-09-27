@@ -1,6 +1,7 @@
 import type { DartDisclosure, DartDisclosureCategory, DartDisclosureResult, DartDisclosureStatus, DartSourceMode } from '@/types/dart'
+import { runtimeConfig } from '@/config/runtimeConfig'
 
-const DEFAULT_ENDPOINT = 'http://localhost:8788/api/dart/disclosures'
+const DEFAULT_ENDPOINT = `${runtimeConfig.dartProxyUrl}/api/dart/disclosures`
 const statuses = new Set<DartDisclosureStatus>(['disabled', 'unavailable', 'mapping_unavailable', 'loading', 'ready', 'error'])
 const sourceModes = new Set<DartSourceMode>(['live', 'mock', 'disabled'])
 const categories = new Set<DartDisclosureCategory>(['periodic', 'material', 'correction', 'other'])

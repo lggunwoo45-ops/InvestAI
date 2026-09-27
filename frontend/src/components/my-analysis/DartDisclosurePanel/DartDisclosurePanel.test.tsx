@@ -17,7 +17,16 @@ describe('DartDisclosurePanel', () => {
 
   it('renders a clear no-recent-disclosures state', () => {
     render(<DartDisclosurePanel language="en" result={{ ...state('ready'), sourceMode: 'live' }} />)
-    expect(screen.getByRole('status').textContent).toBe('No recent disclosures were loaded.')
+    expect(screen.getByRole('status').textContent).toContain('No recent disclosures were loaded.')
+    expect(screen.getByRole('status').textContent).toContain('analysis still works')
+  })
+
+  it('explains proxy unavailability, remaining functionality, and the next step', () => {
+    render(<DartDisclosurePanel language="en" result={state('unavailable')} />)
+    const status = screen.getByRole('status').textContent
+    expect(status).toContain('local DART proxy is unavailable')
+    expect(status).toContain('analysis still works')
+    expect(status).toContain('Start or configure the proxy')
   })
 
   it('renders disclosure evidence and Korean labels without unsafe interpretation', () => {
