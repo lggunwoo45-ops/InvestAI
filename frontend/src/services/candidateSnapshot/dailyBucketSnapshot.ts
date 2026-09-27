@@ -26,9 +26,8 @@ interface BuildDailyBucketSnapshotInput {
   items: readonly CandidateSnapshotItem[]
 }
 
-export function buildDailyBucketSnapshot(input: BuildDailyBucketSnapshotInput): DailyBucketSnapshot | null {
+export function buildDailyBucketSnapshot(input: BuildDailyBucketSnapshotInput): DailyBucketSnapshot {
   const items = input.items.slice(0, DAILY_BUCKET_ITEM_LIMIT).map((item, index) => ({ ...item, order: index + 1 }))
-  if (!items.length) return null
   return {
     schemaVersion: DAILY_BUCKET_SNAPSHOT_SCHEMA_VERSION,
     snapshotId: input.snapshotId,

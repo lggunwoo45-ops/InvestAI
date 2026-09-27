@@ -31,4 +31,9 @@ describe('dailyBucketSnapshotStorage', () => {
     const raw = localStorage.getItem(DAILY_BUCKET_SNAPSHOT_STORAGE_KEY) ?? ''
     expect(raw).not.toMatch(/userNote|memo|holdingStatus|averagePrice|targetPrice|stopLoss|takeProfit/)
   })
+
+  it('persists an empty reviewed bucket without inventing fallback candidates', () => {
+    saveDailyBucketSnapshot({ ...snapshot('kospi'), items: [] })
+    expect(loadDailyBucketSnapshots().find((entry) => entry.bucketId === 'kospi')?.items).toEqual([])
+  })
 })

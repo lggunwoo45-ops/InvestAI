@@ -181,6 +181,7 @@ describe('MyAnalysisPage', () => {
     saveDailyBucketSnapshot({ schemaVersion: 1, snapshotId: 'daily-upbit', tradingDate: basis.tradingDateLabel, bucketId: 'upbit', basisTimeLabel: '08:00', generatedAt: basis.currentDailyBasisAt, basisAt: basis.currentDailyBasisAt, expiresAt: basis.nextDailyBasisAt, itemLimit: 5, items: original.items })
     render(<AppProviders><MemoryRouter initialEntries={['/my-analysis?instrumentId=upbit-btc&bucketId=upbit&snapshotId=daily-upbit']}><AppRoutes /></MemoryRouter></AppProviders>)
     expect(await screen.findByText('Opened from today’s interest candidate record.')).toBeTruthy()
+    expect(screen.getByText('Bitcoin market flow is shown as context for crypto candidate review.')).toBeTruthy()
     expect(screen.getByRole('region', { name: 'Analysis baseline locked' }).textContent).toContain('90 KRW')
     expect((screen.getByRole('textbox', { name: 'My note (optional)' }) as HTMLTextAreaElement).value).toBe('')
     expect((screen.getByRole('spinbutton', { name: 'Average price (optional)' }) as HTMLInputElement).value).toBe('')
