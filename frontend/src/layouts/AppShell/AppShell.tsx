@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom'
 
 import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
+import { BetaRouteBanner } from '@/components/demo/BetaRouteBanner/BetaRouteBanner'
 import { useUiStore } from '@/hooks/useUiStore'
 import { classNames } from '@/utils/classNames'
 import { AiCopilot } from '../AiCopilot/AiCopilot'
@@ -19,6 +20,7 @@ export function AppShell() {
         <Header />
         <div className={classNames(styles.body, !isAiCopilotOpen && styles.aiCopilotClosed)}>
           <main className={styles.main}>
+            <BetaRouteBanner />
             <Outlet />
           </main>
           {isAiCopilotOpen && <AiCopilot />}

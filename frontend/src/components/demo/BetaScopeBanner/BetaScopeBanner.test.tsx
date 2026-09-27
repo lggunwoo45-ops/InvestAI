@@ -5,11 +5,11 @@ import { BetaScopeBanner } from './BetaScopeBanner'
 describe('BetaScopeBanner', () => {
   it('renders the English beta boundary', () => {
     render(<BetaScopeBanner language="en" />)
-    expect(screen.getByRole('complementary', { name: '1.5 Beta scope' }).textContent).toContain('Real AI and trading are not connected')
+    expect(screen.getByRole('complementary', { name: 'Market Copilot Beta scope' }).textContent).toContain('does not provide trade instructions, automated trading, or profit guarantees')
   })
   it('renders the Korean beta boundary', () => {
     render(<BetaScopeBanner language="ko" />)
-    expect(screen.getByRole('complementary', { name: '1.5 베타 범위' }).textContent).toContain('주식 후보는 초기 베타')
+    expect(screen.getByRole('complementary', { name: 'Market Copilot 베타 범위' }).textContent).toContain('거래 지시, 자동매매, 수익 보장을 제공하지 않습니다')
   })
 })
 

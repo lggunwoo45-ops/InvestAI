@@ -24,6 +24,7 @@ describe('CandidateSnapshotPanel', () => {
     expect(document.body.textContent).toContain('Reason')
     expect(document.body.textContent).toContain('Next check')
     expect(document.body.textContent).toContain('Approach review range')
+    expect(screen.getAllByText('Decision-support information, not a trade instruction or profit guarantee.')).toHaveLength(1)
     expect(document.body.textContent).not.toMatch(/1st interest|2nd interest|3rd interest/i)
   })
 
@@ -37,7 +38,7 @@ describe('CandidateSnapshotPanel', () => {
     rerender(<CandidateSnapshotPanel {...props} now="2026-09-27T01:00:00Z" />)
     expect(renderedSymbols()).toEqual(['BTC', 'ETH'])
     expect(screen.getByRole('region', { name: 'Candidate snapshot record' }).getAttribute('data-expired')).toBe('true')
-    expect(screen.getByText('Refresh candidates to create a current snapshot record.')).toBeTruthy()
+    expect(screen.getByText('The saved list still works as historical context. Refresh candidates to create a current snapshot record.')).toBeTruthy()
     expect(screen.getByText('This record reflects the earlier basis and should not be read as a current judgment.')).toBeTruthy()
     fireEvent.click(screen.getAllByRole('button', { name: /Open analysis/ })[0])
     expect(openAnalysis).toHaveBeenCalledWith('btc', 'snapshot-1')
@@ -62,7 +63,7 @@ describe('CandidateSnapshotPanel', () => {
     expect(screen.getByText('105 KRW')).toBeTruthy()
     expect(screen.getByText('79 KRW')).toBeTruthy()
     expect(screen.getAllByText('Current review basis unavailable')).toHaveLength(2)
-    expect(screen.getAllByText('Current price is available, but the current review basis could not be compared with the snapshot record.')).toHaveLength(2)
+    expect(screen.getAllByText('Current price is available, but the current review basis could not be compared with the snapshot record. The saved snapshot remains available.')).toHaveLength(2)
     expect(screen.queryByText('Current state unavailable')).toBeNull()
     expect(renderedSymbols()).toEqual(['BTC', 'ETH'])
   })
@@ -75,7 +76,7 @@ describe('CandidateSnapshotPanel', () => {
     expect(screen.getAllByText('현재 가격 확인 불가')).toHaveLength(2)
     rerender(<CandidateSnapshotPanel {...props} currentPrices={new Map([['btc', 105], ['eth', 79]])} language="ko" />)
     expect(screen.getAllByText('현재 판단 근거 확인 불가')).toHaveLength(2)
-    expect(screen.getAllByText('현재 가격은 표시되지만, 기준 기록과 비교할 현재 판단 근거를 불러오지 못했습니다.')).toHaveLength(2)
+    expect(screen.getAllByText('현재 가격은 표시되지만, 기준 기록과 비교할 현재 판단 근거를 불러오지 못했습니다. 저장된 스냅샷은 계속 확인할 수 있습니다.')).toHaveLength(2)
     expect(screen.queryByText('현재 상태 확인 불가')).toBeNull()
   })
 
@@ -114,5 +115,10 @@ describe('CandidateSnapshotPanel', () => {
   it('does not expose direct action or future order-price wording', () => {
     render(<CandidateSnapshotPanel snapshot={snapshot} currentStates={states(100)} language="en" now="2026-09-25T01:00:00Z" canRefresh onRefresh={vi.fn()} onOpenAnalysis={vi.fn()} />)
     expect(document.body.textContent?.toLowerCase()).not.toMatch(/buy signal|sell signal|entry price|target price|stop loss|take profit/)
+  })
+
+  it('explains how to create the first snapshot without exposing technical errors', () => {
+    render(<CandidateSnapshotPanel snapshot={null} currentStates={new Map()} language="en" now="2026-09-25T01:00:00Z" canRefresh onRefresh={vi.fn()} onOpenAnalysis={vi.fn()} />)
+    expect(screen.getByRole('status').textContent).toContain('Use Refresh candidates to create an interest candidate list')
   })
 })

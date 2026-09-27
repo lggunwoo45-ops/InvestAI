@@ -10,6 +10,11 @@ function candidateSnapshot(providerLabel: string, symbol: string, assetType: 'cr
   return { schemaVersion: 1, snapshotId: `snapshot-${instrumentId}`, generatedAt: '2026-09-26T01:00:00.000Z', expiresAt: '2099-09-27T01:00:00.000Z', engineVersion: 'v1', catalogSource: assetType === 'crypto' ? 'live' : 'mock', providerLabel, items: [{ instrumentId, symbol, displayName: symbol, assetType, marketId: assetType === 'crypto' ? 'upbit' : 'mock-stock', quoteCurrency: assetType === 'crypto' ? 'KRW' : 'USD', order: 1, basisPrice: 100, basisChange24hPercent: 1, basisVolume24h: 1000, basisMovementBand: 'Limited', interestStage: 'first', actionStatus: 'watchZone', clarity: 'medium', reasonText: 'Saved snapshot evidence', ruleBasis: [{ key: 'dataQuality', label: 'Data quality', value: 'Recorded' }], dataQuality: assetType === 'crypto' ? 'live' : 'mock', newsState: 'Unavailable', disclosureCount: 0, latestDisclosureAt: null }] }
 }
 
+function openRoute(path: string) {
+  window.history.pushState({}, '', path)
+  window.dispatchEvent(new PopStateEvent('popstate'))
+}
+
 describe('Market Copilot application shell', () => {
   beforeEach(() => {
     window.localStorage.clear()
@@ -249,7 +254,7 @@ describe('Market Copilot application shell', () => {
     expect(screen.getByRole('link', { name: 'Demo' })).toBeTruthy()
     fireEvent.click(screen.getByRole('link', { name: /Open Market Radar/ }))
     expect(await screen.findByRole('heading', { name: 'Market Radar' })).toBeTruthy()
-    expect(screen.getByRole('complementary', { name: '1.5 Beta scope' })).toBeTruthy()
+    expect(screen.getByRole('complementary', { name: 'Market Copilot Beta scope' })).toBeTruthy()
   })
 
   it('keeps one global display switch across Simple and Expert routes without adding primary navigation', async () => {
@@ -318,14 +323,15 @@ describe('Market Copilot application shell', () => {
     fireEvent.click(screen.getByRole('button', { name: 'MOCK' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Open BTC/KRW' }))
     expect(await screen.findByRole('img', { name: /BTC\/KRW 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
-    fireEvent.click(screen.getByRole('link', { name: 'Market Briefing' }))
+    openRoute('/briefing')
     expect(await screen.findByRole('heading', { name: 'Market Briefing' })).toBeTruthy()
     expect(screen.getByRole('complementary', { name: 'AI Copilot' }).textContent).toContain('BTC/KRW')
     expect(screen.getAllByText('Demo briefing / Mock data').length).toBeGreaterThan(0)
     fireEvent.click(await screen.findByRole('link', { name: /Global markets assess a possible rates path/ }))
     expect(await screen.findByRole('heading', { name: 'News Center' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: /Global markets assess a possible rates path/ })).toBeTruthy()
-    fireEvent.click(screen.getByRole('link', { name: 'Market Briefing' }))
+    openRoute('/briefing')
+    expect(await screen.findByRole('heading', { name: 'Market Briefing' })).toBeTruthy()
     fireEvent.click(screen.getAllByRole('button', { name: /Samsung Electronics/ })[0])
     expect(await screen.findByRole('img', { name: /005930 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
     expect(screen.getByRole('complementary', { name: 'AI Copilot' }).textContent).toContain('005930')
@@ -390,7 +396,7 @@ describe('Market Copilot application shell', () => {
     expect(window.localStorage.getItem('market-copilot.newsProviderMode')).toBe('rss-ready')
     expect((screen.getByRole('searchbox', { name: 'Search news' }) as HTMLInputElement).value).toBe('rates')
     expect(screen.getByText(/Global markets assess a possible rates path/)).toBeTruthy()
-    fireEvent.click(screen.getByRole('link', { name: 'Market Briefing' }))
+    openRoute('/briefing')
     expect(await screen.findByRole('heading', { name: 'Market Briefing' })).toBeTruthy()
     expect(await screen.findByText('RSS unavailable')).toBeTruthy()
     expect(screen.getAllByText('Demo briefing / Mock data').length).toBeGreaterThan(0)
@@ -447,8 +453,8 @@ describe('Market Copilot application shell', () => {
     render(<App />)
     fireEvent.click(screen.getByRole('button', { name: 'Local Proxy Experimental' }))
     expect(await screen.findByText('Local proxy unavailable')).toBeTruthy()
-    expect(screen.getByRole('alert').textContent).toContain('Local proxy unavailable. Showing demo news.')
-    expect(screen.getByRole('alert').textContent).toContain('Start the local news proxy server')
+    expect(screen.getByRole('alert').textContent).toContain('optional local news connection is unavailable')
+    expect(screen.getByRole('alert').textContent).toContain('Use Mock mode to continue')
     expect(screen.getByText(/Global markets assess a possible rates path/)).toBeTruthy()
     expect(screen.getAllByText('Demo news / Mock data').length).toBeGreaterThan(0)
     fetchSpy.mockRestore()

@@ -1,15 +1,10 @@
 import type { NavigationItem } from '@/types/navigation'
 
 export const primaryNavigation: readonly NavigationItem[] = [
-  { label: 'Market', path: '/market', icon: 'markets' },
-  { label: 'Market Briefing', path: '/briefing', icon: 'briefing' },
   { label: 'Dashboard', path: '/dashboard', icon: 'dashboard' },
-  { label: 'Discover', path: '/discover', icon: 'discover' },
-  { label: 'Portfolio', path: '/portfolio', icon: 'portfolio' },
-  { label: 'Trading', path: '/trading', icon: 'trading' },
+  { label: 'Market', path: '/market', icon: 'markets' },
   { label: 'AI Analysis', path: '/ai-analysis', icon: 'ai' },
   { label: 'My Analysis', path: '/my-analysis', icon: 'analyze' },
-  { label: 'Strategies', path: '/strategies', icon: 'strategies' },
   { label: 'News', path: '/news', icon: 'news' },
   { label: 'Demo', path: '/demo', icon: 'demo' },
 ]
