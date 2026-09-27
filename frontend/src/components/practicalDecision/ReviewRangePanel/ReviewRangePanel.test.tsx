@@ -9,7 +9,7 @@ describe('ReviewRangePanel', () => {
     const panel = screen.getByRole('region', { name: 'Review ranges' })
     expect(panel.textContent).toContain('Approach review range')
     expect(panel.textContent).toContain('98.8 ~ 100.6 USD')
-    expect(panel.textContent).toContain('not order prices or profit guarantees')
+    expect(panel.textContent).toContain('Review ranges are decision-support areas, not order prices.')
     expect(panel.textContent).not.toMatch(/stop loss|take profit|target price/i)
   })
 

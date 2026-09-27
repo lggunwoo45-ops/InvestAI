@@ -1,13 +1,12 @@
 # Market Copilot frontend
 
-Market Copilot is the visible product name; the repository and internal compatibility identifiers remain InvestAI.
+**Market Copilot Beta** is the visible product label; the repository and internal compatibility identifiers remain InvestAI. `Beta Preview` identifies the current pre-release build in the application shell.
 
 Production-oriented desktop workspace built with React 19, TypeScript, and
-Vite. Sprint 7.4 keeps the active chart visible while browsing other markets,
-adds a Korean/English UI foundation, and retains the smart dashboard,
-multi-watchlists, news, TradingView charts, and public real-time market data. AI,
-trading, backend, authentication, and database capabilities remain deliberately
-unimplemented.
+Vite. The current beta combines market exploration, daily market-bucket
+candidate records, My Analysis, news, watchlists, TradingView charts, and public
+real-time crypto data. AI, trading, backend, authentication, payment, and
+database capabilities remain deliberately unimplemented.
 
 ## Commands
 
@@ -37,8 +36,9 @@ explicit disabled state. Instruments without a verified corporation-code
 mapping return `mapping_unavailable`. Never commit a populated `.env` file or
 print the credential in logs.
 
-`npm run build:windows-demo` creates `InvestAI_v0.6.2_demo.exe` and
-`InvestAI_v0.6.2_portable.zip` in `frontend/release`. The launcher serves the production bundle on
+`npm run build:windows-demo` creates the compatibility-named Windows artifacts
+documented by the packaging script in `frontend/release`. Those filenames are
+internal packaging identifiers, not the user-facing beta label. The launcher serves the production bundle on
 a private loopback port and opens it in the default browser; LIVE mode requires
 internet access and MOCK mode remains available offline.
 

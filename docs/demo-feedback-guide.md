@@ -1,4 +1,4 @@
-# InvestAI v0.6.2 demo feedback guide
+# Market Copilot Beta Preview feedback guide
 
 Thank you for testing InvestAI. This build is an investment-workspace preview, not investment advice, and it cannot place trades. Please include your Windows version, browser, and screen resolution with your answers.
 

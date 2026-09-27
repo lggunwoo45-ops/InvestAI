@@ -19,6 +19,22 @@ describe('CandidateSnapshotPanel', () => {
     expect(panel.textContent).not.toMatch(/watch score|raw score/i)
   })
 
+  it('labels previous-day and expired daily records without presenting them as today', () => {
+    const now = new Date(2026, 8, 25, 10).toISOString()
+    const previous = { schemaVersion: 1 as const, snapshotId: 'daily-upbit-previous', tradingDate: '2026-09-24', bucketId: 'upbit' as const, basisTimeLabel: '08:00' as const, generatedAt: new Date(2026, 8, 24, 9).toISOString(), basisAt: new Date(2026, 8, 24, 8).toISOString(), expiresAt: new Date(2026, 8, 26, 8).toISOString(), itemLimit: 5 as const, items: snapshot.items }
+    const props = { currentStates: states(100), currentPrices: new Map<string, number>(), language: 'en' as const, now, canRefresh: true, onRefresh: vi.fn(), onOpenAnalysis: vi.fn(), variant: 'daily' as const }
+    const { rerender } = render(<CandidateSnapshotPanel {...props} snapshot={previous} />)
+    const panel = screen.getByRole('region', { name: 'Previous daily snapshot record' })
+    expect(panel.textContent).toContain('This record is not from today. Current data may differ.')
+    expect(panel.textContent).not.toContain('This list is today’s 08:00 snapshot record.')
+    expect(within(panel).getByRole('heading', { name: 'Interest candidates from this record' })).toBeTruthy()
+
+    rerender(<CandidateSnapshotPanel {...props} snapshot={{ ...previous, expiresAt: new Date(2026, 8, 25, 9).toISOString() }} />)
+    const expiredNotice = panel.querySelector('aside[role="status"]') as HTMLElement
+    expect(within(expiredNotice).getByText('Snapshot expired')).toBeTruthy()
+    expect(within(expiredNotice).getByText('Use Refresh today’s candidates to create a current snapshot record.')).toBeTruthy()
+  })
+
   it('explains the before-08:00 empty state', () => {
     render(<CandidateSnapshotPanel snapshot={null} currentStates={new Map()} language="en" now="2026-09-25T00:00:00Z" canRefresh={false} onRefresh={() => undefined} onOpenAnalysis={() => undefined} variant="daily" beforeTodayBasis />)
     expect(screen.getByRole('status').textContent).toContain('not ready yet')
@@ -39,6 +55,7 @@ describe('CandidateSnapshotPanel', () => {
     expect(document.body.textContent).toContain('Reason')
     expect(document.body.textContent).toContain('Next check')
     expect(document.body.textContent).toContain('Approach review range')
+    expect(screen.getAllByText('Review ranges are decision-support areas, not order prices.')).toHaveLength(2)
     expect(screen.getAllByText('Decision-support information, not a trade instruction or profit guarantee.')).toHaveLength(1)
     expect(document.body.textContent).not.toMatch(/1st interest|2nd interest|3rd interest/i)
   })
@@ -124,6 +141,7 @@ describe('CandidateSnapshotPanel', () => {
     expect(screen.getByRole('heading', { name: '관심 후보 목록' })).toBeTruthy()
     expect(screen.getByRole('button', { name: '후보 새로고침' })).toBeTruthy()
     expect(document.body.textContent).toContain('지금 판단: 관심 등록')
+    expect(screen.getAllByText('검토 범위는 주문가가 아니라 판단 보조용입니다.')).toHaveLength(2)
     expect(document.body.textContent).not.toMatch(/추천종목|매수가|손절가|익절가|목표가|지금 사세요|팔아야 합니다|1차|2차|3차/)
   })
 

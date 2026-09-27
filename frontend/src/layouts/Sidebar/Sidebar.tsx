@@ -44,7 +44,7 @@ export function Sidebar() {
           <div className={styles.environment}>
             <span className={styles.environmentDot} />
             <span>{text.localEnvironment}</span>
-            <span className={styles.version}>v0.6.2</span>
+            <span className={styles.version}>Beta Preview</span>
           </div>
         )}
       </div>

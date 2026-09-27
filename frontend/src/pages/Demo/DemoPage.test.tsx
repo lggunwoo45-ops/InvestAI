@@ -13,7 +13,7 @@ const renderPage = (language?: 'ko', mode: 'simple' | 'expert' = 'expert') => {
 describe('DemoPage', () => {
   it('renders readiness, guided demo content, and correct quick-link hrefs', () => {
     renderPage()
-    expect(screen.getByRole('heading', { name: 'Market Copilot 1.5 Beta' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Market Copilot Beta' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Getting started' })).toBeTruthy()
     expect(screen.getByRole('link', { name: /Go to AI Analysis/ }).getAttribute('href')).toBe('/ai-analysis')
     expect(screen.getByRole('link', { name: /My Analysis/ }).getAttribute('href')).toBe('/my-analysis')
@@ -54,7 +54,7 @@ describe('DemoPage', () => {
   })
   it('contains unsafe claims only as explicit presenter warnings', () => {
     renderPage()
-    const hero = screen.getByRole('heading', { name: 'Market Copilot 1.5 Beta' }).closest('header')
+    const hero = screen.getByRole('heading', { name: 'Market Copilot Beta' }).closest('header')
     const warning = screen.getByRole('heading', { name: 'What not to say' }).closest('section')
     expect(hero?.textContent?.toLowerCase()).not.toMatch(/buy now|sell now|strong buy|guaranteed profit|completed trading platform|ai stock picker|auto-trading system/)
     expect(warning?.querySelector('[data-guidance="avoid"]')?.textContent?.toLowerCase()).toMatch(/guaranteed profit system/)
