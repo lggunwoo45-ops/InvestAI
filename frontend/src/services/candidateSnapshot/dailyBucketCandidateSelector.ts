@@ -15,9 +15,16 @@ function belongsToBucket(instrument: MarketInstrument, bucketId: MarketBucketId)
   return instrument.marketId === 'us-stock'
 }
 
+function isBitcoinAnchor(instrument: MarketInstrument, bucketId: MarketBucketId) {
+  if (bucketId !== 'upbit' && bucketId !== 'binance') return false
+  const symbols = [instrument.symbol, instrument.displaySymbol, instrument.providerSymbol].filter(Boolean).map((value) => String(value).toUpperCase().replace(/[^A-Z0-9]/g, ''))
+  const quote = bucketId === 'upbit' ? 'KRW' : 'USDT'
+  return instrument.quoteCurrency.toUpperCase() === quote && symbols.some((symbol) => symbol === `BTC${quote}` || symbol === `${quote}BTC`)
+}
+
 /** Reuses the existing candidate order and only applies bucket/data-validity boundaries. */
 export function selectDailyBucketCandidates(bucketId: MarketBucketId, candidates: readonly WatchCandidate[], instruments: readonly MarketInstrument[], limit = 5): readonly DailyBucketCandidateSelection[] {
-  const byId = new Map(instruments.filter((instrument) => belongsToBucket(instrument, bucketId)).map((instrument) => [instrument.id, instrument]))
+  const byId = new Map(instruments.filter((instrument) => belongsToBucket(instrument, bucketId) && !isBitcoinAnchor(instrument, bucketId)).map((instrument) => [instrument.id, instrument]))
   return candidates.flatMap((candidate) => {
     const instrument = byId.get(candidate.instrumentId)
     if (!instrument || !Number.isFinite(instrument.lastPrice) || instrument.lastPrice <= 0) return []

@@ -22,7 +22,7 @@ function item(value: unknown): value is CandidateSnapshotItem {
 
 export function isDailyBucketSnapshot(value: unknown): value is DailyBucketSnapshot {
   if (!record(value)) return false
-  return value.schemaVersion === DAILY_BUCKET_SNAPSHOT_SCHEMA_VERSION && typeof value.snapshotId === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(String(value.tradingDate)) && bucketIds.has(value.bucketId as MarketBucketId) && value.basisTimeLabel === '08:00' && date(value.generatedAt) && date(value.basisAt) && date(value.expiresAt) && value.itemLimit === DAILY_BUCKET_ITEM_LIMIT && Array.isArray(value.items) && value.items.length > 0 && value.items.length <= DAILY_BUCKET_ITEM_LIMIT && value.items.every(item)
+  return value.schemaVersion === DAILY_BUCKET_SNAPSHOT_SCHEMA_VERSION && typeof value.snapshotId === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(String(value.tradingDate)) && bucketIds.has(value.bucketId as MarketBucketId) && value.basisTimeLabel === '08:00' && date(value.generatedAt) && date(value.basisAt) && date(value.expiresAt) && value.itemLimit === DAILY_BUCKET_ITEM_LIMIT && Array.isArray(value.items) && value.items.length <= DAILY_BUCKET_ITEM_LIMIT && value.items.every(item)
 }
 
 type ReadStorage = Pick<Storage, 'getItem' | 'removeItem'>

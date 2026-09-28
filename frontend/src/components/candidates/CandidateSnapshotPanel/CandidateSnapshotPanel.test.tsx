@@ -13,7 +13,7 @@ describe('CandidateSnapshotPanel', () => {
     const daily = { schemaVersion: 1 as const, snapshotId: 'daily-upbit', tradingDate: '2026-09-25', bucketId: 'upbit' as const, basisTimeLabel: '08:00' as const, generatedAt: snapshot.generatedAt, basisAt: snapshot.generatedAt, expiresAt: snapshot.expiresAt, itemLimit: 5 as const, items: snapshot.items }
     render(<CandidateSnapshotPanel snapshot={daily} currentStates={states(100)} currentPrices={new Map()} language="en" now="2026-09-25T01:00:00Z" canRefresh onRefresh={() => undefined} onOpenAnalysis={() => undefined} variant="daily" />)
     const panel = screen.getByRole('region', { name: 'Today’s 08:00 snapshot record' })
-    expect(within(panel).getByRole('heading', { name: 'Today’s 5 interest candidates' })).toBeTruthy()
+    expect(within(panel).getByRole('heading', { name: 'Today’s interest candidates' })).toBeTruthy()
     expect(panel.querySelectorAll('ol')).toHaveLength(1)
     expect(panel.textContent).toContain('does not change automatically until refreshed')
     expect(panel.textContent).not.toMatch(/watch score|raw score/i)
