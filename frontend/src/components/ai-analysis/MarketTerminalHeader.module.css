@@ -1,0 +1,13 @@
+.header { display: grid; grid-template-columns: minmax(260px, 1fr) minmax(430px, 1.2fr); gap: 10px 24px; padding: 14px 26px 11px; border-bottom: 1px solid #263740; background: #091117; }
+.identity span { color: #749d96; font: 700 9px ui-monospace, monospace; letter-spacing: .15em; }
+.identity h1 { margin: 5px 0 2px; color: #e0e8e8; font-size: 22px; letter-spacing: -.03em; }
+.identity p { margin: 0; color: #758991; font: 9px ui-monospace, monospace; }
+.header dl { display: grid; grid-auto-columns: minmax(76px, 1fr); grid-auto-flow: column; margin: 0; border: 1px solid #263a43; }
+.header dl > div { display: grid; align-content: center; gap: 4px; min-width: 0; padding: 7px 9px; border-left: 1px solid #263a43; }
+.header dl > div:first-child { border-left: 0; }
+.header dt { color: var(--color-text-muted); font: 9px ui-monospace, monospace; letter-spacing: .08em; text-transform: uppercase; }
+.header dd { overflow: hidden; margin: 0; color: #b9c9c7; font: 650 10px ui-monospace, monospace; text-overflow: ellipsis; white-space: nowrap; }
+.header dd[data-state='unavailable'] { color: #a99b82; }
+.header > small { grid-column: 1 / -1; color: var(--color-text-muted); font-size: 9px; }
+@container (max-width: 850px) { .header { grid-template-columns: 1fr; }.header dl { grid-auto-flow: row; grid-template-columns: repeat(auto-fit, minmax(95px, 1fr)); } }
+@media (max-width: 760px) { .header { padding-inline: 15px; } }

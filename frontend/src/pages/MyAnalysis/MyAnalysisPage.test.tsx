@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { AppRoutes } from '@/app/AppRoutes'
 import { AppProviders } from '@/app/providers/AppProviders'
@@ -25,6 +25,8 @@ vi.mock('@/hooks/useMarketCatalog', () => ({ useMarketCatalog: (venue: MarketVen
 vi.mock('@/hooks/useDartDisclosures', () => ({ useDartDisclosures: (stockCode: string | null) => stockCode ? { status: 'mapping_unavailable', sourceMode: 'disabled', message: 'Mapping unavailable.', disclosures: [], fetchedAt: null } : { status: 'unavailable', sourceMode: 'disabled', message: 'Korean stocks only.', disclosures: [], fetchedAt: null } }))
 
 describe('MyAnalysisPage', () => {
+  afterEach(() => vi.useRealTimers())
+
   beforeEach(() => { window.localStorage.clear(); catalogMockState.failedVenue = null })
 
   it('starts empty, selects an instrument, and switches the global detail level', async () => {
@@ -176,6 +178,8 @@ describe('MyAnalysisPage', () => {
   })
 
   it('opens from today’s daily bucket record without mixing personal context', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-10-03T03:00:00Z'))
     const basis = getDailyBasisTime(new Date())
     const original = candidateSnapshot()
     saveDailyBucketSnapshot({ schemaVersion: 1, snapshotId: 'daily-upbit', tradingDate: basis.tradingDateLabel, bucketId: 'upbit', basisTimeLabel: '08:00', generatedAt: basis.currentDailyBasisAt, basisAt: basis.currentDailyBasisAt, expiresAt: basis.nextDailyBasisAt, itemLimit: 5, items: original.items })
