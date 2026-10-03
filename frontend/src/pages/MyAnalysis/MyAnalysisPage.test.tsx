@@ -11,6 +11,7 @@ import type { CandidateSnapshot } from '@/types/candidateSnapshot'
 import type { MarketInstrument, MarketVenue } from '@/types/market'
 
 const catalogMockState = vi.hoisted(() => ({ failedVenue: null as string | null }))
+const technicalMockState = vi.hoisted(() => ({ isLoading: false }))
 
 const instruments: MarketInstrument[] = [
   { id: 'upbit-btc', marketId: 'upbit', marketType: 'upbit-krw', providerType: 'upbit', symbol: 'BTC/KRW', name: 'Bitcoin', koreanName: '비트코인', englishName: 'Bitcoin', quoteCurrency: 'KRW', lastPrice: 100, change24hPercent: 2, volume24h: 1000 },
@@ -23,11 +24,23 @@ const candidateSnapshot = (expiresAt = '2099-09-26T00:00:00Z'): CandidateSnapsho
 
 vi.mock('@/hooks/useMarketCatalog', () => ({ useMarketCatalog: (venue: MarketVenue) => ({ catalog: catalogMockState.failedVenue === venue ? null : { venue, source: venue === 'upbit-krw' ? 'live' : 'mock', fetchedAt: 0, instruments: instruments.filter((item) => item.marketType === venue) }, loading: false, error: catalogMockState.failedVenue === venue ? 'Catalog failed' : null, loadingMilliseconds: 0 }) }))
 vi.mock('@/hooks/useDartDisclosures', () => ({ useDartDisclosures: (stockCode: string | null) => stockCode ? { status: 'mapping_unavailable', sourceMode: 'disabled', message: 'Mapping unavailable.', disclosures: [], fetchedAt: null } : { status: 'unavailable', sourceMode: 'disabled', message: 'Korean stocks only.', disclosures: [], fetchedAt: null } }))
+vi.mock('@/hooks/useTechnicalLevelData', () => ({
+  useTechnicalLevelData: (instrument: MarketInstrument | null) => ({
+    candles: instrument ? Array.from({ length: 60 }, (_, index) => {
+      const close = instrument.lastPrice * (0.96 + Math.sin(index / 3) * 0.02)
+      return { timestamp: 1_700_000_000_000 + index * 86_400_000, open: close * 0.998, high: close * 1.03, low: close * 0.97, close, volume: 100 + index }
+    }) : [],
+    currentPrice: instrument?.lastPrice ?? null,
+    dataQuality: instrument ? instrument.providerType?.startsWith('mock') ? 'mock' : 'live' : 'unavailable',
+    connectionStatus: instrument ? instrument.providerType?.startsWith('mock') ? 'mock' : 'live' : 'idle',
+    isLoading: technicalMockState.isLoading,
+  }),
+}))
 
 describe('MyAnalysisPage', () => {
   afterEach(() => vi.useRealTimers())
 
-  beforeEach(() => { window.localStorage.clear(); catalogMockState.failedVenue = null })
+  beforeEach(() => { window.localStorage.clear(); catalogMockState.failedVenue = null; technicalMockState.isLoading = false })
 
   it('starts empty, selects an instrument, and switches the global detail level', async () => {
     render(<AppProviders><MemoryRouter initialEntries={['/my-analysis']}><AppRoutes /></MemoryRouter></AppProviders>)
@@ -64,6 +77,10 @@ describe('MyAnalysisPage', () => {
     expect(screen.queryByRole('heading', { name: 'Review zones' })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Position review' }))
     expect(screen.getByRole('region', { name: 'Position review' }).textContent).toContain('Enter your basis price')
+    const simpleTechnical = screen.getByRole('region', { name: 'Chart structure analysis' })
+    expect(simpleTechnical.getAttribute('data-display-mode')).toBe('simple')
+    expect(simpleTechnical.textContent).toContain('Compact review')
+    expect(screen.queryByRole('region', { name: 'Chart overlays' })).toBeNull()
     fireEvent.change(screen.getByRole('textbox', { name: 'My note (optional)' }), { target: { value: 'Personal review note' } })
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Average price (optional)' }), { target: { value: '68000' } })
     expect(screen.getByRole('region', { name: 'Position review' }).textContent).toContain('68,000 KRW')
@@ -75,6 +92,9 @@ describe('MyAnalysisPage', () => {
     expect(screen.getByRole('region', { name: 'Position review' })).toBeTruthy()
     expect(screen.getByRole('region', { name: 'Recent DART disclosures' })).toBeTruthy()
     expect(screen.getByRole('region', { name: 'Disclosure review' })).toBeTruthy()
+    expect(screen.getByRole('region', { name: 'Chart structure analysis' }).getAttribute('data-display-mode')).toBe('expert')
+    expect(screen.getByRole('region', { name: 'Chart structure analysis' }).textContent).toContain('Full review')
+    expect(screen.getByRole('region', { name: 'Chart overlays' }).textContent).toContain('Full legend')
     expect(screen.getByText('Candidate evidence')).toBeTruthy()
     expect(screen.getByText('News state')).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Evidence board' })).toBeTruthy()
@@ -120,17 +140,25 @@ describe('MyAnalysisPage', () => {
     const report = screen.getByRole('region', { name: 'Review summary' })
     const practical = screen.getByRole('region', { name: 'Decision-support information' })
     const ranges = screen.getByRole('region', { name: 'Review ranges' })
+    const technical = screen.getByRole('region', { name: 'Chart structure analysis' })
+    const overlayLegend = screen.getByRole('region', { name: 'Chart overlays' })
     const reviewMode = screen.getByRole('region', { name: 'Review mode' })
     expect(practical.textContent).toContain('Current read: Approach review possible')
     expect(ranges.textContent).toContain('Approach review range')
     expect(report.compareDocumentPosition(practical) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(practical.compareDocumentPosition(ranges) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(ranges.compareDocumentPosition(reviewMode) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(ranges.compareDocumentPosition(technical) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(technical.compareDocumentPosition(overlayLegend) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(overlayLegend.compareDocumentPosition(reviewMode) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Average price (optional)' }), { target: { value: '90' } })
     expect(screen.getByRole('region', { name: 'Decision-support information' }).textContent).toContain('Current read: Re-check holding basis')
     const plainText = (screen.getByRole('textbox', { name: 'Plain-text summary' }) as HTMLTextAreaElement).value
     expect(plainText).toContain('Current read: Re-check holding basis')
     expect(plainText).toContain('Approach review range:')
+    expect(plainText).toContain('Chart structure:')
+    expect(plainText).toContain('First support:')
+    expect(plainText).toContain('First resistance:')
+    expect(plainText).toContain('Technical levels are historical, rule-based reference areas. They are not order prices, trade instructions, or forecasts.')
     const readiness = screen.getByRole('region', { name: 'Action readiness' })
     expect(readiness.textContent).toContain('Action status is generated from rule-based evidence conditions. This is not a trade instruction.')
     expect(readiness.textContent).toContain('This describes how clearly the rule-based status is classified, not expected return.')
@@ -158,6 +186,18 @@ describe('MyAnalysisPage', () => {
     expect(screen.getByText('검토 목적은 체크리스트 문구만 바꿉니다.')).toBeTruthy()
     expect(screen.getByText('검토 목적은 체크리스트 문구만 바꾸며 개인 투자 조언을 생성하지 않습니다.')).toBeTruthy()
     expect(koreanReadiness.textContent).not.toMatch(/매수가|손절가|익절가|목표가|매수 추천/)
+  })
+
+  it('keeps the copyable report neutral while candle context is still loading', async () => {
+    technicalMockState.isLoading = true
+    render(<AppProviders><MemoryRouter initialEntries={['/my-analysis?instrumentId=upbit-btc']}><AppRoutes /></MemoryRouter></AppProviders>)
+
+    expect(await screen.findByRole('heading', { name: 'BTC/KRW' })).toBeTruthy()
+    const technical = screen.getByRole('region', { name: 'Chart structure analysis' })
+    expect(within(technical).getByRole('status').textContent).toContain('Calculating chart structure')
+    const plainText = (screen.getByRole('textbox', { name: 'Plain-text summary' }) as HTMLTextAreaElement).value
+    expect(plainText).not.toContain('Chart structure:')
+    expect(plainText).not.toContain('Technical references are unavailable')
   })
 
   it('resolves a Binance Market link through the existing catalog', async () => {

@@ -13,11 +13,14 @@ import { PositionReviewPanel } from '@/components/my-analysis/PositionReviewPane
 import { ReviewModeSelector, type MyAnalysisReviewMode } from '@/components/my-analysis/ReviewModeSelector/ReviewModeSelector'
 import { PracticalDecisionCard } from '@/components/practicalDecision/PracticalDecisionCard/PracticalDecisionCard'
 import { ReviewRangePanel } from '@/components/practicalDecision/ReviewRangePanel/ReviewRangePanel'
+import { ChartOverlayLegend } from '@/components/technicalLevels/ChartOverlayLegend/ChartOverlayLegend'
+import { TechnicalLevelsPanel } from '@/components/technicalLevels/TechnicalLevelsPanel/TechnicalLevelsPanel'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { useDartDisclosures } from '@/hooks/useDartDisclosures'
 import { useMarketCatalog } from '@/hooks/useMarketCatalog'
 import { useMarketWorkspace } from '@/hooks/useMarketWorkspace'
 import { useNewsProviderMode } from '@/hooks/useNewsProviderMode'
+import { useTechnicalLevelData } from '@/hooks/useTechnicalLevelData'
 import { useLanguage } from '@/i18n/useLanguage'
 import { buildCryptoWatchCandidates } from '@/services/ai/cryptoWatchCandidateEngine'
 import { buildStockWatchCandidates } from '@/services/ai/stockWatchCandidateEngine'
@@ -29,6 +32,7 @@ import { findDailyBucketSnapshot } from '@/services/candidateSnapshot/dailyBucke
 import { buildMyInstrumentAnalysis } from '@/services/myAnalysis/myAnalysisEngine'
 import { buildPracticalDecision } from '@/services/practicalDecision/practicalDecisionModel'
 import { buildReviewRanges } from '@/services/practicalDecision/reviewRangeModel'
+import { buildTechnicalLevelAnalysis } from '@/services/technicalLevels/technicalLevelEngine'
 import type { MarketGroup, MarketInstrument } from '@/types/market'
 import { marketBucketIds, type MarketBucketId } from '@/types/marketBucket'
 import type { AnalysisIntent } from '@/types/myAnalysis'
@@ -111,6 +115,7 @@ export function MyAnalysisPage() {
   const catalogErrors = states.filter((state) => state.error !== null)
   const loadedCatalogCount = states.filter((state) => state.catalog !== null).length
   const selected = instruments.find((instrument) => instrument.id === selectedId) ?? null
+  const technicalData = useTechnicalLevelData(selected)
   const dartResult = useDartDisclosures(selected?.marketId === 'korea-stock' ? selected.symbol : null)
   const dartReview = useMemo(() => buildDartDisclosureReview(dartResult, language), [dartResult, language])
   const normalized = query.trim().toLocaleLowerCase()
@@ -144,6 +149,13 @@ export function MyAnalysisPage() {
   const practicalDecision = analysis ? buildPracticalDecision({ language, horizon: practicalHorizon, dataQuality: analysis.dataQuality, actionStatus: analysis.actionReadiness.status, interestStage, hasAveragePrice: validAveragePrice !== null, source: 'analysis', reason: analysis.actionReadiness.whyThisStatus, nextCheck: analysis.reviewChecklist[0] ?? analysis.actionReadiness.nextChecks[0] }) : null
   const reviewRanges = analysis ? buildReviewRanges({ language, horizon: practicalHorizon, dataQuality: analysis.dataQuality, anchorPrice: validAveragePrice ?? currentPrice, source: 'current' }) : []
   const candidateReviewScore = analysis && practicalDecision ? buildCandidateReviewScore({ language, dataQuality: analysis.dataQuality, practicalDecisionState: practicalDecision.state, clarity: analysis.actionReadiness.strength, hasReviewRanges: reviewRanges.length > 0, freshness: snapshotExpired ? 'expired' : null, evidenceCount: analysis.evidence.length, missingEvidenceCount: analysis.missingEvidence.length, hasNewsEvidence: analysis.evidence.some((entry) => entry.type === 'news' || entry.type === 'market'), hasDisclosureEvidence: dartReview.counts.total > 0 }) : null
+  const technicalAnalysis = useMemo(() => {
+    if (!selected) return null
+    const technicalInstrument = technicalData.currentPrice !== null && Number.isFinite(technicalData.currentPrice) && technicalData.currentPrice > 0
+      ? { ...selected, lastPrice: technicalData.currentPrice }
+      : selected
+    return buildTechnicalLevelAnalysis({ instrument: technicalInstrument, candles: technicalData.candles, language, dataQuality: technicalData.dataQuality })
+  }, [language, selected, technicalData.candles, technicalData.currentPrice, technicalData.dataQuality])
 
   const choose = (instrument: MarketInstrument) => {
     setSelectedId(instrument.id)
@@ -197,9 +209,11 @@ export function MyAnalysisPage() {
         <div className={styles.quote}><small>{t.availableData}</small><strong>{Number.isFinite(selected.lastPrice) ? formatMarketPrice(selected) : t.qualities.unavailable}</strong>{Number.isFinite(selected.change24hPercent) && <span data-direction={selected.change24hPercent >= 0 ? 'positive' : 'negative'}>{formatMarketChange(selected.change24hPercent)}</span>}</div>
         <div className={styles.quality}><small>{t.quality}</small><b data-quality={analysis.dataQuality}>{analysis.dataQualityLabel}</b><small>{t.qualityHelp[analysis.dataQuality]}</small></div>
       </section>
-      <MyAnalysisReportSummary analysis={analysis} language={language} mode={displayMode} symbol={selected.displaySymbol ?? selected.symbol} name={selected.name} reviewMode={reviewMode} basisPrice={validAveragePrice} currentPrice={currentPrice} quoteCurrency={selected.quoteCurrency} disclosureReview={selected.marketId === 'korea-stock' ? dartReview : null} practicalDecision={practicalDecision ?? undefined} reviewRanges={reviewRanges} candidateReviewScore={candidateReviewScore ?? undefined} />
+      <MyAnalysisReportSummary analysis={analysis} language={language} mode={displayMode} symbol={selected.displaySymbol ?? selected.symbol} name={selected.name} reviewMode={reviewMode} basisPrice={validAveragePrice} currentPrice={currentPrice} quoteCurrency={selected.quoteCurrency} disclosureReview={selected.marketId === 'korea-stock' ? dartReview : null} practicalDecision={practicalDecision ?? undefined} reviewRanges={reviewRanges} candidateReviewScore={candidateReviewScore ?? undefined} technicalAnalysis={technicalData.isLoading ? undefined : technicalAnalysis ?? undefined} />
       {practicalDecision && <PracticalDecisionCard result={practicalDecision} language={language} />}
       <ReviewRangePanel ranges={reviewRanges} language={language} quoteCurrency={selected.quoteCurrency} />
+      {technicalAnalysis && <TechnicalLevelsPanel levelSet={technicalAnalysis.levelSet} movingAverageContext={technicalAnalysis.movingAverageContext} displayMode={displayMode} language={language} isLoading={technicalData.isLoading} />}
+      {displayMode === 'expert' && technicalAnalysis && <ChartOverlayLegend status={technicalAnalysis.levelSet.status} lines={technicalAnalysis.overlayLines} displayMode={displayMode} language={language} isLoading={technicalData.isLoading} />}
       <ReviewModeSelector language={language} mode={reviewMode} onChange={setReviewMode} />
       <AnalysisBaselinePanel key={`${selected.id}:${snapshotItem?.instrumentId ?? 'current'}`} actionStatus={analysis.actionReadiness.status} currentPrice={currentPrice} instrumentId={selected.id} interestStage={interestStage} language={language} quoteCurrency={selected.quoteCurrency} initialSnapshot={snapshotItem ? { actionStatus: snapshotItem.actionStatus, capturedAt: snapshotRecord?.generatedAt ?? openedAt, interestStage: snapshotItem.interestStage, price: snapshotItem.basisPrice } : null} />
       {displayMode === 'simple' ? reviewMode === 'interest'

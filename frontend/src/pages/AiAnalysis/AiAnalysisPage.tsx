@@ -16,6 +16,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { useMarketCatalog } from '@/hooks/useMarketCatalog'
 import { useMarketWorkspace } from '@/hooks/useMarketWorkspace'
 import { useNewsProviderMode } from '@/hooks/useNewsProviderMode'
+import { useTechnicalLevelData } from '@/hooks/useTechnicalLevelData'
 import { useLanguage } from '@/i18n/useLanguage'
 import { buildCryptoWatchCandidates } from '@/services/ai/cryptoWatchCandidateEngine'
 import { buildStockWatchCandidates } from '@/services/ai/stockWatchCandidateEngine'
@@ -31,6 +32,7 @@ import { buildMyInstrumentAnalysis } from '@/services/myAnalysis/myAnalysisEngin
 import { buildBitcoinMarketAnchor } from '@/services/marketAnchor/bitcoinMarketAnchor'
 import { buildPracticalDecision } from '@/services/practicalDecision/practicalDecisionModel'
 import { buildReviewRanges } from '@/services/practicalDecision/reviewRangeModel'
+import { buildTechnicalLevelAnalysis } from '@/services/technicalLevels/technicalLevelEngine'
 import type { CandidateSnapshotBuildSource } from '@/types/candidateSnapshot'
 import type { MarketCatalog, MarketInstrument } from '@/types/market'
 import { getMarketBuckets, type MarketBucketId } from '@/types/marketBucket'
@@ -123,6 +125,20 @@ export function AiAnalysisPage() {
   const terminalItems = useMemo(() => displaySnapshot ? buildCandidateTerminalItems({ items: displaySnapshot.items, expiresAt: displaySnapshot.expiresAt, currentStates, currentPrices, horizon, language, now: clock }) : [], [clock, currentPrices, currentStates, displaySnapshot, horizon, language])
   const selectedInstrumentId = terminalItems.some((entry) => entry.item.instrumentId === selectedByBucket[bucketId]) ? selectedByBucket[bucketId] ?? null : terminalItems[0]?.item.instrumentId ?? null
   const selectedTerminalItem = terminalItems.find((entry) => entry.item.instrumentId === selectedInstrumentId) ?? null
+  const selectedInstrument = activeInstruments.find((instrument) => instrument.id === selectedInstrumentId) ?? null
+  const technicalLevelData = useTechnicalLevelData(selectedInstrument)
+  const technicalAnalysis = useMemo(() => {
+    if (!selectedInstrument) return null
+    const instrument = technicalLevelData.currentPrice === null
+      ? selectedInstrument
+      : { ...selectedInstrument, lastPrice: technicalLevelData.currentPrice }
+    return buildTechnicalLevelAnalysis({
+      instrument,
+      candles: technicalLevelData.candles,
+      language,
+      dataQuality: technicalLevelData.dataQuality,
+    })
+  }, [language, selectedInstrument, technicalLevelData.candles, technicalLevelData.currentPrice, technicalLevelData.dataQuality])
   const displayedCount = terminalItems.length
   const excludedCount = activeSnapshot ? activeSnapshotQuality?.excluded.length ?? 0 : qualityGate.excluded.length
   const exclusionReasons = activeSnapshot ? activeSnapshotQuality?.reasonCounts ?? {} : qualityGate.reasonCounts
@@ -155,7 +171,7 @@ export function AiAnalysisPage() {
       context={<MarketContextStrip bucketId={bucketId} bucketLabel={bucketLabel} bitcoinAnchor={bitcoinAnchor} displayedCount={displayedCount} excludedCount={excludedCount} reasonCounts={exclusionReasons} dataState={activeCatalogSource} newsState={newsResult?.state ?? null} language={language} />}
       advanced={displayMode === 'expert' ? <details className={styles.advanced}><summary>{pageCopy.advanced}</summary><p>{pageCopy.advancedHelp}</p><CandidateHorizonSelector horizon={horizon} language={language} onChange={setHorizon} /></details> : undefined}
       candidateList={<CandidateTerminalList key={recalculationContextKey} snapshot={displaySnapshot} items={terminalItems} selectedInstrumentId={selectedInstrumentId} language={language} now={clock} canRecalculate={!basis.isBeforeTodayBasis && activeInstruments.length > 0} beforeTodayBasis={basis.isBeforeTodayBasis} contextKey={recalculationContextKey} onSelect={selectCandidate} onRecalculate={createSnapshot} />}
-      inspector={<CandidateInspectorPanel candidate={selectedTerminalItem} snapshotId={displaySnapshot?.snapshotId ?? null} generatedAt={displaySnapshot?.generatedAt ?? null} language={language} onOpenAnalysis={openSnapshotAnalysis} />}
+      inspector={<CandidateInspectorPanel candidate={selectedTerminalItem} snapshotId={displaySnapshot?.snapshotId ?? null} generatedAt={displaySnapshot?.generatedAt ?? null} language={language} technicalAnalysis={technicalAnalysis} technicalLoading={technicalLevelData.isLoading} onOpenAnalysis={openSnapshotAnalysis} />}
     />
     <AiUsagePlans language={language} />
   </>

@@ -9,6 +9,7 @@ import { buildReviewRanges } from '@/services/practicalDecision/reviewRangeModel
 import type { DartDisclosureReview } from '@/types/dart'
 import type { MyAnalysisResult } from '@/types/myAnalysis'
 import type { PracticalDecisionResult, ReviewRange } from '@/types/practicalDecision'
+import type { TechnicalLevelAnalysis } from '@/types/technicalLevels'
 import styles from './MyAnalysisReportSummary.module.css'
 
 interface MyAnalysisReportSummaryProps {
@@ -25,11 +26,12 @@ interface MyAnalysisReportSummaryProps {
   practicalDecision?: PracticalDecisionResult
   reviewRanges?: readonly ReviewRange[]
   candidateReviewScore?: CandidateReviewScore
+  technicalAnalysis?: TechnicalLevelAnalysis
 }
 
 const copy = {
   en: {
-    eyebrow: 'Review summary', title: 'Report summary', current: 'Current state', reason: 'Key reason', caution: 'Main caution', next: 'Next check', confidence: 'Data confidence', loaded: 'Loaded evidence', missing: 'Missing evidence', basedOn: 'Based on currently loaded data', copy: 'Copy summary', copied: 'Summary copied', unavailable: 'Copy unavailable', privacy: 'This summary excludes personal notes and average price', positionPrivacy: 'This summary excludes personal notes; basis price appears only as position context', plainTitle: 'Market Copilot review summary', summary: 'Summary', practical: 'Current read', reviewScore: 'Review score', scoreUnavailable: 'Unavailable', scoreCaution: 'Caution: The score and ranges are decision-support information, not profit probability or trade instructions.', safety: 'Caution: This is not investment advice or a trade instruction.', plainText: 'Plain-text summary', guide: 'How to read action status', interest: 'Interest stage', position: 'Position state', basis: 'My basis price', currentPrice: 'Current price', basisChange: 'Change from basis',
+    eyebrow: 'Review summary', title: 'Report summary', current: 'Current state', reason: 'Key reason', caution: 'Main caution', next: 'Next check', confidence: 'Data confidence', loaded: 'Loaded evidence', missing: 'Missing evidence', basedOn: 'Based on currently loaded data', copy: 'Copy summary', copied: 'Summary copied', unavailable: 'Copy unavailable', privacy: 'This summary excludes personal notes and average price', positionPrivacy: 'This summary excludes personal notes; basis price appears only as position context', plainTitle: 'Market Copilot review summary', summary: 'Summary', practical: 'Current read', reviewScore: 'Review score', scoreUnavailable: 'Unavailable', scoreCaution: 'Caution: The score and ranges are decision-support information, not profit probability or trade instructions.', safety: 'Caution: This is not investment advice or a trade instruction.', plainText: 'Plain-text summary', guide: 'How to read action status', interest: 'Interest stage', position: 'Position state', basis: 'My basis price', currentPrice: 'Current price', basisChange: 'Change from basis', chartStructure: 'Chart structure', firstSupport: 'First support', firstResistance: 'First resistance',
     dataLabels: { live: 'Live data', mock: 'Mock/demo data', limited: 'Limited data', unavailable: 'Data unavailable' },
     disclosure: 'Disclosure review: Recent disclosure evidence is available. Check the original disclosure.', disclosureNeeded: 'Disclosure review: Correction or material disclosures are included, so the original disclosures should be checked.',
     stages: { waiting: 'Waiting / checking conditions', first: 'Observation start', second: 'Conditions forming', third: 'Conditions clear', chaseCaution: 'Movement expansion caution', reboundCaution: 'Sharp-drop rebound caution' },
@@ -37,7 +39,7 @@ const copy = {
     guideItems: [['Decision pending', 'Data is not reliable enough yet.'], ['Waiting / checking conditions', 'More conditions need confirmation.'], ['Watch zone', 'Worth monitoring while conditions remain incomplete.'], ['Conditional approach possible', 'Some conditions exist, but confirmation is still needed.'], ['Movement expansion caution', 'Recent movement is already large.'], ['Sharp-drop rebound caution', 'A rebound after a sharp drop needs more evidence.']],
   },
   ko: {
-    eyebrow: '분석 요약', title: '리포트 요약', current: '현재 상태', reason: '핵심 이유', caution: '주요 주의점', next: '다음 확인', confidence: '데이터 신뢰 상태', loaded: '불러온 근거', missing: '부족한 근거', basedOn: '현재 불러온 데이터를 기준으로 표시', copy: '요약 복사', copied: '요약을 복사했습니다', unavailable: '복사 기능을 사용할 수 없습니다', privacy: '이 요약에는 개인 메모와 평균 가격이 포함되지 않습니다', positionPrivacy: '이 요약에는 개인 메모가 포함되지 않으며 내가 적은 참고 가격은 보유 맥락으로만 표시됩니다', plainTitle: 'Market Copilot 분석 요약', summary: '요약', practical: '지금 판단', reviewScore: '검토 점수', scoreUnavailable: '산정 불가', scoreCaution: '주의: 검토 점수와 범위는 판단 보조 정보이며, 수익 가능성이나 거래 지시가 아닙니다.', safety: '주의: 투자 조언이나 거래 지시가 아닙니다.', plainText: '일반 텍스트 요약', guide: '액션 상태 읽는 법', interest: '관심 단계', position: '보유 상태', basis: '내가 적은 참고 가격', currentPrice: '현재가', basisChange: '참고 가격 대비',
+    eyebrow: '분석 요약', title: '리포트 요약', current: '현재 상태', reason: '핵심 이유', caution: '주요 주의점', next: '다음 확인', confidence: '데이터 신뢰 상태', loaded: '불러온 근거', missing: '부족한 근거', basedOn: '현재 불러온 데이터를 기준으로 표시', copy: '요약 복사', copied: '요약을 복사했습니다', unavailable: '복사 기능을 사용할 수 없습니다', privacy: '이 요약에는 개인 메모와 평균 가격이 포함되지 않습니다', positionPrivacy: '이 요약에는 개인 메모가 포함되지 않으며 내가 적은 참고 가격은 보유 맥락으로만 표시됩니다', plainTitle: 'Market Copilot 분석 요약', summary: '요약', practical: '지금 판단', reviewScore: '검토 점수', scoreUnavailable: '산정 불가', scoreCaution: '주의: 검토 점수와 범위는 판단 보조 정보이며, 수익 가능성이나 거래 지시가 아닙니다.', safety: '주의: 투자 조언이나 거래 지시가 아닙니다.', plainText: '일반 텍스트 요약', guide: '액션 상태 읽는 법', interest: '관심 단계', position: '보유 상태', basis: '내가 적은 참고 가격', currentPrice: '현재가', basisChange: '참고 가격 대비', chartStructure: '차트 구조', firstSupport: '1차 지지', firstResistance: '1차 저항',
     dataLabels: { live: '실제 데이터', mock: '모의/데모 데이터', limited: '제한 데이터', unavailable: '데이터 이용 불가' },
     disclosure: '공시 점검: 최근 공시 근거가 있습니다. 원문 확인이 필요합니다.', disclosureNeeded: '공시 점검: 정정 또는 주요사항 관련 공시가 포함되어 있어 원문 확인이 필요합니다.',
     stages: { waiting: '대기 / 조건 확인 중', first: '관찰 시작', second: '조건 확인', third: '조건 뚜렷', chaseCaution: '변동 확대 주의', reboundCaution: '급락 반등 주의' },
@@ -60,10 +62,17 @@ function disclosureLine(review: DartDisclosureReview | null, language: Language)
   return null
 }
 
-function buildMyAnalysisPlainTextSummary(symbol: string, language: Language, reviewMode: MyAnalysisReviewMode, basisPrice: number | null, currentPrice: number, quoteCurrency: string, disclosureReview: DartDisclosureReview | null, practicalDecision: PracticalDecisionResult, reviewRanges: readonly ReviewRange[], candidateReviewScore?: CandidateReviewScore) {
+function buildMyAnalysisPlainTextSummary(symbol: string, language: Language, reviewMode: MyAnalysisReviewMode, basisPrice: number | null, currentPrice: number, quoteCurrency: string, disclosureReview: DartDisclosureReview | null, practicalDecision: PracticalDecisionResult, reviewRanges: readonly ReviewRange[], candidateReviewScore?: CandidateReviewScore, technicalAnalysis?: TechnicalLevelAnalysis) {
   const t = copy[language]
   const disclosure = disclosureLine(disclosureReview, language)
   const range = reviewRanges[0]
+  const technical = technicalAnalysis?.levelSet
+  const technicalLines = technical ? [
+    `${t.chartStructure}: ${technical.summary}`,
+    ...(technical.status === 'ready' && technical.firstSupport ? [`${t.firstSupport}: ${technical.firstSupport.priceLabel}`] : []),
+    ...(technical.status === 'ready' && technical.firstResistance ? [`${t.firstResistance}: ${technical.firstResistance.priceLabel}`] : []),
+    ...technical.cautions.slice(0, 1),
+  ] : []
   const lines = [
     t.plainTitle,
     symbol,
@@ -71,6 +80,7 @@ function buildMyAnalysisPlainTextSummary(symbol: string, language: Language, rev
     ...(candidateReviewScore ? [`${t.reviewScore}: ${candidateReviewScore.score === null ? t.scoreUnavailable : `${candidateReviewScore.score}/100`}`] : []),
     `${t.summary}: ${practicalDecision.summary}`,
     ...(range ? [`${range.label}: ${formatValue(range.lowPrice!, language)} ~ ${formatValue(range.highPrice!, language)} ${quoteCurrency}`] : []),
+    ...technicalLines,
     ...(reviewMode === 'position' && basisPrice !== null && Number.isFinite(basisPrice) && basisPrice > 0 ? [`${t.basis}: ${formatValue(basisPrice, language)} ${quoteCurrency}`, `${t.currentPrice}: ${Number.isFinite(currentPrice) ? `${formatValue(currentPrice, language)} ${quoteCurrency}` : '—'}`] : []),
     `${t.next}: ${practicalDecision.nextCheck}`,
     `${t.caution}: ${range?.caution ?? practicalDecision.caution}`,
@@ -81,12 +91,12 @@ function buildMyAnalysisPlainTextSummary(symbol: string, language: Language, rev
   return lines.join('\n')
 }
 
-export function MyAnalysisReportSummary({ analysis, language, mode, symbol, name, reviewMode = 'interest', basisPrice = null, currentPrice = Number.NaN, quoteCurrency = '', disclosureReview = null, practicalDecision: providedDecision, reviewRanges: providedRanges, candidateReviewScore }: MyAnalysisReportSummaryProps) {
+export function MyAnalysisReportSummary({ analysis, language, mode, symbol, name, reviewMode = 'interest', basisPrice = null, currentPrice = Number.NaN, quoteCurrency = '', disclosureReview = null, practicalDecision: providedDecision, reviewRanges: providedRanges, candidateReviewScore, technicalAnalysis }: MyAnalysisReportSummaryProps) {
   const t = copy[language]
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'unavailable'>('idle')
   const practicalDecision = providedDecision ?? buildPracticalDecision({ language, horizon: 'short', dataQuality: analysis.dataQuality, actionStatus: analysis.actionReadiness.status, hasAveragePrice: reviewMode === 'position' && basisPrice !== null && basisPrice > 0, source: 'analysis', reason: analysis.actionReadiness.whyThisStatus, nextCheck: analysis.reviewChecklist[0] ?? analysis.actionReadiness.nextChecks[0] })
   const reviewRanges = providedRanges ?? buildReviewRanges({ language, horizon: 'short', dataQuality: analysis.dataQuality, anchorPrice: basisPrice && basisPrice > 0 ? basisPrice : currentPrice, source: 'current' })
-  const plainText = useMemo(() => buildMyAnalysisPlainTextSummary(symbol, language, reviewMode, basisPrice, currentPrice, quoteCurrency, disclosureReview, practicalDecision, reviewRanges, candidateReviewScore), [basisPrice, candidateReviewScore, currentPrice, disclosureReview, language, practicalDecision, quoteCurrency, reviewMode, reviewRanges, symbol])
+  const plainText = useMemo(() => buildMyAnalysisPlainTextSummary(symbol, language, reviewMode, basisPrice, currentPrice, quoteCurrency, disclosureReview, practicalDecision, reviewRanges, candidateReviewScore, technicalAnalysis), [basisPrice, candidateReviewScore, currentPrice, disclosureReview, language, practicalDecision, quoteCurrency, reviewMode, reviewRanges, symbol, technicalAnalysis])
   const disclosure = disclosureLine(disclosureReview, language)
   const caution = firstItem(analysis.simpleModeSections.find((section) => section.id === 'simple-caution')?.items ?? [], analysis.actionReadiness.avoidConditions[0])
   const next = firstItem(analysis.reviewChecklist, analysis.actionReadiness.nextChecks[0])

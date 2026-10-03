@@ -1,6 +1,9 @@
 import { PracticalDecisionCard } from '@/components/practicalDecision/PracticalDecisionCard/PracticalDecisionCard'
 import { ReviewRangePanel } from '@/components/practicalDecision/ReviewRangePanel/ReviewRangePanel'
+import { ChartOverlayLegend } from '@/components/technicalLevels/ChartOverlayLegend/ChartOverlayLegend'
+import { TechnicalLevelsPanel } from '@/components/technicalLevels/TechnicalLevelsPanel/TechnicalLevelsPanel'
 import type { Language } from '@/i18n/translations'
+import type { TechnicalLevelAnalysis } from '@/types/technicalLevels'
 import type { CandidateTerminalItem } from './candidateTerminalModel'
 import styles from './CandidateInspectorPanel.module.css'
 
@@ -9,6 +12,8 @@ interface CandidateInspectorPanelProps {
   snapshotId: string | null
   generatedAt: string | null
   language: Language
+  technicalAnalysis?: TechnicalLevelAnalysis | null
+  technicalLoading?: boolean
   onOpenAnalysis: (instrumentId: string, snapshotId: string) => void
 }
 
@@ -39,7 +44,7 @@ function newsStateLabel(value: string, language: Language) {
   return labels[normalized as keyof typeof labels] ?? value
 }
 
-export function CandidateInspectorPanel({ candidate, snapshotId, generatedAt, language, onOpenAnalysis }: CandidateInspectorPanelProps) {
+export function CandidateInspectorPanel({ candidate, snapshotId, generatedAt, language, technicalAnalysis = null, technicalLoading = false, onOpenAnalysis }: CandidateInspectorPanelProps) {
   const t = copy[language]
   if (!candidate) return <aside className={styles.inspector} aria-label={t.title} data-empty="true"><header><span>INSPECTOR</span><h2>{t.title}</h2></header><p className={styles.empty}>{t.empty}</p></aside>
 
@@ -57,6 +62,10 @@ export function CandidateInspectorPanel({ candidate, snapshotId, generatedAt, la
     </dl>
     <PracticalDecisionCard result={candidate.practicalDecision} language={language} compact showSafety={false} />
     <ReviewRangePanel ranges={candidate.reviewRanges} language={language} quoteCurrency={item.quoteCurrency} compact showSafety={false} />
+    {technicalAnalysis && <>
+      <TechnicalLevelsPanel levelSet={technicalAnalysis.levelSet} movingAverageContext={technicalAnalysis.movingAverageContext} displayMode="simple" language={language} isLoading={technicalLoading} />
+      <ChartOverlayLegend status={technicalAnalysis.levelSet.status} lines={technicalAnalysis.overlayLines} displayMode="simple" language={language} isLoading={technicalLoading} />
+    </>}
     <section className={styles.evidence} aria-label={t.evidence}><header><span>{t.evidence}</span><strong>{t.ruleBasis}</strong></header><dl>{item.ruleBasis.map((entry) => <div key={entry.key}><dt>{entry.label}</dt><dd>{entry.value}</dd></div>)}</dl><p>{t.news}: {newsStateLabel(item.newsState, language)}</p><p>{t.disclosure}: {item.disclosureCount > 0 ? item.disclosureCount : t.disclosureNone}</p></section>
     <section className={styles.changes} aria-label={t.changes}><strong>{t.changes}</strong>{candidate.freshnessChanges.length > 0 ? <ul>{candidate.freshnessChanges.map((change) => <li key={change.field}>{t.fields[change.field]}: {change.previousValue} → {change.currentValue}</li>)}</ul> : <p>{t.noChanges}</p>}</section>
     <section className={styles.cautions} aria-label={t.caution}><strong>{t.caution}</strong>{cautions.length > 0 ? <ul>{cautions.map((caution) => <li key={caution}>{caution}</li>)}</ul> : <p>{t.noCaution}</p>}</section>
