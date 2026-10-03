@@ -1,9 +1,19 @@
-.controls { position: absolute; top: 3px; right: 8px; z-index: 5; display: grid; width: min(410px, calc(100% - 16px)); justify-items: end; color: #aebac5; font: 9px ui-monospace, monospace; }
-.modeButton { min-height: 20px; padding: 2px 9px; border: 1px solid #344757; background: #101923; color: #9fb2bf; font: inherit; letter-spacing: .04em; cursor: pointer; }
-.modeButton[aria-pressed="true"] { border-color: #638a83; background: #172924; color: #c3d8d1; }
-.panel { width: 100%; max-height: min(420px, calc(100vh - 170px)); box-sizing: border-box; margin-top: 5px; overflow: auto; border: 1px solid #344757; background: rgba(12, 19, 27, .97); box-shadow: 0 10px 30px rgba(0, 0, 0, .35); }
-.controls[data-analysis-mode="inactive"] { width: min(320px, calc(100% - 16px)); }
-.controls[data-analysis-mode="inactive"] .panel { max-height: 225px; }
+.controls { position: relative; z-index: 1; display: grid; min-width: 0; color: #aebac5; background: #0d151e; font: 9px ui-monospace, monospace; }
+.summary { display: grid; min-width: 0; grid-template-columns: minmax(150px, .8fr) minmax(260px, 1.4fr) auto; align-items: center; gap: 10px; min-height: 42px; padding: 5px 9px; border-top: 1px solid #344757; background: #101923; }
+.summaryTitle { display: flex; min-width: 0; align-items: center; gap: 7px; }
+.summaryTitle strong { overflow: hidden; color: #c0cbd3; letter-spacing: .05em; text-overflow: ellipsis; white-space: nowrap; }
+.summaryTitle small { color: #667988; white-space: nowrap; }
+.summaryTitle span { padding: 2px 5px; border: 1px solid #344757; color: #80919f; font-size: 8px; text-transform: uppercase; white-space: nowrap; }
+.summaryTitle span[data-quality="mock"],.summaryTitle span[data-quality="limited"] { border-color: #665e48; color: #ac9e71; }
+.summaryLevels { display: grid; min-width: 0; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 0; }
+.summaryLevels > div { display: grid; min-width: 0; grid-template-columns: auto minmax(0, 1fr); gap: 5px; }
+.summaryLevels dt { color: #667988; white-space: nowrap; }
+.summaryLevels dd { margin: 0; overflow: hidden; color: #b7c3cc; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
+.summaryStatus { min-width: 0; margin: 0; overflow: hidden; color: #7f909e; text-overflow: ellipsis; white-space: nowrap; }
+.summaryActions { display: flex; gap: 5px; }
+.modeButton,.panelToggle { min-height: 26px; padding: 3px 8px; border: 1px solid #344757; background: #111b25; color: #9fb2bf; font: inherit; letter-spacing: .03em; white-space: nowrap; cursor: pointer; }
+.modeButton[aria-pressed="true"],.panelToggle[aria-expanded="true"] { border-color: #638a83; background: #172924; color: #c3d8d1; }
+.panel { width: 100%; max-height: min(300px, 34vh); box-sizing: border-box; overflow: auto; border-top: 1px solid #344757; background: #0c131b; box-shadow: inset 0 8px 18px rgba(0, 0, 0, .16); }
 .structure { display: grid; gap: 7px; padding: 9px; border-bottom: 1px solid #253341; }
 .structure > strong { color: #c0cbd3; letter-spacing: .05em; }
 .structureTitle { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -40,4 +50,5 @@
 .editor div { display: flex; justify-content: flex-end; gap: 1px; }
 .editor button { border: 1px solid #344757; }
 .safety { margin: 0; padding: 8px 9px; border-top: 1px solid #253341; color: #657785; line-height: 1.4; }
-@media (max-width: 900px) { .controls { right: 6px; width: calc(100% - 12px); } .controls[data-analysis-mode="inactive"] { width: min(320px, calc(100% - 12px)); } .groups { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 1100px) { .summary { grid-template-columns: minmax(145px, .8fr) minmax(190px, 1fr) auto; } .summaryLevels > div:last-child { display: none; } .summaryLevels { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 900px) { .summary { grid-template-columns: minmax(0, 1fr) auto; } .summaryLevels { grid-column: 1 / -1; grid-row: 2; } .summaryActions { grid-column: 2; grid-row: 1; } .groups { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

@@ -1,11 +1,16 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { useState } from 'react'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { buildTechnicalLevelAnalysis } from '@/services/technicalLevels/technicalLevelEngine'
 import type { ChartOverlayVisibility, UserChartLine } from '@/types/chartOverlays'
 import type { Language } from '@/i18n/translations'
 import { ChartAnalysisControls } from './ChartAnalysisControls'
+import {
+  CHART_STRUCTURE_PANEL_COLLAPSED_KEY,
+  loadChartStructurePanelCollapsed,
+  saveChartStructurePanelCollapsed,
+} from './chartStructurePanelPreference'
 
 const baseVisibility: ChartOverlayVisibility = { supportResistance: true, movingAverage: true, fibonacci: false, user: true }
 const analysis = (language: Language) => buildTechnicalLevelAnalysis({
@@ -40,6 +45,69 @@ function Harness({ language = 'en' }: { language?: 'en' | 'ko' }) {
 }
 
 describe('ChartAnalysisControls', () => {
+  beforeEach(() => {
+    window.localStorage.clear()
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('defaults to a compact in-flow summary with support, resistance, and moving-average context', () => {
+    render(<Harness />)
+
+    const panel = screen.getByRole('region', { name: 'Chart structure analysis' })
+    expect(panel.getAttribute('data-layout')).toBe('reserved')
+    expect(panel.getAttribute('data-panel-state')).toBe('collapsed')
+    expect(screen.getByText('First support')).toBeTruthy()
+    expect(screen.getByText('First resistance')).toBeTruthy()
+    expect(screen.getByText('Moving-average context')).toBeTruthy()
+    expect(screen.queryByLabelText('Full chart structure details')).toBeNull()
+    expect(screen.getByRole('button', { name: 'Expand chart structure' }).getAttribute('aria-expanded')).toBe('false')
+  })
+
+  it('expands below the summary, persists the preference, and restores it after remount', () => {
+    const view = render(<Harness />)
+    fireEvent.click(screen.getByRole('button', { name: 'Expand chart structure' }))
+
+    expect(screen.getByRole('region', { name: 'Chart structure analysis' }).getAttribute('data-panel-state')).toBe('expanded')
+    expect(screen.getByLabelText('Full chart structure details')).toBeTruthy()
+    expect(window.localStorage.getItem(CHART_STRUCTURE_PANEL_COLLAPSED_KEY)).toBe('false')
+
+    view.unmount()
+    const restored = render(<Harness />)
+    expect(screen.getByRole('button', { name: 'Collapse chart structure' }).getAttribute('aria-expanded')).toBe('true')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Collapse chart structure' }))
+    expect(window.localStorage.getItem(CHART_STRUCTURE_PANEL_COLLAPSED_KEY)).toBe('true')
+    restored.unmount()
+    render(<Harness />)
+    expect(screen.getByRole('button', { name: 'Expand chart structure' }).getAttribute('aria-expanded')).toBe('false')
+  })
+
+  it('falls back safely to collapsed when the stored preference is invalid', () => {
+    window.localStorage.setItem(CHART_STRUCTURE_PANEL_COLLAPSED_KEY, '{"collapsed":"yes"}')
+    render(<Harness />)
+
+    expect(screen.getByRole('button', { name: 'Expand chart structure' })).toBeTruthy()
+    expect(window.localStorage.getItem(CHART_STRUCTURE_PANEL_COLLAPSED_KEY)).toBeNull()
+  })
+
+  it('keeps the default usable when storage get, remove, or set operations throw', () => {
+    const getFailure = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('get blocked') })
+    expect(loadChartStructurePanelCollapsed()).toBe(true)
+    getFailure.mockRestore()
+
+    const invalidValue = vi.spyOn(Storage.prototype, 'getItem').mockReturnValue('invalid')
+    const removeFailure = vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => { throw new Error('remove blocked') })
+    expect(loadChartStructurePanelCollapsed()).toBe(true)
+    invalidValue.mockRestore()
+    removeFailure.mockRestore()
+
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('set blocked') })
+    expect(() => saveChartStructurePanelCollapsed(false)).not.toThrow()
+  })
+
   it('keeps chart review controls behind an explicit analysis mode', () => {
     render(<Harness />)
     fireEvent.click(screen.getByRole('button', { name: 'Analysis mode' }))
@@ -75,8 +143,11 @@ describe('ChartAnalysisControls', () => {
 
   it('provides the required Korean actions and safety wording', () => {
     render(<Harness language="ko" />)
+    expect(screen.getByRole('button', { name: '차트 구조 펼치기' })).toBeTruthy()
+    expect(screen.getByText('이동평균 맥락')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: '분석 모드' }))
     expect(screen.getByRole('button', { name: '분석 모드 종료' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: '차트 구조 접기' })).toBeTruthy()
     expect(screen.getByRole('button', { name: '수평선 추가' })).toBeTruthy()
     expect(screen.getByText('차트 기준선은 거래 지시가 아니라 차트 검토 기준입니다.')).toBeTruthy()
   })

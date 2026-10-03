@@ -1,8 +1,12 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { AppProviders } from '@/app/providers/AppProviders'
 import { DemoPage } from './DemoPage'
+
+vi.mock('@/hooks/useDartProxyHealth', () => ({
+  useDartProxyHealth: () => ({ status: 'disabled', apiKeyConfigured: false, message: 'DART API key is not configured.' }),
+}))
 
 const renderPage = (language?: 'ko', mode: 'simple' | 'expert' = 'expert') => {
   window.localStorage.setItem('market-copilot.language', language ?? 'en')
@@ -18,8 +22,10 @@ describe('DemoPage', () => {
     expect(screen.getByRole('link', { name: /Go to AI Analysis/ }).getAttribute('href')).toBe('/ai-analysis')
     expect(screen.getByRole('link', { name: /My Analysis/ }).getAttribute('href')).toBe('/my-analysis')
     expect(screen.getByRole('heading', { name: 'Beta readiness' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'Beta system status' })).toBeTruthy()
-    expect(screen.getByText('Real AI').closest('li')?.textContent).toContain('Disabled')
+    const systemStatus = screen.getByRole('region', { name: 'Beta system status' })
+    const apiUsage = screen.getByRole('region', { name: 'API usage status' })
+    expect(within(apiUsage).getByText('DART API key').closest('li')?.textContent).toContain('Not configured')
+    expect(within(systemStatus).getByText('Real AI').closest('li')?.textContent).toContain('Disabled')
     expect(screen.getByRole('heading', { name: 'What works now' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: '5-minute investor demo script' })).toBeTruthy()
     expect(screen.getByText('Not included in this beta')).toBeTruthy()
@@ -40,6 +46,7 @@ describe('DemoPage', () => {
     expect(screen.getByRole('heading', { name: '처음 사용 흐름' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: '베타 준비 상태' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: '베타 시스템 상태' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'API 사용 상태' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: '5분 투자자 데모 스크립트' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: '현재 작동하는 기능' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: '신뢰 경계' })).toBeTruthy()

@@ -1,8 +1,9 @@
-import { useState, type FormEvent } from 'react'
+import { useId, useState, type FormEvent } from 'react'
 
 import type { Language } from '@/i18n/translations'
 import type { ChartOverlayGroup, ChartOverlayVisibility, UserChartLine, UserChartLineInput } from '@/types/chartOverlays'
 import type { TechnicalLevelAnalysis } from '@/types/technicalLevels'
+import { loadChartStructurePanelCollapsed, saveChartStructurePanelCollapsed } from './chartStructurePanelPreference'
 import styles from './ChartAnalysisControls.module.css'
 
 interface ChartAnalysisControlsProps {
@@ -20,6 +21,7 @@ interface ChartAnalysisControlsProps {
   onUpdateLine: (id: string, input: UserChartLineInput) => boolean
   onDeleteLine: (id: string) => void
   onSetLineVisible: (id: string, visible: boolean) => void
+  onPanelStateChange?: (collapsed: boolean) => void
 }
 
 type EditorMode = 'add' | 'edit' | null
@@ -30,6 +32,7 @@ const copy = {
     userLine: 'User reference line', name: 'Line name', price: 'Line price', save: 'Save line', cancel: 'Cancel', noLines: 'No user reference lines.',
     groups: { supportResistance: 'Support / resistance', movingAverage: 'MA', fibonacci: 'Fibonacci', user: 'User lines' },
     structure: 'Chart structure analysis', firstSupport: 'First support', firstResistance: 'First resistance', average: 'Moving-average context', fibonacciReference: 'Fibonacci reference', unavailable: 'Not enough data to calculate chart reference lines.', quality: { live: 'Live data', mock: 'Mock data', limited: 'Limited data', unavailable: 'Unavailable data' },
+    compact: 'Compact summary', expand: 'Expand chart structure', collapse: 'Collapse chart structure', details: 'Full chart structure details',
     loading: 'Preparing daily chart references…', safety: 'Chart reference lines are review references, not trade instructions.', visible: 'Show line', select: 'Select',
   },
   ko: {
@@ -37,6 +40,7 @@ const copy = {
     userLine: '사용자 기준선', name: '기준선 이름', price: '기준선 가격', save: '기준선 저장', cancel: '취소', noLines: '저장된 사용자 기준선이 없습니다.',
     groups: { supportResistance: '지지 / 저항', movingAverage: '이동평균', fibonacci: '피보나치', user: '사용자 기준선' },
     structure: '차트 구조 분석', firstSupport: '1차 지지', firstResistance: '1차 저항', average: '이동평균 맥락', fibonacciReference: '피보나치 참고', unavailable: '차트 기준선을 계산할 데이터가 부족합니다.', quality: { live: '실시간 데이터', mock: '모의 데이터', limited: '제한된 데이터', unavailable: '데이터 없음' },
+    compact: '요약', expand: '차트 구조 펼치기', collapse: '차트 구조 접기', details: '전체 차트 구조 상세',
     loading: '일봉 차트 기준선을 준비하는 중입니다…', safety: '차트 기준선은 거래 지시가 아니라 차트 검토 기준입니다.', visible: '선 표시', select: '선택',
   },
 } as const
@@ -58,8 +62,11 @@ export function ChartAnalysisControls({
   onUpdateLine,
   onDeleteLine,
   onSetLineVisible,
+  onPanelStateChange,
 }: ChartAnalysisControlsProps) {
   const t = copy[language]
+  const detailsId = useId()
+  const [collapsed, setCollapsed] = useState(() => analysisMode ? false : loadChartStructurePanelCollapsed())
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [editorMode, setEditorMode] = useState<EditorMode>(null)
   const [label, setLabel] = useState('')
@@ -86,8 +93,18 @@ export function ChartAnalysisControls({
     if (analysisMode) {
       closeEditor()
       setSelectedId(null)
+    } else if (collapsed) {
+      setCollapsed(false)
+      saveChartStructurePanelCollapsed(false)
+      onPanelStateChange?.(false)
     }
     onToggleAnalysisMode()
+  }
+  const togglePanel = () => {
+    const next = !collapsed
+    setCollapsed(next)
+    saveChartStructurePanelCollapsed(next)
+    onPanelStateChange?.(next)
   }
   const submit = (event: FormEvent) => {
     event.preventDefault()
@@ -100,14 +117,43 @@ export function ChartAnalysisControls({
     closeEditor()
   }
 
-  return <div className={styles.controls} data-analysis-mode={analysisMode ? 'active' : 'inactive'}>
-    <button type="button" className={styles.modeButton} aria-pressed={analysisMode} onClick={toggleAnalysisMode}>
-      {analysisMode ? t.exitAnalysisMode : t.analysisMode}
-    </button>
-    <section className={styles.panel} aria-label={t.structure}>
+  const summaryText = technicalLoading
+    ? t.loading
+    : technicalAnalysis.levelSet.status === 'unavailable'
+      ? t.unavailable
+      : null
+
+  return <section
+    className={styles.controls}
+    aria-label={t.structure}
+    data-analysis-mode={analysisMode ? 'active' : 'inactive'}
+    data-layout="reserved"
+    data-panel-state={collapsed ? 'collapsed' : 'expanded'}
+  >
+    <div className={styles.summary}>
+      <div className={styles.summaryTitle}>
+        <strong>{t.structure}</strong>
+        <small>{t.compact}</small>
+        <span data-quality={technicalAnalysis.levelSet.dataQuality}>{t.quality[technicalAnalysis.levelSet.dataQuality]}</span>
+      </div>
+      {summaryText ? <p className={styles.summaryStatus} role="status">{summaryText}</p> : <dl className={styles.summaryLevels}>
+        <div><dt>{t.firstSupport}</dt><dd>{technicalAnalysis.levelSet.firstSupport?.priceLabel ?? '—'}</dd></div>
+        <div><dt>{t.firstResistance}</dt><dd>{technicalAnalysis.levelSet.firstResistance?.priceLabel ?? '—'}</dd></div>
+        <div><dt>{t.average}</dt><dd>{technicalAnalysis.movingAverageContext.summary}</dd></div>
+      </dl>}
+      <div className={styles.summaryActions}>
+        <button type="button" className={styles.modeButton} aria-pressed={analysisMode} onClick={toggleAnalysisMode}>
+          {analysisMode ? t.exitAnalysisMode : t.analysisMode}
+        </button>
+        <button type="button" className={styles.panelToggle} aria-expanded={!collapsed} aria-controls={detailsId} onClick={togglePanel}>
+          {collapsed ? t.expand : t.collapse}
+        </button>
+      </div>
+    </div>
+    {!collapsed && <div id={detailsId} className={styles.panel} aria-label={t.details}>
       <div className={styles.structure} data-status={technicalAnalysis.levelSet.status}>
         <div className={styles.structureTitle}><strong>{t.structure}</strong><span data-quality={technicalAnalysis.levelSet.dataQuality}>{t.quality[technicalAnalysis.levelSet.dataQuality]}</span></div>
-        {technicalLoading ? <p role="status">{t.loading}</p> : technicalAnalysis.levelSet.status === 'unavailable' ? <p role="status">{t.unavailable}</p> : <dl>
+        {technicalLoading ? <p>{t.loading}</p> : technicalAnalysis.levelSet.status === 'unavailable' ? <p>{t.unavailable}</p> : <dl>
           <div><dt>{t.firstSupport}</dt><dd>{technicalAnalysis.levelSet.firstSupport?.priceLabel ?? '—'}</dd></div>
           <div><dt>{t.firstResistance}</dt><dd>{technicalAnalysis.levelSet.firstResistance?.priceLabel ?? '—'}</dd></div>
           <div className={styles.wide}><dt>{t.average}</dt><dd>{technicalAnalysis.movingAverageContext.summary}</dd></div>
@@ -151,6 +197,6 @@ export function ChartAnalysisControls({
         <div><button type="submit">{t.save}</button><button type="button" onClick={closeEditor}>{t.cancel}</button></div>
       </form>}</>}
       <p className={styles.safety}>{t.safety}</p>
-    </section>
-  </div>
+    </div>}
+  </section>
 }

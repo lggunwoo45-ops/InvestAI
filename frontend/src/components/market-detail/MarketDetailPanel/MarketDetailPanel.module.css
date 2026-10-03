@@ -22,7 +22,7 @@
 .stats > div:last-child { border-right: 0; }
 .stats dt { color: #8395a5; font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
 .stats dd { margin: 0; overflow: hidden; color: #d1dbe3; font: 600 11px ui-monospace, monospace; text-overflow: ellipsis; text-transform: capitalize; white-space: nowrap; }
-.chartArea { min-height: 0; }
+.chartArea { min-height: 0; overflow: auto; }
 .stock .chartArea { border-top: 1px solid #34445a; }
 @media (max-width: 1550px) { .detail { grid-template-rows: 98px 52px 34px minmax(0, 1fr); } .header { padding: 8px 12px; } .identity h1 { font-size: 19px; } .quote strong { font-size: 18px; } .stats > div { padding: 0 8px; } .stats dd { font-size: 10px; } }
 @media (max-width: 1550px) { .stock .identity h1 { font-size: 18px; } }

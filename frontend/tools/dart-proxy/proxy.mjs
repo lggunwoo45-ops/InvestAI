@@ -14,6 +14,14 @@ function safeText(value, limit = 300) { return typeof value === 'string' ? value
 function viewerUrl(receiptNo) { return /^\d{8,20}$/.test(receiptNo) ? `https://dart.fss.or.kr/dsaf001/main.do?rcpNo=${receiptNo}` : null }
 
 function result(status, sourceMode, message, disclosures = [], fetchedAt = null) { return { status, sourceMode, message, disclosures, fetchedAt } }
+function health(apiKey) {
+  const apiKeyConfigured = Boolean(apiKey.trim())
+  return {
+    status: apiKeyConfigured ? 'ready' : 'disabled',
+    apiKeyConfigured,
+    message: apiKeyConfigured ? 'DART API key is configured.' : 'DART API key is not configured.',
+  }
+}
 function sendJson(res, statusCode, payload, origin) {
   res.statusCode = statusCode
   res.setHeader('Content-Type', 'application/json; charset=utf-8')
@@ -51,6 +59,7 @@ export function createDartProxyHandler({ apiKey = process.env.DART_API_KEY ?? ''
     const origin = req.headers.origin
     if (req.method !== 'GET') { res.setHeader('Allow', 'GET'); return sendJson(res, 405, result('error', 'disabled', 'Only GET is supported.'), origin) }
     const requestUrl = new URL(req.url ?? '/', 'http://127.0.0.1:8788')
+    if (requestUrl.pathname === '/api/dart/health') return sendJson(res, 200, health(apiKey), origin)
     if (requestUrl.pathname !== '/api/dart/disclosures') return sendJson(res, 404, result('error', 'disabled', 'Endpoint not found.'), origin)
     if ([...requestUrl.searchParams.keys()].some((key) => key !== 'stockCode' && key !== 'corpCode')) return sendJson(res, 400, result('error', 'disabled', 'Only stockCode and corpCode are accepted.'), origin)
     if (!apiKey.trim()) return sendJson(res, 200, result('disabled', 'disabled', 'DART API key is not configured.'), origin)

@@ -11,6 +11,7 @@ const server = createServer((req, res) => handler(req, res).catch(() => {
 
 server.listen(port, host, () => {
   process.stdout.write(`Market Copilot local DART proxy: http://${host}:${port}\n`)
+  process.stdout.write('Health: /api/dart/health\n')
   process.stdout.write('Endpoint: /api/dart/disclosures?stockCode=005930&corpCode=00126380\n')
 })
 server.on('error', (error) => { process.stderr.write(`Local DART proxy could not start: ${error.message}\n`); process.exitCode = 1 })

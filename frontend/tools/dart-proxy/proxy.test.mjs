@@ -13,6 +13,21 @@ async function invoke({ url = '/api/dart/disclosures?stockCode=005930&corpCode=0
 }
 
 describe('local DART proxy', () => {
+  it('reports configured health without calling DART or exposing the key', async () => {
+    let called = false
+    const response = await invoke({ url: '/api/dart/health?ignored=true', apiKey: 'test-only-key', fetchImpl: async () => { called = true } })
+    assert.deepEqual(response.payload, { status: 'ready', apiKeyConfigured: true, message: 'DART API key is configured.' })
+    assert.equal(JSON.stringify(response.payload).includes('test-only-key'), false)
+    assert.equal(called, false)
+  })
+
+  it('reports disabled health when the server-side key is not configured', async () => {
+    let called = false
+    const response = await invoke({ url: '/api/dart/health', fetchImpl: async () => { called = true } })
+    assert.deepEqual(response.payload, { status: 'disabled', apiKeyConfigured: false, message: 'DART API key is not configured.' })
+    assert.equal(called, false)
+  })
+
   it('returns a disabled state without a key and never fetches', async () => {
     let called = false
     const response = await invoke({ fetchImpl: async () => { called = true } })

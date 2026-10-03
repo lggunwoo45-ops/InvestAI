@@ -56,6 +56,23 @@ describe('CandlestickChart chart overlays', () => {
     Object.defineProperty(globalThis, 'ResizeObserver', { configurable: true, value: ResizeObserverMock })
   })
 
+  it('keeps the compact structure summary after the chart and marks expanded layout state', () => {
+    render(<LanguageProvider><CandlestickChart candles={candles} instrument={instrument} timeframe="1D" mode="mock" technicalAnalysis={technicalAnalysis} /></LanguageProvider>)
+
+    const chartImage = screen.getByRole('img', { name: /BTC\/KRW 1D TradingView candlestick chart in mock mode/i })
+    const chart = chartImage.closest('figure')
+    const structure = screen.getByRole('region', { name: 'Chart structure analysis' })
+    expect(chart?.getAttribute('data-chart-structure-panel')).toBe('collapsed')
+    expect(chartImage.compareDocumentPosition(structure) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Expand chart structure' }))
+    expect(chart?.getAttribute('data-chart-structure-panel')).toBe('expanded')
+    expect(structure.getAttribute('data-layout')).toBe('reserved')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Collapse chart structure' }))
+    expect(chart?.getAttribute('data-chart-structure-panel')).toBe('collapsed')
+  })
+
   it('uses lightweight-charts price lines for automatic groups and a distinct user line', async () => {
     render(<LanguageProvider><CandlestickChart candles={candles} instrument={instrument} timeframe="1D" mode="mock" technicalAnalysis={technicalAnalysis} /></LanguageProvider>)
     fireEvent.click(screen.getByRole('button', { name: 'Analysis mode' }))
