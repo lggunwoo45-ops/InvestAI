@@ -1,21 +1,21 @@
 import { createContext } from 'react'
 
 export interface UiState {
-  isSidebarCollapsed: boolean
+  isSidebarPinned: boolean
   isAiCopilotOpen: boolean
 }
 
 export type UiAction =
-  | { type: 'toggle-sidebar' }
+  | { type: 'toggle-sidebar-pin' }
   | { type: 'toggle-ai-copilot' }
 
 export interface UiStoreValue extends UiState {
-  toggleSidebar: () => void
+  toggleSidebarPin: () => void
   toggleAiCopilot: () => void
 }
 
 export const initialUiState: UiState = {
-  isSidebarCollapsed: false,
+  isSidebarPinned: true,
   isAiCopilotOpen: true,
 }
 

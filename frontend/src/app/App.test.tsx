@@ -19,11 +19,15 @@ function openRoute(path: string) {
 }
 
 describe('Market Copilot application shell', () => {
-  afterEach(() => vi.useRealTimers())
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.restoreAllMocks()
+  })
 
   beforeEach(() => {
     window.localStorage.clear()
     window.history.pushState({}, '', '/')
+    vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('Network disabled in deterministic App tests'))
   })
 
   it('opens the market workspace as the home page', async () => {
@@ -46,6 +50,18 @@ describe('Market Copilot application shell', () => {
     expect(within(await screen.findByRole('button', { name: 'Open BTC/KRW' })).queryByText('KRW')).toBeNull()
     expect(screen.getByText('KRW', { selector: 'button[role="tab"]' })).toBeTruthy()
     expect(screen.getByLabelText(/results$/).getAttribute('aria-live')).toBe('polite')
+  })
+
+  it('keeps the AI Copilot close and reopen controls reachable', () => {
+    render(<App />)
+
+    fireEvent.click(within(screen.getByRole('complementary', { name: 'AI Copilot' })).getByRole('button', { name: 'Close AI Copilot' }))
+    expect(screen.queryByRole('complementary', { name: 'AI Copilot' })).toBeNull()
+
+    const reopenButton = screen.getByRole('button', { name: 'Toggle AI Copilot' })
+    expect(reopenButton.getAttribute('aria-pressed')).toBe('false')
+    fireEvent.click(reopenButton)
+    expect(screen.getByRole('complementary', { name: 'AI Copilot' })).toBeTruthy()
   })
 
   it('sends a selected symbol to the AI Copilot', async () => {

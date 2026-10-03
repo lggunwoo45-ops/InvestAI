@@ -1,18 +1,25 @@
-import { memo, useEffect, useMemo, useRef } from 'react'
+import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import {
   CandlestickSeries,
   ColorType,
   createChart,
   HistogramSeries,
+  LineStyle,
   type CandlestickData,
   type HistogramData,
   type IChartApi,
+  type IPriceLine,
   type ISeriesApi,
   type UTCTimestamp,
 } from 'lightweight-charts'
 
+import { useUserChartLines } from '@/hooks/useUserChartLines'
+import { useLanguage } from '@/i18n/useLanguage'
+import type { ChartOverlayGroup, ChartOverlayVisibility } from '@/types/chartOverlays'
 import type { MarketDataMode, MarketInstrument } from '@/types/market'
 import type { Candle, ChartTimeframe } from '@/types/marketDetail'
+import type { ChartOverlayLine, TechnicalLevelAnalysis } from '@/types/technicalLevels'
+import { ChartAnalysisControls } from '../ChartAnalysisControls/ChartAnalysisControls'
 import styles from './CandlestickChart.module.css'
 
 interface CandlestickChartProps {
@@ -20,26 +27,95 @@ interface CandlestickChartProps {
   instrument: MarketInstrument
   timeframe: ChartTimeframe
   mode: MarketDataMode
+  technicalAnalysis: TechnicalLevelAnalysis
+  technicalLoading?: boolean
 }
 
-export const CandlestickChart = memo(function CandlestickChart({ candles, instrument, timeframe, mode }: CandlestickChartProps) {
+interface RenderedPriceLine {
+  id: string
+  label: string
+  price: number
+  color: string
+  style: LineStyle
+  width: 1 | 2
+}
+
+const initialVisibility: ChartOverlayVisibility = {
+  supportResistance: true,
+  movingAverage: true,
+  fibonacci: false,
+  user: true,
+}
+
+function overlayGroup(line: ChartOverlayLine): ChartOverlayGroup | null {
+  if (line.kind === 'support' || line.kind === 'resistance') return 'supportResistance'
+  if (line.kind === 'movingAverage') return 'movingAverage'
+  if (line.kind === 'fibonacci') return 'fibonacci'
+  return null
+}
+
+function overlayColor(line: ChartOverlayLine) {
+  if (line.kind === 'support') return '#4f8f83'
+  if (line.kind === 'resistance') return '#a45f68'
+  if (line.kind === 'movingAverage') return '#a79261'
+  return '#677b91'
+}
+
+function overlayStyle(line: ChartOverlayLine) {
+  if (line.style === 'dotted') return LineStyle.Dotted
+  if (line.style === 'dashed') return LineStyle.Dashed
+  return LineStyle.Solid
+}
+
+function chartPricePrecision(price: number, quoteCurrency: string) {
+  const absolute = Math.abs(price)
+  if (absolute > 0 && absolute < 1) return Math.min(12, Math.max(4, Math.ceil(-Math.log10(absolute)) + 2))
+  if (quoteCurrency === 'KRW' && absolute >= 1_000) return 0
+  return 2
+}
+
+export const CandlestickChart = memo(function CandlestickChart({ candles, instrument, timeframe, mode, technicalAnalysis, technicalLoading = false }: CandlestickChartProps) {
+  const { language } = useLanguage()
   const containerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
   const candleSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null)
   const volumeSeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null)
   const dataKeyRef = useRef<string | null>(null)
+  const activePriceLinesRef = useRef<Map<string, IPriceLine>>(new Map())
   const initialPriceRef = useRef(instrument.lastPrice)
+  const [analysisMode, setAnalysisMode] = useState(false)
+  const [visibility, setVisibility] = useState<ChartOverlayVisibility>(initialVisibility)
+  const { lines: userLines, addLine, updateLine, deleteLine, setLineVisible } = useUserChartLines(instrument.id)
   const latest = candles.at(-1)
+  const pricePrecision = chartPricePrecision(instrument.lastPrice, instrument.quoteCurrency)
   const priceLabel = useMemo(() => new Intl.NumberFormat('en-US', {
-    maximumFractionDigits: instrument.quoteCurrency === 'KRW' ? 0 : instrument.lastPrice < 1 ? 4 : 2,
-  }), [instrument.lastPrice, instrument.quoteCurrency])
+    maximumFractionDigits: pricePrecision,
+  }), [pricePrecision])
+  const technicalLines = useMemo(() => technicalAnalysis.levelSet.status === 'ready' ? technicalAnalysis.overlayLines : [], [technicalAnalysis])
+  const availableCounts = useMemo<Record<ChartOverlayGroup, number>>(() => ({
+    supportResistance: technicalLines.filter((line) => overlayGroup(line) === 'supportResistance').length,
+    movingAverage: technicalLines.filter((line) => overlayGroup(line) === 'movingAverage').length,
+    fibonacci: technicalLines.filter((line) => overlayGroup(line) === 'fibonacci').length,
+    user: userLines.length,
+  }), [technicalLines, userLines.length])
+  const renderedPriceLines = useMemo<readonly RenderedPriceLine[]>(() => {
+    const automatic = technicalLines.flatMap((line): readonly RenderedPriceLine[] => {
+      const group = overlayGroup(line)
+      if (!group || !visibility[group] || !Number.isFinite(line.price) || line.price <= 0) return []
+      return [{ id: `automatic:${line.id}`, label: line.label, price: line.price, color: overlayColor(line), style: overlayStyle(line), width: 1 }]
+    })
+    const manual = visibility.user ? userLines.flatMap((line): readonly RenderedPriceLine[] => line.visible
+      ? [{ id: `user:${line.id}`, label: line.label, price: line.price, color: '#8b7da8', style: LineStyle.LargeDashed, width: 2 }]
+      : []) : []
+    return [...automatic, ...manual]
+  }, [technicalLines, userLines, visibility])
 
   useEffect(() => {
     const container = containerRef.current
     if (!container || typeof ResizeObserver === 'undefined') return undefined
 
-    const precision = instrument.quoteCurrency === 'KRW' ? 0 : initialPriceRef.current < 1 ? 4 : 2
-    const minimumMove = precision === 0 ? 1 : precision === 4 ? 0.0001 : 0.01
+    const precision = chartPricePrecision(initialPriceRef.current, instrument.quoteCurrency)
+    const minimumMove = precision === 0 ? 1 : 10 ** -precision
     const chart = createChart(container, {
       width: container.clientWidth,
       height: container.clientHeight,
@@ -67,6 +143,7 @@ export const CandlestickChart = memo(function CandlestickChart({ candles, instru
     chartRef.current = chart
     candleSeriesRef.current = candleSeries
     volumeSeriesRef.current = volumeSeries
+    const activePriceLines = activePriceLinesRef.current
 
     const resizeObserver = new ResizeObserver(([entry]) => {
       chart.applyOptions({ width: Math.floor(entry.contentRect.width), height: Math.floor(entry.contentRect.height) })
@@ -79,6 +156,7 @@ export const CandlestickChart = memo(function CandlestickChart({ candles, instru
       candleSeriesRef.current = null
       volumeSeriesRef.current = null
       dataKeyRef.current = null
+      activePriceLines.clear()
     }
   }, [instrument.id, instrument.quoteCurrency, timeframe])
 
@@ -109,14 +187,48 @@ export const CandlestickChart = memo(function CandlestickChart({ candles, instru
     if (latestVolume) volumeSeriesRef.current?.update(latestVolume)
   }, [candles, instrument.id, timeframe])
 
+  useEffect(() => {
+    const series = candleSeriesRef.current
+    if (!series) return undefined
+    const nextIds = new Set(renderedPriceLines.map((line) => line.id))
+    activePriceLinesRef.current.forEach((priceLine, id) => {
+      if (nextIds.has(id)) return
+      try { series.removePriceLine(priceLine) } catch { /* The chart may have been replaced during an instrument change. */ }
+      activePriceLinesRef.current.delete(id)
+    })
+    renderedPriceLines.forEach((line) => {
+      const options = { id: line.id, price: line.price, title: line.label, color: line.color, lineWidth: line.width, lineStyle: line.style, lineVisible: true, axisLabelVisible: true }
+      const existing = activePriceLinesRef.current.get(line.id)
+      if (existing) existing.applyOptions(options)
+      else activePriceLinesRef.current.set(line.id, series.createPriceLine(options))
+    })
+    return undefined
+  }, [instrument.id, renderedPriceLines, timeframe])
+
   return (
-    <figure className={styles.chart} role="img" aria-label={`${instrument.symbol} ${timeframe} TradingView candlestick chart in ${mode} mode`}>
+    <figure className={styles.chart}>
       <div className={styles.legend}>
         <span>{instrument.symbol}</span><span>{timeframe}</span>
         <span>O {priceLabel.format(latest?.open ?? 0)}</span><span>H {priceLabel.format(latest?.high ?? 0)}</span>
         <span>L {priceLabel.format(latest?.low ?? 0)}</span><span>C {priceLabel.format(latest?.close ?? 0)}</span>
       </div>
-      <div ref={containerRef} className={styles.canvas} aria-hidden="true" />
+      <ChartAnalysisControls
+        language={language}
+        analysisMode={analysisMode}
+        visibility={visibility}
+        availableCounts={availableCounts}
+        userLines={userLines}
+        technicalAnalysis={technicalAnalysis}
+        technicalLoading={technicalLoading}
+        currentPrice={latest?.close ?? instrument.lastPrice}
+        onToggleAnalysisMode={() => setAnalysisMode((current) => !current)}
+        onToggleGroup={(group) => setVisibility((current) => ({ ...current, [group]: !current[group] }))}
+        onAddLine={addLine}
+        onUpdateLine={updateLine}
+        onDeleteLine={deleteLine}
+        onSetLineVisible={setLineVisible}
+      />
+      <div ref={containerRef} className={styles.canvas} role="img" aria-label={`${instrument.symbol} ${timeframe} TradingView candlestick chart in ${mode} mode`} />
       <div className={styles.watermark}>TRADINGVIEW LIGHTWEIGHT CHARTS · {mode.toUpperCase()}</div>
     </figure>
   )

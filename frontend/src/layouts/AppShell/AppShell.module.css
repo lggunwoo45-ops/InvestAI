@@ -1,6 +1,23 @@
-.shell { display: grid; min-width: 1280px; height: 100vh; grid-template-columns: var(--sidebar-width) minmax(0, 1fr); overflow: hidden; background: var(--color-bg); }
-.sidebarCollapsed { grid-template-columns: var(--sidebar-collapsed-width) minmax(0, 1fr); }
+.shell { display: grid; min-width: 0; height: 100vh; grid-template-columns: var(--sidebar-width) minmax(0, 1fr); overflow: hidden; background: var(--color-bg); }
+.sidebarUnpinned { grid-template-columns: var(--sidebar-collapsed-width) minmax(0, 1fr); }
 .workspace { display: grid; min-width: 0; min-height: 0; grid-template-rows: var(--header-height) minmax(0, 1fr); overflow: hidden; }
 .body { display: grid; min-width: 0; min-height: 0; grid-template-columns: minmax(0, 1fr) var(--ai-copilot-width); overflow: hidden; }
 .aiCopilotClosed { grid-template-columns: minmax(0, 1fr); }
 .main { min-width: 0; min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-gutter: stable; background: var(--color-bg); }
+
+@media (max-width: 1024px) {
+  .shell,
+  .sidebarUnpinned { grid-template-columns: var(--sidebar-collapsed-width) minmax(0, 1fr); }
+  .body,
+  .aiCopilotClosed { position: relative; grid-template-columns: minmax(0, 1fr); }
+  .body > aside {
+    position: absolute;
+    z-index: 15;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(var(--ai-copilot-width), calc(100% - 24px));
+    max-width: 100%;
+    box-shadow: -14px 0 32px rgba(0, 0, 0, .42);
+  }
+}

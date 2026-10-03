@@ -15,6 +15,7 @@ export function SidebarNavItem({ item, compact, label = item.label }: SidebarNav
   return (
     <NavLink
       to={item.path}
+      aria-label={label}
       title={compact ? label : undefined}
       className={({ isActive }) => classNames(styles.link, isActive && styles.active)}
     >

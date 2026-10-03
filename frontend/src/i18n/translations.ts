@@ -7,8 +7,10 @@ interface UiStrings {
   navigation: Record<NavigationIcon, string>
   workspace: string
   localEnvironment: string
-  collapseSidebar: string
-  expandSidebar: string
+  pinSidebar: string
+  unpinSidebar: string
+  openWorkspace: string
+  closeWorkspace: string
   language: string
   displayMode: {
     label: string; simple: string; expert: string; simpleMode: string; expertMode: string
@@ -103,7 +105,7 @@ interface UiStrings {
 export const uiText = {
   en: {
     navigation: { markets: 'Market', briefing: 'Market Briefing', dashboard: 'Dashboard', discover: 'Discover', portfolio: 'Portfolio', trading: 'Trading', ai: 'AI Analysis', analyze: 'My Analysis', strategies: 'Strategies', news: 'News', demo: 'Demo', settings: 'Settings' },
-    workspace: 'Workspace', localEnvironment: 'Local environment', collapseSidebar: 'Collapse sidebar', expandSidebar: 'Expand sidebar',
+    workspace: 'Workspace', localEnvironment: 'Local environment', pinSidebar: 'Pin sidebar', unpinSidebar: 'Unpin sidebar', openWorkspace: 'Open workspace', closeWorkspace: 'Close workspace',
     language: 'Language',
     displayMode: {
       label: 'Display mode', simple: 'Simple', expert: 'Expert', simpleMode: 'Simple Mode', expertMode: 'Expert Mode',
@@ -192,7 +194,7 @@ export const uiText = {
   },
   ko: {
     navigation: { markets: '마켓', briefing: '시장 브리핑', dashboard: '대시보드', discover: '발견', portfolio: '포트폴리오', trading: '거래', ai: 'AI 분석', analyze: '내 종목 분석', strategies: '전략', news: '뉴스', demo: '데모', settings: '설정' },
-    workspace: '워크스페이스', localEnvironment: '로컬 환경', collapseSidebar: '사이드바 접기', expandSidebar: '사이드바 펼치기',
+    workspace: '워크스페이스', localEnvironment: '로컬 환경', pinSidebar: '사이드바 고정', unpinSidebar: '사이드바 고정 해제', openWorkspace: '워크스페이스 열기', closeWorkspace: '워크스페이스 닫기',
     language: '언어',
     displayMode: {
       label: '표시 모드', simple: '간편모드', expert: '전문가모드', simpleMode: '간편모드', expertMode: '전문가모드',
