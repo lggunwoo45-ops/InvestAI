@@ -3,11 +3,14 @@ import { useNavigate } from 'react-router-dom'
 
 import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
 import { AiUsagePlans } from '@/components/ai/AiUsagePlans/AiUsagePlans'
-import { MarketBucketSummary } from '@/components/candidates/MarketBucketSummary/MarketBucketSummary'
+import { AiAnalysisTerminalLayout } from '@/components/ai-analysis/AiAnalysisTerminalLayout'
+import { CandidateInspectorPanel } from '@/components/ai-analysis/CandidateInspectorPanel'
+import { CandidateTerminalList } from '@/components/ai-analysis/CandidateTerminalList'
+import { buildCandidateTerminalItems } from '@/components/ai-analysis/candidateTerminalModel'
+import { MarketContextStrip } from '@/components/ai-analysis/MarketContextStrip'
+import { MarketTerminalHeader } from '@/components/ai-analysis/MarketTerminalHeader'
 import { CandidateHorizonSelector } from '@/components/candidates/CandidateHorizonSelector/CandidateHorizonSelector'
-import { CandidateSnapshotPanel } from '@/components/candidates/CandidateSnapshotPanel/CandidateSnapshotPanel'
 import { MarketBucketSelector } from '@/components/candidates/MarketBucketSelector/MarketBucketSelector'
-import { BitcoinMarketAnchorCard } from '@/components/marketAnchor/BitcoinMarketAnchorCard/BitcoinMarketAnchorCard'
 import { deriveBeginnerInterestStage } from '@/components/my-analysis/BeginnerInterestZone/beginnerInterestZoneModel'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { useMarketCatalog } from '@/hooks/useMarketCatalog'
@@ -57,6 +60,7 @@ export function AiAnalysisPage() {
   const [previousSnapshots] = useState(loadCandidateSnapshots)
   const [snapshotRecords, setSnapshotRecords] = useState(loadDailyBucketSnapshots)
   const [clock, setClock] = useState(() => new Date().toISOString())
+  const [selectedByBucket, setSelectedByBucket] = useState<Partial<Record<MarketBucketId, string>>>({})
 
   const upbitKrw = useMarketCatalog('upbit-krw', marketDataMode, 0)
   const upbitBtc = useMarketCatalog('upbit-btc', marketDataMode, 0)
@@ -116,9 +120,14 @@ export function AiAnalysisPage() {
   const marketBuckets = useMemo(() => getMarketBuckets(language), [language])
   const bucketLabel = marketBuckets.find((bucket) => bucket.id === bucketId)?.label ?? bucketId
   const bitcoinAnchor = useMemo(() => bucketId === 'upbit' || bucketId === 'binance' ? buildBitcoinMarketAnchor({ marketBucket: bucketId, instruments: activeInstruments, catalogSource: activeCatalogSource === 'live' ? 'live' : activeCatalogSource === 'mock' ? 'mock' : null, newsResult, language }) : null, [activeCatalogSource, activeInstruments, bucketId, language, newsResult])
-  const displayedCount = displaySnapshot?.items.length ?? snapshotSources.length
-  const excludedCount = qualityGate.excluded.length > 0 ? qualityGate.excluded.length : activeSnapshotQuality?.excluded.length ?? 0
-  const exclusionReasons = qualityGate.excluded.length > 0 ? qualityGate.reasonCounts : activeSnapshotQuality?.reasonCounts ?? {}
+  const terminalItems = useMemo(() => displaySnapshot ? buildCandidateTerminalItems({ items: displaySnapshot.items, expiresAt: displaySnapshot.expiresAt, currentStates, currentPrices, horizon, language, now: clock }) : [], [clock, currentPrices, currentStates, displaySnapshot, horizon, language])
+  const selectedInstrumentId = terminalItems.some((entry) => entry.item.instrumentId === selectedByBucket[bucketId]) ? selectedByBucket[bucketId] ?? null : terminalItems[0]?.item.instrumentId ?? null
+  const selectedTerminalItem = terminalItems.find((entry) => entry.item.instrumentId === selectedInstrumentId) ?? null
+  const displayedCount = terminalItems.length
+  const excludedCount = activeSnapshot ? activeSnapshotQuality?.excluded.length ?? 0 : qualityGate.excluded.length
+  const exclusionReasons = activeSnapshot ? activeSnapshotQuality?.reasonCounts ?? {} : qualityGate.reasonCounts
+  const snapshotStatus = !displaySnapshot ? 'pending' : displaySnapshot.tradingDate === basis.tradingDateLabel ? 'today' : 'previous'
+  const recalculationContextKey = `${bucketId}:${displaySnapshot?.snapshotId ?? 'none'}:${horizon}:${marketDataMode}`
 
   const createSnapshot = useCallback(() => {
     const generatedAt = new Date().toISOString()
@@ -137,14 +146,17 @@ export function AiAnalysisPage() {
   }, [activeInstruments.length, activeSnapshot?.tradingDate, basis.isBeforeTodayBasis, basis.tradingDateLabel, createSnapshot])
 
   const openSnapshotAnalysis = useCallback((instrumentId: string, snapshotId: string) => navigate(`/my-analysis?instrumentId=${encodeURIComponent(instrumentId)}&bucketId=${encodeURIComponent(bucketId)}&snapshotId=${encodeURIComponent(snapshotId)}`), [bucketId, navigate])
+  const selectCandidate = useCallback((instrumentId: string) => setSelectedByBucket((current) => ({ ...current, [bucketId]: instrumentId })), [bucketId])
 
   return <>
-    <div className={styles.pageHeader}><header><span>{pageCopy.eyebrow}</span><h1>{pageCopy.title}</h1><p>{pageCopy.description}</p></header></div>
-    <MarketBucketSelector selected={bucketId} language={language} onChange={setBucketId} />
-    {displayMode === 'expert' && <details className={styles.advanced}><summary>{pageCopy.advanced}</summary><p>{pageCopy.advancedHelp}</p><CandidateHorizonSelector horizon={horizon} language={language} onChange={setHorizon} /></details>}
-    {bitcoinAnchor !== null && <BitcoinMarketAnchorCard anchor={bitcoinAnchor} language={language} />}
-    <MarketBucketSummary bucketLabel={bucketLabel} displayedCount={displayedCount} excludedCount={excludedCount} reasonCounts={exclusionReasons} language={language} />
-    <CandidateSnapshotPanel snapshot={displaySnapshot} currentStates={currentStates} currentPrices={currentPrices} horizon={horizon} language={language} now={clock} canRefresh={!basis.isBeforeTodayBasis && activeInstruments.length > 0} onRefresh={createSnapshot} onOpenAnalysis={openSnapshotAnalysis} variant="daily" beforeTodayBasis={basis.isBeforeTodayBasis} />
+    <AiAnalysisTerminalLayout
+      header={<MarketTerminalHeader bucketLabel={bucketLabel} displayedCount={displayedCount} excludedCount={excludedCount} dataState={activeCatalogSource} snapshotStatus={snapshotStatus} bitcoinAnchorStatus={bitcoinAnchor?.status ?? null} language={language} />}
+      tabs={<MarketBucketSelector selected={bucketId} language={language} onChange={setBucketId} />}
+      context={<MarketContextStrip bucketId={bucketId} bucketLabel={bucketLabel} bitcoinAnchor={bitcoinAnchor} displayedCount={displayedCount} excludedCount={excludedCount} reasonCounts={exclusionReasons} dataState={activeCatalogSource} newsState={newsResult?.state ?? null} language={language} />}
+      advanced={displayMode === 'expert' ? <details className={styles.advanced}><summary>{pageCopy.advanced}</summary><p>{pageCopy.advancedHelp}</p><CandidateHorizonSelector horizon={horizon} language={language} onChange={setHorizon} /></details> : undefined}
+      candidateList={<CandidateTerminalList key={recalculationContextKey} snapshot={displaySnapshot} items={terminalItems} selectedInstrumentId={selectedInstrumentId} language={language} now={clock} canRecalculate={!basis.isBeforeTodayBasis && activeInstruments.length > 0} beforeTodayBasis={basis.isBeforeTodayBasis} contextKey={recalculationContextKey} onSelect={selectCandidate} onRecalculate={createSnapshot} />}
+      inspector={<CandidateInspectorPanel candidate={selectedTerminalItem} snapshotId={displaySnapshot?.snapshotId ?? null} generatedAt={displaySnapshot?.generatedAt ?? null} language={language} onOpenAnalysis={openSnapshotAnalysis} />}
+    />
     <AiUsagePlans language={language} />
   </>
 }

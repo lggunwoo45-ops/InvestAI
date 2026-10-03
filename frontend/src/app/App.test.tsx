@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { getDailyBasisTime } from '@/services/candidateSnapshot/dailyBasisTime'
 import { loadDailyBucketSnapshots, saveDailyBucketSnapshot } from '@/services/candidateSnapshot/dailyBucketSnapshotStorage'
@@ -7,9 +7,9 @@ import type { DailyBucketSnapshot } from '@/services/candidateSnapshot/dailyBuck
 import type { MarketBucketId } from '@/types/marketBucket'
 import { App } from './App'
 
-function dailyBucketSnapshot(bucketId: MarketBucketId, symbol: string, assetType: 'crypto' | 'stock' = 'crypto'): DailyBucketSnapshot {
+function dailyBucketSnapshot(bucketId: MarketBucketId, symbol: string, assetType: 'crypto' | 'stock' = 'crypto', savedInstrumentId?: string): DailyBucketSnapshot {
   const basis = getDailyBasisTime(new Date())
-  const instrumentId = `${bucketId}-${symbol}`
+  const instrumentId = savedInstrumentId ?? `${bucketId}-${symbol}`
   return { schemaVersion: 1, snapshotId: `daily-${bucketId}-${basis.tradingDateLabel}`, tradingDate: basis.tradingDateLabel, bucketId, basisTimeLabel: '08:00', generatedAt: basis.currentDailyBasisAt, basisAt: basis.currentDailyBasisAt, expiresAt: basis.nextDailyBasisAt, itemLimit: 5, items: [{ instrumentId, symbol, displayName: symbol, assetType, marketId: assetType === 'crypto' ? bucketId : assetType === 'stock' && bucketId === 'usStocks' ? 'us-stock' : 'korea-stock', quoteCurrency: assetType === 'crypto' ? 'USDT' : 'USD', order: 1, basisPrice: 100, basisChange24hPercent: 1, basisVolume24h: 1000, basisMovementBand: 'Limited', interestStage: 'first', actionStatus: 'watchZone', clarity: 'medium', reasonText: 'Saved daily evidence', ruleBasis: [{ key: 'dataQuality', label: 'Data quality', value: 'Recorded' }], dataQuality: assetType === 'crypto' ? 'live' : 'mock', newsState: 'Unavailable', disclosureCount: 0, latestDisclosureAt: null }] }
 }
 
@@ -19,6 +19,8 @@ function openRoute(path: string) {
 }
 
 describe('Market Copilot application shell', () => {
+  afterEach(() => vi.useRealTimers())
+
   beforeEach(() => {
     window.localStorage.clear()
     window.history.pushState({}, '', '/')
@@ -225,6 +227,8 @@ describe('Market Copilot application shell', () => {
   })
 
   it('shows only one fixed daily candidate list while switching market buckets', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(2026, 9, 3, 12))
     saveDailyBucketSnapshot(dailyBucketSnapshot('upbit', 'UPBIT/KRW'))
     saveDailyBucketSnapshot(dailyBucketSnapshot('binance', 'BINANCE/USDT'))
     saveDailyBucketSnapshot(dailyBucketSnapshot('kospi', '005930', 'stock'))
@@ -236,9 +240,9 @@ describe('Market Copilot application shell', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Today’s interest candidates' })).toBeTruthy()
     const upbitAnchor = screen.getByRole('region', { name: 'Bitcoin market anchor' })
     expect(upbitAnchor.getAttribute('data-market-bucket')).toBe('upbit')
-    const snapshotPanel = () => screen.getByRole('region', { name: 'Today’s 08:00 snapshot record' })
+    const snapshotPanel = () => screen.getByRole('region', { name: /(?:Today’s 08:00|Previous daily) snapshot record/ })
     expect(snapshotPanel().querySelectorAll('ol')).toHaveLength(1)
-    expect(screen.getAllByRole('heading', { level: 3, name: 'Today’s interest candidates' })).toHaveLength(1)
+    expect(snapshotPanel().querySelectorAll('h2')).toHaveLength(1)
     expect(screen.queryByText('UPBIT/KRW')).toBeNull()
     expect(screen.getByRole('region', { name: 'Market bucket summary' }).textContent).toContain('There are no displayable interest candidates')
     expect(upbitAnchor.textContent).toContain('BTC/KRW')
@@ -263,6 +267,8 @@ describe('Market Copilot application shell', () => {
   }, 15000)
 
   it('refreshes only the selected daily market bucket', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-10-03T03:00:00Z'))
     const upbitBefore = dailyBucketSnapshot('upbit', 'UPBIT/KRW')
     const binanceBefore = dailyBucketSnapshot('binance', 'BINANCE/USDT')
     const kospiBefore = dailyBucketSnapshot('kospi', '005930', 'stock')
@@ -277,20 +283,25 @@ describe('Market Copilot application shell', () => {
     render(<App />)
     fireEvent.click(await screen.findByRole('button', { name: 'MOCK' }, { timeout: 5000 }))
     openRoute('/ai-analysis')
-    const refresh = await screen.findByRole('button', { name: 'Refresh today’s candidates' }, { timeout: 5000 })
+    const refresh = await screen.findByRole('button', { name: 'Advanced: Recalculate today’s candidates' }, { timeout: 5000 })
     await waitFor(() => expect((refresh as HTMLButtonElement).disabled).toBe(false))
+    fireEvent.click(refresh)
+    expect(loadDailyBucketSnapshots().find((snapshot) => snapshot.bucketId === 'upbit')?.generatedAt).toBe(upbitBefore.generatedAt)
+    expect(screen.getByText(/Press again to continue/)).toBeTruthy()
     fireEvent.click(refresh)
     await waitFor(() => expect(loadDailyBucketSnapshots().find((snapshot) => snapshot.bucketId === 'upbit')?.generatedAt).not.toBe(upbitBefore.generatedAt))
     expect(loadDailyBucketSnapshots().find((snapshot) => snapshot.bucketId === 'binance')?.snapshotId).toBe(binanceBefore.snapshotId)
     fireEvent.click(screen.getByRole('tab', { name: 'KOSPI' }))
     expect(await screen.findByRole('heading', { name: 'KOSPI' })).toBeTruthy()
-    const stockRefresh = screen.getByRole('button', { name: 'Refresh today’s candidates' })
+    const stockRefresh = screen.getByRole('button', { name: 'Advanced: Recalculate today’s candidates' })
     await waitFor(() => expect((stockRefresh as HTMLButtonElement).disabled).toBe(false))
+    fireEvent.click(stockRefresh)
+    expect(loadDailyBucketSnapshots().find((snapshot) => snapshot.bucketId === 'kospi')?.generatedAt).toBe(kospiBefore.generatedAt)
     fireEvent.click(stockRefresh)
     await waitFor(() => expect(loadDailyBucketSnapshots().find((snapshot) => snapshot.bucketId === 'kospi')?.generatedAt).not.toBe(kospiBefore.generatedAt))
     expect(loadDailyBucketSnapshots().find((snapshot) => snapshot.bucketId === 'kosdaq')?.snapshotId).toBe(kosdaqBefore.snapshotId)
     expect(screen.queryByText('035720')).toBeNull()
-    const panel = screen.getByRole('region', { name: 'Today’s 08:00 snapshot record' })
+    const panel = screen.getByRole('region', { name: /(?:Today’s 08:00|Previous daily) snapshot record/ })
     expect(panel.querySelectorAll('ol')).toHaveLength(1)
     const visibleProductCopy = panel.textContent.replace('It is not a profit probability or buy signal.', '')
     expect(visibleProductCopy).not.toMatch(/buy candidate|buy signal|top pick|best pick/i)
@@ -307,6 +318,8 @@ describe('Market Copilot application shell', () => {
   })
 
   it('keeps one global display switch across Simple and Expert routes without adding primary navigation', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(2026, 9, 3, 12))
     window.history.pushState({}, '', '/simple')
     render(<App />)
     expect(await screen.findByRole('heading', { name: 'Market Copilot Simple Mode' })).toBeTruthy()
@@ -320,12 +333,20 @@ describe('Market Copilot application shell', () => {
     expect(screen.getAllByRole('group', { name: 'Display mode' })).toHaveLength(1)
     expect(document.querySelector('[data-display-mode]')?.getAttribute('data-display-mode')).toBe('simple')
     expect(screen.queryByText('Advanced criteria')).toBeNull()
-    expect(screen.getByRole('heading', { name: 'Today’s interest candidates' })).toBeTruthy()
+    expect(screen.getByRole('heading', { level: 1, name: 'Today’s interest candidates' })).toBeTruthy()
+    expect(screen.getByLabelText('AI analysis terminal header')).toBeTruthy()
+    expect(screen.getByRole('region', { name: 'Market context' })).toBeTruthy()
+    expect(screen.getByRole('complementary', { name: 'Selected candidate inspector' })).toBeTruthy()
+    expect(document.querySelectorAll('[data-terminal-list]')).toHaveLength(1)
     expect(screen.getByRole('region', { name: 'Bitcoin market anchor' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: /Expert Mode/ }))
     expect(document.querySelector('[data-display-mode]')?.getAttribute('data-display-mode')).toBe('expert')
     expect(screen.getByRole('region', { name: 'Today’s 08:00 snapshot record' })).toBeTruthy()
     expect(screen.getByText('Advanced criteria')).toBeTruthy()
+    expect(screen.getByLabelText('AI analysis terminal header')).toBeTruthy()
+    expect(screen.getByRole('region', { name: 'Market context' })).toBeTruthy()
+    expect(screen.getByRole('complementary', { name: 'Selected candidate inspector' })).toBeTruthy()
+    expect(document.querySelectorAll('[data-terminal-list]')).toHaveLength(1)
     expect(screen.getByRole('region', { name: 'Bitcoin market anchor' })).toBeTruthy()
     expect(window.localStorage.getItem('market-copilot.displayMode.v1')).toBe('expert')
   })

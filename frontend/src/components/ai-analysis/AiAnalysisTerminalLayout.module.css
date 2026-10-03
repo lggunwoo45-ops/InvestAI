@@ -1,0 +1,18 @@
+.terminal {
+  --color-surface-primary: var(--color-surface);
+  --color-surface-canvas: var(--color-bg);
+  --color-surface-elevated: var(--color-surface-raised);
+  --color-text-primary: var(--color-text);
+  --color-text-secondary: var(--color-text-muted);
+  --font-mono: ui-monospace, monospace;
+  container-type: inline-size;
+  min-width: 0;
+  padding-bottom: 16px;
+  background: #081016;
+  color: var(--color-text);
+}
+.workspace { display: grid; grid-template-columns: minmax(0, 1.62fr) minmax(310px, .78fr); gap: 10px; padding: 10px 26px 0; align-items: start; }
+.list, .inspector { min-width: 0; }
+.inspector { position: sticky; top: 54px; }
+@container (max-width: 1040px) { .workspace { grid-template-columns: 1fr; }.inspector { position: static; } }
+@media (max-width: 760px) { .workspace { padding-inline: 15px; } }
