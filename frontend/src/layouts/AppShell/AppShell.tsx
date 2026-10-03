@@ -10,11 +10,11 @@ import { Sidebar } from '../Sidebar/Sidebar'
 import styles from './AppShell.module.css'
 
 export function AppShell() {
-  const { isAiCopilotOpen, isSidebarCollapsed } = useUiStore()
+  const { isAiCopilotOpen, isSidebarPinned } = useUiStore()
   const { displayMode } = useDisplayMode()
 
   return (
-    <div className={classNames(styles.shell, isSidebarCollapsed && styles.sidebarCollapsed)} data-display-mode={displayMode}>
+    <div className={classNames(styles.shell, !isSidebarPinned && styles.sidebarUnpinned)} data-display-mode={displayMode}>
       <Sidebar />
       <div className={styles.workspace}>
         <Header />

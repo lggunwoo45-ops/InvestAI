@@ -18,6 +18,19 @@ import { nextExplorerSort, type BinanceSpotQuoteFilter, type ExplorerSortDirecti
 import { marketExplorerText } from './marketExplorerConfig'
 import styles from './MarketPage.module.css'
 
+const MARKET_LIST_COLLAPSED_KEY = 'market-copilot.market-list-collapsed.v1'
+const NARROW_MARKET_QUERY = '(max-width: 900px)'
+
+function initialMarketListCollapsed() {
+  try {
+    const stored = window.localStorage.getItem(MARKET_LIST_COLLAPSED_KEY)
+    if (stored === 'true' || stored === 'false') return stored === 'true'
+  } catch {
+    // Storage can be unavailable in privacy-restricted browser contexts.
+  }
+  return typeof window.matchMedia === 'function' && window.matchMedia(NARROW_MARKET_QUERY).matches
+}
+
 function initialVenue(instrument: MarketInstrument): MarketVenue {
   if (instrument.marketType) return instrument.marketType
   if (instrument.marketId === 'upbit') return 'upbit-krw'
@@ -42,6 +55,7 @@ export function MarketPage() {
   const [sortField, setSortField] = useState<ExplorerSortField>('volume')
   const [sortDirection, setSortDirection] = useState<ExplorerSortDirection>('desc')
   const [spotQuoteFilter, setSpotQuoteFilter] = useState<BinanceSpotQuoteFilter>('USDT')
+  const [instrumentListCollapsed, setInstrumentListCollapsed] = useState(initialMarketListCollapsed)
   // The explorer's browsing venue is independent of the active chart instrument.
   const catalogState = useMarketCatalog(venue, marketDataMode, retry)
   const detailState = useMarketDetailData(selectedInstrument, selectedTimeframe)
@@ -69,6 +83,17 @@ export function MarketPage() {
     setSortField(next.field)
     setSortDirection(next.direction)
   }, [sortField, sortDirection])
+  const toggleInstrumentList = useCallback(() => {
+    setInstrumentListCollapsed((current) => {
+      const next = !current
+      try {
+        window.localStorage.setItem(MARKET_LIST_COLLAPSED_KEY, String(next))
+      } catch {
+        // The layout remains usable for this session when persistence is blocked.
+      }
+      return next
+    })
+  }, [])
 
   const explorerPanel = (
     <MarketExplorer
@@ -99,14 +124,35 @@ export function MarketPage() {
       compact={Boolean(selectedInstrument)}
     />
   )
-  const explorer = <div className={styles.navigator}>{displayMode === 'simple' && <DisplayModeNotice variant="panel">{uiText[language].displayMode.marketHint}</DisplayModeNotice>}{explorerPanel}</div>
+  const listIsCollapsed = Boolean(selectedInstrument && instrumentListCollapsed)
+  const layoutText = marketExplorerText[language].layout
+  const explorer = <div className={`${styles.navigator} ${selectedInstrument ? styles.navigatorDetail : ''} ${listIsCollapsed ? styles.navigatorCollapsed : ''}`}>
+    {selectedInstrument && <div className={styles.navigatorToolbar}>
+      {!listIsCollapsed && <strong>{layoutText.instrumentList}</strong>}
+      <button
+        type="button"
+        aria-controls="market-instrument-list"
+        aria-expanded={!listIsCollapsed}
+        aria-label={listIsCollapsed ? layoutText.expandInstrumentList : layoutText.collapseInstrumentList}
+        title={listIsCollapsed ? layoutText.expandInstrumentList : layoutText.collapseInstrumentList}
+        onClick={toggleInstrumentList}
+      >
+        <span aria-hidden="true">{listIsCollapsed ? '›' : '‹'}</span>
+        <em>{listIsCollapsed ? layoutText.instrumentList : layoutText.expandChart}</em>
+      </button>
+    </div>}
+    <div id="market-instrument-list" className={styles.navigatorContent} hidden={listIsCollapsed}>
+      {displayMode === 'simple' && <DisplayModeNotice variant="panel">{uiText[language].displayMode.marketHint}</DisplayModeNotice>}
+      {explorerPanel}
+    </div>
+  </div>
 
   if (!selectedInstrument) return <main className={styles.page}>{explorer}</main>
 
   const snapshot = detailState.state?.snapshot
   const currentSnapshot = snapshot?.instrument.id === selectedInstrument.id && snapshot.timeframe === selectedTimeframe
   if (!currentSnapshot || !detailState.state) {
-    return <div className={styles.pendingWorkspace}>
+    return <div className={`${styles.pendingWorkspace} ${listIsCollapsed ? styles.pendingWorkspaceCollapsed : ''}`}>
       {explorer}
       <div className={styles.detailState}>{detailState.error ?? `Connecting ${selectedInstrument.symbol} · ${detailState.state?.connection.message ?? 'Preparing market workspace…'}`}</div>
     </div>
@@ -114,6 +160,7 @@ export function MarketPage() {
 
   return <MarketDetailWorkspace
     navigator={explorer}
+    instrumentListCollapsed={listIsCollapsed}
     snapshot={snapshot}
     connection={detailState.state.connection}
     selectedTimeframe={selectedTimeframe}

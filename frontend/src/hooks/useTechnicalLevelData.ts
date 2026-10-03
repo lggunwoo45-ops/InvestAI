@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useEffectEvent, useState } from 'react'
 
 import { useMarketWorkspace } from '@/hooks/useMarketWorkspace'
 import { marketDataService } from '@/services/market/marketDataService'
@@ -29,13 +29,15 @@ const emptyState: TechnicalLevelDataState = {
 export function useTechnicalLevelData(instrument: MarketInstrument | null): TechnicalLevelDataState {
   const { marketDataMode } = useMarketWorkspace()
   const requestKey = instrument ? `${instrument.id}:1D:${marketDataMode}` : null
+  const readSubscriptionInstrument = useEffectEvent(() => instrument)
   const [resolved, setResolved] = useState<{ key: string | null; value: TechnicalLevelDataState }>({ key: null, value: emptyState })
 
   useEffect(() => {
-    if (!instrument) return undefined
+    const subscriptionInstrument = readSubscriptionInstrument()
+    if (!subscriptionInstrument) return undefined
 
     return marketDataService.subscribe({
-      instrument,
+      instrument: subscriptionInstrument,
       timeframe: '1D',
       mode: marketDataMode,
       onState: ({ snapshot, connection }) => {
@@ -58,7 +60,7 @@ export function useTechnicalLevelData(instrument: MarketInstrument | null): Tech
         })
       },
     })
-  }, [instrument, marketDataMode, requestKey])
+  }, [marketDataMode, requestKey])
 
   if (!instrument) return emptyState
   if (resolved.key !== requestKey) return { ...emptyState, isLoading: true }

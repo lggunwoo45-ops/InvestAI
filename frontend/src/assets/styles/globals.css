@@ -37,12 +37,12 @@
 }
 
 html {
-  min-width: 1280px;
+  min-width: 0;
   background: var(--color-bg);
 }
 
 body {
-  min-width: 1280px;
+  min-width: 0;
   min-height: 100vh;
   margin: 0;
   overflow: hidden;
@@ -97,6 +97,12 @@ a {
     --sidebar-width: 220px;
     --ai-copilot-width: 320px;
     --header-height: 66px;
+  }
+}
+
+@media (max-width: 1024px) {
+  :root {
+    --sidebar-collapsed-width: 56px;
   }
 }
 

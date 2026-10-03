@@ -3,9 +3,11 @@ import { Link } from 'react-router-dom'
 
 import { ConnectionIndicator } from '@/components/market-data/ConnectionIndicator/ConnectionIndicator'
 import { DataModeControl } from '@/components/market-data/DataModeControl/DataModeControl'
+import { useTechnicalLevelData } from '@/hooks/useTechnicalLevelData'
 import { uiText } from '@/i18n/translations'
 import { useLanguage } from '@/i18n/useLanguage'
 import { marketExplorerText } from '@/pages/Market/marketExplorerConfig'
+import { buildTechnicalLevelAnalysis } from '@/services/technicalLevels/technicalLevelEngine'
 import type { MarketConnectionState, MarketDataMode } from '@/types/market'
 import type { MarketDetailSnapshot, ChartTimeframe } from '@/types/marketDetail'
 import { formatMarketChange, formatMarketPrice, formatMarketVolume } from '@/utils/formatMarketValue'
@@ -26,6 +28,13 @@ export const MarketDetailPanel = memo(function MarketDetailPanel({ snapshot, con
   const { instrument, candles } = snapshot
   const { language } = useLanguage()
   const labels = uiText[language].detail
+  const technicalData = useTechnicalLevelData(instrument)
+  const technicalAnalysis = useMemo(() => buildTechnicalLevelAnalysis({
+    instrument: technicalData.currentPrice !== null ? { ...instrument, lastPrice: technicalData.currentPrice } : instrument,
+    candles: technicalData.candles,
+    language,
+    dataQuality: technicalData.dataQuality,
+  }), [instrument, language, technicalData.candles, technicalData.currentPrice, technicalData.dataQuality])
   const isStock = instrument.marketId === 'korea-stock' || instrument.marketId === 'us-stock'
   const workspace = marketExplorerText[language].workspace[isStock ? 'stock' : 'crypto']
   const venueLabel = instrument.marketType
@@ -65,7 +74,7 @@ export const MarketDetailPanel = memo(function MarketDetailPanel({ snapshot, con
       </dl>
       <TimeframeToolbar selected={selectedTimeframe} mode={connection.effectiveMode} onSelect={onSelectTimeframe} />
       <div className={styles.chartArea}>
-        <CandlestickChart key={instrument.id} candles={candles} instrument={instrument} timeframe={selectedTimeframe} mode={connection.effectiveMode} />
+        <CandlestickChart key={instrument.id} candles={candles} instrument={instrument} timeframe={selectedTimeframe} mode={connection.effectiveMode} technicalAnalysis={technicalAnalysis} technicalLoading={technicalData.isLoading} />
       </div>
     </section>
   )

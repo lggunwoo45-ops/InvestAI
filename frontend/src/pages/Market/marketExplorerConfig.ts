@@ -61,6 +61,12 @@ export const marketExplorerText = {
     mock: 'MOCK CATALOG',
     mockDisclosure: 'Stock quotes are simulated. Not investment data.',
     sourceUnavailable: 'The public market catalog is unavailable. Retry or switch to MOCK.',
+    layout: {
+      instrumentList: 'Instrument list',
+      collapseInstrumentList: 'Collapse instrument list',
+      expandInstrumentList: 'Expand instrument list',
+      expandChart: 'Expand chart',
+    },
     group: { crypto: 'Crypto', korea: 'Korea', us: 'US' },
     venue: {
       'upbit-krw': 'Upbit · KRW',
@@ -133,6 +139,12 @@ export const marketExplorerText = {
     mock: '모의 목록',
     mockDisclosure: '주식 시세는 모의값이며 투자 자료가 아닙니다.',
     sourceUnavailable: '공개 마켓 목록을 불러오지 못했습니다. 재시도하거나 MOCK으로 전환하세요.',
+    layout: {
+      instrumentList: '종목 목록',
+      collapseInstrumentList: '종목 목록 접기',
+      expandInstrumentList: '종목 목록 펼치기',
+      expandChart: '차트 넓게 보기',
+    },
     group: { crypto: '암호화폐', korea: '한국', us: '미국' },
     venue: {
       'upbit-krw': '업비트 · KRW',

@@ -47,4 +47,15 @@ describe('useTechnicalLevelData', () => {
     expect(result.current).toEqual({ candles: [], currentPrice: null, dataQuality: 'unavailable', connectionStatus: 'idle', isLoading: false })
     expect(subscribe).not.toHaveBeenCalled()
   })
+
+  it('does not restart the daily subscription for quote-only instrument updates', () => {
+    const unsubscribe = vi.fn()
+    const subscribe = vi.spyOn(marketDataService, 'subscribe').mockReturnValue(unsubscribe)
+    const { rerender, unmount } = renderHook(({ value }) => useTechnicalLevelData(value), { initialProps: { value: instrument } })
+    rerender({ value: { ...instrument, lastPrice: 104, change24hPercent: 2, volume24h: 2_000 } })
+    expect(subscribe).toHaveBeenCalledOnce()
+    expect(unsubscribe).not.toHaveBeenCalled()
+    unmount()
+    expect(unsubscribe).toHaveBeenCalledOnce()
+  })
 })
