@@ -22,8 +22,8 @@ import { buildCryptoWatchCandidates } from '@/services/ai/cryptoWatchCandidateEn
 import { buildStockWatchCandidates } from '@/services/ai/stockWatchCandidateEngine'
 import { buildCandidateReviewScore } from '@/services/candidateScore/candidateReviewScore'
 import { buildCandidateCurrentState, buildCandidateSnapshot } from '@/services/candidateSnapshot/candidateSnapshotBuilder'
-import { evaluateCandidateSnapshotFreshness } from '@/services/candidateSnapshot/candidateSnapshotFreshness'
-import { applyCandidateQualityGate, type CandidateQualityGateInput } from '@/services/candidateSnapshot/candidateQualityGate'
+import { classifyCandidateQualityStatus, filterDisplayedCandidates, loadCandidateDisplayFilter, saveCandidateDisplayFilter, type CandidateDisplayFilter } from '@/services/candidateSnapshot/candidateDisplayClassification'
+import type { CandidateQualityGateInput } from '@/services/candidateSnapshot/candidateQualityGate'
 import { getDailyBasisTime } from '@/services/candidateSnapshot/dailyBasisTime'
 import { selectDailyBucketCandidates } from '@/services/candidateSnapshot/dailyBucketCandidateSelector'
 import { buildDailyBucketSnapshot } from '@/services/candidateSnapshot/dailyBucketSnapshot'
@@ -33,7 +33,7 @@ import { buildBitcoinMarketAnchor } from '@/services/marketAnchor/bitcoinMarketA
 import { buildPracticalDecision } from '@/services/practicalDecision/practicalDecisionModel'
 import { buildReviewRanges } from '@/services/practicalDecision/reviewRangeModel'
 import { buildTechnicalLevelAnalysis } from '@/services/technicalLevels/technicalLevelEngine'
-import type { CandidateSnapshotBuildSource } from '@/types/candidateSnapshot'
+import type { CandidateSnapshotBuildSource, CandidateSnapshotItem } from '@/types/candidateSnapshot'
 import type { MarketCatalog, MarketInstrument } from '@/types/market'
 import { getMarketBuckets, type MarketBucketId } from '@/types/marketBucket'
 import type { WatchCandidate, WatchCandidateHorizon } from '@/types/watchCandidate'
@@ -51,6 +51,15 @@ function qualityGateInput(source: CandidateSnapshotBuildSource, horizon: WatchCa
   return { currentPrice: source.instrument.lastPrice, practicalDecisionState: practicalDecision.state, reviewScore, dataQuality: source.analysis.dataQuality, freshness: 'basisHeld', missingEvidenceCount: source.analysis.missingEvidence.length, hasCautionState: practicalDecision.state === 'extendedCaution' || practicalDecision.state === 'postDropReview' }
 }
 
+function savedSnapshotFilterInput(item: CandidateSnapshotItem, horizon: WatchCandidateHorizon): CandidateQualityGateInput {
+  const decision = buildPracticalDecision({ language: 'en', horizon, dataQuality: item.dataQuality, actionStatus: item.actionStatus, interestStage: item.interestStage, freshness: 'basisHeld', movementBand: item.basisMovementBand, source: 'snapshot', reason: item.reasonText })
+  const ranges = buildReviewRanges({ language: 'en', horizon, dataQuality: item.dataQuality, anchorPrice: item.basisPrice, source: 'snapshot' })
+  const newsState = item.newsState.toLocaleLowerCase()
+  const missingEvidenceCount = newsState.includes('unavailable') || newsState.includes('not available') || newsState.includes('없음') ? 1 : 0
+  const reviewScore = buildCandidateReviewScore({ language: 'en', dataQuality: item.dataQuality, practicalDecisionState: decision.state, clarity: item.clarity, hasReviewRanges: ranges.length > 0, freshness: 'basisHeld', evidenceCount: item.ruleBasis.length + (item.disclosureCount > 0 ? 1 : 0), missingEvidenceCount, hasNewsEvidence: missingEvidenceCount === 0, hasDisclosureEvidence: item.disclosureCount > 0 })
+  return { currentPrice: item.basisPrice, practicalDecisionState: decision.state, reviewScore, dataQuality: item.dataQuality, freshness: 'basisHeld', missingEvidenceCount, hasCautionState: decision.state === 'extendedCaution' || decision.state === 'postDropReview' }
+}
+
 export function AiAnalysisPage() {
   const navigate = useNavigate()
   const { language } = useLanguage()
@@ -63,6 +72,7 @@ export function AiAnalysisPage() {
   const [snapshotRecords, setSnapshotRecords] = useState(loadDailyBucketSnapshots)
   const [clock, setClock] = useState(() => new Date().toISOString())
   const [selectedByBucket, setSelectedByBucket] = useState<Partial<Record<MarketBucketId, string>>>({})
+  const [candidateDisplayFilter, setCandidateDisplayFilter] = useState(loadCandidateDisplayFilter)
 
   const upbitKrw = useMarketCatalog('upbit-krw', marketDataMode, 0)
   const upbitBtc = useMarketCatalog('upbit-btc', marketDataMode, 0)
@@ -99,30 +109,38 @@ export function AiAnalysisPage() {
     instrument,
     analysis: buildMyInstrumentAnalysis({ instrument, candidate, intent: 'watching', userNote: '', averagePrice: null, catalogSource: activeCatalogSource === 'live' ? 'live' : activeCatalogSource === 'mock' ? 'mock' : null, newsResult, language: 'en' }),
   })), [activeCatalogSource, newsResult, selectedCandidates])
-  const qualityGate = useMemo(() => applyCandidateQualityGate(candidateSources, (source) => qualityGateInput(source, horizon)), [candidateSources, horizon])
-  const snapshotSources = useMemo(() => qualityGate.passing.slice(0, 5), [qualityGate.passing])
+  const candidateSourceQualityInputs = useMemo(() => new Map(candidateSources.map((source) => [source.instrument.id, qualityGateInput(source, horizon)])), [candidateSources, horizon])
+  const allCandidateQualityStatus = useMemo(() => classifyCandidateQualityStatus(candidateSources, (source) => candidateSourceQualityInputs.get(source.instrument.id)!), [candidateSourceQualityInputs, candidateSources])
+  const candidateQualityScan = useMemo(() => {
+    const fifthDisplayed = allCandidateQualityStatus.displayed[4]
+    if (!fifthDisplayed) return candidateSources
+    return candidateSources.slice(0, candidateSources.indexOf(fifthDisplayed) + 1)
+  }, [allCandidateQualityStatus.displayed, candidateSources])
+  const candidateQualityStatus = useMemo(() => classifyCandidateQualityStatus(candidateQualityScan, (source) => candidateSourceQualityInputs.get(source.instrument.id)!), [candidateQualityScan, candidateSourceQualityInputs])
+  const snapshotSources = useMemo(() => candidateQualityStatus.displayed.slice(0, 5), [candidateQualityStatus.displayed])
   const activeSnapshot = snapshotRecords.find((snapshot) => snapshot.bucketId === bucketId) ?? null
   const currentStates = useMemo(() => new Map(candidateSources.map((source) => [source.instrument.id, buildCandidateCurrentState(source)])), [candidateSources])
   const currentPrices = useMemo(() => new Map(activeInstruments.map((instrument) => [instrument.id, instrument.lastPrice])), [activeInstruments])
   const basis = useMemo(() => getDailyBasisTime(new Date(clock)), [clock])
-  const activeSnapshotQuality = useMemo(() => activeSnapshot ? applyCandidateQualityGate(activeSnapshot.items, (item) => {
-    const state = currentStates.get(item.instrumentId) ?? null
-    const catalogPrice = currentPrices.get(item.instrumentId) ?? null
-    const currentPrice = state && Number.isFinite(state.currentPrice) && state.currentPrice > 0 ? state.currentPrice : catalogPrice ?? Number.NaN
-    const freshness = evaluateCandidateSnapshotFreshness(item, state, activeSnapshot.expiresAt, clock, Number.isFinite(currentPrice) && currentPrice > 0 ? currentPrice : null)
-    const movementBand = item.basisMovementBand
-    const decision = buildPracticalDecision({ language: 'en', horizon, dataQuality: item.dataQuality, actionStatus: item.actionStatus, interestStage: item.interestStage, freshness: freshness.state, movementBand, source: 'snapshot', reason: item.reasonText })
-    const ranges = buildReviewRanges({ language: 'en', horizon, dataQuality: item.dataQuality, anchorPrice: item.basisPrice, source: 'snapshot', expired: freshness.state === 'expired' })
-    const newsState = item.newsState.toLocaleLowerCase()
-    const missingEvidenceCount = (newsState.includes('unavailable') || newsState.includes('not available') || newsState.includes('없음') ? 1 : 0) + (freshness.state === 'reviewBasisUnavailable' ? 1 : 0)
-    const reviewScore = buildCandidateReviewScore({ language: 'en', dataQuality: item.dataQuality, practicalDecisionState: decision.state, clarity: item.clarity, hasReviewRanges: ranges.length > 0, freshness: freshness.state, evidenceCount: item.ruleBasis.length + (item.disclosureCount > 0 ? 1 : 0), missingEvidenceCount, hasNewsEvidence: !newsState.includes('unavailable') && !newsState.includes('not available') && !newsState.includes('없음'), hasDisclosureEvidence: item.disclosureCount > 0 })
-    return { currentPrice, practicalDecisionState: decision.state, reviewScore, dataQuality: item.dataQuality, freshness: freshness.state, missingEvidenceCount, hasCautionState: decision.state === 'extendedCaution' || decision.state === 'postDropReview' }
-  }) : null, [activeSnapshot, clock, currentPrices, currentStates, horizon])
-  const displaySnapshot = useMemo(() => activeSnapshot && activeSnapshotQuality ? { ...activeSnapshot, items: activeSnapshotQuality.passing } : activeSnapshot, [activeSnapshot, activeSnapshotQuality])
+  const savedSnapshotFilterInputs = useMemo(() => activeSnapshot ? new Map(activeSnapshot.items.map((item) => [item.instrumentId, savedSnapshotFilterInput(item, DAILY_DEFAULT_HORIZON)])) : null, [activeSnapshot])
+  const displaySnapshot = useMemo(() => activeSnapshot && savedSnapshotFilterInputs ? {
+    ...activeSnapshot,
+    items: filterDisplayedCandidates(activeSnapshot.items, (item) => savedSnapshotFilterInputs.get(item.instrumentId)!, candidateDisplayFilter),
+  } : activeSnapshot, [activeSnapshot, candidateDisplayFilter, savedSnapshotFilterInputs])
   const marketBuckets = useMemo(() => getMarketBuckets(language), [language])
   const bucketLabel = marketBuckets.find((bucket) => bucket.id === bucketId)?.label ?? bucketId
   const bitcoinAnchor = useMemo(() => bucketId === 'upbit' || bucketId === 'binance' ? buildBitcoinMarketAnchor({ marketBucket: bucketId, instruments: activeInstruments, catalogSource: activeCatalogSource === 'live' ? 'live' : activeCatalogSource === 'mock' ? 'mock' : null, newsResult, language }) : null, [activeCatalogSource, activeInstruments, bucketId, language, newsResult])
   const terminalItems = useMemo(() => displaySnapshot ? buildCandidateTerminalItems({ items: displaySnapshot.items, expiresAt: displaySnapshot.expiresAt, currentStates, currentPrices, horizon, language, now: clock }) : [], [clock, currentPrices, currentStates, displaySnapshot, horizon, language])
+  const heldCandidateSnapshot = useMemo(() => {
+    const heldSources = candidateQualityStatus.heldForReview.map(({ item }) => item)
+    if (heldSources.length === 0) return null
+    return buildCandidateSnapshot({ sources: heldSources, generatedAt: clock, expiresAt: basis.nextDailyBasisAt, snapshotId: `display-held-${bucketId}`, catalogSource: activeCatalogSource, providerLabel: `Held ${bucketId}` })
+  }, [activeCatalogSource, basis.nextDailyBasisAt, bucketId, candidateQualityStatus.heldForReview, clock])
+  const heldTerminalItems = useMemo(() => {
+    if (!heldCandidateSnapshot) return []
+    const reasons = new Map(candidateQualityStatus.heldForReview.map(({ item, reason }) => [item.instrument.id, reason]))
+    return buildCandidateTerminalItems({ items: heldCandidateSnapshot.items, expiresAt: heldCandidateSnapshot.expiresAt, currentStates, currentPrices, horizon, language, now: clock }).map((candidate) => ({ candidate, reason: reasons.get(candidate.item.instrumentId)! }))
+  }, [candidateQualityStatus.heldForReview, clock, currentPrices, currentStates, heldCandidateSnapshot, horizon, language])
   const selectedInstrumentId = terminalItems.some((entry) => entry.item.instrumentId === selectedByBucket[bucketId]) ? selectedByBucket[bucketId] ?? null : terminalItems[0]?.item.instrumentId ?? null
   const selectedTerminalItem = terminalItems.find((entry) => entry.item.instrumentId === selectedInstrumentId) ?? null
   const selectedInstrument = activeInstruments.find((instrument) => instrument.id === selectedInstrumentId) ?? null
@@ -139,9 +157,9 @@ export function AiAnalysisPage() {
       dataQuality: technicalLevelData.dataQuality,
     })
   }, [language, selectedInstrument, technicalLevelData.candles, technicalLevelData.currentPrice, technicalLevelData.dataQuality])
-  const displayedCount = terminalItems.length
-  const excludedCount = activeSnapshot ? activeSnapshotQuality?.excluded.length ?? 0 : qualityGate.excluded.length
-  const exclusionReasons = activeSnapshot ? activeSnapshotQuality?.reasonCounts ?? {} : qualityGate.reasonCounts
+  const qualityDisplayedCount = candidateQualityStatus.displayed.length
+  const heldCount = candidateQualityStatus.heldForReview.length
+  const excludedCount = candidateQualityStatus.excluded.length
   const snapshotStatus = !displaySnapshot ? 'pending' : displaySnapshot.tradingDate === basis.tradingDateLabel ? 'today' : 'previous'
   const recalculationContextKey = `${bucketId}:${displaySnapshot?.snapshotId ?? 'none'}:${horizon}:${marketDataMode}`
 
@@ -163,14 +181,19 @@ export function AiAnalysisPage() {
 
   const openSnapshotAnalysis = useCallback((instrumentId: string, snapshotId: string) => navigate(`/my-analysis?instrumentId=${encodeURIComponent(instrumentId)}&bucketId=${encodeURIComponent(bucketId)}&snapshotId=${encodeURIComponent(snapshotId)}`), [bucketId, navigate])
   const selectCandidate = useCallback((instrumentId: string) => setSelectedByBucket((current) => ({ ...current, [bucketId]: instrumentId })), [bucketId])
+  const changeCandidateDisplayFilter = useCallback((filter: CandidateDisplayFilter) => {
+    setCandidateDisplayFilter(filter)
+    saveCandidateDisplayFilter(filter)
+  }, [])
+  const heldVisibility = candidateDisplayFilter === 'wider' ? 'expanded' : displayMode === 'expert' ? 'collapsed' : 'hidden'
 
   return <>
     <AiAnalysisTerminalLayout
-      header={<MarketTerminalHeader bucketLabel={bucketLabel} displayedCount={displayedCount} excludedCount={excludedCount} dataState={activeCatalogSource} snapshotStatus={snapshotStatus} bitcoinAnchorStatus={bitcoinAnchor?.status ?? null} language={language} />}
+      header={<MarketTerminalHeader bucketLabel={bucketLabel} displayedCount={qualityDisplayedCount} heldCount={heldCount} excludedCount={excludedCount} dataState={activeCatalogSource} snapshotStatus={snapshotStatus} bitcoinAnchorStatus={bitcoinAnchor?.status ?? null} language={language} />}
       tabs={<MarketBucketSelector selected={bucketId} language={language} onChange={setBucketId} />}
-      context={<MarketContextStrip bucketId={bucketId} bucketLabel={bucketLabel} bitcoinAnchor={bitcoinAnchor} displayedCount={displayedCount} excludedCount={excludedCount} reasonCounts={exclusionReasons} dataState={activeCatalogSource} newsState={newsResult?.state ?? null} language={language} />}
+      context={<MarketContextStrip bucketId={bucketId} bucketLabel={bucketLabel} bitcoinAnchor={bitcoinAnchor} displayedCount={qualityDisplayedCount} heldCount={heldCount} excludedCount={excludedCount} heldReasonCounts={candidateQualityStatus.heldReasonCounts} excludedReasonCounts={candidateQualityStatus.excludedReasonCounts} displayFilter={candidateDisplayFilter} onDisplayFilterChange={changeCandidateDisplayFilter} dataState={activeCatalogSource} newsState={newsResult?.state ?? null} language={language} />}
       advanced={displayMode === 'expert' ? <details className={styles.advanced}><summary>{pageCopy.advanced}</summary><p>{pageCopy.advancedHelp}</p><CandidateHorizonSelector horizon={horizon} language={language} onChange={setHorizon} /></details> : undefined}
-      candidateList={<CandidateTerminalList key={recalculationContextKey} snapshot={displaySnapshot} items={terminalItems} selectedInstrumentId={selectedInstrumentId} language={language} now={clock} canRecalculate={!basis.isBeforeTodayBasis && activeInstruments.length > 0} beforeTodayBasis={basis.isBeforeTodayBasis} contextKey={recalculationContextKey} onSelect={selectCandidate} onRecalculate={createSnapshot} />}
+      candidateList={<CandidateTerminalList key={recalculationContextKey} snapshot={displaySnapshot} items={terminalItems} selectedInstrumentId={selectedInstrumentId} language={language} now={clock} canRecalculate={!basis.isBeforeTodayBasis && activeInstruments.length > 0} beforeTodayBasis={basis.isBeforeTodayBasis} contextKey={recalculationContextKey} heldCandidates={heldTerminalItems} heldCandidateCount={heldCount} heldVisibility={heldVisibility} onSelect={selectCandidate} onRecalculate={createSnapshot} />}
       inspector={<CandidateInspectorPanel candidate={selectedTerminalItem} snapshotId={displaySnapshot?.snapshotId ?? null} generatedAt={displaySnapshot?.generatedAt ?? null} language={language} technicalAnalysis={technicalAnalysis} technicalLoading={technicalLevelData.isLoading} onOpenAnalysis={openSnapshotAnalysis} />}
     />
     <AiUsagePlans language={language} />

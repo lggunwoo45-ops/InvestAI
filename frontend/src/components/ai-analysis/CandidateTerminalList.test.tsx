@@ -176,4 +176,28 @@ describe('CandidateTerminalList', () => {
     expect(panel.textContent).toContain('This saved record has expired and should be read as historical context.')
     expect(panel.textContent).not.toContain('Saved candidates and order stay fixed until advanced recalculation.')
   })
+
+  it('keeps held candidates hidden by default, collapsed for experts, and expanded in Wider view', () => {
+    const held = { ...terminalItem(2), reviewScore: { ...terminalItem(2).reviewScore, score: 55 } }
+    const heldCandidates = [{ candidate: held, reason: 'reviewScoreTooLow' as const }]
+    const main = terminalItem(1)
+    const view = render(<CandidateTerminalList {...baseProps} snapshot={snapshot([main.item])} items={[main]} heldCandidates={heldCandidates} heldVisibility="hidden" />)
+
+    expect(screen.queryByText('Held for review')).toBeNull()
+
+    view.rerender(<CandidateTerminalList {...baseProps} snapshot={snapshot([main.item])} items={[main]} heldCandidates={heldCandidates} heldVisibility="collapsed" />)
+    const collapsed = screen.getByText('Held for review').closest('details')
+    expect(collapsed?.hasAttribute('open')).toBe(false)
+    expect(collapsed?.textContent).toContain('Conditions are not strong enough for the main candidate list.')
+    expect(collapsed?.textContent).toContain('Review score too low')
+    expect(within(collapsed as HTMLElement).queryByRole('button')).toBeNull()
+    expect(within(collapsed as HTMLElement).queryByRole('link')).toBeNull()
+
+    view.rerender(<CandidateTerminalList {...baseProps} snapshot={snapshot([main.item])} items={[main]} heldCandidates={heldCandidates} heldVisibility="expanded" language="ko" />)
+    const expanded = screen.getByText('보류 후보').closest('details')
+    expect(expanded?.hasAttribute('open')).toBe(true)
+    expect(expanded?.textContent).toContain('조건이 부족해 기본 후보에는 표시하지 않습니다.')
+    expect(expanded?.textContent).toContain('검토 점수 부족')
+    expect(expanded?.textContent).not.toMatch(/매수|매도|손절가|익절가|목표가/)
+  })
 })

@@ -12,8 +12,18 @@
 .strip p { margin: 7px 0 0; overflow: hidden; color: var(--color-text-muted); font-size: 9px; line-height: 1.45; text-overflow: ellipsis; }
 .strip .anchorCaution { color: var(--color-text); }
 .anchorSafety { display: block; margin-top: 7px; color: var(--color-text-muted); font-size: 9px; line-height: 1.45; }
-.counts { display: flex; gap: 5px; align-items: baseline; margin-top: 10px; color: var(--color-text-muted); font-size: 9px; }
+.counts { display: flex; flex-wrap: wrap; gap: 5px; align-items: baseline; margin-top: 10px; color: var(--color-text-muted); font-size: 9px; }
+.counts span { display: inline-flex; gap: 4px; align-items: baseline; }
 .counts b { color: var(--color-text); font: 650 15px ui-monospace, monospace; }.counts i { color: var(--color-text-subtle); font-style: normal; }
+.bucket > small { display: block; margin-top: 6px; color: var(--color-text-subtle); font-size: 8px; line-height: 1.45; }
+.filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3px; margin-top: 8px; }
+.filters button { min-width: 0; padding: 5px 3px; border: 1px solid var(--color-border); background: #0d1820; color: var(--color-text-muted); font: 650 8px ui-monospace, monospace; cursor: pointer; }
+.filters button:hover, .filters button:focus-visible { border-color: #496064; color: var(--color-text); }
+.filters button[aria-pressed='true'] { border-color: #668d86; background: #142522; color: #b8cfca; }
+.reasons { display: flex; flex-wrap: wrap; gap: 4px; margin: 7px 0 0; padding: 0; list-style: none; }
+.reasons li { padding: 3px 5px; border: 1px solid #24333c; color: var(--color-text-muted); font-size: 8px; }
+.reasons li span { margin-right: 4px; color: #8ca8a3; font-weight: 700; }
+.reasons b { margin-left: 3px; color: var(--color-text); font-family: ui-monospace, monospace; }
 .pulse { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; margin-top: 11px; }
 .pulse i { height: 4px; background: #24313c; }.pulse i[data-active='true'] { background: #668d86; }
 @container (max-width: 900px) { .strip, .strip[data-asset-context='stock'] { grid-template-columns: repeat(2, 1fr); }.strip > section:nth-child(3) { border-left: 0; border-top: 1px solid var(--color-border); }.strip > section:nth-child(4) { border-top: 1px solid var(--color-border); } }

@@ -10,5 +10,19 @@
 .select { width: 100%; min-width: 0; padding: 9px 8px 9px 11px; border: 0; background: transparent; color: var(--color-text-muted); text-align: left; cursor: pointer; }.select:focus-visible { outline: 1px solid var(--color-accent); outline-offset: -2px; }
 .select > span { min-width: 0; }.identity { display: grid; gap: 2px; }.identity strong { color: var(--color-text); font: 650 11px ui-monospace, monospace; }.identity small { overflow: hidden; color: var(--color-text-muted); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }.identity em { overflow: hidden; color: var(--color-text-muted); font-size: 9px; font-style: normal; text-overflow: ellipsis; white-space: nowrap; }
 .numeric, .score, .range { color: #9faeaf; font: 600 9px ui-monospace, monospace; }.numeric { display: grid; gap: 2px; text-align: right; }.numeric small { color: var(--color-text-muted); font-size: 9px; }.score { color: #adc2bd; }.read { overflow: hidden; color: #a8b7b6; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.held { border-top: 1px solid var(--color-border); background: #0a1218; }
+.held > summary { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 9px 11px; color: var(--color-text-muted); cursor: pointer; }
+.held > summary span { display: grid; gap: 2px; }
+.held > summary strong { color: #a8b7b6; font-size: 10px; }
+.held > summary small { color: var(--color-text-muted); font-size: 9px; }
+.held > summary b { color: var(--color-text); font: 650 12px ui-monospace, monospace; }
+.held > ol { margin: 0; padding: 0; border-top: 1px solid var(--color-border); list-style: none; }
+.held > ol > li { display: grid; grid-template-columns: minmax(130px, 1fr) 72px minmax(110px, .8fr); gap: 10px; align-items: center; padding: 8px 11px; border-bottom: 1px solid var(--color-border); color: var(--color-text-muted); font: 9px ui-monospace, monospace; }
+.held > ol > li:last-child { border-bottom: 0; }
+.held li > span:first-child { display: grid; gap: 2px; }
+.held li strong { color: var(--color-text); font-size: 10px; }
+.held li small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.held li em { color: #a69f89; font-style: normal; }
 @container (max-width: 840px) { .columns, .select { grid-template-columns: minmax(135px, 1.3fr) minmax(68px, .7fr) minmax(75px, .7fr) 68px minmax(90px, .8fr); }.columns span:nth-child(6), .select > span:nth-child(6) { display: none; } }
 @container (max-width: 620px) { .columns, .select { grid-template-columns: minmax(125px, 1.2fr) minmax(66px, .7fr) 64px minmax(88px, .8fr); }.columns span:nth-child(3), .select > span:nth-child(3), .columns span:nth-child(6), .select > span:nth-child(6) { display: none; } }
+@container (max-width: 460px) { .held > ol > li { grid-template-columns: minmax(120px, 1fr) 64px; }.held li em { grid-column: 1 / -1; } }

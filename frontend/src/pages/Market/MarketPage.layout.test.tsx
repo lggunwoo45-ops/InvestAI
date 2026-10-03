@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { App } from '@/app/App'
+import { WATCHLIST_STORAGE_KEY } from '@/utils/watchlistStorage'
 
 const MARKET_LIST_COLLAPSED_KEY = 'market-copilot.market-list-collapsed.v1'
 const originalMatchMedia = window.matchMedia
@@ -38,12 +39,15 @@ describe('Market instrument-list layout', () => {
   it('keeps search, sort, favorite, and selected-instrument context while collapsing and expanding', async () => {
     render(<App />)
     fireEvent.click(await screen.findByRole('button', { name: 'MOCK' }))
+    await screen.findByRole('img', { name: /BTC\/KRW 1H TradingView candlestick chart in mock mode/i })
 
     const search = screen.getByRole('searchbox', { name: 'Search symbol, Korean or English name' })
     fireEvent.change(search, { target: { value: 'XRP' } })
     fireEvent.click(screen.getByRole('button', { name: /Sort by Price/ }))
     const favorite = await screen.findByRole('button', { name: 'Add XRP/KRW favorite' })
     fireEvent.click(favorite)
+    await waitFor(() => expect(window.localStorage.getItem(WATCHLIST_STORAGE_KEY)).toContain('upbit-xrp'))
+    expect(await screen.findByRole('button', { name: 'Remove XRP/KRW favorite' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Open XRP/KRW' }))
 
     expect(await screen.findByRole('img', { name: /XRP\/KRW 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
@@ -67,13 +71,13 @@ describe('Market instrument-list layout', () => {
     window.localStorage.setItem(MARKET_LIST_COLLAPSED_KEY, 'true')
     const first = render(<App />)
     fireEvent.click(await screen.findByRole('button', { name: 'MOCK' }))
-    fireEvent.click(await screen.findByRole('button', { name: 'Open BTC/KRW' }))
+    expect(await screen.findByRole('img', { name: /BTC\/KRW 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
     expect(await screen.findByRole('button', { name: 'Expand instrument list' })).toBeTruthy()
     first.unmount()
 
     render(<App />)
     fireEvent.click(await screen.findByRole('button', { name: 'MOCK' }))
-    fireEvent.click(await screen.findByRole('button', { name: 'Open BTC/KRW' }))
+    expect(await screen.findByRole('img', { name: /BTC\/KRW 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
     expect(await screen.findByRole('button', { name: 'Expand instrument list' })).toBeTruthy()
   })
 
@@ -81,7 +85,6 @@ describe('Market instrument-list layout', () => {
     mockNarrowViewport(true)
     render(<App />)
     fireEvent.click(await screen.findByRole('button', { name: 'MOCK' }))
-    fireEvent.click(await screen.findByRole('button', { name: 'Open BTC/KRW' }))
 
     expect(await screen.findByRole('img', { name: /BTC\/KRW 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Expand instrument list' }))
