@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
 import { DisplayModeNotice } from '@/components/displayMode/DisplayModeNotice/DisplayModeNotice'
@@ -15,6 +15,20 @@ import { marketDataService } from '@/services/market/marketDataService'
 import { venueForStockId } from '@/services/market/explorer/StockCatalogProvider'
 import type { MarketInstrument, MarketVenue } from '@/types/market'
 import { nextExplorerSort, type BinanceSpotQuoteFilter, type ExplorerSortDirection, type ExplorerSortField } from './marketExplorerQuery'
+import {
+  assetModeForInstrument,
+  assetModeForVenue,
+  defaultVenueByAssetMode,
+  isSelectableMarketInstrument,
+  loadLastMarketInstrumentIds,
+  loadMarketAssetMode,
+  saveLastMarketInstrumentIds,
+  saveMarketAssetMode,
+  selectDefaultInstrument,
+  venueForPersistedInstrumentId,
+  type LastMarketInstrumentIds,
+  type MarketAssetMode,
+} from './marketAssetMode'
 import { marketExplorerText } from './marketExplorerConfig'
 import styles from './MarketPage.module.css'
 
@@ -47,7 +61,23 @@ export function MarketPage() {
   useDocumentTitle(marketExplorerText[language].title)
   const { selectedInstrument, selectedTimeframe, marketDataMode, selectInstrument, clearInstrument, selectTimeframe, setMarketDataMode } = useMarketWorkspace()
   const { favoriteIds, toggleFavorite, trackRecentlyViewed } = useWatchlists()
-  const [venue, setVenue] = useState<MarketVenue>(() => selectedInstrument ? initialVenue(selectedInstrument) : 'upbit-krw')
+  const [initialLastInstrumentIds] = useState(loadLastMarketInstrumentIds)
+  const lastInstrumentIdsRef = useRef<LastMarketInstrumentIds>(initialLastInstrumentIds)
+  const synchronizedInstrumentIdRef = useRef<string | null>(null)
+  const [assetMode, setAssetMode] = useState<MarketAssetMode>(() => selectedInstrument ? assetModeForInstrument(selectedInstrument) : loadMarketAssetMode())
+  const [venue, setVenue] = useState<MarketVenue>(() => {
+    if (selectedInstrument) return initialVenue(selectedInstrument)
+    const persistedVenue = venueForPersistedInstrumentId(initialLastInstrumentIds[assetMode] ?? '')
+    return persistedVenue && assetModeForVenue(persistedVenue) === assetMode ? persistedVenue : defaultVenueByAssetMode[assetMode]
+  })
+  const [pendingAssetSelection, setPendingAssetSelection] = useState<{ mode: MarketAssetMode, preferredId?: string } | null>(() => (
+    selectedInstrument ? null : { mode: assetMode, preferredId: initialLastInstrumentIds[assetMode] }
+  ))
+  const pendingAssetSelectionRef = useRef(pendingAssetSelection)
+  const updatePendingAssetSelection = useCallback((next: { mode: MarketAssetMode, preferredId?: string } | null) => {
+    pendingAssetSelectionRef.current = next
+    setPendingAssetSelection(next)
+  }, [])
   const [retry, setRetry] = useState(0)
   // Keep explorer controls stable when the center workspace switches to detail.
   const [search, setSearch] = useState('')
@@ -61,20 +91,82 @@ export function MarketPage() {
   const detailState = useMarketDetailData(selectedInstrument, selectedTimeframe)
 
   const openInstrument = useCallback((instrument: MarketInstrument) => {
+    const nextAssetMode = assetModeForInstrument(instrument)
+    setAssetMode(nextAssetMode)
+    saveMarketAssetMode(nextAssetMode)
+    updatePendingAssetSelection(null)
     setVenue(initialVenue(instrument))
     marketDataService.rememberInstrument(instrument)
     trackRecentlyViewed(instrument.id)
     selectInstrument(instrument)
-  }, [selectInstrument, trackRecentlyViewed])
+  }, [selectInstrument, trackRecentlyViewed, updatePendingAssetSelection])
+
+  useEffect(() => {
+    if (!selectedInstrument) {
+      synchronizedInstrumentIdRef.current = null
+      return
+    }
+    if (synchronizedInstrumentIdRef.current === selectedInstrument.id) return
+    synchronizedInstrumentIdRef.current = selectedInstrument.id
+    const instrumentAssetMode = assetModeForInstrument(selectedInstrument)
+    saveMarketAssetMode(instrumentAssetMode)
+    updatePendingAssetSelection(null)
+    if (instrumentAssetMode !== assetMode) {
+      // oxlint-disable-next-line react/set-state-in-effect -- Route-driven instrument selections must synchronize the local workspace boundary.
+      setAssetMode(instrumentAssetMode)
+      setSearch('')
+    }
+    const instrumentVenue = initialVenue(selectedInstrument)
+    if (instrumentVenue !== venue) setVenue(instrumentVenue)
+    const next = { ...lastInstrumentIdsRef.current, [instrumentAssetMode]: selectedInstrument.id }
+    lastInstrumentIdsRef.current = next
+    saveLastMarketInstrumentIds(next)
+  }, [assetMode, selectedInstrument, updatePendingAssetSelection, venue])
+
+  useLayoutEffect(() => {
+    if (pendingAssetSelectionRef.current !== pendingAssetSelection) return
+    if (!pendingAssetSelection || pendingAssetSelection.mode !== assetMode || !catalogState.catalog) return
+    if (assetModeForVenue(catalogState.catalog.venue) !== assetMode) return
+
+    const preferred = pendingAssetSelection.preferredId
+      ? catalogState.catalog.instruments.find((instrument) => instrument.id === pendingAssetSelection.preferredId && isSelectableMarketInstrument(instrument))
+      : undefined
+    if (preferred) {
+      // oxlint-disable-next-line react/set-state-in-effect -- The safe default can only be selected after its asynchronous catalog has loaded.
+      openInstrument(preferred)
+      return
+    }
+
+    if (pendingAssetSelection.preferredId && venue !== defaultVenueByAssetMode[assetMode]) {
+      setVenue(defaultVenueByAssetMode[assetMode])
+      updatePendingAssetSelection({ mode: assetMode })
+      return
+    }
+
+    const fallback = selectDefaultInstrument(assetMode, catalogState.catalog.instruments)
+    if (fallback) openInstrument(fallback)
+  }, [assetMode, catalogState.catalog, openInstrument, pendingAssetSelection, updatePendingAssetSelection, venue])
   const changeFavorite = useCallback((id: string) => {
     const instrument = catalogState.catalog?.instruments.find((item) => item.id === id)
     if (instrument) marketDataService.rememberInstrument(instrument)
     toggleFavorite(id)
   }, [catalogState.catalog, toggleFavorite])
   const changeVenue = useCallback((next: MarketVenue) => {
-    setVenue(next)
+    const nextAssetMode = assetModeForVenue(next)
+    if (nextAssetMode !== assetMode) {
+      const persistedId = lastInstrumentIdsRef.current[nextAssetMode]
+      const persistedVenue = persistedId ? venueForPersistedInstrumentId(persistedId) : undefined
+      const safePreferredId = persistedVenue && assetModeForVenue(persistedVenue) === nextAssetMode ? persistedId : undefined
+      setAssetMode(nextAssetMode)
+      saveMarketAssetMode(nextAssetMode)
+      clearInstrument()
+      updatePendingAssetSelection({ mode: nextAssetMode, preferredId: safePreferredId })
+      setVenue(persistedVenue && safePreferredId ? persistedVenue : defaultVenueByAssetMode[nextAssetMode])
+    } else {
+      setVenue(next)
+    }
     setSearch('')
-  }, [])
+  }, [assetMode, clearInstrument, updatePendingAssetSelection])
   const returnToExplorer = useCallback(() => {
     clearInstrument()
   }, [clearInstrument])

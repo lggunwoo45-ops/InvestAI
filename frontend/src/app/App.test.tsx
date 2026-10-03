@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { getDailyBasisTime } from '@/services/candidateSnapshot/dailyBasisTime'
-import { loadDailyBucketSnapshots, saveDailyBucketSnapshot } from '@/services/candidateSnapshot/dailyBucketSnapshotStorage'
+import { DAILY_BUCKET_SNAPSHOT_STORAGE_KEY, loadDailyBucketSnapshots, saveDailyBucketSnapshot } from '@/services/candidateSnapshot/dailyBucketSnapshotStorage'
 import type { DailyBucketSnapshot } from '@/services/candidateSnapshot/dailyBucketSnapshot'
 import type { MarketBucketId } from '@/types/marketBucket'
 import { App } from './App'
@@ -33,7 +33,7 @@ describe('Market Copilot application shell', () => {
   it('opens the market workspace as the home page', async () => {
     render(<App />)
 
-    const cryptoHeading = await screen.findByRole('heading', { name: 'Crypto Terminal' }, { timeout: 5000 })
+    const cryptoHeading = await screen.findByRole('heading', { name: 'Crypto Market' }, { timeout: 5000 })
     expect(cryptoHeading.closest('section')?.getAttribute('data-workspace')).toBe('crypto')
     expect(screen.getByRole('navigation', { name: 'Primary navigation' })).toBeTruthy()
     expect(screen.getByText('Beta Preview')).toBeTruthy()
@@ -43,8 +43,8 @@ describe('Market Copilot application shell', () => {
     expect(screen.getByRole('searchbox', { name: 'Global search' })).toBeTruthy()
     expect(screen.getByRole('group', { name: 'Display mode' })).toBeTruthy()
     expect(screen.getByRole('tab', { name: 'Crypto' })).toBeTruthy()
-    expect(screen.getByRole('tab', { name: 'Korea' })).toBeTruthy()
-    expect(screen.getByRole('tab', { name: 'US' })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'Korea Stocks' })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'US Stocks' })).toBeTruthy()
     expect(screen.getByRole('tab', { name: 'Upbit' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'MOCK' }))
     expect(within(await screen.findByRole('button', { name: 'Open BTC/KRW' })).queryByText('KRW')).toBeNull()
@@ -67,8 +67,8 @@ describe('Market Copilot application shell', () => {
   it('sends a selected symbol to the AI Copilot', async () => {
     render(<App />)
 
-    fireEvent.click(await screen.findByRole('tab', { name: 'Korea' }))
-    const stockHeading = await screen.findByRole('heading', { name: 'Stock Research' })
+    fireEvent.click(await screen.findByRole('tab', { name: 'Korea Stocks' }))
+    const stockHeading = await screen.findByRole('heading', { name: 'Korea Stocks Beta' })
     expect(stockHeading.closest('section')?.getAttribute('data-workspace')).toBe('stock')
     expect(screen.getByText('Stock quotes are simulated. Not investment data.')).toBeTruthy()
     fireEvent.change(screen.getByRole('searchbox', { name: 'Search symbol, Korean or English name' }), { target: { value: '005930' } })
@@ -137,7 +137,7 @@ describe('Market Copilot application shell', () => {
     expect(screen.getAllByText('MOCK').length).toBeGreaterThan(1)
   })
 
-  it('keeps the active chart and copilot while browsing other markets', async () => {
+  it('keeps the chart within crypto venues and selects the safe default when the asset mode changes', async () => {
     render(<App />)
     fireEvent.click(screen.getByRole('button', { name: 'MOCK' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Open BTC/KRW' }))
@@ -150,12 +150,11 @@ describe('Market Copilot application shell', () => {
     expect(screen.getByRole('tab', { name: 'FDUSD' }).getAttribute('aria-selected')).toBe('true')
     expect(screen.getByRole('img', { name: /BTC\/KRW 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Korea' }))
-    expect(screen.getByRole('tab', { name: 'Korea' }).getAttribute('aria-selected')).toBe('true')
-    expect(screen.getByRole('heading', { name: 'Stock Research' })).toBeTruthy()
-    expect(screen.getByRole('img', { name: /BTC\/KRW 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
-    expect(screen.getByText(/Active analysis: BTC\/KRW/)).toBeTruthy()
-    expect(screen.getByRole('complementary', { name: 'AI Copilot' }).textContent).toContain('BTC/KRW')
+    fireEvent.click(screen.getByRole('tab', { name: 'Korea Stocks' }))
+    expect(screen.getByRole('tab', { name: 'Korea Stocks' }).getAttribute('aria-selected')).toBe('true')
+    expect(screen.getByRole('heading', { name: 'Korea Stocks Beta' })).toBeTruthy()
+    expect(await screen.findByRole('img', { name: /005930 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
+    expect(screen.getByRole('complementary', { name: 'AI Copilot' }).textContent).toContain('005930')
 
     fireEvent.change(screen.getByRole('searchbox', { name: 'Search symbol, Korean or English name' }), { target: { value: '005930' } })
     fireEvent.click(await screen.findByRole('button', { name: 'Open 005930' }))
@@ -163,7 +162,7 @@ describe('Market Copilot application shell', () => {
     expect(screen.getByRole('complementary', { name: 'AI Copilot' }).textContent).toContain('005930')
     fireEvent.click(screen.getByRole('button', { name: '← All instruments' }))
     expect(screen.queryByRole('img', { name: /TradingView candlestick chart/i })).toBeNull()
-    expect(screen.getByRole('tab', { name: 'Korea' }).getAttribute('aria-selected')).toBe('true')
+    expect(screen.getByRole('tab', { name: 'Korea Stocks' }).getAttribute('aria-selected')).toBe('true')
   })
 
   it('switches and persists English and Korean core workspace labels', async () => {
@@ -171,7 +170,7 @@ describe('Market Copilot application shell', () => {
     const language = screen.getByRole('combobox', { name: 'Language' })
     fireEvent.change(language, { target: { value: 'ko' } })
     expect(screen.getByRole('link', { name: '대시보드' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: '암호화폐 터미널' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: '코인 마켓' })).toBeTruthy()
     expect(screen.getByRole('button', { name: /간편모드/ })).toBeTruthy()
     expect(screen.getByRole('button', { name: /전문가모드/ })).toBeTruthy()
     expect(screen.getByRole('searchbox', { name: '심볼·한국어·영어 이름 검색' })).toBeTruthy()
@@ -182,7 +181,7 @@ describe('Market Copilot application shell', () => {
     expect((screen.getByRole('combobox', { name: 'Language' }) as HTMLSelectElement).value).toBe('ko')
     expect(screen.getByRole('link', { name: '대시보드' })).toBeTruthy()
     fireEvent.change(screen.getByRole('combobox', { name: 'Language' }), { target: { value: 'en' } })
-    expect(screen.getByRole('heading', { name: 'Crypto Terminal' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Crypto Market' })).toBeTruthy()
     expect(screen.getByRole('searchbox', { name: 'Search symbol, Korean or English name' })).toBeTruthy()
   })
 
@@ -197,7 +196,7 @@ describe('Market Copilot application shell', () => {
 
     const favoriteButton = screen.getByRole('button', { name: 'Add XRP/KRW favorite' })
     fireEvent.click(favoriteButton)
-    expect(favoriteButton.getAttribute('aria-pressed')).toBe('true')
+    expect((await screen.findByRole('button', { name: 'Remove XRP/KRW favorite' })).getAttribute('aria-pressed')).toBe('true')
   })
 
   it('keeps sorting visible through search and market tab changes', async () => {
@@ -210,7 +209,7 @@ describe('Market Copilot application shell', () => {
     expect(screen.getByRole('status').textContent).toContain('Price ↓')
     fireEvent.click(screen.getByRole('button', { name: /Sort by Price/ }))
     expect(screen.getByRole('status').textContent).toContain('Price ↑')
-    fireEvent.click(screen.getByRole('tab', { name: 'Korea' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Korea Stocks' }))
     expect((search as HTMLInputElement).value).toBe('')
     expect(screen.getByRole('status').textContent).toContain('Price ↑')
     fireEvent.change(search, { target: { value: '005930' } })
@@ -259,15 +258,22 @@ describe('Market Copilot application shell', () => {
     const snapshotPanel = () => screen.getByRole('region', { name: /(?:Today’s 08:00|Previous daily) snapshot record/ })
     expect(snapshotPanel().querySelectorAll('ol')).toHaveLength(1)
     expect(snapshotPanel().querySelectorAll('h2')).toHaveLength(1)
-    expect(screen.queryByText('UPBIT/KRW')).toBeNull()
-    expect(screen.getByRole('region', { name: 'Market bucket summary' }).textContent).toContain('There are no displayable interest candidates')
+    expect(within(snapshotPanel()).getByRole('button', { name: /^Select UPBIT\/KRW;/ })).toBeTruthy()
+    const savedBeforeFiltering = window.localStorage.getItem(DAILY_BUCKET_SNAPSHOT_STORAGE_KEY)
+    fireEvent.click(screen.getByRole('button', { name: 'Strict' }))
+    expect(within(snapshotPanel()).queryByRole('button', { name: /^Select UPBIT\/KRW;/ })).toBeNull()
+    expect(window.localStorage.getItem(DAILY_BUCKET_SNAPSHOT_STORAGE_KEY)).toBe(savedBeforeFiltering)
+    fireEvent.click(screen.getByRole('button', { name: 'Standard' }))
+    expect(within(snapshotPanel()).getByRole('button', { name: /^Select UPBIT\/KRW;/ })).toBeTruthy()
+    expect(window.localStorage.getItem(DAILY_BUCKET_SNAPSHOT_STORAGE_KEY)).toBe(savedBeforeFiltering)
+    expect(screen.getByRole('region', { name: 'Candidate quality summary' }).textContent).toContain('Only candidates that pass the current review basis are shown')
     expect(upbitAnchor.textContent).toContain('BTC/KRW')
     expect(screen.queryByRole('heading', { name: 'Crypto Interest Candidates' })).toBeNull()
     fireEvent.click(screen.getByRole('tab', { name: 'Binance' }))
     const binanceAnchor = screen.getByRole('region', { name: 'Bitcoin market anchor' })
     expect(binanceAnchor.getAttribute('data-market-bucket')).toBe('binance')
     expect(binanceAnchor.textContent).toContain('BTC/USDT')
-    expect(screen.queryByText('BINANCE/USDT')).toBeNull()
+    expect(within(snapshotPanel()).getByRole('button', { name: /^Select BINANCE\/USDT;/ })).toBeTruthy()
     expect(snapshotPanel().querySelectorAll('ol')).toHaveLength(1)
     fireEvent.click(screen.getByRole('tab', { name: 'KOSPI' }))
     expect(await screen.findByRole('heading', { name: 'KOSPI' })).toBeTruthy()
@@ -280,6 +286,8 @@ describe('Market Copilot application shell', () => {
     expect(await screen.findByRole('heading', { name: 'US stocks' })).toBeTruthy()
     expect(screen.queryByRole('region', { name: 'Bitcoin market anchor' })).toBeNull()
     expect(snapshotPanel().querySelectorAll('ol')).toHaveLength(1)
+    fireEvent.click(screen.getByRole('tab', { name: 'Upbit' }))
+    expect(within(snapshotPanel()).getByRole('button', { name: /^Select UPBIT\/KRW;/ })).toBeTruthy()
   }, 15000)
 
   it('refreshes only the selected daily market bucket', async () => {
@@ -390,6 +398,9 @@ describe('Market Copilot application shell', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Open NVDA from global search' }))
 
     expect(await screen.findByRole('img', { name: /NVDA 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'US Stocks' }).getAttribute('aria-selected')).toBe('true')
+    expect(screen.getByRole('heading', { name: 'US Stocks Beta' })).toBeTruthy()
+    expect(window.localStorage.getItem('market-copilot.marketAssetMode.v1')).toBe('us')
   })
 
   it('filters the News Center by the active symbol', async () => {
@@ -569,14 +580,15 @@ describe('Market Copilot application shell', () => {
 
   it('updates compact instrument news and shows a no-news state for uncovered symbols', async () => {
     render(<App />)
-    fireEvent.click(screen.getByRole('button', { name: 'MOCK' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'MOCK' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Open BTC/KRW' }))
     const copilot = screen.getByRole('complementary', { name: 'AI Copilot' })
-    expect(await within(copilot).findByText(/Bitcoin liquidity and institutional rebalancing/)).toBeTruthy()
-    fireEvent.click(screen.getByRole('tab', { name: 'Korea' }))
+    expect((await within(copilot).findAllByText(/Bitcoin liquidity and institutional rebalancing/)).length).toBeGreaterThan(0)
+    fireEvent.click(screen.getByRole('tab', { name: 'Korea Stocks' }))
+    expect(await screen.findByRole('img', { name: /005930 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
     fireEvent.change(screen.getByRole('searchbox', { name: 'Search symbol, Korean or English name' }), { target: { value: '035420' } })
     fireEvent.click(await screen.findByRole('button', { name: 'Open 035420' }))
-    expect(await within(copilot).findByText('No related demo news yet.')).toBeTruthy()
+    expect(await within(screen.getByRole('complementary', { name: 'AI Copilot' })).findByText('No related demo news yet.')).toBeTruthy()
   })
 
   it('keeps a news-linked Binance symbol in its own market context', async () => {

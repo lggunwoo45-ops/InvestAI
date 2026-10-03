@@ -36,7 +36,9 @@ export const MarketDetailPanel = memo(function MarketDetailPanel({ snapshot, con
     dataQuality: technicalData.dataQuality,
   }), [instrument, language, technicalData.candles, technicalData.currentPrice, technicalData.dataQuality])
   const isStock = instrument.marketId === 'korea-stock' || instrument.marketId === 'us-stock'
-  const workspace = marketExplorerText[language].workspace[isStock ? 'stock' : 'crypto']
+  const workspace = marketExplorerText[language].workspace[
+    instrument.marketId === 'korea-stock' ? 'korea' : instrument.marketId === 'us-stock' ? 'us' : 'crypto'
+  ]
   const venueLabel = instrument.marketType
     ? marketExplorerText[language].venue[instrument.marketType]
     : instrument.marketId.replaceAll('-', ' ')

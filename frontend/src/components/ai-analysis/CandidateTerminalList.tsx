@@ -2,6 +2,7 @@ import { useState } from 'react'
 
 import type { Language } from '@/i18n/translations'
 import type { DailyBucketSnapshot } from '@/services/candidateSnapshot/dailyBucketSnapshot'
+import type { CandidateDisplayReason } from '@/services/candidateSnapshot/candidateDisplayClassification'
 import { getDailyBasisTime } from '@/services/candidateSnapshot/dailyBasisTime'
 import type { CandidateTerminalItem } from './candidateTerminalModel'
 import styles from './CandidateTerminalList.module.css'
@@ -15,13 +16,21 @@ interface CandidateTerminalListProps {
   canRecalculate: boolean
   beforeTodayBasis: boolean
   contextKey: string
+  heldCandidates?: readonly HeldCandidateTerminalItem[]
+  heldCandidateCount?: number
+  heldVisibility?: 'hidden' | 'collapsed' | 'expanded'
   onSelect: (instrumentId: string) => void
   onRecalculate: () => void
 }
 
+export interface HeldCandidateTerminalItem {
+  candidate: CandidateTerminalItem
+  reason: CandidateDisplayReason
+}
+
 const copy = {
-  en: { title: 'Today’s interest candidates', previous: 'Interest candidates from this record', panelToday: 'Today’s 08:00 snapshot record', panelPrevious: 'Previous daily snapshot record', symbol: 'Symbol', price: 'Price', change: 'Change since basis', score: 'Review score', read: 'Current read', range: 'Review range', advanced: 'Advanced: Recalculate today’s candidates', confirm: 'Recalculating today’s candidate record will replace the existing candidates. Press again to continue.', fixed: 'Saved candidates and order stay fixed until advanced recalculation.', previousNote: 'This is a previous daily record. Current data may differ.', expiredNote: 'This saved record has expired and should be read as historical context.', fewer: 'Only candidates that pass the current review basis are shown.', zero: 'There are no displayable interest candidates for this market bucket today. The list is not filled with weak candidates.', pending: 'Today’s candidate record is preparing. Recalculate after 08:00 if needed.', notReady: 'No daily candidate record is available yet. Use advanced recalculation when market data is ready.', boundary: 'Review score describes available review evidence, not return probability. Review ranges are reference areas, not order prices.', rangeUnavailable: 'Unavailable', select: 'Select' },
-  ko: { title: '오늘의 관심 후보', previous: '이 기록의 관심 후보', panelToday: '오늘 08:00 기준 기록', panelPrevious: '이전 날짜 기준 기록', symbol: '종목', price: '현재가', change: '기준 이후 변화', score: '검토 점수', read: '지금 판단', range: '검토 범위', advanced: '고급: 오늘 후보 다시 계산', confirm: '오늘 후보 기준 기록을 다시 계산하면 기존 후보가 교체됩니다. 계속하려면 한 번 더 눌러주세요.', fixed: '저장된 후보와 순서는 고급 재계산 전까지 유지됩니다.', previousNote: '이전 날짜의 기준 기록입니다. 현재 데이터와 다를 수 있습니다.', expiredNote: '만료된 기준 기록이므로 과거 참고 정보로 확인하세요.', fewer: '현재 데이터 기준으로 검토 가능한 후보만 표시합니다.', zero: '오늘은 이 시장군에서 표시 가능한 관심 후보가 없습니다. 무리해서 후보를 채우지 않습니다.', pending: '오늘 후보 기준 기록을 준비 중입니다. 필요한 경우 08:00 이후 다시 계산하세요.', notReady: '아직 일일 후보 기준 기록이 없습니다. 시장 데이터가 준비되면 고급 재계산을 사용하세요.', boundary: '검토 점수는 확인 가능한 검토 근거를 나타내며 수익 확률이 아닙니다. 검토 범위는 주문가가 아닌 참고 영역입니다.', rangeUnavailable: '확인 불가', select: '선택' },
+  en: { title: 'Today’s interest candidates', previous: 'Interest candidates from this record', panelToday: 'Today’s 08:00 snapshot record', panelPrevious: 'Previous daily snapshot record', symbol: 'Symbol', price: 'Price', change: 'Change since basis', score: 'Review score', read: 'Current read', range: 'Review range', advanced: 'Advanced: Recalculate today’s candidates', confirm: 'Recalculating today’s candidate record will replace the existing candidates. Press again to continue.', fixed: 'Saved candidates and order stay fixed until advanced recalculation.', previousNote: 'This is a previous daily record. Current data may differ.', expiredNote: 'This saved record has expired and should be read as historical context.', fewer: 'Only candidates that pass the current review basis are shown.', zero: 'There are no displayable interest candidates for this market bucket today. The list is not filled with weak candidates.', pending: 'Today’s candidate record is preparing. Recalculate after 08:00 if needed.', notReady: 'No daily candidate record is available yet. Use advanced recalculation when market data is ready.', boundary: 'Review score describes available review evidence, not return probability. Review ranges are reference areas, not order prices.', rangeUnavailable: 'Unavailable', select: 'Select', held: 'Held for review', heldHelp: 'Conditions are not strong enough for the main candidate list.', heldLimit: (visible: number, total: number) => `Showing ${visible} of ${total} held candidates.`, reasons: { currentPriceUnavailable: 'Current price unavailable', reviewBasisInsufficient: 'Review basis insufficient', reviewScoreTooLow: 'Review score too low', dataQualityInsufficient: 'Data quality insufficient', currentBasisUnavailable: 'Current basis unavailable' } },
+  ko: { title: '오늘의 관심 후보', previous: '이 기록의 관심 후보', panelToday: '오늘 08:00 기준 기록', panelPrevious: '이전 날짜 기준 기록', symbol: '종목', price: '현재가', change: '기준 이후 변화', score: '검토 점수', read: '지금 판단', range: '검토 범위', advanced: '고급: 오늘 후보 다시 계산', confirm: '오늘 후보 기준 기록을 다시 계산하면 기존 후보가 교체됩니다. 계속하려면 한 번 더 눌러주세요.', fixed: '저장된 후보와 순서는 고급 재계산 전까지 유지됩니다.', previousNote: '이전 날짜의 기준 기록입니다. 현재 데이터와 다를 수 있습니다.', expiredNote: '만료된 기준 기록이므로 과거 참고 정보로 확인하세요.', fewer: '현재 데이터 기준으로 검토 가능한 후보만 표시합니다.', zero: '오늘은 이 시장군에서 표시 가능한 관심 후보가 없습니다. 무리해서 후보를 채우지 않습니다.', pending: '오늘 후보 기준 기록을 준비 중입니다. 필요한 경우 08:00 이후 다시 계산하세요.', notReady: '아직 일일 후보 기준 기록이 없습니다. 시장 데이터가 준비되면 고급 재계산을 사용하세요.', boundary: '검토 점수는 확인 가능한 검토 근거를 나타내며 수익 확률이 아닙니다. 검토 범위는 주문가가 아닌 참고 영역입니다.', rangeUnavailable: '확인 불가', select: '선택', held: '보류 후보', heldHelp: '조건이 부족해 기본 후보에는 표시하지 않습니다.', heldLimit: (visible: number, total: number) => `보류 후보 ${total}개 중 ${visible}개를 표시합니다.`, reasons: { currentPriceUnavailable: '현재 가격 확인 불가', reviewBasisInsufficient: '판단 근거 부족', reviewScoreTooLow: '검토 점수 부족', dataQualityInsufficient: '데이터 품질 부족', currentBasisUnavailable: '현재 기준 비교 불가' } },
 } as const
 
 function number(value: number | null, language: Language) {
@@ -29,7 +38,7 @@ function number(value: number | null, language: Language) {
   return new Intl.NumberFormat(language === 'ko' ? 'ko-KR' : 'en-US', { maximumFractionDigits: 4 }).format(value)
 }
 
-export function CandidateTerminalList({ snapshot, items, selectedInstrumentId, language, now, canRecalculate, beforeTodayBasis, contextKey, onSelect, onRecalculate }: CandidateTerminalListProps) {
+export function CandidateTerminalList({ snapshot, items, selectedInstrumentId, language, now, canRecalculate, beforeTodayBasis, contextKey, heldCandidates = [], heldCandidateCount = heldCandidates.length, heldVisibility = 'hidden', onSelect, onRecalculate }: CandidateTerminalListProps) {
   const t = copy[language]
   const isToday = Boolean(snapshot?.tradingDate === getDailyBasisTime(new Date(now)).tradingDateLabel)
   const expired = Boolean(snapshot && Date.parse(now) > Date.parse(snapshot.expiresAt))
@@ -65,5 +74,13 @@ export function CandidateTerminalList({ snapshot, items, selectedInstrumentId, l
         </button>
       </li>
     })}</ol>
+    {heldVisibility !== 'hidden' && heldCandidates.length > 0 && <details className={styles.held} open={heldVisibility === 'expanded' || undefined}>
+      <summary><span><strong>{t.held}</strong><small>{t.heldHelp}</small>{heldCandidateCount > heldCandidates.length && <small>{t.heldLimit(heldCandidates.length, heldCandidateCount)}</small>}</span><b>{heldCandidateCount}</b></summary>
+      <ol>{heldCandidates.map(({ candidate, reason }) => <li key={candidate.item.instrumentId}>
+        <span><strong>{candidate.item.symbol}</strong><small>{candidate.item.displayName}</small></span>
+        <span>{candidate.reviewScore.score === null ? '—' : `${candidate.reviewScore.score}/100`}</span>
+        <em>{t.reasons[reason]}</em>
+      </li>)}</ol>
+    </details>}
   </section>
 }

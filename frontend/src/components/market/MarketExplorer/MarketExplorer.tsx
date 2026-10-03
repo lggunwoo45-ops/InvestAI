@@ -55,7 +55,7 @@ export function MarketExplorer({
   const deferredSearch = useDeferredValue(search)
   const group = groupForVenue(venue)
   const isCrypto = group === 'crypto'
-  const workspace = text.workspace[isCrypto ? 'crypto' : 'stock']
+  const workspace = text.workspace[group]
   const cryptoProvider = venue.startsWith('binance-') ? 'binance' : 'upbit'
   const venues = group === 'crypto'
     ? venuesByGroup.crypto.filter((item) => item.startsWith(cryptoProvider))
@@ -101,7 +101,7 @@ export function MarketExplorer({
           {compact && onBack && <button type="button" className={styles.back} onClick={onBack}>← {text.all}</button>}
           <span className={styles.eyebrow}>{workspace.eyebrow}</span>
           <h1>{workspace.title}</h1>
-          {!compact && <p>{workspace.subtitle}</p>}
+          <p>{workspace.subtitle}</p>
         </div>
         <div className={styles.count}><DataModeControl value={mode} onChange={onModeChange} /><strong aria-live="polite" aria-atomic="true" aria-label={`${instruments.length.toLocaleString()} ${text.results}`}>{instruments.length.toLocaleString()}</strong><span>{text.results}</span></div>
       </header>

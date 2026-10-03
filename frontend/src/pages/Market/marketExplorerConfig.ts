@@ -8,16 +8,23 @@ export const marketExplorerText = {
     subtitle: 'Discover every available crypto pair and explore stock universes.',
     workspace: {
       crypto: {
-        title: 'Crypto Terminal',
+        title: 'Crypto Market',
         eyebrow: 'CRYPTO / MARKET PULSE',
-        subtitle: 'Scan exchange pairs by movement, turnover, and quote market.',
+        subtitle: 'Review crypto movement from Upbit and Binance markets.',
         scope: 'Exchange / market',
         detail: 'Crypto market',
       },
-      stock: {
-        title: 'Stock Research',
-        eyebrow: 'EQUITIES / COMPANY RESEARCH',
-        subtitle: 'Compare companies by region, board, and daily market activity.',
+      korea: {
+        title: 'Korea Stocks Beta',
+        eyebrow: 'KOREA EQUITIES / BETA DATA',
+        subtitle: 'KOSPI / KOSDAQ instruments are shown with beta data. A live stock provider is not connected yet.',
+        scope: 'Region / board',
+        detail: 'Company research',
+      },
+      us: {
+        title: 'US Stocks Beta',
+        eyebrow: 'US EQUITIES / BETA DATA',
+        subtitle: 'US stock instruments are shown with beta data. A live stock provider is not connected yet.',
         scope: 'Region / board',
         detail: 'Company research',
       },
@@ -67,7 +74,7 @@ export const marketExplorerText = {
       expandInstrumentList: 'Expand instrument list',
       expandChart: 'Expand chart',
     },
-    group: { crypto: 'Crypto', korea: 'Korea', us: 'US' },
+    group: { crypto: 'Crypto', korea: 'Korea Stocks', us: 'US Stocks' },
     venue: {
       'upbit-krw': 'Upbit · KRW',
       'upbit-btc': 'Upbit · BTC',
@@ -86,16 +93,23 @@ export const marketExplorerText = {
     subtitle: '거래 가능한 암호화폐와 주식 종목을 탐색합니다.',
     workspace: {
       crypto: {
-        title: '암호화폐 터미널',
+        title: '코인 마켓',
         eyebrow: '암호화폐 / 시장 흐름',
-        subtitle: '변동률, 거래량, 기준 통화별로 거래소 종목을 살펴봅니다.',
+        subtitle: '업비트와 바이낸스 기준으로 코인 흐름을 확인합니다.',
         scope: '거래소 / 마켓',
         detail: '암호화폐 시장',
       },
-      stock: {
-        title: '주식 리서치',
-        eyebrow: '주식 / 기업 리서치',
-        subtitle: '지역, 거래소, 일간 시장 흐름별로 기업을 비교합니다.',
+      korea: {
+        title: '한국 주식 Beta',
+        eyebrow: '한국 주식 / 베타 데이터',
+        subtitle: 'KOSPI / KOSDAQ 종목은 베타 데이터로 표시됩니다. 실시간 주식 공급자는 아직 연결되지 않았습니다.',
+        scope: '지역 / 거래소',
+        detail: '기업 리서치',
+      },
+      us: {
+        title: '미국 주식 Beta',
+        eyebrow: '미국 주식 / 베타 데이터',
+        subtitle: '미국 주식은 베타 데이터로 표시됩니다. 실시간 주식 공급자는 아직 연결되지 않았습니다.',
         scope: '지역 / 거래소',
         detail: '기업 리서치',
       },
@@ -145,7 +159,7 @@ export const marketExplorerText = {
       expandInstrumentList: '종목 목록 펼치기',
       expandChart: '차트 넓게 보기',
     },
-    group: { crypto: '암호화폐', korea: '한국', us: '미국' },
+    group: { crypto: '코인', korea: '한국 주식', us: '미국 주식' },
     venue: {
       'upbit-krw': '업비트 · KRW',
       'upbit-btc': '업비트 · BTC',
