@@ -31,6 +31,17 @@ function sendJson(res, statusCode, payload, origin) {
   res.end(JSON.stringify(payload))
 }
 
+function sendPreflight(res, origin) {
+  res.statusCode = 204
+  res.setHeader('Access-Control-Allow-Origin', origin)
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Accept, Content-Type')
+  res.setHeader('Access-Control-Max-Age', '600')
+  res.setHeader('Vary', 'Origin')
+  res.setHeader('Cache-Control', 'no-store')
+  res.end()
+}
+
 function normalizeList(payload) {
   if (!Array.isArray(payload?.list)) return []
   return payload.list.slice(0, 10).flatMap((item) => {
@@ -57,8 +68,15 @@ async function readBoundedJson(response) {
 export function createDartProxyHandler({ apiKey = process.env.DART_API_KEY ?? '', fetchImpl = globalThis.fetch, now = () => new Date() } = {}) {
   return async function dartProxyHandler(req, res) {
     const origin = req.headers.origin
-    if (req.method !== 'GET') { res.setHeader('Allow', 'GET'); return sendJson(res, 405, result('error', 'disabled', 'Only GET is supported.'), origin) }
     const requestUrl = new URL(req.url ?? '/', 'http://127.0.0.1:8788')
+    const knownEndpoint = requestUrl.pathname === '/api/dart/health' || requestUrl.pathname === '/api/dart/disclosures'
+    if (origin && !allowedOrigins.has(origin)) return sendJson(res, 403, result('error', 'disabled', 'Origin is not allowed.'))
+    if (req.method === 'OPTIONS') {
+      if (!knownEndpoint) return sendJson(res, 404, result('error', 'disabled', 'Endpoint not found.'), origin)
+      if (!origin) return sendJson(res, 400, result('error', 'disabled', 'CORS origin is required.'))
+      return sendPreflight(res, origin)
+    }
+    if (req.method !== 'GET') { res.setHeader('Allow', 'GET, OPTIONS'); return sendJson(res, 405, result('error', 'disabled', 'Only GET is supported.'), origin) }
     if (requestUrl.pathname === '/api/dart/health') return sendJson(res, 200, health(apiKey), origin)
     if (requestUrl.pathname !== '/api/dart/disclosures') return sendJson(res, 404, result('error', 'disabled', 'Endpoint not found.'), origin)
     if ([...requestUrl.searchParams.keys()].some((key) => key !== 'stockCode' && key !== 'corpCode')) return sendJson(res, 400, result('error', 'disabled', 'Only stockCode and corpCode are accepted.'), origin)

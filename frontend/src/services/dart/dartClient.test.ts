@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
+import { runtimeConfig } from '@/config/runtimeConfig'
 import { DartClient } from './dartClient'
 
 describe('DartClient', () => {
@@ -7,6 +8,7 @@ describe('DartClient', () => {
     const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ status: 'ready', apiKeyConfigured: true, message: 'DART API key is configured.' })))
     const result = await new DartClient(fetcher).loadHealth()
     expect(result).toEqual({ status: 'ready', apiKeyConfigured: true, message: 'DART API key is configured.' })
+    expect(fetcher).toHaveBeenCalledWith(`${runtimeConfig.dartProxyUrl}/api/dart/health`, expect.objectContaining({ method: 'GET' }))
     expect(JSON.stringify(result)).not.toMatch(/test-only-key|crtfc_key|DART_API_KEY=/)
   })
 
