@@ -1,6 +1,12 @@
 export type DartDisclosureCategory = 'periodic' | 'material' | 'correction' | 'other'
 export type DartDisclosureStatus = 'disabled' | 'unavailable' | 'mapping_unavailable' | 'loading' | 'ready' | 'error'
 export type DartSourceMode = 'live' | 'mock' | 'disabled'
+export type DartProxyHealthStatus = 'ready' | 'disabled' | 'unavailable'
+
+export type DartProxyHealthResult =
+  | { status: 'ready'; apiKeyConfigured: true; message: string }
+  | { status: 'disabled'; apiKeyConfigured: false; message: string }
+  | { status: 'unavailable'; apiKeyConfigured: null; message: string }
 
 export interface DartDisclosure {
   id: string

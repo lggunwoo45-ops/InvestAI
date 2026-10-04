@@ -20,6 +20,7 @@ import type { MarketDataMode, MarketInstrument } from '@/types/market'
 import type { Candle, ChartTimeframe } from '@/types/marketDetail'
 import type { ChartOverlayLine, TechnicalLevelAnalysis } from '@/types/technicalLevels'
 import { ChartAnalysisControls } from '../ChartAnalysisControls/ChartAnalysisControls'
+import { loadChartStructurePanelCollapsed } from '../ChartAnalysisControls/chartStructurePanelPreference'
 import styles from './CandlestickChart.module.css'
 
 interface CandlestickChartProps {
@@ -84,6 +85,7 @@ export const CandlestickChart = memo(function CandlestickChart({ candles, instru
   const activePriceLinesRef = useRef<Map<string, IPriceLine>>(new Map())
   const initialPriceRef = useRef(instrument.lastPrice)
   const [analysisMode, setAnalysisMode] = useState(false)
+  const [chartStructurePanelCollapsed, setChartStructurePanelCollapsed] = useState(loadChartStructurePanelCollapsed)
   const [visibility, setVisibility] = useState<ChartOverlayVisibility>(initialVisibility)
   const { lines: userLines, addLine, updateLine, deleteLine, setLineVisible } = useUserChartLines(instrument.id)
   const latest = candles.at(-1)
@@ -206,11 +208,15 @@ export const CandlestickChart = memo(function CandlestickChart({ candles, instru
   }, [instrument.id, renderedPriceLines, timeframe])
 
   return (
-    <figure className={styles.chart}>
+    <figure className={styles.chart} data-chart-structure-panel={chartStructurePanelCollapsed ? 'collapsed' : 'expanded'}>
       <div className={styles.legend}>
         <span>{instrument.symbol}</span><span>{timeframe}</span>
         <span>O {priceLabel.format(latest?.open ?? 0)}</span><span>H {priceLabel.format(latest?.high ?? 0)}</span>
         <span>L {priceLabel.format(latest?.low ?? 0)}</span><span>C {priceLabel.format(latest?.close ?? 0)}</span>
+      </div>
+      <div className={styles.chartViewport}>
+        <div ref={containerRef} className={styles.canvas} role="img" aria-label={`${instrument.symbol} ${timeframe} TradingView candlestick chart in ${mode} mode`} />
+        <div className={styles.watermark}>TRADINGVIEW LIGHTWEIGHT CHARTS · {mode.toUpperCase()}</div>
       </div>
       <ChartAnalysisControls
         language={language}
@@ -227,9 +233,8 @@ export const CandlestickChart = memo(function CandlestickChart({ candles, instru
         onUpdateLine={updateLine}
         onDeleteLine={deleteLine}
         onSetLineVisible={setLineVisible}
+        onPanelStateChange={setChartStructurePanelCollapsed}
       />
-      <div ref={containerRef} className={styles.canvas} role="img" aria-label={`${instrument.symbol} ${timeframe} TradingView candlestick chart in ${mode} mode`} />
-      <div className={styles.watermark}>TRADINGVIEW LIGHTWEIGHT CHARTS · {mode.toUpperCase()}</div>
     </figure>
   )
 })
