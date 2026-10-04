@@ -12,8 +12,9 @@ This document defines a safe deployment boundary for the Market Copilot beta. It
 Browser (Vite/React static application)
   ├─ Public market providers (existing provider layer)
   ├─ Optional news proxy  http://localhost:8787
-  └─ Optional DART proxy  http://localhost:8788
-                              └─ DART_API_KEY (server process only)
+  └─ Same-origin /api/dart/* (Vite development proxy)
+       └─ Optional DART proxy  http://localhost:8788
+            └─ DART_API_KEY (server process only)
 ```
 
 - The frontend is a static React 19/Vite build.
@@ -42,7 +43,7 @@ Copy `frontend/.env.example` to an untracked local environment file only when ov
 | --- | --- | --- | --- |
 | `VITE_APP_ENV` | Public browser bundle | `local` | Environment label (`local`, `preview`, `staging`, `production`) |
 | `VITE_NEWS_PROXY_URL` | Public browser bundle | `http://localhost:8787` | Optional news proxy base URL |
-| `VITE_DART_PROXY_URL` | Public browser bundle | `http://localhost:8788` | Optional DART proxy base URL |
+| `VITE_DART_PROXY_URL` | Public browser bundle | unset (same-origin `/api/dart/*`) | Optional explicit DART proxy base URL for a separately hosted proxy |
 | `DART_API_KEY` | Server process only | unset | OpenDART credential for the optional DART proxy |
 
 All `VITE_` values are public after build and must be treated as non-secret. `DART_API_KEY` must never be renamed to a `VITE_` variable, committed, printed to logs, embedded in static files, or sent to the browser. Public market API identifiers and proxy URLs are configuration; credentials, private tokens, account data, and broker keys are server secrets.
@@ -70,6 +71,11 @@ npm run preview
 ```
 
 `npm run preview` serves the static frontend build. It does not start either proxy. Run optional proxy processes separately.
+
+The Vite development server forwards same-origin `/api/dart/*` requests to
+`http://localhost:8788`. A static preview or hosted build must provide the same
+route at its host, or set `VITE_DART_PROXY_URL` to an explicitly hosted proxy
+base URL at build time.
 
 ## Public beta readiness checklist
 

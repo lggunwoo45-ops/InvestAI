@@ -1,8 +1,8 @@
 import type { DartDisclosure, DartDisclosureCategory, DartDisclosureResult, DartDisclosureStatus, DartProxyHealthResult, DartSourceMode } from '@/types/dart'
 import { runtimeConfig } from '@/config/runtimeConfig'
 
-const DEFAULT_ENDPOINT = `${runtimeConfig.dartProxyUrl}/api/dart/disclosures`
-const DEFAULT_HEALTH_ENDPOINT = `${runtimeConfig.dartProxyUrl}/api/dart/health`
+const DEFAULT_ENDPOINT = runtimeConfig.dartDisclosuresUrl
+const DEFAULT_HEALTH_ENDPOINT = runtimeConfig.dartHealthUrl
 const statuses = new Set<DartDisclosureStatus>(['disabled', 'unavailable', 'mapping_unavailable', 'loading', 'ready', 'error'])
 const sourceModes = new Set<DartSourceMode>(['live', 'mock', 'disabled'])
 const categories = new Set<DartDisclosureCategory>(['periodic', 'material', 'correction', 'other'])
@@ -64,9 +64,8 @@ export class DartClient {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), this.timeoutMs)
     try {
-      const url = new URL(this.endpoint)
-      url.searchParams.set('stockCode', stockCode)
-      url.searchParams.set('corpCode', corpCode)
+      const query = new URLSearchParams({ stockCode, corpCode })
+      const url = `${this.endpoint}?${query}`
       const response = await this.fetchImpl(url, { method: 'GET', signal: controller.signal, headers: { Accept: 'application/json' } })
       const parsed = parseResult(await response.json())
       if (!parsed) return unavailable('The local DART proxy returned an invalid response.')

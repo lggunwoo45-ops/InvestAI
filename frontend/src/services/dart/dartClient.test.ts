@@ -8,7 +8,7 @@ describe('DartClient', () => {
     const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ status: 'ready', apiKeyConfigured: true, message: 'DART API key is configured.' })))
     const result = await new DartClient(fetcher).loadHealth()
     expect(result).toEqual({ status: 'ready', apiKeyConfigured: true, message: 'DART API key is configured.' })
-    expect(fetcher).toHaveBeenCalledWith(`${runtimeConfig.dartProxyUrl}/api/dart/health`, expect.objectContaining({ method: 'GET' }))
+    expect(fetcher).toHaveBeenCalledWith(runtimeConfig.dartHealthUrl, expect.objectContaining({ method: 'GET' }))
     expect(JSON.stringify(result)).not.toMatch(/test-only-key|crtfc_key|DART_API_KEY=/)
   })
 
@@ -32,7 +32,7 @@ describe('DartClient', () => {
     const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ status: 'disabled', sourceMode: 'disabled', message: 'DART API key is not configured.', disclosures: [], fetchedAt: null })))
     const result = await new DartClient(fetcher).loadDisclosures('005930', '00126380')
     expect(result.status).toBe('disabled')
-    expect(fetcher).toHaveBeenCalledOnce()
+    expect(fetcher).toHaveBeenCalledWith(`${runtimeConfig.dartDisclosuresUrl}?stockCode=005930&corpCode=00126380`, expect.objectContaining({ method: 'GET' }))
   })
 
   it('handles malformed responses and missing mappings safely', async () => {
