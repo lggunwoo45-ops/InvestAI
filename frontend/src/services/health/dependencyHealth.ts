@@ -47,23 +47,15 @@ function newsStatus(mode: NewsProviderMode, state?: NewsProviderState): Dependen
   return 'unknown'
 }
 
-function dartProxyStatus(state?: DartDisclosureStatus): DependencyHealthStatus {
-  if (!state || state === 'loading') return 'unknown'
-  if (state === 'ready') return 'ready'
-  if (state === 'mapping_unavailable') return 'limited'
-  if (state === 'disabled') return 'disabled'
-  return 'unavailable'
-}
-
 /** Builds an observed-state summary only; it never probes a dependency or creates network traffic. */
 export function buildDependencyHealth(input: DependencyHealthInput): readonly DependencyHealthItem[] {
   const dartHealth = normalizedDartHealth(input.dartHealth)
   const dartStatus = dartHealth
     ? dartHealth.status === 'unavailable' ? 'unavailable' : 'ready'
-    : dartProxyStatus(input.dartState)
+    : 'unknown'
   const dartApiKeyStatus = dartHealth
     ? dartHealth.apiKeyConfigured === true ? 'ready' : dartHealth.apiKeyConfigured === false ? 'disabled' : 'unknown'
-    : input.dartState === 'ready' ? 'ready' : input.dartState === 'disabled' ? 'disabled' : 'unknown'
+    : 'unknown'
   return [
     { id: 'market-data', status: input.marketDataMode === 'live' ? 'ready' : 'limited' },
     { id: 'news-proxy', status: newsStatus(input.newsMode, input.newsState) },

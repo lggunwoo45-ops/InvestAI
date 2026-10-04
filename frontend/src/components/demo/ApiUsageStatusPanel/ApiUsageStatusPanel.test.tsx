@@ -25,8 +25,8 @@ describe('ApiUsageStatusPanel', () => {
     render(<ApiUsageStatusPanel items={configured} language="en" />)
     const panel = screen.getByRole('region', { name: 'API usage status' })
     expect(panel.textContent).toContain('News proxyActive')
-    expect(panel.textContent).toContain('DART proxyActive')
-    expect(panel.textContent).toContain('DART API keyActive')
+    expect(panel.textContent).toContain('DART proxyReady')
+    expect(panel.textContent).toContain('DART API keyConfigured')
     expect(panel.textContent).toContain('Real AIDisabled')
     expect(panel.textContent).toContain('TradingDisabled')
     expect(panel.textContent).toContain('Key value is never displayed.')
@@ -37,11 +37,32 @@ describe('ApiUsageStatusPanel', () => {
     render(<ApiUsageStatusPanel items={unconfigured} language="ko" />)
     const panel = screen.getByRole('region', { name: 'API 사용 상태' })
     expect(panel.textContent).toContain('뉴스 프록시연결 불가')
-    expect(panel.textContent).toContain('DART 프록시사용 중')
+    expect(panel.textContent).toContain('DART 프록시사용 가능')
     expect(panel.textContent).toContain('DART API 키미설정')
     expect(panel.textContent).toContain('실제 AI비활성화')
     expect(panel.textContent).toContain('거래 기능비활성화')
     expect(panel.textContent).toContain('키 값은 표시하지 않습니다.')
     expect(panel.textContent).toContain('현재 개인 거래소 API, 증권사 API, 실제 AI API는 사용하지 않습니다.')
+  })
+
+  it('shows an unavailable proxy and an unchecked key without contradictory configuration claims', () => {
+    render(<ApiUsageStatusPanel language="en" items={[
+      { id: 'dart-proxy', status: 'unavailable' },
+      { id: 'dart-api-key', status: 'unknown' },
+    ]} />)
+    const panel = screen.getByRole('region', { name: 'API usage status' })
+    expect(panel.textContent).toContain('DART proxyUnavailable')
+    expect(panel.textContent).toContain('DART API keyNot checked')
+    expect(panel.textContent).not.toContain('DART API keyConfigured')
+  })
+
+  it('shows not checked while the shared health result is pending', () => {
+    render(<ApiUsageStatusPanel language="en" items={[
+      { id: 'dart-proxy', status: 'unknown' },
+      { id: 'dart-api-key', status: 'unknown' },
+    ]} />)
+    const panel = screen.getByRole('region', { name: 'API usage status' })
+    expect(panel.textContent).toContain('DART proxyNot checked')
+    expect(panel.textContent).toContain('DART API keyNot checked')
   })
 })

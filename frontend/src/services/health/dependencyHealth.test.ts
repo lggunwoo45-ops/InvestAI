@@ -3,12 +3,12 @@ import { describe, expect, it } from 'vitest'
 import { buildApiUsageStatus, buildDependencyHealth } from './dependencyHealth'
 
 describe('buildDependencyHealth', () => {
-  it('maps observed dependency states without performing a health request', () => {
+  it('does not infer DART health from an instrument disclosure state', () => {
     expect(buildDependencyHealth({ marketDataMode: 'live', newsMode: 'local-proxy', newsState: 'local-proxy-ready', dartState: 'ready' })).toEqual([
       { id: 'market-data', status: 'ready' },
       { id: 'news-proxy', status: 'ready' },
-      { id: 'dart-proxy', status: 'ready' },
-      { id: 'dart-api-key', status: 'ready' },
+      { id: 'dart-proxy', status: 'unknown' },
+      { id: 'dart-api-key', status: 'unknown' },
       { id: 'real-ai', status: 'disabled' },
       { id: 'trading', status: 'disabled' },
     ])
@@ -26,7 +26,7 @@ describe('buildDependencyHealth', () => {
   })
 
   it('reports observed proxy failures without treating disabled product features as errors', () => {
-    const health = buildDependencyHealth({ marketDataMode: 'live', newsMode: 'local-proxy', newsState: 'local-proxy-unavailable', dartState: 'unavailable' })
+    const health = buildDependencyHealth({ marketDataMode: 'live', newsMode: 'local-proxy', newsState: 'local-proxy-unavailable', dartHealth: { status: 'unavailable', apiKeyConfigured: null, message: 'Unavailable.' } })
     expect(health.find((item) => item.id === 'news-proxy')?.status).toBe('unavailable')
     expect(health.find((item) => item.id === 'dart-proxy')?.status).toBe('unavailable')
     expect(health.find((item) => item.id === 'real-ai')?.status).toBe('disabled')
@@ -76,6 +76,7 @@ describe('buildApiUsageStatus', () => {
     const usage = buildApiUsageStatus({ newsMode: 'local-proxy' })
     expect(usage).toContainEqual({ id: 'real-ai', status: 'disabled' })
     expect(usage).toContainEqual({ id: 'trading', status: 'disabled' })
+    expect(usage).toContainEqual({ id: 'dart-proxy', status: 'unknown' })
     expect(usage).toContainEqual({ id: 'dart-api-key', status: 'unknown' })
   })
 
