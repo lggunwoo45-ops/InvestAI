@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 
 import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
@@ -94,8 +95,11 @@ export function DemoPage() {
   const { marketDataMode } = useMarketWorkspace()
   const { mode: newsMode, result: newsResult } = useNewsProviderMode()
   const dartHealth = useDartProxyHealth()
-  const dependencyHealth = buildDependencyHealth({ marketDataMode, newsMode, ...(newsResult ? { newsState: newsResult.state } : {}), dartHealth })
-  const apiUsage = buildApiUsageStatus({ newsMode, ...(newsResult ? { newsState: newsResult.state } : {}), dartHealth })
+  const newsState = newsResult?.state
+  const { dependencyHealth, apiUsage } = useMemo(() => ({
+    dependencyHealth: buildDependencyHealth({ marketDataMode, newsMode, ...(newsState ? { newsState } : {}), dartHealth }),
+    apiUsage: buildApiUsageStatus({ newsMode, ...(newsState ? { newsState } : {}), dartHealth }),
+  }), [dartHealth, marketDataMode, newsMode, newsState])
   const t = copy[language]
   const p = readinessCopy[language]
   useDocumentTitle(scope.versionLabel)
