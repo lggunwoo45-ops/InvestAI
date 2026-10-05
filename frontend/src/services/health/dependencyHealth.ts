@@ -32,11 +32,26 @@ export interface ApiUsageInput {
   dartHealth?: DartProxyHealthResult | null
 }
 
+/** Canonical visible state shared by every Demo DART status surface. */
+export type DartHealthUiState = 'checking' | 'ready' | 'notConfigured' | 'unavailable'
+
 function normalizedDartHealth(health?: DartProxyHealthResult | null): DartProxyHealthResult | null {
   if (health?.status === 'ready' && health.apiKeyConfigured === true) return health
   if (health?.status === 'disabled' && health.apiKeyConfigured === false) return health
   if (health?.status === 'unavailable' && health.apiKeyConfigured === null) return health
   return null
+}
+
+/**
+ * Converts the safe proxy health response into one UI state. Components receive
+ * this value directly so the Demo status panels cannot disagree about DART.
+ */
+export function getDartHealthUiState(health?: DartProxyHealthResult | null): DartHealthUiState {
+  const normalized = normalizedDartHealth(health)
+  if (!normalized) return 'checking'
+  if (normalized.status === 'ready') return 'ready'
+  if (normalized.status === 'disabled') return 'notConfigured'
+  return 'unavailable'
 }
 
 function newsStatus(mode: NewsProviderMode, state?: NewsProviderState): DependencyHealthStatus {
@@ -49,13 +64,13 @@ function newsStatus(mode: NewsProviderMode, state?: NewsProviderState): Dependen
 
 /** Builds an observed-state summary only; it never probes a dependency or creates network traffic. */
 export function buildDependencyHealth(input: DependencyHealthInput): readonly DependencyHealthItem[] {
-  const dartHealth = normalizedDartHealth(input.dartHealth)
-  const dartStatus = dartHealth
-    ? dartHealth.status === 'unavailable' ? 'unavailable' : 'ready'
-    : 'unknown'
-  const dartApiKeyStatus = dartHealth
-    ? dartHealth.apiKeyConfigured === true ? 'ready' : dartHealth.apiKeyConfigured === false ? 'disabled' : 'unknown'
-    : 'unknown'
+  const dartHealthState = getDartHealthUiState(input.dartHealth)
+  const dartStatus: DependencyHealthStatus = dartHealthState === 'checking'
+    ? 'unknown'
+    : dartHealthState === 'unavailable' ? 'unavailable' : 'ready'
+  const dartApiKeyStatus: DependencyHealthStatus = dartHealthState === 'ready'
+    ? 'ready'
+    : dartHealthState === 'notConfigured' ? 'disabled' : 'unknown'
   return [
     { id: 'market-data', status: input.marketDataMode === 'live' ? 'ready' : 'limited' },
     { id: 'news-proxy', status: newsStatus(input.newsMode, input.newsState) },
@@ -77,13 +92,13 @@ function newsApiUsage(mode: NewsProviderMode, state?: NewsProviderState): ApiUsa
 
 /** Maps already-observed frontend state and the safe local DART health response; no secret is accepted or returned. */
 export function buildApiUsageStatus(input: ApiUsageInput): readonly ApiUsageItem[] {
-  const dartHealth = normalizedDartHealth(input.dartHealth)
-  const dartProxyStatus: ApiUsageStatus = dartHealth
-    ? dartHealth.status === 'unavailable' ? 'unavailable' : 'active'
-    : 'unknown'
-  const dartKeyStatus: ApiUsageStatus = dartHealth?.apiKeyConfigured === true
+  const dartHealthState = getDartHealthUiState(input.dartHealth)
+  const dartProxyStatus: ApiUsageStatus = dartHealthState === 'checking'
+    ? 'unknown'
+    : dartHealthState === 'unavailable' ? 'unavailable' : 'active'
+  const dartKeyStatus: ApiUsageStatus = dartHealthState === 'ready'
     ? 'active'
-    : dartHealth?.apiKeyConfigured === false ? 'notConfigured' : 'unknown'
+    : dartHealthState === 'notConfigured' ? 'notConfigured' : 'unknown'
 
   return [
     { id: 'news-proxy', status: newsApiUsage(input.newsMode, input.newsState) },

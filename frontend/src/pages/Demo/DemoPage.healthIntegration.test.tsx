@@ -38,7 +38,9 @@ describe('DemoPage DART health integration', () => {
 
     const systemStatus = screen.getByRole('region', { name: '베타 시스템 상태' })
     const apiUsage = screen.getByRole('region', { name: 'API 사용 상태' })
+    expect(within(systemStatus).getByText('DART 프록시').closest('li')?.textContent).toBe('DART 프록시확인 중')
     expect(within(systemStatus).getByText('DART API 키').closest('li')?.textContent).toBe('DART API 키확인 전')
+    expect(within(apiUsage).getByText('DART 프록시').closest('li')?.textContent).toBe('DART 프록시확인 중')
     expect(within(apiUsage).getByText('DART API 키').closest('li')?.textContent).toBe('DART API 키확인 전')
 
     await waitFor(() => {
@@ -50,6 +52,29 @@ describe('DemoPage DART health integration', () => {
 
     expect(within(systemStatus).queryByText('확인 전')).toBeNull()
     expect(within(apiUsage).queryByText('확인 전')).toBeNull()
+    expect(systemStatus.textContent).not.toContain('DART 프록시사용 불가')
+    expect(apiUsage.textContent).not.toContain('DART 프록시사용 불가')
     expect(loadHealth).toHaveBeenCalled()
+  })
+
+  it('shows unavailable and not checked in both visible panels only after a failed health check', async () => {
+    vi.spyOn(dartClient, 'loadHealth').mockResolvedValue({
+      status: 'unavailable',
+      apiKeyConfigured: null,
+      message: 'The local DART proxy is unavailable.',
+    })
+
+    renderPage()
+
+    const systemStatus = screen.getByRole('region', { name: '베타 시스템 상태' })
+    const apiUsage = screen.getByRole('region', { name: 'API 사용 상태' })
+    await waitFor(() => {
+      expect(within(systemStatus).getByText('DART 프록시').closest('li')?.textContent).toBe('DART 프록시사용 불가')
+      expect(within(systemStatus).getByText('DART API 키').closest('li')?.textContent).toBe('DART API 키확인 전')
+      expect(within(apiUsage).getByText('DART 프록시').closest('li')?.textContent).toBe('DART 프록시사용 불가')
+      expect(within(apiUsage).getByText('DART API 키').closest('li')?.textContent).toBe('DART API 키확인 전')
+    })
+    expect(systemStatus.textContent).not.toContain('DART API 키설정됨')
+    expect(apiUsage.textContent).not.toContain('DART API 키설정됨')
   })
 })

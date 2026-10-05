@@ -22,7 +22,7 @@ const unconfigured: readonly ApiUsageItem[] = [
 
 describe('ApiUsageStatusPanel', () => {
   it('renders configured and intentionally disabled English states without a key value', () => {
-    render(<ApiUsageStatusPanel items={configured} language="en" />)
+    render(<ApiUsageStatusPanel items={configured} language="en" dartHealthState="ready" />)
     const panel = screen.getByRole('region', { name: 'API usage status' })
     expect(panel.textContent).toContain('News proxyActive')
     expect(panel.textContent).toContain('DART proxyReady')
@@ -34,7 +34,7 @@ describe('ApiUsageStatusPanel', () => {
   })
 
   it('renders exact Korean labels and safe unavailable states', () => {
-    render(<ApiUsageStatusPanel items={unconfigured} language="ko" />)
+    render(<ApiUsageStatusPanel items={unconfigured} language="ko" dartHealthState="notConfigured" />)
     const panel = screen.getByRole('region', { name: 'API 사용 상태' })
     expect(panel.textContent).toContain('뉴스 프록시연결 불가')
     expect(panel.textContent).toContain('DART 프록시사용 가능')
@@ -49,20 +49,32 @@ describe('ApiUsageStatusPanel', () => {
     render(<ApiUsageStatusPanel language="en" items={[
       { id: 'dart-proxy', status: 'unavailable' },
       { id: 'dart-api-key', status: 'unknown' },
-    ]} />)
+    ]} dartHealthState="unavailable" />)
     const panel = screen.getByRole('region', { name: 'API usage status' })
     expect(panel.textContent).toContain('DART proxyUnavailable')
     expect(panel.textContent).toContain('DART API keyNot checked')
     expect(panel.textContent).not.toContain('DART API keyConfigured')
   })
 
-  it('shows not checked while the shared health result is pending', () => {
+  it('shows checking and not checked while the shared health result is pending', () => {
     render(<ApiUsageStatusPanel language="en" items={[
       { id: 'dart-proxy', status: 'unknown' },
       { id: 'dart-api-key', status: 'unknown' },
-    ]} />)
+    ]} dartHealthState="checking" />)
     const panel = screen.getByRole('region', { name: 'API usage status' })
-    expect(panel.textContent).toContain('DART proxyNot checked')
+    expect(panel.textContent).toContain('DART proxyChecking')
     expect(panel.textContent).toContain('DART API keyNot checked')
+  })
+
+  it('uses the shared health state instead of contradictory item statuses', () => {
+    render(<ApiUsageStatusPanel language="ko" items={[
+      { id: 'dart-proxy', status: 'unavailable' },
+      { id: 'dart-api-key', status: 'unknown' },
+    ]} dartHealthState="ready" />)
+    const panel = screen.getByRole('region', { name: 'API 사용 상태' })
+    expect(panel.textContent).toContain('DART 프록시사용 가능')
+    expect(panel.textContent).toContain('DART API 키설정됨')
+    expect(panel.textContent).not.toContain('DART 프록시사용 불가')
+    expect(panel.textContent).not.toContain('DART API 키확인 전')
   })
 })

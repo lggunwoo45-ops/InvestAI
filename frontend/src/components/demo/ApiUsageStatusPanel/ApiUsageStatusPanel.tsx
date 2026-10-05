@@ -1,10 +1,11 @@
 import type { Language } from '@/i18n/translations'
-import type { ApiUsageId, ApiUsageItem, ApiUsageStatus } from '@/services/health/dependencyHealth'
+import type { ApiUsageId, ApiUsageItem, ApiUsageStatus, DartHealthUiState } from '@/services/health/dependencyHealth'
 import styles from './ApiUsageStatusPanel.module.css'
 
 interface ApiUsageStatusPanelProps {
   items: readonly ApiUsageItem[]
   language: Language
+  dartHealthState: DartHealthUiState
 }
 
 const copy: Record<Language, {
@@ -13,7 +14,7 @@ const copy: Record<Language, {
   privacy: string
   labels: Record<ApiUsageId, string>
   statuses: Record<ApiUsageStatus, string>
-  dart: { proxyReady: string; proxyUnavailable: string; proxyNotChecked: string; keyConfigured: string; keyNotChecked: string }
+  dart: { proxyChecking: string; proxyReady: string; proxyUnavailable: string; keyConfigured: string; keyNotConfigured: string; keyNotChecked: string }
 }> = {
   en: {
     title: 'API usage status',
@@ -21,7 +22,7 @@ const copy: Record<Language, {
     privacy: 'Key value is never displayed.',
     labels: { 'news-proxy': 'News proxy', 'dart-proxy': 'DART proxy', 'dart-api-key': 'DART API key', 'real-ai': 'Real AI', trading: 'Trading' },
     statuses: { active: 'Active', notConfigured: 'Not configured', disabled: 'Disabled', unavailable: 'Unavailable', unknown: 'Unknown' },
-    dart: { proxyReady: 'Ready', proxyUnavailable: 'Unavailable', proxyNotChecked: 'Not checked', keyConfigured: 'Configured', keyNotChecked: 'Not checked' },
+    dart: { proxyChecking: 'Checking', proxyReady: 'Ready', proxyUnavailable: 'Unavailable', keyConfigured: 'Configured', keyNotConfigured: 'Not configured', keyNotChecked: 'Not checked' },
   },
   ko: {
     title: 'API 사용 상태',
@@ -29,23 +30,40 @@ const copy: Record<Language, {
     privacy: '키 값은 표시하지 않습니다.',
     labels: { 'news-proxy': '뉴스 프록시', 'dart-proxy': 'DART 프록시', 'dart-api-key': 'DART API 키', 'real-ai': '실제 AI', trading: '거래 기능' },
     statuses: { active: '사용 중', notConfigured: '미설정', disabled: '비활성화', unavailable: '연결 불가', unknown: '확인 전' },
-    dart: { proxyReady: '사용 가능', proxyUnavailable: '사용 불가', proxyNotChecked: '확인 전', keyConfigured: '설정됨', keyNotChecked: '확인 전' },
+    dart: { proxyChecking: '확인 중', proxyReady: '사용 가능', proxyUnavailable: '사용 불가', keyConfigured: '설정됨', keyNotConfigured: '미설정', keyNotChecked: '확인 전' },
   },
 }
 
-function statusLabel(item: ApiUsageItem, language: Language): string {
+function resolvedStatus(item: ApiUsageItem, dartHealthState: DartHealthUiState): ApiUsageStatus {
+  if (item.id === 'dart-proxy') {
+    if (dartHealthState === 'unavailable') return 'unavailable'
+    if (dartHealthState === 'checking') return 'unknown'
+    return 'active'
+  }
+  if (item.id === 'dart-api-key') {
+    if (dartHealthState === 'ready') return 'active'
+    if (dartHealthState === 'notConfigured') return 'notConfigured'
+    return 'unknown'
+  }
+  return item.status
+}
+
+function statusLabel(item: ApiUsageItem, language: Language, dartHealthState: DartHealthUiState): string {
   const t = copy[language]
   if (item.id === 'dart-proxy') {
-    if (item.status === 'active') return t.dart.proxyReady
-    if (item.status === 'unavailable') return t.dart.proxyUnavailable
-    if (item.status === 'unknown') return t.dart.proxyNotChecked
+    if (dartHealthState === 'checking') return t.dart.proxyChecking
+    if (dartHealthState === 'unavailable') return t.dart.proxyUnavailable
+    return t.dart.proxyReady
   }
-  if (item.id === 'dart-api-key' && item.status === 'active') return t.dart.keyConfigured
-  if (item.id === 'dart-api-key' && item.status === 'unknown') return t.dart.keyNotChecked
+  if (item.id === 'dart-api-key') {
+    if (dartHealthState === 'ready') return t.dart.keyConfigured
+    if (dartHealthState === 'notConfigured') return t.dart.keyNotConfigured
+    return t.dart.keyNotChecked
+  }
   return t.statuses[item.status]
 }
 
-export function ApiUsageStatusPanel({ items, language }: ApiUsageStatusPanelProps) {
+export function ApiUsageStatusPanel({ items, language, dartHealthState }: ApiUsageStatusPanelProps) {
   const t = copy[language]
   return <section className={styles.panel} aria-labelledby="api-usage-status-title">
     <header>
@@ -53,9 +71,9 @@ export function ApiUsageStatusPanel({ items, language }: ApiUsageStatusPanelProp
       <small>{t.privacy}</small>
     </header>
     <p>{t.description}</p>
-    <ul aria-live="polite">{items.map((item) => <li key={item.id} data-status={item.status}>
+    <ul aria-live="polite">{items.map((item) => <li key={item.id} data-status={resolvedStatus(item, dartHealthState)}>
       <span>{t.labels[item.id]}</span>
-      <strong><i aria-hidden="true" />{statusLabel(item, language)}</strong>
+      <strong><i aria-hidden="true" />{statusLabel(item, language, dartHealthState)}</strong>
     </li>)}</ul>
   </section>
 }
