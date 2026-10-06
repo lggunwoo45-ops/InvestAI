@@ -4,10 +4,13 @@ import { AppRoutes } from '@/app/AppRoutes'
 import { AppProviders } from '@/app/providers/AppProviders'
 
 export function App() {
-  const Router = window.location.protocol === 'file:' ? HashRouter : BrowserRouter
+  const isFileProtocol = window.location.protocol === 'file:'
+  const Router = isFileProtocol ? HashRouter : BrowserRouter
+  const basename = !isFileProtocol && window.location.hostname.endsWith('github.io') ? '/InvestAI' : undefined
+
   return (
     <AppProviders>
-      <Router>
+      <Router basename={basename}>
         <AppRoutes />
       </Router>
     </AppProviders>
