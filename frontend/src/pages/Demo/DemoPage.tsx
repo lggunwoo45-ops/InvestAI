@@ -8,14 +8,13 @@ import { BetaReadinessChecklist } from '@/components/demo/BetaReadinessChecklist
 import { BetaSystemStatusPanel } from '@/components/demo/BetaSystemStatusPanel/BetaSystemStatusPanel'
 import { DemoHealthChecklist } from '@/components/demo/DemoHealthChecklist/DemoHealthChecklist'
 import { GettingStartedFlow } from '@/components/demo/GettingStartedFlow/GettingStartedFlow'
-import { useDartProxyHealth } from '@/hooks/useDartProxyHealth'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { useMarketWorkspace } from '@/hooks/useMarketWorkspace'
 import { useNewsProviderMode } from '@/hooks/useNewsProviderMode'
 import { useLanguage } from '@/i18n/useLanguage'
 import { uiText } from '@/i18n/translations'
 import { getDemoScopeSummary } from '@/services/demo/demoScopeConfig'
-import { buildApiUsageStatus, buildDependencyHealth, getDartHealthUiState } from '@/services/health/dependencyHealth'
+import { buildApiUsageStatus, buildDependencyHealth } from '@/services/health/dependencyHealth'
 import styles from './DemoPage.module.css'
 
 const copy = {
@@ -94,13 +93,11 @@ export function DemoPage() {
   const scope = getDemoScopeSummary(language)
   const { marketDataMode } = useMarketWorkspace()
   const { mode: newsMode, result: newsResult } = useNewsProviderMode()
-  const dartHealth = useDartProxyHealth()
-  const dartHealthState = getDartHealthUiState(dartHealth)
   const newsState = newsResult?.state
   const { dependencyHealth, apiUsage } = useMemo(() => ({
-    dependencyHealth: buildDependencyHealth({ marketDataMode, newsMode, ...(newsState ? { newsState } : {}), dartHealth }),
-    apiUsage: buildApiUsageStatus({ newsMode, ...(newsState ? { newsState } : {}), dartHealth }),
-  }), [dartHealth, marketDataMode, newsMode, newsState])
+    dependencyHealth: buildDependencyHealth({ marketDataMode, newsMode, ...(newsState ? { newsState } : {}) }),
+    apiUsage: buildApiUsageStatus({ newsMode, ...(newsState ? { newsState } : {}) }),
+  }), [marketDataMode, newsMode, newsState])
   const t = copy[language]
   const p = readinessCopy[language]
   useDocumentTitle(scope.versionLabel)
@@ -114,8 +111,8 @@ export function DemoPage() {
     <nav className={styles.quick} aria-label={t.quick}><span>{t.quick}</span>{t.quickLinks.map((link) => <Link key={link.label} to={link.route}><strong>{link.label} →</strong>{'hint' in link && <small>{link.hint}</small>}</Link>)}</nav>
 
     <BetaReadinessChecklist language={language} />
-    <BetaSystemStatusPanel items={dependencyHealth} language={language} dartHealthState={dartHealthState} />
-    <ApiUsageStatusPanel items={apiUsage} language={language} dartHealthState={dartHealthState} />
+    <BetaSystemStatusPanel items={dependencyHealth} language={language} />
+    <ApiUsageStatusPanel items={apiUsage} language={language} />
 
     <section className={styles.section} aria-labelledby="demo-works"><header><span>02</span><h2 id="demo-works">{t.works}</h2></header><div className={styles.capabilities}>{scope.capabilities.map((capability) => <article key={capability.area} data-status={capability.status}><header><h3>{capability.title}</h3><em>{t.statuses[capability.status]}</em></header><p>{capability.summary}</p><ul>{capability.whatWorks.map((item) => <li key={item}>{item}</li>)}</ul><details><summary>{t.limits}</summary><ul>{capability.limitations.map((item) => <li key={item}>{item}</li>)}</ul><small>{t.next}: {capability.nextMilestone}</small></details></article>)}</div></section>
 

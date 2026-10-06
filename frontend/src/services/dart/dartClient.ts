@@ -3,6 +3,7 @@ import { runtimeConfig } from '@/config/runtimeConfig'
 
 const DEFAULT_ENDPOINT = runtimeConfig.dartDisclosuresUrl
 const DEFAULT_HEALTH_ENDPOINT = runtimeConfig.dartHealthUrl
+export const MANUAL_DART_HEALTH_ENDPOINT = '/api/dart/health'
 const statuses = new Set<DartDisclosureStatus>(['disabled', 'unavailable', 'mapping_unavailable', 'loading', 'ready', 'error'])
 const sourceModes = new Set<DartSourceMode>(['live', 'mock', 'disabled'])
 const categories = new Set<DartDisclosureCategory>(['periodic', 'material', 'correction', 'other'])
@@ -24,6 +25,26 @@ function parseHealth(value: unknown): DartProxyHealthResult | null {
   if (consistentReady) return { status: 'ready', apiKeyConfigured: true, message: health.message }
   if (consistentDisabled) return { status: 'disabled', apiKeyConfigured: false, message: health.message }
   return null
+}
+
+/**
+ * Runs an explicit, same-origin proxy health check. This endpoint reports only
+ * configuration booleans and never contacts OpenDART or returns the key value.
+ */
+export async function checkDartConnection(
+  fetchImpl: typeof fetch = globalThis.fetch,
+  healthEndpoint = MANUAL_DART_HEALTH_ENDPOINT,
+  timeoutMs = 5_000,
+): Promise<DartProxyHealthResult> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    const response = await fetchImpl(healthEndpoint, { method: 'GET', signal: controller.signal, headers: { Accept: 'application/json' } })
+    if (!response.ok) return unavailableHealth()
+    return parseHealth(await response.json()) ?? unavailableHealth()
+  } catch {
+    return unavailableHealth()
+  } finally { clearTimeout(timer) }
 }
 
 function disclosure(value: unknown): value is DartDisclosure {
@@ -48,15 +69,7 @@ export class DartClient {
   ) {}
 
   async loadHealth(): Promise<DartProxyHealthResult> {
-    const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), this.timeoutMs)
-    try {
-      const response = await this.fetchImpl(this.healthEndpoint, { method: 'GET', signal: controller.signal, headers: { Accept: 'application/json' } })
-      if (!response.ok) return unavailableHealth()
-      return parseHealth(await response.json()) ?? unavailableHealth()
-    } catch {
-      return unavailableHealth()
-    } finally { clearTimeout(timer) }
+    return checkDartConnection(this.fetchImpl, this.healthEndpoint, this.timeoutMs)
   }
 
   async loadDisclosures(stockCode: string, corpCode: string | null): Promise<DartDisclosureResult> {

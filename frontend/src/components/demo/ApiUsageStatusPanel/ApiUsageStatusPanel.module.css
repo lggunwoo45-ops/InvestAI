@@ -45,15 +45,15 @@
   line-height: 1.55;
 }
 
-.panel ul {
+.apiItems {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.panel li {
+.apiItems li {
   display: grid;
   gap: 7px;
   min-width: 0;
@@ -61,7 +61,7 @@
   border-right: 1px solid #22343d;
 }
 
-.panel li:last-child {
+.apiItems li:last-child {
   border-right: 0;
 }
 
@@ -99,14 +99,99 @@
 .panel li[data-status='unavailable'] i { background: #a27370; }
 .panel li[data-status='disabled'] i { background: #686e70; }
 
+.dartCheck {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border-top: 1px solid #263a43;
+  background: #0c171d;
+}
+
+.dartCheck > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.dartCheck > header > div {
+  display: grid;
+  gap: 4px;
+}
+
+.dartCheck b {
+  color: #aebec1;
+  font: 700 10px ui-monospace, monospace;
+  letter-spacing: .08em;
+}
+
+.dartCheck small {
+  color: #718589;
+  font: 8px ui-monospace, monospace;
+}
+
+.dartCheck button {
+  min-width: 142px;
+  border: 1px solid #46675f;
+  background: #13241f;
+  color: #a8c2bb;
+  padding: 8px 12px;
+  font: 700 9px ui-monospace, monospace;
+  cursor: pointer;
+}
+
+.dartCheck button:hover:not(:disabled) {
+  border-color: #669387;
+  background: #172d27;
+}
+
+.dartCheck button:focus-visible {
+  outline: 2px solid #75a99c;
+  outline-offset: 2px;
+}
+
+.dartCheck button:disabled {
+  cursor: wait;
+  opacity: .55;
+}
+
+.dartResult > p {
+  margin: 0;
+  color: #90a2a5;
+  font-size: 9px;
+}
+
+.dartResult ul {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  border: 1px solid #22343d;
+  list-style: none;
+}
+
+.dartResult li {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  padding: 10px 12px;
+  border-right: 1px solid #22343d;
+}
+
+.dartResult li:last-child { border-right: 0; }
+
 @media (max-width: 900px) {
-  .panel ul { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .panel li { border-bottom: 1px solid #22343d; }
-  .panel li:nth-child(2n) { border-right: 0; }
+  .apiItems { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .apiItems li { border-bottom: 1px solid #22343d; }
+  .apiItems li:nth-child(2n) { border-right: 0; }
 }
 
 @media (max-width: 600px) {
   .panel > header { align-items: flex-start; flex-direction: column; gap: 6px; }
-  .panel ul { grid-template-columns: 1fr; }
-  .panel li { border-right: 0; }
+  .apiItems,
+  .dartResult ul { grid-template-columns: 1fr; }
+  .apiItems li,
+  .dartResult li { border-right: 0; }
+  .dartCheck > header { align-items: stretch; flex-direction: column; }
+  .dartCheck button { width: 100%; }
 }
