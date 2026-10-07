@@ -3,6 +3,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
 import { DisplayModeNotice } from '@/components/displayMode/DisplayModeNotice/DisplayModeNotice'
 import { MarketDetailWorkspace } from '@/components/market-detail/MarketDetailWorkspace/MarketDetailWorkspace'
+import { MarketAssetSwitcher } from '@/components/market/MarketAssetSwitcher/MarketAssetSwitcher'
 import { MarketExplorer } from '@/components/market/MarketExplorer/MarketExplorer'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { useMarketCatalog } from '@/hooks/useMarketCatalog'
@@ -218,6 +219,7 @@ export function MarketPage() {
   )
   const listIsCollapsed = Boolean(selectedInstrument && instrumentListCollapsed)
   const layoutText = marketExplorerText[language].layout
+  const workspaceSwitcher = <MarketAssetSwitcher activeMode={assetMode} onChange={(mode) => changeVenue(defaultVenueByAssetMode[mode])} />
   const explorer = <div className={`${styles.navigator} ${selectedInstrument ? styles.navigatorDetail : ''} ${listIsCollapsed ? styles.navigatorCollapsed : ''}`}>
     {selectedInstrument && <div className={styles.navigatorToolbar}>
       {!listIsCollapsed && <strong>{layoutText.instrumentList}</strong>}
@@ -239,25 +241,25 @@ export function MarketPage() {
     </div>
   </div>
 
-  if (!selectedInstrument) return <main className={styles.page}>{explorer}</main>
+  if (!selectedInstrument) return <main className={styles.page}>{workspaceSwitcher}{explorer}</main>
 
   const snapshot = detailState.state?.snapshot
   const currentSnapshot = snapshot?.instrument.id === selectedInstrument.id && snapshot.timeframe === selectedTimeframe
   if (!currentSnapshot || !detailState.state) {
-    return <div className={`${styles.pendingWorkspace} ${listIsCollapsed ? styles.pendingWorkspaceCollapsed : ''}`}>
-      {explorer}
-      <div className={styles.detailState}>{detailState.error ?? `Connecting ${selectedInstrument.symbol} · ${detailState.state?.connection.message ?? 'Preparing market workspace…'}`}</div>
-    </div>
+    return <main className={styles.page}>{workspaceSwitcher}<div className={`${styles.pendingWorkspace} ${listIsCollapsed ? styles.pendingWorkspaceCollapsed : ''}`}>
+        {explorer}
+        <div className={styles.detailState}>{detailState.error ?? `Connecting ${selectedInstrument.symbol} · ${detailState.state?.connection.message ?? 'Preparing market workspace…'}`}</div>
+      </div></main>
   }
 
-  return <MarketDetailWorkspace
-    navigator={explorer}
-    instrumentListCollapsed={listIsCollapsed}
-    snapshot={snapshot}
-    connection={detailState.state.connection}
-    selectedTimeframe={selectedTimeframe}
-    onSelectTimeframe={selectTimeframe}
-    marketDataMode={marketDataMode}
-    onMarketDataModeChange={setMarketDataMode}
-  />
+  return <main className={styles.page}>{workspaceSwitcher}<MarketDetailWorkspace
+      navigator={explorer}
+      instrumentListCollapsed={listIsCollapsed}
+      snapshot={snapshot}
+      connection={detailState.state.connection}
+      selectedTimeframe={selectedTimeframe}
+      onSelectTimeframe={selectTimeframe}
+      marketDataMode={marketDataMode}
+      onMarketDataModeChange={setMarketDataMode}
+    /></main>
 }

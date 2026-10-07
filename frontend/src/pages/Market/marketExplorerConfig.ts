@@ -10,21 +10,18 @@ export const marketExplorerText = {
       crypto: {
         title: 'Crypto Market',
         eyebrow: 'CRYPTO / MARKET PULSE',
-        subtitle: 'Review crypto movement from Upbit and Binance markets.',
         scope: 'Exchange / market',
         detail: 'Crypto market',
       },
       korea: {
         title: 'Korea Stocks Beta',
         eyebrow: 'KOREA EQUITIES / BETA DATA',
-        subtitle: 'KOSPI / KOSDAQ instruments are shown with beta data. A live stock provider is not connected yet.',
         scope: 'Region / board',
         detail: 'Company research',
       },
       us: {
         title: 'US Stocks Beta',
         eyebrow: 'US EQUITIES / BETA DATA',
-        subtitle: 'US stock instruments are shown with beta data. A live stock provider is not connected yet.',
         scope: 'Region / board',
         detail: 'Company research',
       },
@@ -94,21 +91,18 @@ export const marketExplorerText = {
       crypto: {
         title: '코인 마켓',
         eyebrow: '암호화폐 / 시장 흐름',
-        subtitle: '업비트와 바이낸스 기준으로 코인 흐름을 확인합니다.',
         scope: '거래소 / 마켓',
         detail: '암호화폐 시장',
       },
       korea: {
         title: '한국 주식 Beta',
         eyebrow: '한국 주식 / 베타 데이터',
-        subtitle: 'KOSPI / KOSDAQ 종목은 베타 데이터로 표시됩니다. 실시간 주식 공급자는 아직 연결되지 않았습니다.',
         scope: '지역 / 거래소',
         detail: '기업 리서치',
       },
       us: {
         title: '미국 주식 Beta',
         eyebrow: '미국 주식 / 베타 데이터',
-        subtitle: '미국 주식은 베타 데이터로 표시됩니다. 실시간 주식 공급자는 아직 연결되지 않았습니다.',
         scope: '지역 / 거래소',
         detail: '기업 리서치',
       },

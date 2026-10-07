@@ -5,7 +5,7 @@ import { DataModeControl } from '@/components/market-data/DataModeControl/DataMo
 import { useLanguage } from '@/i18n/useLanguage'
 import { marketExplorerText, groupForVenue, venuesByGroup } from '@/pages/Market/marketExplorerConfig'
 import { queryMarketInstruments, type BinanceSpotQuoteFilter, type ExplorerSortDirection, type ExplorerSortField } from '@/pages/Market/marketExplorerQuery'
-import type { MarketCatalog, MarketDataMode, MarketGroup, MarketInstrument, MarketVenue } from '@/types/market'
+import type { MarketCatalog, MarketDataMode, MarketInstrument, MarketVenue } from '@/types/market'
 import { formatMarketChange, formatMarketPrice, formatMarketVolume } from '@/utils/formatMarketValue'
 import styles from './MarketExplorer.module.css'
 
@@ -37,7 +37,6 @@ interface MarketExplorerProps {
   compact?: boolean
 }
 
-const groups: readonly MarketGroup[] = ['crypto', 'korea', 'us']
 const sortFields: readonly ExplorerSortField[] = ['alphabet', 'price', 'change', 'volume']
 const spotQuotes: readonly BinanceSpotQuoteFilter[] = ['USDT', 'FDUSD', 'BTC', 'ETH', 'Other']
 
@@ -90,7 +89,6 @@ export function MarketExplorer({
 
   useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = 0 }, [venue, search, favoritesOnly, sortField, sortDirection, spotQuoteFilter])
 
-  const changeGroup = (next: MarketGroup) => onVenueChange(venuesByGroup[next][0])
   const changeProvider = (provider: 'upbit' | 'binance') =>
     onVenueChange(provider === 'upbit' ? 'upbit-krw' : 'binance-spot')
 
@@ -101,15 +99,11 @@ export function MarketExplorer({
           {compact && onBack && <button type="button" className={styles.back} onClick={onBack}>← {text.all}</button>}
           <span className={styles.eyebrow}>{workspace.eyebrow}</span>
           <h1>{workspace.title}</h1>
-          <p>{workspace.subtitle}</p>
         </div>
         <div className={styles.count}><DataModeControl value={mode} onChange={onModeChange} /><strong aria-live="polite" aria-atomic="true" aria-label={`${instruments.length.toLocaleString()} ${text.results}`}>{instruments.length.toLocaleString()}</strong><span>{text.results}</span></div>
       </header>
 
       <div className={styles.navigation}>
-        <div className={styles.groupTabs} role="tablist" aria-label={text.marketGroup}>
-          {groups.map((item) => <button key={item} type="button" role="tab" aria-selected={group === item} onClick={() => changeGroup(item)}>{text.group[item]}</button>)}
-        </div>
         {group === 'crypto' && <div className={styles.providerTabs} role="tablist" aria-label={text.cryptoProvider}>
           <button type="button" role="tab" aria-selected={cryptoProvider === 'upbit'} onClick={() => changeProvider('upbit')}>Upbit</button>
           <button type="button" role="tab" aria-selected={cryptoProvider === 'binance'} onClick={() => changeProvider('binance')}>Binance</button>

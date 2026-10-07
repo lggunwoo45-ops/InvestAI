@@ -97,7 +97,8 @@ describe('Market Copilot application shell', () => {
     const finalRead = within(copilot).getByRole('region', { name: 'AI Copilot final review' })
     const bullishScenario = copilot.querySelector('[data-scenario="bullish"]')!
     expect(finalRead.textContent).toContain('Final read')
-    expect(finalRead.textContent).toContain('Reference evidence')
+    expect(finalRead.textContent).toContain('Evidence')
+    fireEvent.click(within(finalRead).getByRole('button', { name: 'Show evidence details' }))
     expect(finalRead.textContent).toContain('Instrument: 005930')
     expect(finalRead.compareDocumentPosition(bullishScenario) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0)
     expect(copilot.textContent).toContain('Scenario Analysis')
@@ -153,7 +154,7 @@ describe('Market Copilot application shell', () => {
     fireEvent.click(screen.getByRole('button', { name: 'MOCK' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Open BTC/KRW' }))
     expect(await screen.findByRole('img', { name: /BTC\/KRW 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
-    expect(screen.getByRole('complementary', { name: 'AI Copilot' }).textContent).toContain('Instrument: BTC/KRW')
+    expect(screen.getByRole('complementary', { name: 'AI Copilot' }).textContent).toContain('BTC/KRW')
 
     fireEvent.click(screen.getByRole('tab', { name: 'Binance' }))
     expect(screen.getByRole('tab', { name: 'Binance' }).getAttribute('aria-selected')).toBe('true')
@@ -167,7 +168,7 @@ describe('Market Copilot application shell', () => {
     expect(screen.getByRole('heading', { name: 'Korea Stocks Beta' })).toBeTruthy()
     expect(await screen.findByRole('img', { name: /005930 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
     expect(screen.getByRole('complementary', { name: 'AI Copilot' }).textContent).toContain('005930')
-    expect(screen.getByRole('complementary', { name: 'AI Copilot' }).textContent).toContain('Instrument: 005930')
+    expect(screen.getByRole('complementary', { name: 'AI Copilot' }).textContent).toContain('005930')
 
     fireEvent.change(screen.getByRole('searchbox', { name: 'Search symbol, Korean or English name' }), { target: { value: '005930' } })
     fireEvent.click(await screen.findByRole('button', { name: 'Open 005930' }))

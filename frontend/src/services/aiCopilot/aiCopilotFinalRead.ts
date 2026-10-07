@@ -23,6 +23,15 @@ export type AiCopilotVolumeState = 'elevated' | 'normal' | 'low' | 'unavailable'
 export type AiCopilotSupportResistanceState = 'nearSupport' | 'balanced' | 'nearResistance' | 'aboveResistance' | 'belowSupport' | 'unavailable'
 export type AiCopilotBtcAnchorContext = 'stable' | 'mixed' | 'volatilityWatch' | 'unavailable'
 export type AiCopilotMarketBriefDirection = 'upside' | 'neutral' | 'downsidePressure' | 'volatilityWatch' | 'unavailable'
+export type AiCopilotEvidenceStatus = 'constructive' | 'neutral' | 'caution' | 'limited' | 'strong' | 'weak' | 'checkNeeded'
+
+export interface AiCopilotFinalReadEvidenceItem {
+  key: 'score' | 'trend' | 'momentum' | 'volume' | 'structure' | 'btc' | 'market' | 'quality'
+  label: string
+  value: string
+  status: AiCopilotEvidenceStatus
+  statusLabel: string
+}
 
 /** A transparent snapshot of the existing evidence used by the deterministic final-read rules. */
 export interface AiCopilotFinalReadEvidence {
@@ -55,6 +64,7 @@ export interface AiCopilotFinalRead {
   confidenceLabel: string
   sourceFactors: readonly string[]
   evidenceSummary: readonly string[]
+  evidenceItems: readonly AiCopilotFinalReadEvidenceItem[]
 }
 
 export interface BuildAiCopilotFinalReadEvidenceInput {
@@ -89,6 +99,7 @@ const copy = {
       notEnoughData: ['Not enough data', 'There is not enough usable current evidence for a meaningful final read.'],
     },
     confidence: { low: 'Low', moderate: 'Medium', strong: 'High', unavailable: 'Not available' },
+    evidenceStatus: { constructive: 'Constructive', neutral: 'Neutral', caution: 'Caution', limited: 'Limited', strong: 'Strong', weak: 'Weak', checkNeeded: 'Check needed' },
     factors: { instrument: 'Instrument', decision: 'Practical decision', score: 'Review score', trend: 'Technical trend', momentum: 'Momentum', volume: 'Volume state', structure: 'Price structure', btc: 'Bitcoin anchor', brief: 'Market caution', quality: 'Data quality', series: 'Price series' },
     values: {
       trend: { upward: 'Upward bias', neutral: 'Mixed', downward: 'Downward bias', unavailable: 'Unavailable' },
@@ -139,6 +150,7 @@ const copy = {
       notEnoughData: ['데이터 부족', '의미 있는 최종 검토에 필요한 현재 근거가 충분하지 않습니다.'],
     },
     confidence: { low: '낮음', moderate: '보통', strong: '높음', unavailable: '산정 불가' },
+    evidenceStatus: { constructive: '우호적', neutral: '중립', caution: '주의', limited: '부족', strong: '강함', weak: '약함', checkNeeded: '확인 필요' },
     factors: { instrument: '종목', decision: '실용 판단', score: '검토 점수', trend: '기술 상태', momentum: '모멘텀', volume: '거래량 상태', structure: '가격 구조', btc: 'BTC 기준', brief: '시장 주의', quality: '데이터 품질', series: '가격 흐름' },
     values: {
       trend: { upward: '상승 우위', neutral: '혼재', downward: '하락 우위', unavailable: '확인 불가' },
@@ -297,6 +309,31 @@ function confidenceFor(state: AiCopilotFinalReadState, evidence: AiCopilotFinalR
   return reviewScore?.level === 'low' ? 'low' as const : 'moderate' as const
 }
 
+function evidenceItems(evidence: AiCopilotFinalReadEvidence, language: Language): readonly AiCopilotFinalReadEvidenceItem[] {
+  const t = copy[language]
+  const item = (key: AiCopilotFinalReadEvidenceItem['key'], label: string, value: string, status: AiCopilotEvidenceStatus): AiCopilotFinalReadEvidenceItem => ({ key, label, value, status, statusLabel: t.evidenceStatus[status] })
+  const scoreStatus: AiCopilotEvidenceStatus = (evidence.candidateReviewScore ?? 0) >= 75 ? 'strong'
+    : (evidence.candidateReviewScore ?? 0) >= 55 ? 'constructive'
+      : (evidence.candidateReviewScore ?? 0) >= 45 ? 'neutral' : 'weak'
+  const trendStatus: Record<AiCopilotTechnicalTrend, AiCopilotEvidenceStatus> = { upward: 'constructive', neutral: 'neutral', downward: 'caution', unavailable: 'limited' }
+  const momentumStatus: Record<AiCopilotMomentumState, AiCopilotEvidenceStatus> = { strongPositive: 'strong', positive: 'constructive', neutral: 'neutral', negative: 'caution', strongNegative: 'weak', unavailable: 'limited' }
+  const volumeStatus: Record<AiCopilotVolumeState, AiCopilotEvidenceStatus> = { elevated: 'checkNeeded', normal: 'neutral', low: 'limited', unavailable: 'limited' }
+  const structureStatus: Record<AiCopilotSupportResistanceState, AiCopilotEvidenceStatus> = { nearSupport: 'constructive', balanced: 'neutral', nearResistance: 'checkNeeded', aboveResistance: 'caution', belowSupport: 'caution', unavailable: 'limited' }
+  const btcStatus: Record<AiCopilotBtcAnchorContext, AiCopilotEvidenceStatus> = { stable: 'constructive', mixed: 'neutral', volatilityWatch: 'caution', unavailable: 'limited' }
+  const marketStatus: Record<AiCopilotMarketBriefDirection, AiCopilotEvidenceStatus> = { upside: 'constructive', neutral: 'neutral', downsidePressure: 'caution', volatilityWatch: 'caution', unavailable: 'limited' }
+  const qualityStatus: Record<AnalysisDataQuality, AiCopilotEvidenceStatus> = { live: 'strong', mock: 'limited', limited: 'limited', unavailable: 'limited' }
+  return [
+    evidence.candidateReviewScore !== null ? item('score', t.factors.score, String(evidence.candidateReviewScore), scoreStatus) : null,
+    evidence.technicalTrend !== 'unavailable' ? item('trend', t.factors.trend, t.values.trend[evidence.technicalTrend], trendStatus[evidence.technicalTrend]) : null,
+    evidence.momentumState !== 'unavailable' ? item('momentum', t.factors.momentum, t.values.momentum[evidence.momentumState], momentumStatus[evidence.momentumState]) : null,
+    evidence.volumeState !== 'unavailable' ? item('volume', t.factors.volume, t.values.volume[evidence.volumeState], volumeStatus[evidence.volumeState]) : null,
+    evidence.supportResistanceState !== 'unavailable' ? item('structure', t.factors.structure, t.values.structure[evidence.supportResistanceState], structureStatus[evidence.supportResistanceState]) : null,
+    evidence.btcAnchorState !== 'unavailable' ? item('btc', t.factors.btc, t.values.btc[evidence.btcAnchorState], btcStatus[evidence.btcAnchorState]) : null,
+    evidence.marketCautionState !== 'unavailable' ? item('market', t.factors.brief, t.values.market[evidence.marketCautionState], marketStatus[evidence.marketCautionState]) : null,
+    item('quality', t.factors.quality, t.values.quality[evidence.dataQuality], qualityStatus[evidence.dataQuality]),
+  ].filter((entry): entry is AiCopilotFinalReadEvidenceItem => entry !== null)
+}
+
 export function buildAiCopilotFinalRead(input: AiCopilotFinalReadInput): AiCopilotFinalRead {
   const t = copy[input.language]
   const { evidence } = input
@@ -317,15 +354,8 @@ export function buildAiCopilotFinalRead(input: AiCopilotFinalReadInput): AiCopil
     evidence.btcAnchorState !== 'unavailable' ? t.factors.btc : null,
     evidence.marketCautionState !== 'unavailable' ? t.factors.brief : null,
   ].filter((factor): factor is string => Boolean(factor))
-  const evidenceSummary = [
-    evidence.candidateReviewScore !== null ? `${t.factors.score}: ${evidence.candidateReviewScore}` : null,
-    `${t.factors.trend}: ${t.values.trend[evidence.technicalTrend]}`,
-    `${t.factors.momentum}: ${t.values.momentum[evidence.momentumState]}`,
-    `${t.factors.volume}: ${t.values.volume[evidence.volumeState]}`,
-    `${t.factors.structure}: ${t.values.structure[evidence.supportResistanceState]}`,
-    evidence.btcAnchorState !== 'unavailable' ? `${t.factors.btc}: ${t.values.btc[evidence.btcAnchorState]}` : null,
-    evidence.marketCautionState !== 'unavailable' ? `${t.factors.brief}: ${t.values.market[evidence.marketCautionState]}` : null,
-  ].filter((factor): factor is string => Boolean(factor))
+  const availableEvidenceItems = evidenceItems(evidence, input.language)
+  const evidenceSummary = availableEvidenceItems.map((entry) => `${entry.label}: ${entry.value} · ${entry.statusLabel}`)
   const [title, summary] = t.states[state]
   const whySuffix = btcCapsConclusion ? ` ${t.btcWhy}` : marketCapsConclusion ? ` ${t.marketCaution}` : ''
   const nextCheck = btcCapsConclusion ? t.btcNext : t.next[state]
@@ -340,6 +370,7 @@ export function buildAiCopilotFinalRead(input: AiCopilotFinalReadInput): AiCopil
     confidenceLabel: t.confidence[confidenceFor(state, evidence, input.reviewScore)],
     sourceFactors,
     evidenceSummary,
+    evidenceItems: availableEvidenceItems,
   }
 }
 
@@ -364,5 +395,6 @@ export function applyFinalReadToScenarioAnalysis(analysis: AiScenarioAnalysis, f
 
 export function formatAiCopilotFinalReadSummary(finalRead: AiCopilotFinalRead, language: Language): string {
   const t = copy[language]
-  return [`${t.summaryHeading} ${finalRead.title}`, `${t.reason}: ${finalRead.why}`, `${t.nextLabel}: ${finalRead.nextCheck}`, `${t.evidence}: ${finalRead.evidenceSummary.join(' · ')}`, `${t.cautionLabel}: ${finalRead.caution}`].join('\n')
+  const evidenceLines = finalRead.evidenceItems.map((entry) => `- ${entry.label}: ${entry.value} · ${entry.statusLabel}`)
+  return [`${t.summaryHeading} ${finalRead.title}`, `${t.reason}: ${finalRead.why}`, `${t.evidence}:`, ...evidenceLines, `${t.nextLabel}: ${finalRead.nextCheck}`, `${t.cautionLabel}: ${finalRead.caution}`].join('\n')
 }

@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 import type { MarketInstrument } from '@/types/market'
@@ -49,6 +49,7 @@ describe('AiCopilot selected-instrument evidence wiring', () => {
 
     const first = screen.getByRole('region', { name: 'AI Copilot final review' })
     expect(first.getAttribute('data-final-read')).toBe('approachReviewPossible')
+    fireEvent.click(within(first).getByRole('button', { name: 'Show evidence details' }))
     expect(first.textContent).toContain('Instrument: AAA/KRW')
     expect(within(screen.getByRole('complementary', { name: 'AI Copilot' })).getByText(/Constructive continuation remains possible/)).toBeTruthy()
 
