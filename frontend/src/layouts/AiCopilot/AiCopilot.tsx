@@ -14,7 +14,7 @@ import { useLanguage } from '@/i18n/useLanguage'
 import { buildAiAnalysisContext } from '@/services/ai/aiAnalysisContextBuilder'
 import { createMockAiAnalysis } from '@/services/ai/mockAiAnalysisEngine'
 import { safelyCreateMockScenarioAnalysis } from '@/services/ai/mockScenarioService'
-import { buildAiCopilotFinalRead } from '@/services/aiCopilot/aiCopilotFinalRead'
+import { applyFinalReadToScenarioAnalysis, buildAiCopilotFinalRead, buildAiCopilotFinalReadEvidence } from '@/services/aiCopilot/aiCopilotFinalRead'
 import { buildCandidateReviewScore } from '@/services/candidateScore/candidateReviewScore'
 import { buildMyInstrumentAnalysis } from '@/services/myAnalysis/myAnalysisEngine'
 import { buildPracticalDecision } from '@/services/practicalDecision/practicalDecisionModel'
@@ -36,16 +36,16 @@ export function AiCopilot() {
   const isStock = displayedInstrument?.marketId === 'korea-stock' || displayedInstrument?.marketId === 'us-stock'
   const scenarioTimeframe: AiScenarioTimeframe = selectedTimeframe === '1D' ? 'long'
     : selectedTimeframe === '4H' ? 'medium' : 'short'
-  const scenarioAnalysis = useMemo(() => displayedInstrument ? safelyCreateMockScenarioAnalysis(displayedInstrument, language, scenarioTimeframe) : null, [displayedInstrument, language, scenarioTimeframe])
+  const baseScenarioAnalysis = useMemo(() => displayedInstrument ? safelyCreateMockScenarioAnalysis(displayedInstrument, language, scenarioTimeframe) : null, [displayedInstrument, language, scenarioTimeframe])
   const analysisContext = useMemo(() => buildAiAnalysisContext({
     instrument: displayedInstrument ?? null,
-    scenario: scenarioAnalysis,
+    scenario: baseScenarioAnalysis,
     newsProviderMode,
     newsResult,
     marketDataMode,
     connectionStatus: activeMarketState?.connection.status,
     language,
-  }), [activeMarketState?.connection.status, displayedInstrument, language, marketDataMode, newsProviderMode, newsResult, scenarioAnalysis])
+  }), [activeMarketState?.connection.status, baseScenarioAnalysis, displayedInstrument, language, marketDataMode, newsProviderMode, newsResult])
   const foundationResult = useMemo(() => analysisContext.status === 'ready' ? createMockAiAnalysis(analysisContext.input, language) : null, [analysisContext, language])
   const finalRead = useMemo(() => {
     if (!displayedInstrument) return null
@@ -84,17 +84,19 @@ export function AiCopilot() {
       hasNewsEvidence: analysis.evidence.some((entry) => entry.type === 'news' || entry.type === 'market'),
       hasDisclosureEvidence: false,
     })
-    return buildAiCopilotFinalRead({
-      language,
-      instrumentLabel: displayedInstrument.displaySymbol ?? displayedInstrument.symbol,
+    const evidence = buildAiCopilotFinalReadEvidence({
+      instrument: displayedInstrument,
+      candles: matchingSnapshot?.candles ?? [],
       practicalDecision,
       reviewScore,
-      hasReviewRanges: reviewRanges.length > 0,
-      hasTechnicalLevels: technicalAnalysis.levelSet.status === 'ready',
-      isCrypto: displayedInstrument.marketId === 'upbit' || displayedInstrument.marketId.startsWith('binance'),
-      dataAvailable: analysis.dataQuality !== 'unavailable',
+      technicalAnalysis,
+      dataQuality: analysis.dataQuality,
     })
+    return buildAiCopilotFinalRead({ language, evidence, practicalDecision, reviewScore })
   }, [activeMarketState, displayedInstrument, language, marketDataMode, newsResult, scenarioTimeframe])
+  const scenarioAnalysis = useMemo(() => baseScenarioAnalysis && finalRead
+    ? applyFinalReadToScenarioAnalysis(baseScenarioAnalysis, finalRead, language)
+    : baseScenarioAnalysis, [baseScenarioAnalysis, finalRead, language])
 
   return (
     <aside className={`${styles.copilot} ${isStock ? styles.stockContext : ''}`} aria-label="AI Copilot">

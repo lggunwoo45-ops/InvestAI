@@ -24,7 +24,7 @@ import { useTechnicalLevelData } from '@/hooks/useTechnicalLevelData'
 import { useLanguage } from '@/i18n/useLanguage'
 import { buildCryptoWatchCandidates } from '@/services/ai/cryptoWatchCandidateEngine'
 import { buildStockWatchCandidates } from '@/services/ai/stockWatchCandidateEngine'
-import { buildAiCopilotFinalRead } from '@/services/aiCopilot/aiCopilotFinalRead'
+import { buildAiCopilotFinalRead, buildAiCopilotFinalReadEvidence } from '@/services/aiCopilot/aiCopilotFinalRead'
 import { buildCandidateReviewScore } from '@/services/candidateScore/candidateReviewScore'
 import { buildDartDisclosureReview } from '@/services/dart/dartDisclosureReview'
 import { findCandidateSnapshot } from '@/services/candidateSnapshot/candidateSnapshotStorage'
@@ -157,18 +157,20 @@ export function MyAnalysisPage() {
       : selected
     return buildTechnicalLevelAnalysis({ instrument: technicalInstrument, candles: technicalData.candles, language, dataQuality: technicalData.dataQuality })
   }, [language, selected, technicalData.candles, technicalData.currentPrice, technicalData.dataQuality])
-  const aiCopilotFinalRead = analysis && practicalDecision ? buildAiCopilotFinalRead({
+  const aiCopilotFinalRead = analysis && practicalDecision && selected ? buildAiCopilotFinalRead({
     language,
-    instrumentLabel: selected?.displaySymbol ?? selected?.symbol,
     practicalDecision,
     reviewScore: candidateReviewScore,
-    hasReviewRanges: reviewRanges.length > 0,
-    hasTechnicalLevels: technicalAnalysis?.levelSet.status === 'ready',
-    isCrypto: analysis.assetType === 'crypto',
-    freshness: snapshotExpired ? 'expired' : null,
-    hasRecordedPrice: validAveragePrice !== null,
-    positionReviewActive: reviewMode === 'position',
-    dataAvailable: analysis.dataQuality !== 'unavailable',
+    evidence: buildAiCopilotFinalReadEvidence({
+      instrument: selected,
+      candles: technicalData.candles,
+      practicalDecision,
+      reviewScore: candidateReviewScore,
+      technicalAnalysis,
+      freshness: snapshotExpired ? 'expired' : null,
+      positionReviewActive: reviewMode === 'position' && validAveragePrice !== null,
+      dataQuality: analysis.dataQuality,
+    }),
   }) : null
 
   const choose = (instrument: MarketInstrument) => {

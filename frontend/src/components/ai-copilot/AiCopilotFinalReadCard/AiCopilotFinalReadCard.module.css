@@ -16,6 +16,7 @@
 
 .card > header div { display: grid; gap: 3px; }
 .card > header span { color: #718783; font: 700 7px ui-monospace, monospace; letter-spacing: .1em; text-transform: uppercase; }
+.card > header small { color: #819497; font-size: 8px; }
 .card h3 { margin: 0; color: #d3dddd; font-size: 12px; line-height: 1.35; }
 .card > header > strong { flex: 0 0 auto; padding: 4px 6px; border: 1px solid #415951; color: #9db4ad; font: 700 7px ui-monospace, monospace; white-space: nowrap; }
 .summary { margin: 0; color: #9caaad; font-size: 9px; line-height: 1.55; }
@@ -23,6 +24,9 @@
 .card dl > div { display: grid; grid-template-columns: 58px minmax(0, 1fr); gap: 8px; padding: 7px 0; border-bottom: 1px solid #25363d; }
 .card dt { color: #73888d; font-size: 8px; }
 .card dd { margin: 0; color: #aab8bb; font-size: 8px; line-height: 1.5; }
+.evidence { display: grid; gap: 5px; }
+.evidence > strong { color: #8ea3a4; font-size: 8px; }
+.evidence ul { display: grid; gap: 3px; margin: 0; padding-left: 14px; color: #99aaad; font-size: 8px; line-height: 1.45; }
 .sources { margin: 0; color: #718287; font-size: 7px; line-height: 1.5; }
 .sources span { margin-right: 6px; color: #899b9e; font-weight: 700; }
 .card[data-final-read='extendedCaution'],
