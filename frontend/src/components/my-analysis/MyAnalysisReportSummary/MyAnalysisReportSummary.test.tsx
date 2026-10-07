@@ -2,6 +2,8 @@ import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 import { buildMyInstrumentAnalysis } from '@/services/myAnalysis/myAnalysisEngine'
+import { buildAiCopilotFinalRead } from '@/services/aiCopilot/aiCopilotFinalRead'
+import { buildPracticalDecision } from '@/services/practicalDecision/practicalDecisionModel'
 import { buildDartDisclosureReview } from '@/services/dart/dartDisclosureReview'
 import { dartMockResult } from '@/services/dart/dartFixtures'
 import { buildTechnicalLevelAnalysis } from '@/services/technicalLevels/technicalLevelEngine'
@@ -57,6 +59,18 @@ describe('MyAnalysisReportSummary', () => {
     fireEvent.click(within(report).getByRole('button', { name: '요약 복사' }))
     expect(await within(report).findByText('요약을 복사했습니다')).toBeTruthy()
     expect(writeText).toHaveBeenCalledOnce()
+  })
+
+  it('includes an available AI Copilot final review in the copied plain-text summary', () => {
+    const practicalDecision = buildPracticalDecision({ language: 'en', horizon: 'short', dataQuality: 'live', actionStatus: 'watchZone', source: 'analysis' })
+    const finalRead = buildAiCopilotFinalRead({ language: 'en', instrumentLabel: 'BTC/KRW', practicalDecision, reviewScore })
+    render(<MyAnalysisReportSummary analysis={analysis()} language="en" mode="simple" symbol="BTC/KRW" name="Bitcoin" candidateReviewScore={reviewScore} aiCopilotFinalRead={finalRead} />)
+    const text = (screen.getByRole('textbox', { name: 'Plain-text summary' }) as HTMLTextAreaElement).value
+    expect(text).toContain('AI Copilot final review:')
+    expect(text).toContain('Keep watching')
+    expect(text).toContain('Reason:')
+    expect(text).toContain('Next check:')
+    expect(text).toContain('Decision-support information, not a trade instruction.')
   })
 
   it('switches the plain text to safe position context without including a personal note', () => {

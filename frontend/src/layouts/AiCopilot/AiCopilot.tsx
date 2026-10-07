@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 
 import { EmptyState } from '@/components/EmptyState/EmptyState'
 import { Icon } from '@/components/Icon/Icon'
+import { AiCopilotFinalReadCard } from '@/components/ai-copilot/AiCopilotFinalReadCard/AiCopilotFinalReadCard'
 import { AiAnalysisFoundation } from '@/components/ai/AiAnalysisFoundation/AiAnalysisFoundation'
 import { AiForecastPanel } from '@/components/ai/AiForecastPanel/AiForecastPanel'
 import { InstrumentRelatedNews } from '@/components/news/InstrumentRelatedNews/InstrumentRelatedNews'
@@ -13,6 +14,12 @@ import { useLanguage } from '@/i18n/useLanguage'
 import { buildAiAnalysisContext } from '@/services/ai/aiAnalysisContextBuilder'
 import { createMockAiAnalysis } from '@/services/ai/mockAiAnalysisEngine'
 import { safelyCreateMockScenarioAnalysis } from '@/services/ai/mockScenarioService'
+import { buildAiCopilotFinalRead } from '@/services/aiCopilot/aiCopilotFinalRead'
+import { buildCandidateReviewScore } from '@/services/candidateScore/candidateReviewScore'
+import { buildMyInstrumentAnalysis } from '@/services/myAnalysis/myAnalysisEngine'
+import { buildPracticalDecision } from '@/services/practicalDecision/practicalDecisionModel'
+import { buildReviewRanges } from '@/services/practicalDecision/reviewRangeModel'
+import { buildTechnicalLevelAnalysis } from '@/services/technicalLevels/technicalLevelEngine'
 import { formatMarketChange, formatMarketPrice } from '@/utils/formatMarketValue'
 import type { AiScenarioTimeframe } from '@/types/aiScenario'
 import styles from './AiCopilot.module.css'
@@ -40,6 +47,54 @@ export function AiCopilot() {
     language,
   }), [activeMarketState?.connection.status, displayedInstrument, language, marketDataMode, newsProviderMode, newsResult, scenarioAnalysis])
   const foundationResult = useMemo(() => analysisContext.status === 'ready' ? createMockAiAnalysis(analysisContext.input, language) : null, [analysisContext, language])
+  const finalRead = useMemo(() => {
+    if (!displayedInstrument) return null
+    const matchingSnapshot = activeMarketState?.snapshot?.instrument.id === displayedInstrument.id ? activeMarketState.snapshot : null
+    const catalogSource = activeMarketState?.connection.effectiveMode ?? marketDataMode
+    const analysis = buildMyInstrumentAnalysis({
+      instrument: displayedInstrument,
+      intent: 'watching',
+      userNote: '',
+      averagePrice: null,
+      catalogSource,
+      newsResult,
+      language,
+    })
+    const horizon = scenarioTimeframe === 'long' ? 'long' : scenarioTimeframe === 'medium' ? 'swing' : 'short'
+    const practicalDecision = buildPracticalDecision({
+      language,
+      horizon,
+      dataQuality: analysis.dataQuality,
+      actionStatus: analysis.actionReadiness.status,
+      source: 'analysis',
+      reason: analysis.actionReadiness.whyThisStatus,
+      nextCheck: analysis.reviewChecklist[0] ?? analysis.actionReadiness.nextChecks[0],
+    })
+    const reviewRanges = buildReviewRanges({ language, horizon, dataQuality: analysis.dataQuality, anchorPrice: displayedInstrument.lastPrice, source: 'current' })
+    const technicalAnalysis = buildTechnicalLevelAnalysis({ instrument: displayedInstrument, candles: matchingSnapshot?.candles ?? [], language, dataQuality: analysis.dataQuality })
+    const reviewScore = buildCandidateReviewScore({
+      language,
+      dataQuality: analysis.dataQuality,
+      practicalDecisionState: practicalDecision.state,
+      clarity: analysis.actionReadiness.strength,
+      hasReviewRanges: reviewRanges.length > 0,
+      freshness: null,
+      evidenceCount: analysis.evidence.length,
+      missingEvidenceCount: analysis.missingEvidence.length,
+      hasNewsEvidence: analysis.evidence.some((entry) => entry.type === 'news' || entry.type === 'market'),
+      hasDisclosureEvidence: false,
+    })
+    return buildAiCopilotFinalRead({
+      language,
+      instrumentLabel: displayedInstrument.displaySymbol ?? displayedInstrument.symbol,
+      practicalDecision,
+      reviewScore,
+      hasReviewRanges: reviewRanges.length > 0,
+      hasTechnicalLevels: technicalAnalysis.levelSet.status === 'ready',
+      isCrypto: displayedInstrument.marketId === 'upbit' || displayedInstrument.marketId.startsWith('binance'),
+      dataAvailable: analysis.dataQuality !== 'unavailable',
+    })
+  }, [activeMarketState, displayedInstrument, language, marketDataMode, newsResult, scenarioTimeframe])
 
   return (
     <aside className={`${styles.copilot} ${isStock ? styles.stockContext : ''}`} aria-label="AI Copilot">
@@ -68,6 +123,8 @@ export function AiCopilot() {
                 </dd>
               </div>
             </dl>
+
+            {finalRead && <AiCopilotFinalReadCard result={finalRead} language={language} />}
 
             <AiForecastPanel instrument={displayedInstrument!} timeframe={scenarioTimeframe} displayTimeframe={selectedTimeframe} analysis={scenarioAnalysis} />
 

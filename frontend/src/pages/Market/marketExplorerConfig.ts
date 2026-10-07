@@ -70,9 +70,8 @@ export const marketExplorerText = {
     sourceUnavailable: 'The public market catalog is unavailable. Retry or switch to MOCK.',
     layout: {
       instrumentList: 'Instrument list',
-      collapseInstrumentList: 'Collapse instrument list',
-      expandInstrumentList: 'Expand instrument list',
-      expandChart: 'Expand chart',
+      collapseInstrumentList: 'Hide instruments',
+      expandInstrumentList: 'Show instruments',
     },
     group: { crypto: 'Crypto', korea: 'Korea Stocks', us: 'US Stocks' },
     venue: {
@@ -155,9 +154,8 @@ export const marketExplorerText = {
     sourceUnavailable: '공개 마켓 목록을 불러오지 못했습니다. 재시도하거나 MOCK으로 전환하세요.',
     layout: {
       instrumentList: '종목 목록',
-      collapseInstrumentList: '종목 목록 접기',
-      expandInstrumentList: '종목 목록 펼치기',
-      expandChart: '차트 넓게 보기',
+      collapseInstrumentList: '종목 숨기기',
+      expandInstrumentList: '종목 보기',
     },
     group: { crypto: '코인', korea: '한국 주식', us: '미국 주식' },
     venue: {

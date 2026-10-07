@@ -40,8 +40,8 @@ describe('Market asset separation', () => {
     expect(screen.queryByRole('button', { name: 'Open BTC/KRW' })).toBeNull()
     expect(window.localStorage.getItem(MARKET_ASSET_MODE_STORAGE_KEY)).toBe('korea')
 
-    fireEvent.click(screen.getByRole('button', { name: 'Collapse instrument list' }))
-    expect(screen.getByRole('button', { name: 'Expand instrument list' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Hide instruments' }))
+    expect(screen.getByRole('button', { name: 'Show instruments' })).toBeTruthy()
     expect(screen.getByRole('img', { name: /005930 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
   })
 

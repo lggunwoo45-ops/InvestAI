@@ -30,6 +30,11 @@ const copy = {
       neutral: ['Mixed momentum persists', 'No decisive break from the current range'],
       bearish: ['Support conditions weaken', 'Negative momentum expands with participation'],
     },
+    checks: {
+      bullish: ['Check whether resistance behavior improves.', 'Confirm that volume supports the move.'],
+      neutral: ['Check whether the observed range remains intact.', 'Watch for a meaningful change in volume.'],
+      bearish: ['Check whether observed support continues to weaken.', 'Watch whether activity confirms the weaker structure.'],
+    },
     invalidation: {
       bullish: 'Weakens if momentum loses support and participation fades.',
       neutral: 'Ends when price leaves the range with sustained confirmation.',
@@ -71,6 +76,11 @@ const copy = {
       neutral: ['혼재된 모멘텀이 지속됨', '현재 범위를 명확하게 벗어나지 않음'],
       bearish: ['지지 조건이 약해짐', '시장 참여와 함께 부정적 모멘텀이 확대됨'],
     },
+    checks: {
+      bullish: ['저항 구간의 흐름이 개선되는지 확인합니다.', '거래량이 움직임을 뒷받침하는지 확인합니다.'],
+      neutral: ['관찰 범위가 유지되는지 확인합니다.', '거래량에 의미 있는 변화가 생기는지 살펴봅니다.'],
+      bearish: ['관찰된 지지가 계속 약해지는지 확인합니다.', '거래 활동이 약해진 구조를 확인하는지 살펴봅니다.'],
+    },
     invalidation: {
       bullish: '모멘텀이 지지를 잃고 시장 참여가 줄면 약해집니다.',
       neutral: '지속적인 확인과 함께 가격이 범위를 벗어나면 종료됩니다.',
@@ -97,6 +107,7 @@ export function createMockScenarioAnalysis(instrument: MarketInstrument, languag
     probability: null,
     summary: text.summaries[kind],
     conditions: text.conditions[kind],
+    checks: text.checks[kind],
     invalidation: text.invalidation[kind],
     risks: text.scenarioRisk[kind],
   })

@@ -24,6 +24,7 @@ import { useTechnicalLevelData } from '@/hooks/useTechnicalLevelData'
 import { useLanguage } from '@/i18n/useLanguage'
 import { buildCryptoWatchCandidates } from '@/services/ai/cryptoWatchCandidateEngine'
 import { buildStockWatchCandidates } from '@/services/ai/stockWatchCandidateEngine'
+import { buildAiCopilotFinalRead } from '@/services/aiCopilot/aiCopilotFinalRead'
 import { buildCandidateReviewScore } from '@/services/candidateScore/candidateReviewScore'
 import { buildDartDisclosureReview } from '@/services/dart/dartDisclosureReview'
 import { findCandidateSnapshot } from '@/services/candidateSnapshot/candidateSnapshotStorage'
@@ -156,6 +157,19 @@ export function MyAnalysisPage() {
       : selected
     return buildTechnicalLevelAnalysis({ instrument: technicalInstrument, candles: technicalData.candles, language, dataQuality: technicalData.dataQuality })
   }, [language, selected, technicalData.candles, technicalData.currentPrice, technicalData.dataQuality])
+  const aiCopilotFinalRead = analysis && practicalDecision ? buildAiCopilotFinalRead({
+    language,
+    instrumentLabel: selected?.displaySymbol ?? selected?.symbol,
+    practicalDecision,
+    reviewScore: candidateReviewScore,
+    hasReviewRanges: reviewRanges.length > 0,
+    hasTechnicalLevels: technicalAnalysis?.levelSet.status === 'ready',
+    isCrypto: analysis.assetType === 'crypto',
+    freshness: snapshotExpired ? 'expired' : null,
+    hasRecordedPrice: validAveragePrice !== null,
+    positionReviewActive: reviewMode === 'position',
+    dataAvailable: analysis.dataQuality !== 'unavailable',
+  }) : null
 
   const choose = (instrument: MarketInstrument) => {
     setSelectedId(instrument.id)
@@ -209,7 +223,7 @@ export function MyAnalysisPage() {
         <div className={styles.quote}><small>{t.availableData}</small><strong>{Number.isFinite(selected.lastPrice) ? formatMarketPrice(selected) : t.qualities.unavailable}</strong>{Number.isFinite(selected.change24hPercent) && <span data-direction={selected.change24hPercent >= 0 ? 'positive' : 'negative'}>{formatMarketChange(selected.change24hPercent)}</span>}</div>
         <div className={styles.quality}><small>{t.quality}</small><b data-quality={analysis.dataQuality}>{analysis.dataQualityLabel}</b><small>{t.qualityHelp[analysis.dataQuality]}</small></div>
       </section>
-      <MyAnalysisReportSummary analysis={analysis} language={language} mode={displayMode} symbol={selected.displaySymbol ?? selected.symbol} name={selected.name} reviewMode={reviewMode} basisPrice={validAveragePrice} currentPrice={currentPrice} quoteCurrency={selected.quoteCurrency} disclosureReview={selected.marketId === 'korea-stock' ? dartReview : null} practicalDecision={practicalDecision ?? undefined} reviewRanges={reviewRanges} candidateReviewScore={candidateReviewScore ?? undefined} technicalAnalysis={technicalData.isLoading ? undefined : technicalAnalysis ?? undefined} />
+      <MyAnalysisReportSummary analysis={analysis} language={language} mode={displayMode} symbol={selected.displaySymbol ?? selected.symbol} name={selected.name} reviewMode={reviewMode} basisPrice={validAveragePrice} currentPrice={currentPrice} quoteCurrency={selected.quoteCurrency} disclosureReview={selected.marketId === 'korea-stock' ? dartReview : null} practicalDecision={practicalDecision ?? undefined} reviewRanges={reviewRanges} candidateReviewScore={candidateReviewScore ?? undefined} technicalAnalysis={technicalData.isLoading ? undefined : technicalAnalysis ?? undefined} aiCopilotFinalRead={aiCopilotFinalRead ?? undefined} />
       {practicalDecision && <PracticalDecisionCard result={practicalDecision} language={language} />}
       <ReviewRangePanel ranges={reviewRanges} language={language} quoteCurrency={selected.quoteCurrency} />
       {technicalAnalysis && <TechnicalLevelsPanel levelSet={technicalAnalysis.levelSet} movingAverageContext={technicalAnalysis.movingAverageContext} displayMode={displayMode} language={language} isLoading={technicalData.isLoading} />}

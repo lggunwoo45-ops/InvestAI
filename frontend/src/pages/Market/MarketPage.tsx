@@ -230,7 +230,7 @@ export function MarketPage() {
         onClick={toggleInstrumentList}
       >
         <span aria-hidden="true">{listIsCollapsed ? '›' : '‹'}</span>
-        <em>{listIsCollapsed ? layoutText.instrumentList : layoutText.expandChart}</em>
+        <em>{listIsCollapsed ? layoutText.expandInstrumentList : layoutText.collapseInstrumentList}</em>
       </button>
     </div>}
     <div id="market-instrument-list" className={styles.navigatorContent} hidden={listIsCollapsed}>

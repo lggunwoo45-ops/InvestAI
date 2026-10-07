@@ -18,6 +18,7 @@ describe('mock AI scenario foundation', () => {
     expect(analysis.scenarioMap.bullish).toContain('confirmation')
     expect(analysis.evidence.missingEvidence).toEqual(['real-ai', 'real-news-backend'])
     expect(analysis.scenarios.bullish.status).toBe('watch')
+    expect(analysis.scenarios.bullish.checks).toContain('Confirm that volume supports the move.')
     expect(analysis.scenarios.neutral.status).toBe('wait')
     expect(analysis.scenarios.bearish.status).toBe('risk')
   })
@@ -34,6 +35,7 @@ describe('mock AI scenario foundation', () => {
     const analysis = createMockScenarioAnalysis(crypto, 'ko', 'long')
     expect(analysis.instrumentId).toBe('upbit-btc')
     expect(analysis.scenarios.bullish.label).toBe('상승 시나리오')
+    expect(analysis.scenarios.bullish.checks.join(' ')).toContain('거래량')
     expect(analysis.disclaimer).toContain('투자 조언이 아니며')
   })
 

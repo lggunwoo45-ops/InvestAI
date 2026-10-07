@@ -4,6 +4,7 @@ import { CandidateReviewScoreBadge } from '@/components/candidates/CandidateRevi
 import type { MyAnalysisReviewMode } from '@/components/my-analysis/ReviewModeSelector/ReviewModeSelector'
 import type { Language } from '@/i18n/translations'
 import type { CandidateReviewScore } from '@/services/candidateScore/candidateReviewScore'
+import { formatAiCopilotFinalReadSummary, type AiCopilotFinalRead } from '@/services/aiCopilot/aiCopilotFinalRead'
 import { buildPracticalDecision } from '@/services/practicalDecision/practicalDecisionModel'
 import { buildReviewRanges } from '@/services/practicalDecision/reviewRangeModel'
 import type { DartDisclosureReview } from '@/types/dart'
@@ -27,6 +28,7 @@ interface MyAnalysisReportSummaryProps {
   reviewRanges?: readonly ReviewRange[]
   candidateReviewScore?: CandidateReviewScore
   technicalAnalysis?: TechnicalLevelAnalysis
+  aiCopilotFinalRead?: AiCopilotFinalRead
 }
 
 const copy = {
@@ -62,7 +64,7 @@ function disclosureLine(review: DartDisclosureReview | null, language: Language)
   return null
 }
 
-function buildMyAnalysisPlainTextSummary(symbol: string, language: Language, reviewMode: MyAnalysisReviewMode, basisPrice: number | null, currentPrice: number, quoteCurrency: string, disclosureReview: DartDisclosureReview | null, practicalDecision: PracticalDecisionResult, reviewRanges: readonly ReviewRange[], candidateReviewScore?: CandidateReviewScore, technicalAnalysis?: TechnicalLevelAnalysis) {
+function buildMyAnalysisPlainTextSummary(symbol: string, language: Language, reviewMode: MyAnalysisReviewMode, basisPrice: number | null, currentPrice: number, quoteCurrency: string, disclosureReview: DartDisclosureReview | null, practicalDecision: PracticalDecisionResult, reviewRanges: readonly ReviewRange[], candidateReviewScore?: CandidateReviewScore, technicalAnalysis?: TechnicalLevelAnalysis, aiCopilotFinalRead?: AiCopilotFinalRead) {
   const t = copy[language]
   const disclosure = disclosureLine(disclosureReview, language)
   const range = reviewRanges[0]
@@ -76,6 +78,7 @@ function buildMyAnalysisPlainTextSummary(symbol: string, language: Language, rev
   const lines = [
     t.plainTitle,
     symbol,
+    ...(aiCopilotFinalRead ? [formatAiCopilotFinalReadSummary(aiCopilotFinalRead, language)] : []),
     `${t.practical}: ${practicalDecision.title}`,
     ...(candidateReviewScore ? [`${t.reviewScore}: ${candidateReviewScore.score === null ? t.scoreUnavailable : `${candidateReviewScore.score}/100`}`] : []),
     `${t.summary}: ${practicalDecision.summary}`,
@@ -91,12 +94,12 @@ function buildMyAnalysisPlainTextSummary(symbol: string, language: Language, rev
   return lines.join('\n')
 }
 
-export function MyAnalysisReportSummary({ analysis, language, mode, symbol, name, reviewMode = 'interest', basisPrice = null, currentPrice = Number.NaN, quoteCurrency = '', disclosureReview = null, practicalDecision: providedDecision, reviewRanges: providedRanges, candidateReviewScore, technicalAnalysis }: MyAnalysisReportSummaryProps) {
+export function MyAnalysisReportSummary({ analysis, language, mode, symbol, name, reviewMode = 'interest', basisPrice = null, currentPrice = Number.NaN, quoteCurrency = '', disclosureReview = null, practicalDecision: providedDecision, reviewRanges: providedRanges, candidateReviewScore, technicalAnalysis, aiCopilotFinalRead }: MyAnalysisReportSummaryProps) {
   const t = copy[language]
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'unavailable'>('idle')
   const practicalDecision = providedDecision ?? buildPracticalDecision({ language, horizon: 'short', dataQuality: analysis.dataQuality, actionStatus: analysis.actionReadiness.status, hasAveragePrice: reviewMode === 'position' && basisPrice !== null && basisPrice > 0, source: 'analysis', reason: analysis.actionReadiness.whyThisStatus, nextCheck: analysis.reviewChecklist[0] ?? analysis.actionReadiness.nextChecks[0] })
   const reviewRanges = providedRanges ?? buildReviewRanges({ language, horizon: 'short', dataQuality: analysis.dataQuality, anchorPrice: basisPrice && basisPrice > 0 ? basisPrice : currentPrice, source: 'current' })
-  const plainText = useMemo(() => buildMyAnalysisPlainTextSummary(symbol, language, reviewMode, basisPrice, currentPrice, quoteCurrency, disclosureReview, practicalDecision, reviewRanges, candidateReviewScore, technicalAnalysis), [basisPrice, candidateReviewScore, currentPrice, disclosureReview, language, practicalDecision, quoteCurrency, reviewMode, reviewRanges, symbol, technicalAnalysis])
+  const plainText = useMemo(() => buildMyAnalysisPlainTextSummary(symbol, language, reviewMode, basisPrice, currentPrice, quoteCurrency, disclosureReview, practicalDecision, reviewRanges, candidateReviewScore, technicalAnalysis, aiCopilotFinalRead), [aiCopilotFinalRead, basisPrice, candidateReviewScore, currentPrice, disclosureReview, language, practicalDecision, quoteCurrency, reviewMode, reviewRanges, symbol, technicalAnalysis])
   const disclosure = disclosureLine(disclosureReview, language)
   const caution = firstItem(analysis.simpleModeSections.find((section) => section.id === 'simple-caution')?.items ?? [], analysis.actionReadiness.avoidConditions[0])
   const next = firstItem(analysis.reviewChecklist, analysis.actionReadiness.nextChecks[0])

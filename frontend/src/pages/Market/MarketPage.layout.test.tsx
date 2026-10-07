@@ -51,15 +51,16 @@ describe('Market instrument-list layout', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open XRP/KRW' }))
 
     expect(await screen.findByRole('img', { name: /XRP\/KRW 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'Collapse instrument list' }))
+    expect(screen.getByRole('button', { name: 'Hide instruments' }).textContent).toContain('Hide instruments')
+    fireEvent.click(screen.getByRole('button', { name: 'Hide instruments' }))
 
-    expect(screen.getByRole('button', { name: 'Expand instrument list' }).getAttribute('aria-expanded')).toBe('false')
+    expect(screen.getByRole('button', { name: 'Show instruments' }).getAttribute('aria-expanded')).toBe('false')
     expect(screen.queryByRole('searchbox', { name: 'Search symbol, Korean or English name' })).toBeNull()
     expect(screen.getByRole('img', { name: /XRP\/KRW 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
     expect(screen.getByRole('complementary', { name: 'AI Copilot' }).textContent).toContain('XRP/KRW')
     expect(window.localStorage.getItem(MARKET_LIST_COLLAPSED_KEY)).toBe('true')
 
-    fireEvent.click(screen.getByRole('button', { name: 'Expand instrument list' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Show instruments' }))
     expect((screen.getByRole('searchbox', { name: 'Search symbol, Korean or English name' }) as HTMLInputElement).value).toBe('XRP')
     expect(screen.getByText('Sorted by').closest('[role="status"]')?.textContent).toContain('Price')
     expect(screen.getByRole('button', { name: 'Remove XRP/KRW favorite' }).getAttribute('aria-pressed')).toBe('true')
@@ -72,13 +73,13 @@ describe('Market instrument-list layout', () => {
     const first = render(<App />)
     fireEvent.click(await screen.findByRole('button', { name: 'MOCK' }))
     expect(await screen.findByRole('img', { name: /BTC\/KRW 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
-    expect(await screen.findByRole('button', { name: 'Expand instrument list' })).toBeTruthy()
+    expect(await screen.findByRole('button', { name: 'Show instruments' })).toBeTruthy()
     first.unmount()
 
     render(<App />)
     fireEvent.click(await screen.findByRole('button', { name: 'MOCK' }))
     expect(await screen.findByRole('img', { name: /BTC\/KRW 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
-    expect(await screen.findByRole('button', { name: 'Expand instrument list' })).toBeTruthy()
+    expect(await screen.findByRole('button', { name: 'Show instruments' })).toBeTruthy()
   })
 
   it('defaults to a collapsed detail list on narrow screens without removing access to the list', async () => {
@@ -87,8 +88,8 @@ describe('Market instrument-list layout', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'MOCK' }))
 
     expect(await screen.findByRole('img', { name: /BTC\/KRW 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'Expand instrument list' }))
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Collapse instrument list' }).getAttribute('aria-expanded')).toBe('true'))
+    fireEvent.click(screen.getByRole('button', { name: 'Show instruments' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Hide instruments' }).getAttribute('aria-expanded')).toBe('true'))
     expect(within(screen.getByRole('button', { name: 'Open BTC/KRW' })).getByText('BTC/KRW')).toBeTruthy()
   })
 
@@ -99,7 +100,9 @@ describe('Market instrument-list layout', () => {
     expect(await screen.findByRole('img', { name: /BTC\/KRW 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
 
     fireEvent.change(screen.getByRole('combobox', { name: 'Language' }), { target: { value: 'ko' } })
-    fireEvent.click(screen.getByRole('button', { name: '종목 목록 접기' }))
-    expect(screen.getByRole('button', { name: '종목 목록 펼치기' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: '종목 숨기기' }).textContent).toContain('종목 숨기기')
+    fireEvent.click(screen.getByRole('button', { name: '종목 숨기기' }))
+    expect(screen.getByRole('button', { name: '종목 보기' }).textContent).toContain('종목 보기')
+    expect(screen.queryByText('차트 넓게 보기')).toBeNull()
   })
 })
