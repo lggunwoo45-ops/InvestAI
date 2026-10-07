@@ -96,7 +96,9 @@ describe('Market Copilot application shell', () => {
     expect(copilot.textContent).toContain('AI Confidence')
     const finalRead = within(copilot).getByRole('region', { name: 'AI Copilot final review' })
     const bullishScenario = copilot.querySelector('[data-scenario="bullish"]')!
-    expect(finalRead.textContent).toContain('Final review: Not enough data')
+    expect(finalRead.textContent).toContain('Final read')
+    expect(finalRead.textContent).toContain('Reference evidence')
+    expect(finalRead.textContent).toContain('Instrument: 005930')
     expect(finalRead.compareDocumentPosition(bullishScenario) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0)
     expect(copilot.textContent).toContain('Scenario Analysis')
     expect(copilot.textContent).toContain('Bullish scenario')
