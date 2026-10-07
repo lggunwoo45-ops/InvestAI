@@ -24,19 +24,29 @@ describe('useDartProxyHealth', () => {
     expect(fetcher).toHaveBeenCalledTimes(2)
   })
 
-  it('bounds automatic retries and rechecks when the window regains focus', async () => {
+  it('backs off failed checks, keeps retrying, and rechecks when the window regains focus', async () => {
     vi.useFakeTimers()
     const fetcher = vi.fn().mockRejectedValue(new TypeError('offline'))
     const client = new DartClient(fetcher)
-    renderHook(() => useDartProxyHealth(client))
+    const { unmount } = renderHook(() => useDartProxyHealth(client))
 
-    await act(async () => { await vi.runAllTimersAsync() })
+    await act(async () => { await Promise.resolve() })
+    expect(fetcher).toHaveBeenCalledTimes(1)
+    await act(async () => { await vi.advanceTimersByTimeAsync(1_000) })
+    expect(fetcher).toHaveBeenCalledTimes(2)
+    await act(async () => { await vi.advanceTimersByTimeAsync(3_000) })
     expect(fetcher).toHaveBeenCalledTimes(3)
+    await act(async () => { await vi.advanceTimersByTimeAsync(10_000) })
+    expect(fetcher).toHaveBeenCalledTimes(4)
 
     await act(async () => {
       window.dispatchEvent(new Event('focus'))
       await Promise.resolve()
     })
-    expect(fetcher).toHaveBeenCalledTimes(4)
+    expect(fetcher).toHaveBeenCalledTimes(5)
+
+    unmount()
+    await act(async () => { await vi.advanceTimersByTimeAsync(30_000) })
+    expect(fetcher).toHaveBeenCalledTimes(5)
   })
 })

@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest'
 
-import { buildApiUsageStatus, buildDependencyHealth } from './dependencyHealth'
+import { buildApiUsageStatus, buildDependencyHealth, getDartHealthUiState } from './dependencyHealth'
+
+describe('getDartHealthUiState', () => {
+  it('maps the safe health response to one canonical visible state', () => {
+    expect(getDartHealthUiState(null)).toBe('checking')
+    expect(getDartHealthUiState({ status: 'ready', apiKeyConfigured: true, message: 'Configured.' })).toBe('ready')
+    expect(getDartHealthUiState({ status: 'disabled', apiKeyConfigured: false, message: 'Not configured.' })).toBe('notConfigured')
+    expect(getDartHealthUiState({ status: 'unavailable', apiKeyConfigured: null, message: 'Unavailable.' })).toBe('unavailable')
+  })
+})
 
 describe('buildDependencyHealth', () => {
   it('does not infer DART health from an instrument disclosure state', () => {

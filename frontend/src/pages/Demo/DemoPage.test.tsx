@@ -1,17 +1,8 @@
 import { render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { AppProviders } from '@/app/providers/AppProviders'
-import type { DartProxyHealthResult } from '@/types/dart'
 import { DemoPage } from './DemoPage'
-
-const dartHealth = vi.hoisted(() => ({
-  current: { status: 'disabled', apiKeyConfigured: false, message: 'DART API key is not configured.' } as DartProxyHealthResult,
-}))
-
-vi.mock('@/hooks/useDartProxyHealth', () => ({
-  useDartProxyHealth: () => dartHealth.current,
-}))
 
 const renderPage = (language?: 'ko', mode: 'simple' | 'expert' = 'expert') => {
   window.localStorage.setItem('market-copilot.language', language ?? 'en')
@@ -21,7 +12,7 @@ const renderPage = (language?: 'ko', mode: 'simple' | 'expert' = 'expert') => {
 
 describe('DemoPage', () => {
   beforeEach(() => {
-    dartHealth.current = { status: 'disabled', apiKeyConfigured: false, message: 'DART API key is not configured.' }
+    window.localStorage.clear()
   })
 
   it('renders readiness, guided demo content, and correct quick-link hrefs', () => {
@@ -33,9 +24,11 @@ describe('DemoPage', () => {
     expect(screen.getByRole('heading', { name: 'Beta readiness' })).toBeTruthy()
     const systemStatus = screen.getByRole('region', { name: 'Beta system status' })
     const apiUsage = screen.getByRole('region', { name: 'API usage status' })
-    expect(within(apiUsage).getByText('DART API key').closest('li')?.textContent).toContain('Not configured')
-    expect(within(systemStatus).getByText('DART proxy').closest('li')?.textContent).toContain('Ready')
-    expect(within(systemStatus).getByText('DART API key').closest('li')?.textContent).toContain('Not configured')
+    expect(within(systemStatus).queryByText('DART proxy')).toBeNull()
+    expect(within(systemStatus).queryByText('DART API key')).toBeNull()
+    expect(within(systemStatus).getByText('DART status can be checked directly in the API Usage Status section below.')).toBeTruthy()
+    expect(within(apiUsage).getByRole('button', { name: 'Check DART connection' })).toBeTruthy()
+    expect(within(apiUsage).getByText('DART connection has not been checked yet.')).toBeTruthy()
     expect(within(systemStatus).getByText('Real AI').closest('li')?.textContent).toContain('Disabled')
     expect(screen.getByRole('heading', { name: 'What works now' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: '5-minute investor demo script' })).toBeTruthy()
@@ -71,26 +64,15 @@ describe('DemoPage', () => {
     expect(screen.getByRole('heading', { name: 'Trust boundary' })).toBeTruthy()
   })
 
-  it('keeps both status panels synchronized for a configured DART proxy', () => {
-    dartHealth.current = { status: 'ready', apiKeyConfigured: true, message: 'DART API key is configured.' }
-    renderPage()
-    const systemStatus = screen.getByRole('region', { name: 'Beta system status' })
-    const apiUsage = screen.getByRole('region', { name: 'API usage status' })
-    expect(within(systemStatus).getByText('DART proxy').closest('li')?.textContent).toBe('DART proxyReady')
-    expect(within(systemStatus).getByText('DART API key').closest('li')?.textContent).toBe('DART API keyConfigured')
-    expect(within(apiUsage).getByText('DART proxy').closest('li')?.textContent).toBe('DART proxyReady')
-    expect(within(apiUsage).getByText('DART API key').closest('li')?.textContent).toBe('DART API keyConfigured')
-  })
-
-  it('keeps both status panels synchronized when DART health cannot be checked', () => {
-    dartHealth.current = { status: 'unavailable', apiKeyConfigured: null, message: 'The local DART proxy is unavailable.' }
+  it('keeps runtime DART truth out of Beta System Status and idle until a manual check', () => {
     renderPage('ko')
     const systemStatus = screen.getByRole('region', { name: '베타 시스템 상태' })
     const apiUsage = screen.getByRole('region', { name: 'API 사용 상태' })
-    expect(within(systemStatus).getByText('DART 프록시').closest('li')?.textContent).toBe('DART 프록시사용 불가')
-    expect(within(systemStatus).getByText('DART API 키').closest('li')?.textContent).toBe('DART API 키확인 전')
-    expect(within(apiUsage).getByText('DART 프록시').closest('li')?.textContent).toBe('DART 프록시사용 불가')
-    expect(within(apiUsage).getByText('DART API 키').closest('li')?.textContent).toBe('DART API 키확인 전')
+    expect(within(systemStatus).queryByText('DART 프록시')).toBeNull()
+    expect(within(systemStatus).queryByText('DART API 키')).toBeNull()
+    expect(within(systemStatus).getByText('DART 상태는 아래 API 사용 상태에서 직접 확인할 수 있습니다.')).toBeTruthy()
+    expect(within(apiUsage).getByText('DART 연결 상태를 아직 확인하지 않았습니다.')).toBeTruthy()
+    expect(within(apiUsage).queryByText('DART 프록시: 연결 실패')).toBeNull()
   })
 
   it('contains unsafe claims only as explicit presenter warnings', () => {

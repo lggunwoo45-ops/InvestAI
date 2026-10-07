@@ -7,7 +7,9 @@ describe('runtimeConfig', () => {
     expect(createRuntimeConfig({})).toEqual({
       appEnv: 'local',
       newsProxyUrl: 'http://localhost:8787',
-      dartProxyUrl: 'http://localhost:8788',
+      dartProxyUrl: '',
+      dartHealthUrl: '/api/dart/health',
+      dartDisclosuresUrl: '/api/dart/disclosures',
       isProductionLike: false,
       isLocal: true,
     })
@@ -22,9 +24,16 @@ describe('runtimeConfig', () => {
       appEnv: 'preview',
       newsProxyUrl: 'https://news.example.test',
       dartProxyUrl: 'https://dart.example.test',
+      dartHealthUrl: 'https://dart.example.test/api/dart/health',
+      dartDisclosuresUrl: 'https://dart.example.test/api/dart/disclosures',
       isProductionLike: true,
       isLocal: false,
     })
+  })
+
+  it('uses an external DART base only when it is explicitly configured', () => {
+    expect(createRuntimeConfig({ VITE_DART_PROXY_URL: '  ' }).dartHealthUrl).toBe('/api/dart/health')
+    expect(createRuntimeConfig({ VITE_DART_PROXY_URL: 'https://dart.example.test/' }).dartHealthUrl).toBe('https://dart.example.test/api/dart/health')
   })
 
   it('never exposes a server-only DART key', () => {

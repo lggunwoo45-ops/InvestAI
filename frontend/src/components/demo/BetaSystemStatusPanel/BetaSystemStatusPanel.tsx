@@ -13,39 +13,25 @@ const copy: Record<Language, {
   note: string
   labels: Record<DependencyHealthId, string>
   statuses: Record<DependencyHealthStatus, string>
-  dart: { proxyReady: string; proxyNotChecked: string; keyConfigured: string; keyNotConfigured: string; keyNotChecked: string }
 }> = {
   en: {
-    eyebrow: 'OBSERVED DEPENDENCIES', title: 'Beta system status', note: 'DART status follows the local proxy health check; no OpenDART request is made.',
+    eyebrow: 'OBSERVED DEPENDENCIES', title: 'Beta system status', note: 'DART status can be checked directly in the API Usage Status section below.',
     labels: { 'market-data': 'Market data', 'news-proxy': 'News proxy', 'dart-proxy': 'DART proxy', 'dart-api-key': 'DART API key', 'real-ai': 'Real AI', trading: 'Trading' },
     statuses: { ready: 'Ready', disabled: 'Disabled', unavailable: 'Unavailable', limited: 'Limited', unknown: 'Configuration needed' },
-    dart: { proxyReady: 'Ready', proxyNotChecked: 'Not checked', keyConfigured: 'Configured', keyNotConfigured: 'Not configured', keyNotChecked: 'Not checked' },
   },
   ko: {
-    eyebrow: '확인된 의존성', title: '베타 시스템 상태', note: 'DART 상태는 로컬 프록시 health 확인 결과를 따르며, OpenDART를 직접 호출하지 않습니다.',
+    eyebrow: '확인된 의존성', title: '베타 시스템 상태', note: 'DART 상태는 아래 API 사용 상태에서 직접 확인할 수 있습니다.',
     labels: { 'market-data': '시장 데이터', 'news-proxy': '뉴스 프록시', 'dart-proxy': 'DART 프록시', 'dart-api-key': 'DART API 키', 'real-ai': '실제 AI', trading: '거래' },
     statuses: { ready: '준비됨', disabled: '비활성화', unavailable: '사용 불가', limited: '제한됨', unknown: '설정 필요' },
-    dart: { proxyReady: '사용 가능', proxyNotChecked: '확인 전', keyConfigured: '설정됨', keyNotConfigured: '미설정', keyNotChecked: '확인 전' },
   },
-}
-
-function statusLabel(item: DependencyHealthItem, language: Language): string {
-  const t = copy[language]
-  if (item.id === 'dart-proxy' && item.status === 'ready') return t.dart.proxyReady
-  if (item.id === 'dart-proxy' && item.status === 'unknown') return t.dart.proxyNotChecked
-  if (item.id === 'dart-api-key') {
-    if (item.status === 'ready') return t.dart.keyConfigured
-    if (item.status === 'disabled') return t.dart.keyNotConfigured
-    if (item.status === 'unknown') return t.dart.keyNotChecked
-  }
-  return t.statuses[item.status]
 }
 
 export function BetaSystemStatusPanel({ items, language }: BetaSystemStatusPanelProps) {
   const t = copy[language]
+  const staticItems = items.filter((item) => item.id !== 'dart-proxy' && item.id !== 'dart-api-key')
   return <section className={styles.panel} aria-labelledby="beta-system-status-title">
     <header><span>{t.eyebrow}</span><h2 id="beta-system-status-title">{t.title}</h2></header>
-    <ul>{items.map((item) => <li key={item.id} data-status={item.status}><i aria-hidden="true" /><span>{t.labels[item.id]}</span><strong>{statusLabel(item, language)}</strong></li>)}</ul>
+    <ul>{staticItems.map((item) => <li key={item.id} data-status={item.status}><i aria-hidden="true" /><span>{t.labels[item.id]}</span><strong>{t.statuses[item.status]}</strong></li>)}</ul>
     <p>{t.note}</p>
   </section>
 }

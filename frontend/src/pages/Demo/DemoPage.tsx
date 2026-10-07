@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 
 import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
@@ -7,7 +8,6 @@ import { BetaReadinessChecklist } from '@/components/demo/BetaReadinessChecklist
 import { BetaSystemStatusPanel } from '@/components/demo/BetaSystemStatusPanel/BetaSystemStatusPanel'
 import { DemoHealthChecklist } from '@/components/demo/DemoHealthChecklist/DemoHealthChecklist'
 import { GettingStartedFlow } from '@/components/demo/GettingStartedFlow/GettingStartedFlow'
-import { useDartProxyHealth } from '@/hooks/useDartProxyHealth'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { useMarketWorkspace } from '@/hooks/useMarketWorkspace'
 import { useNewsProviderMode } from '@/hooks/useNewsProviderMode'
@@ -93,9 +93,11 @@ export function DemoPage() {
   const scope = getDemoScopeSummary(language)
   const { marketDataMode } = useMarketWorkspace()
   const { mode: newsMode, result: newsResult } = useNewsProviderMode()
-  const dartHealth = useDartProxyHealth()
-  const dependencyHealth = buildDependencyHealth({ marketDataMode, newsMode, ...(newsResult ? { newsState: newsResult.state } : {}), dartHealth })
-  const apiUsage = buildApiUsageStatus({ newsMode, ...(newsResult ? { newsState: newsResult.state } : {}), dartHealth })
+  const newsState = newsResult?.state
+  const { dependencyHealth, apiUsage } = useMemo(() => ({
+    dependencyHealth: buildDependencyHealth({ marketDataMode, newsMode, ...(newsState ? { newsState } : {}) }),
+    apiUsage: buildApiUsageStatus({ newsMode, ...(newsState ? { newsState } : {}) }),
+  }), [marketDataMode, newsMode, newsState])
   const t = copy[language]
   const p = readinessCopy[language]
   useDocumentTitle(scope.versionLabel)

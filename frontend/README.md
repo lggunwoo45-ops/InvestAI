@@ -36,6 +36,12 @@ explicit disabled state. Instruments without a verified corporation-code
 mapping return `mapping_unavailable`. Never commit a populated `.env` file or
 print the credential in logs.
 
+During `npm run dev`, the frontend uses the same-origin `/api/dart/*` path and
+Vite forwards it to the local proxy on port `8788`. Leave
+`VITE_DART_PROXY_URL` unset for this local flow. Set that public base URL only
+when the frontend is intentionally using a separately hosted proxy; it must
+never contain a credential.
+
 `npm run build:windows-demo` creates the compatibility-named Windows artifacts
 documented by the packaging script in `frontend/release`. Those filenames are
 internal packaging identifiers, not the user-facing beta label. The launcher serves the production bundle on
