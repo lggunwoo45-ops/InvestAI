@@ -12,6 +12,7 @@ export interface AiScenarioItem {
   probability: number | null
   summary: string
   conditions: readonly string[]
+  checks: readonly string[]
   invalidation: string
   risks: readonly string[]
 }

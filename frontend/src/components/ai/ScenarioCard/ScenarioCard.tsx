@@ -12,8 +12,8 @@ export function ScenarioCard({ scenario, language }: ScenarioCardProps) {
     <p>{scenario.summary}</p>
     <dl>
       <div><dt>{text.supportingConditions}</dt><dd><ul>{scenario.conditions.map((item) => <li key={item}>{item}</li>)}</ul></dd></div>
-      <div><dt>{text.invalidation}</dt><dd>{scenario.invalidation}</dd></div>
-      <div><dt>{text.riskNote}</dt><dd>{scenario.risks.join(' · ')}</dd></div>
+      <div><dt>{text.whatToCheck}</dt><dd><ul>{scenario.checks.map((item) => <li key={item}>{item}</li>)}</ul></dd></div>
+      <div><dt>{text.weakeningCondition}</dt><dd>{scenario.invalidation}</dd></div>
     </dl>
   </article>
 }

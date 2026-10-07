@@ -14,21 +14,22 @@ function response(data: unknown) {
 }
 
 describe('Sprint 7 market catalogs', () => {
-  it('loads all Upbit pairs and maps bilingual names without truncation', async () => {
-    const pairs = Array.from({ length: 350 }, (_, index) => ({
-      market: `KRW-COIN${index}`, korean_name: `코인${index}`, english_name: `Coin ${index}`,
+  it('loads every Upbit pair from one browser-safe all-tickers request without truncation', async () => {
+    const tickers = Array.from({ length: 350 }, (_, index) => ({
+      market: `KRW-COIN${index}`, trade_price: index + 1, signed_change_rate: .01, acc_trade_price_24h: 1000 + index,
     }))
-    const tickers = pairs.map((pair, index) => ({
-      market: pair.market, trade_price: index + 1, signed_change_rate: .01, acc_trade_price_24h: 1000 + index,
-    }))
-    vi.stubGlobal('fetch', vi.fn((url: string) => Promise.resolve(response(url.includes('/market/all') ? pairs : tickers))))
+    const fetcher = vi.fn((_url: string) => Promise.resolve(response(tickers)))
+    vi.stubGlobal('fetch', fetcher)
     const catalog = await upbitCatalogProvider.load('upbit-krw')
 
     expect(catalog.instruments).toHaveLength(350)
     expect(catalog.instruments[0]).toMatchObject({
       id: 'upbit-coin0', providerSymbol: 'KRW-COIN0', marketType: 'upbit-krw',
-      koreanName: '코인0', englishName: 'Coin 0', lastPrice: 1, change24hPercent: 1,
+      name: 'COIN0', englishName: 'COIN0', lastPrice: 1, change24hPercent: 1,
     })
+    expect(catalog.instruments[0].koreanName).toBeUndefined()
+    expect(fetcher).toHaveBeenCalledOnce()
+    expect(fetcher.mock.calls[0]?.[0]).toContain('/v1/ticker/all?quote_currencies=KRW')
   })
 
   it('separates Binance Spot and USDT perpetual futures', async () => {
