@@ -20,25 +20,21 @@
   background: #0e141d;
 }
 
-.header { display: flex; min-width: 0; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 16px 18px 14px; border-bottom: 1px solid #293744; background: #0e1921; }
+.header { display: flex; min-width: 0; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 11px 14px 10px; border-bottom: 1px solid #293744; background: #0e1921; }
 .stock .header { background: #121c2a; }
 .heading { min-width: 0; }
 .eyebrow { color: var(--workspace-accent); font: 700 10px ui-monospace, monospace; letter-spacing: .12em; }
 .back { display: block; margin: 0 0 8px; padding: 0; border: 0; background: transparent; color: var(--workspace-accent); cursor: pointer; font: 11px ui-monospace, monospace; }
 .header h1 { margin: 5px 0 0; color: #ebf0f4; font-size: clamp(20px, 1.25vw, 25px); font-weight: 670; letter-spacing: -.03em; line-height: 1.15; }
-.heading p { max-width: 60ch; margin: 7px 0 0; color: #91a3b3; font-size: 11px; line-height: 1.35; }
 .count { display: grid; flex: 0 0 auto; justify-items: end; gap: 2px; white-space: nowrap; }
 .count strong { margin-top: 2px; color: #e0e7ee; font: 650 20px ui-monospace, monospace; }
 .count span { color: #8897a8; font-size: 10px; text-transform: uppercase; }
 
 .navigation { display: grid; border-bottom: 1px solid #293744; }
-.groupTabs,.providerTabs,.venueTabs,.quoteTabs { display: flex; min-width: 0; gap: 3px; padding: 4px 11px; overflow-x: auto; scrollbar-width: thin; }
-.groupTabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; padding-block: 8px; background: #111c27; }
-.groupTabs button { min-width: 0; padding-inline: 5px; overflow: hidden; text-overflow: ellipsis; }
+.providerTabs,.venueTabs,.quoteTabs { display: flex; min-width: 0; gap: 3px; padding: 4px 11px; overflow-x: auto; scrollbar-width: thin; }
 .providerTabs { background: #0e1922; }
 .venueTabs { background: #0b141d; }
 .quoteTabs { border-top: 1px solid #253341; background: #101b25; }
-.stock .groupTabs { background: #172233; }
 .stock .venueTabs { background: #111a28; }
 .navigation button { flex: 0 0 auto; padding: 7px 12px; border: 1px solid transparent; border-bottom: 2px solid transparent; background: transparent; color: #93a2b2; cursor: pointer; font: 650 11px ui-monospace, monospace; }
 .navigation button:hover { color: #edf1f4; background: #1e2c3b; }
@@ -124,7 +120,7 @@
 .compact .eyebrow { font-size: 8px; }
 .compact .count strong { font-size: 15px; }
 .compact .count span { font-size: 8px; }
-.compact .groupTabs,.compact .providerTabs,.compact .venueTabs,.compact .quoteTabs { padding: 3px 5px; }
+.compact .providerTabs,.compact .venueTabs,.compact .quoteTabs { padding: 3px 5px; }
 .compact .navigation button { padding: 6px 8px; font-size: 10px; }
 .compact .controls { gap: 5px; padding: 8px; }
 .compact .search { height: 35px; }
@@ -154,7 +150,6 @@
 
 @media (max-width: 1550px) {
   .tableHead,.row { grid-template-columns: minmax(145px, 2fr) minmax(85px, 1fr) minmax(85px, .9fr) minmax(95px, 1fr) 36px; }
-  .heading p { max-width: 42ch; }
 }
 @media (min-width: 1800px) {
   .compact .tableHead,.compact .row { grid-template-columns: minmax(118px, 1.2fr) minmax(75px, .8fr) minmax(70px, .7fr) 32px; }

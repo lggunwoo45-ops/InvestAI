@@ -58,8 +58,26 @@ describe('buildAiCopilotFinalRead', () => {
     const constructive = build({ symbol: 'AAA/KRW', candidateReviewScore: 72, practicalDecisionState: 'approachReview', technicalTrend: 'upward', momentumState: 'positive' })
     const weak = build({ symbol: 'BBB/KRW', candidateReviewScore: 20, practicalDecisionState: 'wait', technicalTrend: 'downward', momentumState: 'negative' })
     expect(constructive.state).not.toBe(weak.state)
+    expect(constructive.why).not.toBe(weak.why)
     expect(constructive.sourceFactors.join(' ')).toContain('AAA/KRW')
     expect(weak.sourceFactors.join(' ')).toContain('BBB/KRW')
+  })
+
+  it('exposes only available evidence and keeps neutral status labels separate from values', () => {
+    const result = build({
+      candidateReviewScore: null,
+      technicalTrend: 'unavailable',
+      momentumState: 'positive',
+      volumeState: 'unavailable',
+      supportResistanceState: 'balanced',
+      btcAnchorState: 'unavailable',
+      marketCautionState: 'unavailable',
+    }, 'en')
+
+    expect(result.evidenceItems.map((item) => item.key)).toEqual(['momentum', 'structure', 'quality'])
+    expect(result.evidenceItems.find((item) => item.key === 'momentum')).toMatchObject({ value: 'Positive', statusLabel: 'Constructive' })
+    expect(result.evidenceItems.some((item) => item.key === 'btc')).toBe(false)
+    expect(result.evidenceItems.some((item) => item.key === 'score')).toBe(false)
   })
 
   it('adapts scenario wording to the same final-read evidence context', () => {
