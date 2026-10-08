@@ -42,6 +42,10 @@ describe('Market instrument-list layout', () => {
     await screen.findByRole('img', { name: /BTC\/KRW 1H TradingView candlestick chart in mock mode/i })
 
     const search = screen.getByRole('searchbox', { name: 'Search symbol, Korean or English name' })
+    const switcher = screen.getByRole('tab', { name: 'Crypto' }).closest('[data-market-workspace-switcher]')!
+    expect(switcher.parentElement?.contains(search)).toBe(true)
+    expect(document.getElementById('market-instrument-list')?.contains(switcher)).toBe(false)
+    expect(screen.getAllByRole('tab', { name: 'Crypto' })).toHaveLength(1)
     fireEvent.change(search, { target: { value: 'XRP' } })
     fireEvent.click(screen.getByRole('button', { name: /Sort by Price/ }))
     const favorite = await screen.findByRole('button', { name: 'Add XRP/KRW favorite' })
