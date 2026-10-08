@@ -148,13 +148,29 @@
 .compact .instrument em { display: none; }
 .compact .numeric { font-size: 10px; }
 
+/* Detail mode keeps a readable market table instead of shrinking every row. */
+.compact .header h1 { font-size: 22px; }
+.compact .header { padding: 12px 14px; }
+.compact .navigation button { padding: 8px 12px; font-size: 12px; }
+.compact .controls { padding: 9px 12px; }
+.compact .tableHead,.compact .row { grid-template-columns: minmax(120px, 1.35fr) minmax(86px, 1fr) minmax(74px, .8fr) 36px; }
+.compact .tableHead button:nth-child(3) { display: flex; }
+.compact .row > span:nth-of-type(2) { display: block; }
+.compact .row { padding-left: 12px; }
+.compact .identityLine strong { font-size: 13px; }
+.compact .instrument small { font-size: 11px; }
+.compact .numeric { font-size: 12px; font-variant-numeric: tabular-nums; }
+.numeric { font-variant-numeric: tabular-nums; }
+
 @media (max-width: 1550px) {
   .tableHead,.row { grid-template-columns: minmax(145px, 2fr) minmax(85px, 1fr) minmax(85px, .9fr) minmax(95px, 1fr) 36px; }
 }
 @media (min-width: 1800px) {
-  .compact .tableHead,.compact .row { grid-template-columns: minmax(118px, 1.2fr) minmax(75px, .8fr) minmax(70px, .7fr) 32px; }
+  .compact .tableHead,.compact .row { grid-template-columns: minmax(125px, 1.4fr) minmax(90px, 1fr) minmax(76px, .8fr) minmax(80px, .9fr) 36px; }
   .compact .tableHead button:nth-child(3) { display: flex; }
   .compact .row > span:nth-of-type(2) { display: block; }
+  .compact .tableHead button:nth-child(4) { display: flex; }
+  .compact .row > span:nth-of-type(3) { display: block; }
 }
 @media (min-width: 2400px) {
   .compact .tableHead,.compact .row { grid-template-columns: minmax(140px, 1.5fr) minmax(85px, .8fr) minmax(75px, .7fr) minmax(95px, 1fr) 36px; }

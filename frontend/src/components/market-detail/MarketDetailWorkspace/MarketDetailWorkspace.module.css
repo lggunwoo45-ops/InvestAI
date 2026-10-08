@@ -1,17 +1,17 @@
 .workspace { display: grid; min-width: 0; min-height: 0; height: 100%; overflow: hidden; background: #080d13; }
-.crypto { grid-template-columns: clamp(380px, 23vw, 460px) minmax(420px, 1fr) minmax(245px, 22vw); }
-.stock { grid-template-columns: clamp(380px, 23vw, 460px) minmax(450px, 1fr) minmax(225px, 20vw); }
+.crypto { grid-template-columns: clamp(460px, 29vw, 560px) minmax(0, 1fr) minmax(245px, 18vw); }
+.stock { grid-template-columns: clamp(460px, 29vw, 560px) minmax(0, 1fr) minmax(225px, 18vw); }
 .instrumentListCollapsed { grid-template-columns: 56px minmax(420px, 1fr) minmax(245px, 22vw); }
 .stock.instrumentListCollapsed { grid-template-columns: 56px minmax(450px, 1fr) minmax(225px, 20vw); }
 @media (max-width: 1550px) {
-  .workspace { grid-template-columns: clamp(330px, 30vw, 390px) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) 220px; }
-  .stock { grid-template-columns: clamp(330px, 30vw, 390px) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) 190px; }
+  .workspace { grid-template-columns: clamp(380px, 34vw, 460px) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) 220px; }
+  .stock { grid-template-columns: clamp(380px, 34vw, 460px) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) 190px; }
   .workspace.instrumentListCollapsed,.stock.instrumentListCollapsed { grid-template-columns: 56px minmax(0, 1fr); }
   .workspace > :first-child { grid-row: 1 / -1; }
 }
 @media (min-width: 2200px) {
-  .crypto { grid-template-columns: 460px minmax(720px, 1fr) minmax(330px, 20vw); }
-  .stock { grid-template-columns: 460px minmax(800px, 1fr) minmax(300px, 18vw); }
+  .crypto { grid-template-columns: 560px minmax(0, 1fr) minmax(330px, 18vw); }
+  .stock { grid-template-columns: 560px minmax(0, 1fr) minmax(300px, 18vw); }
   .workspace.instrumentListCollapsed { grid-template-columns: 60px minmax(720px, 1fr) minmax(330px, 20vw); }
   .stock.instrumentListCollapsed { grid-template-columns: 60px minmax(800px, 1fr) minmax(300px, 18vw); }
 }

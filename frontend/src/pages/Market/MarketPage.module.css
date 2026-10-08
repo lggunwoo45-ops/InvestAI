@@ -1,4 +1,10 @@
 .page { display: grid; min-width: 0; min-height: 0; height: 100%; grid-template-rows: auto minmax(0, 1fr); overflow: hidden; background: #080d13; }
+.workspaceControls { display: flex; min-width: 0; align-items: center; flex-wrap: wrap; gap: 10px 24px; padding: 12px 16px; border-bottom: 1px solid #263442; background: #0c141d; }
+.workspaceSearch { display: flex; flex: 1 1 280px; max-width: 620px; min-width: 0; height: 42px; align-items: center; gap: 10px; padding: 0 14px; border: 1px solid #4b6170; background: #101e2b; color: #b4c5d1; }
+.workspaceSearch:focus-within { border-color: #89b9aa; }
+.workspaceSearch span { font-size: 24px; }
+.workspaceSearch input { width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; color: #e5edf3; font: 13px ui-sans-serif, system-ui, sans-serif; }
+.workspaceSearch input::placeholder { color: #9babb9; }
 .navigator { display: grid; min-width: 0; min-height: 0; grid-template-rows: minmax(0, 1fr); overflow: hidden; border-right: 1px solid #263442; background: #0b1118; }
 .navigatorDetail { grid-template-rows: auto minmax(0, 1fr); }
 .navigatorContent { display: grid; min-width: 0; min-height: 0; grid-template-rows: auto minmax(0, 1fr); overflow: hidden; }
@@ -15,10 +21,10 @@
 .navigatorCollapsed .navigatorToolbar { height: 100%; align-items: flex-start; justify-content: center; padding: 8px 4px; border-bottom: 0; }
 .navigatorCollapsed .navigatorToolbar button { width: 100%; height: auto; min-height: 132px; flex-direction: column; justify-content: flex-start; gap: 10px; padding: 8px 2px; }
 .navigatorCollapsed .navigatorToolbar button em { max-height: 92px; writing-mode: vertical-rl; }
-.pendingWorkspace { display: grid; min-width: 0; min-height: 0; grid-template-columns: clamp(380px, 23vw, 460px) minmax(0, 1fr); overflow: hidden; }
+.pendingWorkspace { display: grid; min-width: 0; min-height: 0; grid-template-columns: clamp(460px, 29vw, 560px) minmax(0, 1fr); overflow: hidden; }
 .pendingWorkspaceCollapsed { grid-template-columns: 56px minmax(0, 1fr); }
 .detailState { display: grid; min-width: 0; place-items: center; padding: 20px; color: #8091a2; background: #090e14; font: 11px ui-monospace, monospace; text-align: center; }
-@media (max-width: 1550px) { .pendingWorkspace { grid-template-columns: clamp(330px, 30vw, 390px) minmax(0, 1fr); } }
+@media (max-width: 1550px) { .pendingWorkspace { grid-template-columns: clamp(380px, 34vw, 460px) minmax(0, 1fr); } .pendingWorkspaceCollapsed { grid-template-columns: 56px minmax(0, 1fr); } }
 @media (max-width: 900px) {
   .pendingWorkspace { grid-template-columns: minmax(240px, 42vw) minmax(0, 1fr); }
   .pendingWorkspaceCollapsed { grid-template-columns: 48px minmax(0, 1fr); }

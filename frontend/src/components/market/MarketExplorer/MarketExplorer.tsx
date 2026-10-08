@@ -117,8 +117,6 @@ export function MarketExplorer({
       </div>
 
       <div className={styles.controls}>
-        <label className={styles.search}><span aria-hidden="true">⌕</span><input type="search" value={search} onChange={(event) => onSearchChange(event.target.value)} placeholder={text.search} aria-label={text.search} /></label>
-        <span className={styles.searchBehavior}>{text.searchBehavior}</span>
         <div className={styles.filterRow}>
           <button type="button" className={favoritesOnly ? styles.activeFavorite : ''} aria-pressed={favoritesOnly} onClick={() => onFavoritesOnlyChange(!favoritesOnly)}>★ {text.favorites}</button>
           <span className={styles.sortHint}>{text.sortHint}</span>

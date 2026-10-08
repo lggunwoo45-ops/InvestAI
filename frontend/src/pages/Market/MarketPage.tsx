@@ -219,7 +219,10 @@ export function MarketPage() {
   )
   const listIsCollapsed = Boolean(selectedInstrument && instrumentListCollapsed)
   const layoutText = marketExplorerText[language].layout
-  const workspaceSwitcher = <MarketAssetSwitcher activeMode={assetMode} onChange={(mode) => changeVenue(defaultVenueByAssetMode[mode])} />
+  const workspaceSwitcher = <div className={styles.workspaceControls}>
+    <MarketAssetSwitcher activeMode={assetMode} onChange={(mode) => changeVenue(defaultVenueByAssetMode[mode])} />
+    {!listIsCollapsed && <label className={styles.workspaceSearch}><span aria-hidden="true">⌕</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={marketExplorerText[language].search} aria-label={marketExplorerText[language].search} /></label>}
+  </div>
   const explorer = <div className={`${styles.navigator} ${selectedInstrument ? styles.navigatorDetail : ''} ${listIsCollapsed ? styles.navigatorCollapsed : ''}`}>
     {selectedInstrument && <div className={styles.navigatorToolbar}>
       {!listIsCollapsed && <strong>{layoutText.instrumentList}</strong>}
