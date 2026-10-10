@@ -65,3 +65,6 @@ Paid Sector Picks remains deferred until evidence governance, entitlement, backe
 The future first screen should be **Market Radar**, organized around Hot sectors, Unusual volume, Volatility radar, and Watch candidates. It must not present “today's recommended stocks.”
 
 These items do not authorize real AI, paid access, news proxy, account, payment, trading, or recommendation logic before their dedicated reviewed sprints.
+# Sprint 10.33 — Developer workflow hardening
+
+Repository PowerShell preflight, frontend validation and local sprint finish scripts; shared component test providers and provider regression coverage. Product behavior and investment calculations are unchanged. Validation must complete before a local commit; no push, PR, merge or deployment is part of this workflow.

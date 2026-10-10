@@ -1,7 +1,8 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 import type { MarketInstrument } from '@/types/market'
+import { renderWithProviders } from '@/test/renderWithProviders'
 import type { Candle, RealtimeMarketState } from '@/types/marketDetail'
 import { AiCopilot } from './AiCopilot'
 
@@ -45,7 +46,7 @@ describe('AiCopilot selected-instrument evidence wiring', () => {
     const constructive = instrument('AAA', 3.2)
     const weak = instrument('BBB', -4.2)
     mocks.workspace.mockReturnValue(workspace(constructive, candles('up')))
-    const view = render(<AiCopilot />)
+    const view = renderWithProviders(<AiCopilot />)
 
     const first = screen.getByRole('region', { name: 'AI Copilot final review' })
     expect(first.getAttribute('data-final-read')).toBe('approachReviewPossible')
