@@ -22,6 +22,8 @@ interface MarketExplorerProps {
   activeInstrument?: MarketInstrument | null
   search: string
   onSearchChange: (value: string) => void
+  reviewOnly?: boolean
+  onReviewOnlyChange?: (value: boolean) => void
   favoritesOnly: boolean
   onFavoritesOnlyChange: (value: boolean) => void
   sortField: ExplorerSortField
@@ -46,6 +48,7 @@ const spotQuotes: readonly BinanceSpotQuoteFilter[] = ['USDT', 'FDUSD', 'BTC', '
 export function MarketExplorer({
   venue, mode, catalog, loading, error, selectedInstrumentId, activeInstrument,
   search, onSearchChange, favoritesOnly, onFavoritesOnlyChange,
+  reviewOnly: controlledReviewOnly, onReviewOnlyChange,
   sortField, onSortFieldChange, sortDirection, onSortDirectionChange,
   spotQuoteFilter, onSpotQuoteFilterChange,
   favoriteIds, onVenueChange, onModeChange,
@@ -54,7 +57,9 @@ export function MarketExplorer({
   const { language } = useLanguage()
   const text = marketExplorerText[language]
   const { watchlistItems, getWatchlistItem, activeReview, removeFromWatchlist } = useWatchlists()
-  const [reviewOnly, setReviewOnly] = useState(false)
+  const [localReviewOnly, setLocalReviewOnly] = useState(false)
+  const reviewOnly = controlledReviewOnly ?? localReviewOnly
+  const setReviewOnly = onReviewOnlyChange ?? setLocalReviewOnly
   const [clock, setClock] = useState(Date.now)
   useEffect(() => { const timer = window.setInterval(() => setClock(Date.now()), 60_000); return () => window.clearInterval(timer) }, [])
   const reasonsFor = (instrument: MarketInstrument) => getReviewReasons(getWatchlistItem(instrument.id) ?? itemFromInstrument(instrument), currentReviewData(instrument, activeReview), clock)

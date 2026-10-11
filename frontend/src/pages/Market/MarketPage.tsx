@@ -1,5 +1,8 @@
+import { TodayReviewDashboard, type TodayReviewScope } from '@/components/market/TodayReviewDashboard/TodayReviewDashboard'
+import { buildTodayReviewSummary } from '@/services/watchlist/todayReviewSummary'
+import { currentReviewData, type CurrentReviewData } from '@/services/watchlist/reviewQueue'
 import { itemFromInstrument } from '@/services/watchlist/watchlistStorage'
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
 import { DisplayModeNotice } from '@/components/displayMode/DisplayModeNotice/DisplayModeNotice'
@@ -62,7 +65,7 @@ export function MarketPage() {
   const { displayMode } = useDisplayMode()
   useDocumentTitle(marketExplorerText[language].title)
   const { selectedInstrument, selectedTimeframe, marketDataMode, selectInstrument, clearInstrument, selectTimeframe, setMarketDataMode } = useMarketWorkspace()
-  const { favoriteIds, toggleWatchlist, trackRecentlyViewed } = useWatchlists()
+  const { favoriteIds, toggleWatchlist, trackRecentlyViewed, watchlistItems, activeReview } = useWatchlists()
   const [initialLastInstrumentIds] = useState(loadLastMarketInstrumentIds)
   const lastInstrumentIdsRef = useRef<LastMarketInstrumentIds>(initialLastInstrumentIds)
   const synchronizedInstrumentIdRef = useRef<string | null>(null)
@@ -84,6 +87,9 @@ export function MarketPage() {
   // Keep explorer controls stable when the center workspace switches to detail.
   const [search, setSearch] = useState('')
   const [favoritesOnly, setFavoritesOnly] = useState(false)
+  const [reviewOnly, setReviewOnly] = useState(false)
+  const [reviewClock, setReviewClock] = useState(Date.now)
+  useEffect(() => { const timer = window.setInterval(() => setReviewClock(Date.now()), 60_000); return () => window.clearInterval(timer) }, [])
   const [sortField, setSortField] = useState<ExplorerSortField>('volume')
   const [sortDirection, setSortDirection] = useState<ExplorerSortDirection>('desc')
   const [spotQuoteFilter, setSpotQuoteFilter] = useState<BinanceSpotQuoteFilter>('USDT')
@@ -91,6 +97,7 @@ export function MarketPage() {
   // The explorer's browsing venue is independent of the active chart instrument.
   const catalogState = useMarketCatalog(venue, marketDataMode, retry)
   const detailState = useMarketDetailData(selectedInstrument, selectedTimeframe)
+  const selectedSnapshot = detailState.state?.snapshot ?? null
 
   const openInstrument = useCallback((instrument: MarketInstrument) => {
     const nextAssetMode = assetModeForInstrument(instrument)
@@ -189,6 +196,26 @@ export function MarketPage() {
     })
   }, [])
 
+  const reviewInstruments = useMemo(() => {
+    const rows = new Map<string, MarketInstrument>()
+    if (!catalogState.loading && !catalogState.error) for (const row of catalogState.catalog?.instruments ?? []) rows.set(row.id, row)
+    const live = selectedSnapshot?.instrument ?? null
+    if (live && live.id === selectedInstrument?.id) rows.set(live.id, live)
+    return rows
+  }, [catalogState.catalog, catalogState.loading, catalogState.error, selectedSnapshot, selectedInstrument?.id])
+  const todayReview = useMemo(() => {
+    const current = new Map<string, CurrentReviewData>()
+    for (const [id, instrument] of reviewInstruments) current.set(id, currentReviewData(instrument, activeReview))
+    if (activeReview) current.set(activeReview.instrumentId, { ...current.get(activeReview.instrumentId), snapshot: activeReview.snapshot })
+    return buildTodayReviewSummary(watchlistItems, current, reviewClock)
+  }, [watchlistItems, reviewInstruments, activeReview, reviewClock])
+  const changeReviewScope = (scope: TodayReviewScope) => {
+    setFavoritesOnly(true)
+    setReviewOnly(scope === 'review')
+    setSearch('')
+    setInstrumentListCollapsed(false)
+  }
+
   const explorerPanel = (
     <MarketExplorer
       venue={venue}
@@ -200,6 +227,8 @@ export function MarketPage() {
       activeInstrument={selectedInstrument}
       search={search}
       onSearchChange={setSearch}
+      reviewOnly={reviewOnly}
+      onReviewOnlyChange={setReviewOnly}
       favoritesOnly={favoritesOnly}
       onFavoritesOnlyChange={setFavoritesOnly}
       sortField={sortField}
@@ -224,6 +253,10 @@ export function MarketPage() {
     <MarketAssetSwitcher activeMode={assetMode} onChange={(mode) => changeVenue(defaultVenueByAssetMode[mode])} />
     {!listIsCollapsed && <label className={styles.workspaceSearch}><span aria-hidden="true">⌕</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={marketExplorerText[language].search} aria-label={marketExplorerText[language].search} /></label>}
   </div>
+  const workspaceHeader = <div>
+    {workspaceSwitcher}
+    <TodayReviewDashboard model={todayReview} language={language} instruments={reviewInstruments} onOpen={openInstrument} onScopeChange={changeReviewScope} />
+  </div>
   const explorer = <div className={`${styles.navigator} ${selectedInstrument ? styles.navigatorDetail : ''} ${listIsCollapsed ? styles.navigatorCollapsed : ''}`}>
     {selectedInstrument && <div className={styles.navigatorToolbar}>
       {!listIsCollapsed && <strong>{layoutText.instrumentList}</strong>}
@@ -245,18 +278,18 @@ export function MarketPage() {
     </div>
   </div>
 
-  if (!selectedInstrument) return <main className={styles.page}>{workspaceSwitcher}{explorer}</main>
+  if (!selectedInstrument) return <main className={styles.page}>{workspaceHeader}{explorer}</main>
 
-  const snapshot = detailState.state?.snapshot
+  const snapshot = selectedSnapshot
   const currentSnapshot = snapshot?.instrument.id === selectedInstrument.id && snapshot.timeframe === selectedTimeframe
   if (!currentSnapshot || !detailState.state) {
-    return <main className={styles.page}>{workspaceSwitcher}<div className={`${styles.pendingWorkspace} ${listIsCollapsed ? styles.pendingWorkspaceCollapsed : ''}`}>
+    return <main className={styles.page}>{workspaceHeader}<div className={`${styles.pendingWorkspace} ${listIsCollapsed ? styles.pendingWorkspaceCollapsed : ''}`}>
         {explorer}
         <div className={styles.detailState}>{detailState.error ?? `Connecting ${selectedInstrument.symbol} · ${detailState.state?.connection.message ?? 'Preparing market workspace…'}`}</div>
       </div></main>
   }
 
-  return <main className={styles.page}>{workspaceSwitcher}<MarketDetailWorkspace
+  return <main className={styles.page}>{workspaceHeader}<MarketDetailWorkspace
       navigator={explorer}
       instrumentListCollapsed={listIsCollapsed}
       snapshot={snapshot}

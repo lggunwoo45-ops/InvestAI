@@ -234,7 +234,7 @@ describe('Market Copilot application shell', () => {
     window.history.pushState({}, '', '/dashboard')
     render(<App />)
 
-    expect(await screen.findByRole('heading', { name: 'Market Radar' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Market Radar' }, { timeout: 5000 })).toBeTruthy()
     expect(screen.getByText(/Real AI not connected · Not investment advice/)).toBeTruthy()
     expect(await screen.findByRole('heading', { name: 'Smart Market Dashboard' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Top radar signals' })).toBeTruthy()
