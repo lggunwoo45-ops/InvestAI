@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { WatchlistReviewActions } from '@/components/ai-copilot/WatchlistReviewActions'
 
 import { EmptyState } from '@/components/EmptyState/EmptyState'
 import { Icon } from '@/components/Icon/Icon'
@@ -126,6 +127,7 @@ export function AiCopilot() {
               </div>
             </dl>
 
+            <WatchlistReviewActions instrument={displayedInstrument!} finalRead={finalRead} language={language} />
             {finalRead && <AiCopilotFinalReadCard result={finalRead} language={language} />}
 
             <AiForecastPanel instrument={displayedInstrument!} timeframe={scenarioTimeframe} displayTimeframe={selectedTimeframe} analysis={scenarioAnalysis} />

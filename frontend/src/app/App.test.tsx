@@ -208,9 +208,9 @@ describe('Market Copilot application shell', () => {
     expect(screen.getByLabelText('1 results').getAttribute('aria-live')).toBe('polite')
     expect(screen.queryByRole('button', { name: 'Open BTC/KRW' })).toBeNull()
 
-    const favoriteButton = screen.getByRole('button', { name: 'Add XRP/KRW favorite' })
+    const favoriteButton = screen.getByRole('button', { name: 'Add to watchlist XRP/KRW' })
     fireEvent.click(favoriteButton)
-    expect((await screen.findByRole('button', { name: 'Remove XRP/KRW favorite' })).getAttribute('aria-pressed')).toBe('true')
+    expect((await screen.findByRole('button', { name: 'Remove from watchlist XRP/KRW' })).getAttribute('aria-pressed')).toBe('true')
   })
 
   it('keeps sorting visible through search and market tab changes', async () => {
