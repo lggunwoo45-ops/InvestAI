@@ -1,5 +1,32 @@
 # Windows PowerShell developer workflow
 
+## Recommended Git workflow
+
+Prefer `git-safe.ps1` over raw Git commands. Run from normal Windows PowerShell without administrator access:
+
+```powershell
+# Status (read-only)
+.\scripts\git-safe.ps1 -Action Status
+# Repair an idle index lock
+.\scripts\git-safe.ps1 -Action FixLock
+# Update a clean main checkout
+.\scripts\git-safe.ps1 -Action SyncMain
+# Start a sprint from updated main
+.\scripts\git-safe.ps1 -Action StartSprint -Branch feature/sprint-XX-name
+# Finish with validation and a local commit
+.\scripts\git-safe.ps1 -Action Finish -Message "Sprint XX: message"
+```
+
+From `frontend`, use `..\scripts\git-safe.ps1`; from `scripts`, use `.\git-safe.ps1`. The script resolves its repository from its own path and restores your working directory. Its syntax supports PowerShell 5. The script file uses UTF-8 with BOM so Korean output is readable in Windows PowerShell 5.
+
+SyncMain and StartSprint refuse any tracked, staged or untracked changes before switching branches or pulling. StartSprint refuses an existing branch unless `-ForceExisting` is supplied; that flag switches without resetting or overwriting the branch. Both update main with a fast-forward-only pull. If a pull fails after switching to main, the checkout stays on main; there is no automatic rollback or retry.
+
+FixLock, SyncMain, StartSprint and Finish check for Git processes before lock repair. The only deletion allowed is a regular `.git/index.lock` inside this repository, after another process check. Reparse points and external worktree Git directories are refused. Do not run concurrent Git operations: process checks cannot eliminate races. Status disables optional Git locks and never repairs anything. A permission denial is not necessarily a stale lock, and this wrapper does not change filesystem permissions.
+
+Finish delegates to the existing finish-sprint script, which validates before staging and committing. Existing staged changes are included by Git: review them before finishing. No action pushes, creates PRs, merges branches, rebases, amends, resets, restores or cleans the working tree.
+
+The Codex Windows sandbox can still fail with EPERM or Permission denied. This wrapper reduces lock mistakes; it cannot bypass sandbox permissions. On failure, stop and run the same script from normal Windows PowerShell. Original Git error output and the failing command are printed without automatic retries.
+
 Run these commands in a normal, non-administrator PowerShell at the repository root. Node, npm and Git must already be installed. Scripts locate the repository relative to their own location and restore the caller's working directory on exit. Do not run concurrent Git operations while repairing a lock or finishing a sprint.
 
 ## Normal sprint workflow
