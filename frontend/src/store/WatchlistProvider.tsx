@@ -1,3 +1,5 @@
+import { loadWatchlist, saveWatchlist, itemFromInstrument, reviewItem, sanitizeItems, type ReviewSnapshot, type WatchlistItem } from '@/services/watchlist/watchlistStorage'
+import { marketDataService } from '@/services/market/marketDataService'
 import { useCallback, useEffect, useMemo, useState, type PropsWithChildren } from 'react'
 
 import { WatchlistContext, type WatchlistValue } from '@/store/watchlistContext'
@@ -21,7 +23,14 @@ function targetListId(instrumentId: string) {
 }
 
 export function WatchlistProvider({ children }: PropsWithChildren) {
-  const [watchlists, setWatchlists] = useState<readonly Watchlist[]>(() => loadStoredWatchlists())
+  const [mountedAt] = useState(() => new Date().toISOString())
+  const [metadata, setMetadata] = useState<readonly WatchlistItem[]>(loadWatchlist)
+  const [activeReview, setActiveReview] = useState<{ instrumentId: string; snapshot: ReviewSnapshot } | null>(null)
+  const [watchlists, setWatchlists] = useState<readonly Watchlist[]>(() => {
+    const lists = loadStoredWatchlists()
+    // Restore review-key membership without adding a second favorite system.
+    return lists.map(list => ({ ...list, instrumentIds: [...new Set([...list.instrumentIds, ...metadata.filter(item => targetListId(item.instrumentId) === list.id).map(item => item.instrumentId)])] }))
+  })
   const [activeWatchlistId, setActiveWatchlistId] = useState('crypto')
   const [recentlyViewedIds, setRecentlyViewedIds] = useState<readonly string[]>(() => loadStoredRecentlyViewed())
 
@@ -41,6 +50,7 @@ export function WatchlistProvider({ children }: PropsWithChildren) {
   }, [updateItems])
 
   const toggleFavorite = useCallback((instrumentId: string) => {
+    setMetadata(current => current.filter(item => item.instrumentId !== instrumentId))
     setWatchlists((current) => {
       const exists = current.some((list) => list.instrumentIds.includes(instrumentId))
       if (exists) return current.map((list) => ({ ...list, instrumentIds: list.instrumentIds.filter((id) => id !== instrumentId) }))
@@ -66,8 +76,11 @@ export function WatchlistProvider({ children }: PropsWithChildren) {
     setActiveWatchlistId((current) => current === id ? 'crypto' : current)
   }, [watchlists])
 
-  const removeFromWatchlist = useCallback((watchlistId: string, instrumentId: string) => {
-    updateItems(watchlistId, (ids) => ids.filter((id) => id !== instrumentId))
+  const removeFromWatchlist = useCallback((watchlistId: string, instrumentId?: string) => {
+    if (instrumentId === undefined) {
+      setWatchlists(current => current.map(list => ({ ...list, instrumentIds: list.instrumentIds.filter(id => id !== watchlistId) })))
+      setMetadata(current => current.filter(item => item.instrumentId !== watchlistId))
+    } else updateItems(watchlistId, (ids) => ids.filter((id) => id !== instrumentId))
   }, [updateItems])
 
   const reorderWatchlist = useCallback((watchlistId: string, sourceIndex: number, targetIndex: number) => {
@@ -79,7 +92,36 @@ export function WatchlistProvider({ children }: PropsWithChildren) {
   }, [])
 
   const favoriteIds = useMemo(() => new Set(watchlists.flatMap((list) => list.instrumentIds)), [watchlists])
+  const watchlistItems = useMemo(() => {
+    const known = marketDataService.getKnownInstruments([...favoriteIds])
+    return [...favoriteIds].map(id => {
+      const saved = metadata.find(item => item.instrumentId === id)
+      if (saved) return saved
+      const instrument = known.get(id)
+      if (instrument) return itemFromInstrument(instrument, mountedAt)
+      const at = mountedAt
+      return { instrumentId: id, symbol: id, displayName: id, marketType: targetListId(id) === 'crypto' ? 'crypto' : 'stock', addedAt: at, updatedAt: at }
+    })
+  }, [favoriteIds, metadata, mountedAt])
+  useEffect(() => { saveWatchlist(watchlistItems) }, [watchlistItems])
+  const isWatchlisted = useCallback((id: string) => favoriteIds.has(id), [favoriteIds])
+  const getWatchlistItem = useCallback((id: string) => watchlistItems.find(item => item.instrumentId === id), [watchlistItems])
+  const addToWatchlist = useCallback((item: WatchlistItem) => {
+    const valid = sanitizeItems([item])[0]
+    if (!valid) return
+    setMetadata(current => [...current.filter(entry => entry.instrumentId !== valid.instrumentId), { ...valid, ...(favoriteIds.has(valid.instrumentId) ? current.find(entry => entry.instrumentId === valid.instrumentId) : undefined) }])
+    setWatchlists(current => current.some(list => list.instrumentIds.includes(valid.instrumentId)) ? current : current.map(list => list.id === targetListId(valid.instrumentId) ? { ...list, instrumentIds: [...list.instrumentIds, valid.instrumentId] } : list))
+  }, [favoriteIds])
+  const toggleWatchlist = useCallback((item: WatchlistItem) => {
+    if (favoriteIds.has(item.instrumentId)) removeFromWatchlist(item.instrumentId)
+    else addToWatchlist(item)
+  }, [favoriteIds, removeFromWatchlist, addToWatchlist])
+  const markReviewed = useCallback((id: string, snapshot: ReviewSnapshot) => {
+    if (!favoriteIds.has(id)) return
+    setMetadata(current => reviewItem(watchlistItems.map(item => current.find(entry => entry.instrumentId === item.instrumentId) ?? item), id, snapshot))
+  }, [favoriteIds, watchlistItems])
   const value = useMemo<WatchlistValue>(() => ({
+    watchlistItems, isWatchlisted, addToWatchlist, toggleWatchlist, markReviewed, getWatchlistItem, activeReview, setActiveReview,
     watchlists,
     activeWatchlistId,
     favoriteIds,
@@ -92,7 +134,7 @@ export function WatchlistProvider({ children }: PropsWithChildren) {
     removeFromWatchlist,
     reorderWatchlist,
     trackRecentlyViewed,
-  }), [activeWatchlistId, createWatchlist, deleteWatchlist, favoriteIds, recentlyViewedIds, removeFromWatchlist, reorderWatchlist, toggleFavorite, toggleInWatchlist, trackRecentlyViewed, watchlists])
+  }), [watchlistItems, isWatchlisted, addToWatchlist, toggleWatchlist, markReviewed, getWatchlistItem, activeReview, activeWatchlistId, createWatchlist, deleteWatchlist, favoriteIds, recentlyViewedIds, removeFromWatchlist, reorderWatchlist, toggleFavorite, toggleInWatchlist, trackRecentlyViewed, watchlists])
 
   return <WatchlistContext value={value}>{children}</WatchlistContext>
 }

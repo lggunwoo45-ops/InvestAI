@@ -1,3 +1,4 @@
+import { itemFromInstrument } from '@/services/watchlist/watchlistStorage'
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
@@ -61,7 +62,7 @@ export function MarketPage() {
   const { displayMode } = useDisplayMode()
   useDocumentTitle(marketExplorerText[language].title)
   const { selectedInstrument, selectedTimeframe, marketDataMode, selectInstrument, clearInstrument, selectTimeframe, setMarketDataMode } = useMarketWorkspace()
-  const { favoriteIds, toggleFavorite, trackRecentlyViewed } = useWatchlists()
+  const { favoriteIds, toggleWatchlist, trackRecentlyViewed } = useWatchlists()
   const [initialLastInstrumentIds] = useState(loadLastMarketInstrumentIds)
   const lastInstrumentIdsRef = useRef<LastMarketInstrumentIds>(initialLastInstrumentIds)
   const synchronizedInstrumentIdRef = useRef<string | null>(null)
@@ -150,8 +151,8 @@ export function MarketPage() {
   const changeFavorite = useCallback((id: string) => {
     const instrument = catalogState.catalog?.instruments.find((item) => item.id === id)
     if (instrument) marketDataService.rememberInstrument(instrument)
-    toggleFavorite(id)
-  }, [catalogState.catalog, toggleFavorite])
+    if (instrument) toggleWatchlist(itemFromInstrument(instrument))
+  }, [catalogState.catalog, toggleWatchlist])
   const changeVenue = useCallback((next: MarketVenue) => {
     const nextAssetMode = assetModeForVenue(next)
     if (nextAssetMode !== assetMode) {

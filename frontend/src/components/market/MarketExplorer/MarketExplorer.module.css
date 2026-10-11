@@ -190,3 +190,10 @@
   .instrument small { font-size: 11px; }
   .numeric { font-size: 13px; }
 }
+.scopes { display: flex; flex-wrap: wrap; gap: 3px; }
+.scopes button[aria-pressed='true'] { color: #8ebcff; background: #22344b; }
+.reviewRow { height: 100px !important; }
+.reviewReason { white-space: normal !important; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.35; }
+.unavailable { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px; font-size: 11px; border-bottom: 1px solid #354154; }
+.unavailable small { opacity: .7; }
+.unavailable button { margin-left: auto; color: #f0bf57; background: transparent; border: 0; cursor: pointer; }

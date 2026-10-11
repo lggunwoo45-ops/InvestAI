@@ -2,6 +2,7 @@ import { fireEvent, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 import type { MarketInstrument } from '@/types/market'
+import { loadWatchlist } from '@/services/watchlist/watchlistStorage'
 import { renderWithProviders } from '@/test/renderWithProviders'
 import type { Candle, RealtimeMarketState } from '@/types/marketDetail'
 import { AiCopilot } from './AiCopilot'
@@ -53,6 +54,12 @@ describe('AiCopilot selected-instrument evidence wiring', () => {
     fireEvent.click(within(first).getByRole('button', { name: 'Show evidence details' }))
     expect(first.textContent).toContain('Instrument: AAA/KRW')
     expect(within(screen.getByRole('complementary', { name: 'AI Copilot' })).getByText(/Constructive continuation remains possible/)).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add to watchlist AAA/KRW · AI Copilot' }))
+    expect(screen.getByText('In watchlist')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Mark reviewed' }))
+    expect(loadWatchlist().find(item => item.instrumentId === 'AAA')?.lastReviewedSnapshot?.finalReadState).toBe('approachReviewPossible')
+    expect(first.getAttribute('data-final-read')).toBe('approachReviewPossible')
 
     mocks.workspace.mockReturnValue(workspace(weak, candles('down')))
     view.rerender(<AiCopilot />)
