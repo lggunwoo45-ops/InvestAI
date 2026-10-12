@@ -31,6 +31,8 @@ import { findCandidateSnapshot } from '@/services/candidateSnapshot/candidateSna
 import { getLocalDateLabel } from '@/services/candidateSnapshot/dailyBasisTime'
 import { findDailyBucketSnapshot } from '@/services/candidateSnapshot/dailyBucketSnapshotStorage'
 import { buildMyInstrumentAnalysis } from '@/services/myAnalysis/myAnalysisEngine'
+import { buildBitcoinMarketAnchor } from '@/services/marketAnchor/bitcoinMarketAnchor'
+import { buildEvidenceCandidateRecommendation, recommendationAnchorContext } from '@/services/recommendation/evidenceCandidateRecommendation'
 import { buildPracticalDecision } from '@/services/practicalDecision/practicalDecisionModel'
 import { buildReviewRanges } from '@/services/practicalDecision/reviewRangeModel'
 import { buildTechnicalLevelAnalysis } from '@/services/technicalLevels/technicalLevelEngine'
@@ -173,6 +175,19 @@ export function MyAnalysisPage() {
     }),
   }) : null
 
+  const recommendation = selected && analysis ? buildEvidenceCandidateRecommendation({
+    instrument: technicalData.currentPrice !== null && Number.isFinite(technicalData.currentPrice) && technicalData.currentPrice > 0 ? { ...selected, lastPrice: technicalData.currentPrice } : selected,
+    language,
+    candles: technicalData.candles,
+    technicalAnalysis,
+    practicalDecision,
+    reviewScore: candidateReviewScore,
+    dataQuality: analysis.dataQuality === 'mock' ? 'mock' : technicalData.isLoading ? analysis.dataQuality : technicalData.dataQuality === 'unavailable' && analysis.dataQuality !== 'unavailable' ? 'limited' : technicalData.dataQuality,
+    freshness: snapshotExpired ? 'expired' : null,
+    positionReviewActive: validAveragePrice !== null,
+    btcAnchorContext: recommendationAnchorContext(selected.marketId === 'upbit' || selected.marketId.startsWith('binance') ? buildBitcoinMarketAnchor({ marketBucket: selected.marketId === 'upbit' ? 'upbit' : 'binance', instruments, catalogSource: sourceById.get(selected.id) ?? null, newsResult, language }) : null),
+  }) : undefined
+
   const choose = (instrument: MarketInstrument) => {
     setSelectedId(instrument.id)
     setParams({ instrumentId: instrument.id }, { replace: true })
@@ -225,8 +240,8 @@ export function MyAnalysisPage() {
         <div className={styles.quote}><small>{t.availableData}</small><strong>{Number.isFinite(selected.lastPrice) ? formatMarketPrice(selected) : t.qualities.unavailable}</strong>{Number.isFinite(selected.change24hPercent) && <span data-direction={selected.change24hPercent >= 0 ? 'positive' : 'negative'}>{formatMarketChange(selected.change24hPercent)}</span>}</div>
         <div className={styles.quality}><small>{t.quality}</small><b data-quality={analysis.dataQuality}>{analysis.dataQualityLabel}</b><small>{t.qualityHelp[analysis.dataQuality]}</small></div>
       </section>
-      <MyAnalysisReportSummary analysis={analysis} language={language} mode={displayMode} symbol={selected.displaySymbol ?? selected.symbol} name={selected.name} reviewMode={reviewMode} basisPrice={validAveragePrice} currentPrice={currentPrice} quoteCurrency={selected.quoteCurrency} disclosureReview={selected.marketId === 'korea-stock' ? dartReview : null} practicalDecision={practicalDecision ?? undefined} reviewRanges={reviewRanges} candidateReviewScore={candidateReviewScore ?? undefined} technicalAnalysis={technicalData.isLoading ? undefined : technicalAnalysis ?? undefined} aiCopilotFinalRead={aiCopilotFinalRead ?? undefined} />
-      {practicalDecision && <PracticalDecisionCard result={practicalDecision} language={language} />}
+      <MyAnalysisReportSummary recommendation={recommendation} analysis={analysis} language={language} mode={displayMode} symbol={selected.displaySymbol ?? selected.symbol} name={selected.name} reviewMode={reviewMode} basisPrice={validAveragePrice} currentPrice={currentPrice} quoteCurrency={selected.quoteCurrency} disclosureReview={selected.marketId === 'korea-stock' ? dartReview : null} practicalDecision={practicalDecision ?? undefined} reviewRanges={reviewRanges} candidateReviewScore={candidateReviewScore ?? undefined} technicalAnalysis={technicalData.isLoading ? undefined : technicalAnalysis ?? undefined} aiCopilotFinalRead={aiCopilotFinalRead ?? undefined} />
+      {practicalDecision && <PracticalDecisionCard result={recommendation ? { ...practicalDecision, title: recommendation.title, summary: recommendation.summary, reason: recommendation.why, nextCheck: recommendation.nextCheck } : practicalDecision} language={language} />}
       <ReviewRangePanel ranges={reviewRanges} language={language} quoteCurrency={selected.quoteCurrency} />
       {technicalAnalysis && <TechnicalLevelsPanel levelSet={technicalAnalysis.levelSet} movingAverageContext={technicalAnalysis.movingAverageContext} displayMode={displayMode} language={language} isLoading={technicalData.isLoading} />}
       {displayMode === 'expert' && technicalAnalysis && <ChartOverlayLegend status={technicalAnalysis.levelSet.status} lines={technicalAnalysis.overlayLines} displayMode={displayMode} language={language} isLoading={technicalData.isLoading} />}
@@ -240,7 +255,7 @@ export function MyAnalysisPage() {
           {validAveragePrice !== null && <PositionReviewPanel basisPrice={validAveragePrice} currentPrice={currentPrice} dataQuality={analysis.dataQuality} language={language} nextCheck={analysis.reviewChecklist[0] ?? analysis.actionReadiness.nextChecks[0]} quoteCurrency={selected.quoteCurrency} />}
         </div>}
       {displayMode === 'simple' && selected.marketId === 'korea-stock' && <DartDisclosureReviewCard language={language} review={dartReview} disclosurePanelId="dart-disclosures" />}
-      <ActionReadinessCard plan={analysis.actionReadiness} language={language} mode={displayMode} showRuleBasis={false} />
+      <ActionReadinessCard plan={recommendation ? { ...analysis.actionReadiness, title: recommendation.title, summary: recommendation.summary, whyThisStatus: recommendation.why, nextChecks: [recommendation.nextCheck] } : analysis.actionReadiness} language={language} mode={displayMode} showRuleBasis={false} />
       {displayMode === 'simple' && selected.marketId === 'korea-stock' && <DartDisclosurePanel id="dart-disclosures" compact language={language} result={dartResult} />}
       <section className={styles.analysis} data-mode={displayMode}>
         <div className={styles.analysisHeading}><div><span>{displayMode === 'simple' ? t.simple : t.expert}</span><h2>{displayMode === 'simple' ? t.analyze : t.detailedReport}</h2>{displayMode === 'expert' && <small>{analysis.summary}</small>}</div><Link to="/market" onClick={openMarket}>{t.market} →</Link></div>

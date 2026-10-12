@@ -9,6 +9,8 @@ import { getDailyBasisTime, getLocalDateLabel } from '@/services/candidateSnapsh
 import { saveDailyBucketSnapshot } from '@/services/candidateSnapshot/dailyBucketSnapshotStorage'
 import type { CandidateSnapshot } from '@/types/candidateSnapshot'
 import type { MarketInstrument, MarketVenue } from '@/types/market'
+import { renderWithProviders } from '@/test/renderWithProviders'
+import { MyAnalysisPage } from './MyAnalysisPage'
 
 const catalogMockState = vi.hoisted(() => ({ failedVenue: null as string | null }))
 const technicalMockState = vi.hoisted(() => ({ isLoading: false }))
@@ -38,6 +40,18 @@ vi.mock('@/hooks/useTechnicalLevelData', () => ({
 }))
 
 describe('MyAnalysisPage', () => {
+  it('connects selected current evidence to the report recommendation', () => {
+    window.localStorage.setItem('market-copilot.language', 'en')
+    renderWithProviders(<MyAnalysisPage />)
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search instrument' }), { target: { value: 'Bitcoin' } })
+    fireEvent.click(screen.getByRole('button', { name: /BTC\/KRW/ }))
+    const report = screen.getByRole('region', { name: 'Review summary' })
+    expect(report.textContent).toContain('BTC/KRW')
+    expect(within(report).getByRole('list', { name: 'Evidence factors' })).toBeTruthy()
+    const currentState = within(report).getByText('Current state').parentElement?.querySelector('strong')?.textContent
+    expect(currentState).toMatch(/Keep watching|Approach review possible|Already extended/)
+    expect((within(report).getByRole('textbox', { name: 'Plain-text summary' }) as HTMLTextAreaElement).value).toMatch(/Keep watching|Approach review possible|Already extended/)
+  })
   afterEach(() => vi.useRealTimers())
 
   beforeEach(() => { window.localStorage.clear(); catalogMockState.failedVenue = null; technicalMockState.isLoading = false })
@@ -54,7 +68,8 @@ describe('MyAnalysisPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /005930/ }))
     expect(screen.getByRole('heading', { name: '005930' })).toBeTruthy()
     expect(screen.getByText('Mock / demo data')).toBeTruthy()
-    expect(screen.getAllByText(/This stock analysis is a structure preview/).length).toBeGreaterThan(0)
+    const recommendationFactors = within(screen.getByRole('region', { name: 'Review summary' })).getByRole('list', { name: 'Evidence factors' })
+    expect(within(recommendationFactors).getByText('Data quality: Mock / demo · Limited')).toBeTruthy()
     expect(screen.getByText('Current stock movement is demo context.')).toBeTruthy()
     expect(screen.queryByRole('heading', { name: 'What is visible now' })).toBeNull()
     expect(screen.getByRole('heading', { name: 'What stands out' })).toBeTruthy()
@@ -69,8 +84,10 @@ describe('MyAnalysisPage', () => {
     const actionStatus = screen.getByRole('region', { name: 'Current action status' })
     expect(brief.textContent).toContain('Mock/demo data')
     expect(brief.compareDocumentPosition(actionStatus) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(actionStatus.textContent).toContain('Decision pending')
-    expect(within(actionStatus).getAllByText('Decision pending')).toHaveLength(1)
+    const currentRead = within(brief).getByText('Current state').parentElement?.querySelector('strong')?.textContent
+    expect(currentRead).toMatch(/Keep watching|Already extended/)
+    expect(within(actionStatus).getAllByText(currentRead ?? '')).toHaveLength(1)
+    expect(actionStatus.textContent).not.toContain('Decision pending')
     expect(within(actionStatus).getByText('Signal clarity: Low clarity')).toBeTruthy()
     expect(actionStatus.textContent).not.toContain('This is a workflow preview using mock/demo data.')
     expect(actionStatus.compareDocumentPosition(screen.getByRole('heading', { name: 'What stands out' })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
@@ -135,7 +152,8 @@ describe('MyAnalysisPage', () => {
     expect(await screen.findByRole('heading', { name: 'BTC/KRW' })).toBeTruthy()
     expect(screen.queryByRole('region', { name: 'Disclosure review' })).toBeNull()
     expect(screen.queryByRole('region', { name: 'Recent DART disclosures' })).toBeNull()
-    expect(screen.getAllByText(/moderate upward movement/).length).toBeGreaterThan(0)
+    const recommendationFactors = within(screen.getByRole('region', { name: 'Review summary' })).getByRole('list', { name: 'Evidence factors' })
+    expect(within(recommendationFactors).getByText('Data quality: Live · Strong')).toBeTruthy()
     expect(screen.getByText('Opened from Market workspace.')).toBeTruthy()
     const report = screen.getByRole('region', { name: 'Review summary' })
     const practical = screen.getByRole('region', { name: 'Decision-support information' })
@@ -143,7 +161,8 @@ describe('MyAnalysisPage', () => {
     const technical = screen.getByRole('region', { name: 'Chart structure analysis' })
     const overlayLegend = screen.getByRole('region', { name: 'Chart overlays' })
     const reviewMode = screen.getByRole('region', { name: 'Review mode' })
-    expect(practical.textContent).toContain('Current read: Approach review possible')
+    expect(practical.textContent).toContain('Current read: Already extended')
+    expect(practical.textContent).toContain('observed resistance / moving-average distance')
     expect(ranges.textContent).toContain('Approach review range')
     expect(report.compareDocumentPosition(practical) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(practical.compareDocumentPosition(ranges) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
@@ -175,10 +194,12 @@ describe('MyAnalysisPage', () => {
     expect(screen.getByRole('region', { name: '판단 보조 정보' }).textContent).toContain('지금 판단: 보유 기준 재확인')
     const koreanReadiness = screen.getByRole('region', { name: '액션 준비도' })
     const koreanBrief = screen.getByRole('region', { name: '분석 요약' })
+    const koreanFactors = within(koreanBrief).getByRole('list', { name: '판단 근거' })
+    expect(within(koreanFactors).getByText('데이터 품질: 실시간 · 강함')).toBeTruthy()
     expect(koreanBrief.textContent).toContain('데이터 신뢰 상태')
     expect(koreanBrief.textContent).toContain('리포트 요약')
     expect(koreanReadiness.textContent).toContain('거래 지시가 아닙니다')
-    expect(within(koreanReadiness).getAllByText('조건부 접근 가능')).toHaveLength(1)
+    expect(within(koreanReadiness).getAllByText('보유 기준 재확인')).toHaveLength(1)
     expect(within(koreanReadiness).getByText('판단 명확도: 보통')).toBeTruthy()
     expect(koreanReadiness.textContent).toContain('현재 규칙 기반 상태가 얼마나 명확한지를 뜻하며, 기대수익이나 확신도가 아닙니다.')
     expect(koreanReadiness.textContent).not.toMatch(/검토 구간|현재가보다 약|분할 접근|무효화 기준|수익 보호/)

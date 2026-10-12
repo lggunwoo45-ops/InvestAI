@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
 
 import { CandidateReviewScoreBadge } from '@/components/candidates/CandidateReviewScoreBadge/CandidateReviewScoreBadge'
+import { EvidenceFactors } from '@/components/ai-analysis/EvidenceRecommendation'
+import type { EvidenceCandidateRecommendation } from '@/services/recommendation/evidenceCandidateRecommendation'
 import type { MyAnalysisReviewMode } from '@/components/my-analysis/ReviewModeSelector/ReviewModeSelector'
 import type { Language } from '@/i18n/translations'
 import type { CandidateReviewScore } from '@/services/candidateScore/candidateReviewScore'
@@ -14,6 +16,7 @@ import type { TechnicalLevelAnalysis } from '@/types/technicalLevels'
 import styles from './MyAnalysisReportSummary.module.css'
 
 interface MyAnalysisReportSummaryProps {
+  recommendation?: EvidenceCandidateRecommendation
   analysis: MyAnalysisResult
   language: Language
   mode: 'simple' | 'expert'
@@ -94,12 +97,16 @@ function buildMyAnalysisPlainTextSummary(symbol: string, language: Language, rev
   return lines.join('\n')
 }
 
-export function MyAnalysisReportSummary({ analysis, language, mode, symbol, name, reviewMode = 'interest', basisPrice = null, currentPrice = Number.NaN, quoteCurrency = '', disclosureReview = null, practicalDecision: providedDecision, reviewRanges: providedRanges, candidateReviewScore, technicalAnalysis, aiCopilotFinalRead }: MyAnalysisReportSummaryProps) {
+export function MyAnalysisReportSummary({ analysis, language, mode, symbol, name, reviewMode = 'interest', basisPrice = null, currentPrice = Number.NaN, quoteCurrency = '', disclosureReview = null, practicalDecision: providedDecision, reviewRanges: providedRanges, candidateReviewScore, technicalAnalysis, aiCopilotFinalRead, recommendation }: MyAnalysisReportSummaryProps) {
   const t = copy[language]
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'unavailable'>('idle')
   const practicalDecision = providedDecision ?? buildPracticalDecision({ language, horizon: 'short', dataQuality: analysis.dataQuality, actionStatus: analysis.actionReadiness.status, hasAveragePrice: reviewMode === 'position' && basisPrice !== null && basisPrice > 0, source: 'analysis', reason: analysis.actionReadiness.whyThisStatus, nextCheck: analysis.reviewChecklist[0] ?? analysis.actionReadiness.nextChecks[0] })
   const reviewRanges = providedRanges ?? buildReviewRanges({ language, horizon: 'short', dataQuality: analysis.dataQuality, anchorPrice: basisPrice && basisPrice > 0 ? basisPrice : currentPrice, source: 'current' })
-  const plainText = useMemo(() => buildMyAnalysisPlainTextSummary(symbol, language, reviewMode, basisPrice, currentPrice, quoteCurrency, disclosureReview, practicalDecision, reviewRanges, candidateReviewScore, technicalAnalysis, aiCopilotFinalRead), [aiCopilotFinalRead, basisPrice, candidateReviewScore, currentPrice, disclosureReview, language, practicalDecision, quoteCurrency, reviewMode, reviewRanges, symbol, technicalAnalysis])
+  const plainText = useMemo(() => {
+    const base = buildMyAnalysisPlainTextSummary(symbol, language, reviewMode, basisPrice, currentPrice, quoteCurrency, disclosureReview, practicalDecision, reviewRanges, candidateReviewScore, technicalAnalysis, recommendation ? undefined : aiCopilotFinalRead)
+    const context = base.split('\n').filter((line) => !line.startsWith(`${t.practical}:`) && !line.startsWith(`${t.summary}:`) && !line.startsWith(`${t.next}:`)).join('\n')
+    return recommendation ? [`${t.practical}: ${recommendation.title}`, recommendation.summary, ...recommendation.evidenceFactors.map((factor) => `${factor.label}: ${factor.value} · ${factor.statusLabel}`), `${t.next}: ${recommendation.nextCheck}`, context].join('\n') : base
+  }, [aiCopilotFinalRead, basisPrice, candidateReviewScore, currentPrice, disclosureReview, language, practicalDecision, quoteCurrency, reviewMode, reviewRanges, symbol, technicalAnalysis, recommendation, t.next])
   const disclosure = disclosureLine(disclosureReview, language)
   const caution = firstItem(analysis.simpleModeSections.find((section) => section.id === 'simple-caution')?.items ?? [], analysis.actionReadiness.avoidConditions[0])
   const next = firstItem(analysis.reviewChecklist, analysis.actionReadiness.nextChecks[0])
@@ -128,15 +135,16 @@ export function MyAnalysisReportSummary({ analysis, language, mode, symbol, name
       </div>
     </header>
     <div className={styles.state}>
-      <div><small>{t.current}</small><strong>{analysis.actionReadiness.title}</strong><p>{analysis.currentRead}</p></div>
+      <div><small>{t.current}</small><strong>{recommendation?.title ?? aiCopilotFinalRead?.title ?? analysis.actionReadiness.title}</strong><p>{recommendation?.summary ?? aiCopilotFinalRead?.summary ?? analysis.currentRead}</p></div>
       <div className={styles.confidence} data-quality={analysis.dataQuality}><small>{t.confidence}</small><strong>{t.dataLabels[analysis.dataQuality]}</strong><span>{t.loaded}: {analysis.evidence.length} · {t.missing}: {analysis.missingEvidence.length}</span></div>
     </div>
     {disclosure && <p className={styles.disclosure}>{disclosure}</p>}
     <div className={styles.quickFacts}>
-      <article><h3>{t.reason}</h3><p>{analysis.actionReadiness.whyThisStatus}</p></article>
+      <article><h3>{t.reason}</h3><p>{recommendation?.why ?? aiCopilotFinalRead?.why ?? analysis.actionReadiness.whyThisStatus}</p></article>
       <article><h3>{t.caution}</h3><p>{caution}</p></article>
-      <article><h3>{t.next}</h3><p>{next}</p></article>
+      <article><h3>{t.next}</h3><p>{recommendation?.nextCheck ?? aiCopilotFinalRead?.nextCheck ?? next}</p></article>
     </div>
+    {recommendation && <><EvidenceFactors item={recommendation} language={language} /><small>{language === 'ko' ? '판단 보조 정보이며 거래 지시가 아닙니다.' : 'Decision-support information, not a trade instruction.'}</small></>}
     <details className={styles.plainText}>
       <summary>{t.plainText}</summary>
       <textarea aria-label={t.plainText} readOnly value={plainText} />
