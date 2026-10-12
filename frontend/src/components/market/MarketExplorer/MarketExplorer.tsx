@@ -47,13 +47,13 @@ const sortFields: readonly ExplorerSortField[] = ['alphabet', 'price', 'change',
 const spotQuotes: readonly BinanceSpotQuoteFilter[] = ['USDT', 'FDUSD', 'BTC', 'ETH', 'Other']
 
 export function MarketExplorer({
-  venue, mode, catalog, loading, error, selectedInstrumentId, activeInstrument,
+  venue, mode, catalog, loading, error, selectedInstrumentId,
   search, onSearchChange, favoritesOnly, onFavoritesOnlyChange,
   reviewOnly: controlledReviewOnly, onReviewOnlyChange,
   sortField, onSortFieldChange, sortDirection, onSortDirectionChange,
   spotQuoteFilter, onSpotQuoteFilterChange,
   favoriteIds, onVenueChange, onModeChange,
-  onSelect, onToggleFavorite, onRetry, onBack, compact = false,
+  onSelect, onToggleFavorite, onRetry, compact = false,
 }: MarketExplorerProps) {
   const { language } = useLanguage()
   const text = marketExplorerText[language]
@@ -73,7 +73,6 @@ export function MarketExplorer({
   const deferredSearch = useDeferredValue(search)
   const group = groupForVenue(venue)
   const isCrypto = group === 'crypto'
-  const workspace = text.workspace[group]
   const cryptoProvider = venue.startsWith('binance-') ? 'binance' : 'upbit'
   const venues = group === 'crypto'
     ? venuesByGroup.crypto.filter((item) => item.startsWith(cryptoProvider))
@@ -83,9 +82,7 @@ export function MarketExplorer({
     spotQuoteFilter: !favoritesOnly && venue === 'binance-spot' ? spotQuoteFilter : undefined,
   }), [catalog, deferredSearch, favoriteIds, favoritesOnly, sortDirection, sortField, spotQuoteFilter, venue])
   const instruments = reviewOnly && favoritesOnly ? queried.filter(item => reasonsFor(item).length > 0) : queried
-  const providerLabel = isCrypto ? text.provider[cryptoProvider] : text.provider.stock
   const source = catalog?.source ?? (isCrypto && mode === 'live' ? 'live' : 'mock')
-  const venueLabel = text.venue[venue].split(' · ').at(-1)
   const sortLabel = sortField === 'change' ? text.change : text[sortField]
   const directionLabel = sortDirection === 'asc' ? text.ascending : text.descending
   // A quote badge only distinguishes rows in Binance Spot's mixed-quote view.
@@ -94,13 +91,13 @@ export function MarketExplorer({
   const virtualizer = useVirtualizer({
     count: instruments.length,
     getScrollElement: () => scrollRef.current,
-    estimateSize: () => favoritesOnly ? 100 : compact ? 58 : 62,
+    estimateSize: () => favoritesOnly ? 78 : 50,
     getItemKey,
     overscan: 8,
     useFlushSync: false,
     initialRect: { width: compact ? 260 : 900, height: 600 },
   })
-  const rowHeight = favoritesOnly ? 100 : compact ? 58 : 62
+  const rowHeight = favoritesOnly ? 78 : 50
   const measuredItems = virtualizer.getVirtualItems()
   // The initial rows remain accessible before ResizeObserver reports a viewport.
   const visibleItems = measuredItems.length > 0
@@ -115,12 +112,8 @@ export function MarketExplorer({
   return (
     <section className={`${styles.explorer} ${isCrypto ? styles.crypto : styles.stock} ${compact ? styles.compact : ''}`} data-workspace={isCrypto ? 'crypto' : 'stock'} aria-label={text.title}>
       <header className={styles.header}>
-        <div className={styles.heading}>
-          {compact && onBack && <button type="button" className={styles.back} onClick={onBack}>← {text.all}</button>}
-          <span className={styles.eyebrow}>{workspace.eyebrow}</span>
-          <h1>{workspace.title}</h1>
-        </div>
-        <div className={styles.count}><DataModeControl value={mode} onChange={onModeChange} /><strong aria-live="polite" aria-atomic="true" aria-label={`${instruments.length.toLocaleString()} ${text.results}`}>{instruments.length.toLocaleString()}</strong><span>{text.results}</span></div>
+        <strong>{text.layout.instrumentList}</strong>
+        <div className={styles.count}><DataModeControl value={mode} onChange={onModeChange} /><span aria-live="polite" aria-atomic="true" aria-label={`${instruments.length.toLocaleString()} ${text.results}`}>{instruments.length.toLocaleString()} {text.results}</span><span className={source === 'live' ? styles.live : styles.mock} title={!isCrypto ? text.mockDisclosure : undefined}>{source === 'live' ? text.realPublicApi : text.mockData}</span></div>
       </header>
 
       <div className={styles.navigation}>
@@ -143,7 +136,6 @@ export function MarketExplorer({
             <button type="button" aria-pressed={favoritesOnly && !reviewOnly} onClick={() => { onFavoritesOnlyChange(true); setReviewOnly(false) }}>{language === 'ko' ? '관심' : 'Watchlist'} {savedCount}</button>
             <button type="button" aria-pressed={favoritesOnly && reviewOnly} onClick={() => { onFavoritesOnlyChange(true); setReviewOnly(true) }}>{language === 'ko' ? '다시 볼 종목' : 'Review queue'} {reviewCount}</button>
           </div>
-          <span className={styles.sortHint}>{text.sortHint}</span>
           <label className={styles.sortFallback}><span>{text.sort}</span><select aria-label={text.sort} value={sortField} onChange={(event) => onSortFieldChange(event.target.value as ExplorerSortField)}>
             {sortFields.map((field) => <option key={field} value={field}>{field === 'change' ? text.change : text[field]}</option>)}
           </select></label>
@@ -151,19 +143,6 @@ export function MarketExplorer({
         </div>
       </div>
 
-      <div className={styles.meta}>
-        <div className={styles.marketPath}>
-          <span>{text.browsing} · {workspace.scope}</span>
-          <strong>{isCrypto ? providerLabel : text.group[group]}</strong>
-          <b>/</b> {venueLabel}{venue === 'binance-spot' ? ` / ${spotQuoteFilter}` : ''}
-          {compact && activeInstrument && <span className={styles.activeContext}>{text.active}: {activeInstrument.displaySymbol ?? activeInstrument.symbol} · {activeInstrument.marketType ? text.venue[activeInstrument.marketType] : activeInstrument.marketId}</span>}
-        </div>
-        <div className={styles.sourceInfo}>
-          {!isCrypto && <span className={styles.mockWarning}>{text.mockDisclosure}</span>}
-          <span className={source === 'live' ? styles.live : styles.mock}>{source === 'live' ? text.realPublicApi : text.mockData}</span>
-        </div>
-      </div>
-      <div className={styles.sortStatus} role="status">{text.sortedBy} <strong>{sortLabel} {sortDirection === 'asc' ? '↑' : '↓'}</strong><span>{directionLabel}</span></div>
       <div className={styles.tableHead}>
         {sortFields.map((field) => {
           const label = field === 'change' ? text.change : text[field]

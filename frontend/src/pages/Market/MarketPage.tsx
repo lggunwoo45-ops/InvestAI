@@ -1,11 +1,6 @@
-import { TodayReviewDashboard, type TodayReviewScope } from '@/components/market/TodayReviewDashboard/TodayReviewDashboard'
-import { buildTodayReviewSummary } from '@/services/watchlist/todayReviewSummary'
-import { currentReviewData, type CurrentReviewData } from '@/services/watchlist/reviewQueue'
 import { itemFromInstrument } from '@/services/watchlist/watchlistStorage'
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 
-import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
-import { DisplayModeNotice } from '@/components/displayMode/DisplayModeNotice/DisplayModeNotice'
 import { MarketDetailWorkspace } from '@/components/market-detail/MarketDetailWorkspace/MarketDetailWorkspace'
 import { MarketAssetSwitcher } from '@/components/market/MarketAssetSwitcher/MarketAssetSwitcher'
 import { MarketExplorer } from '@/components/market/MarketExplorer/MarketExplorer'
@@ -15,7 +10,6 @@ import { useMarketDetailData } from '@/hooks/useMarketDetailData'
 import { useMarketWorkspace } from '@/hooks/useMarketWorkspace'
 import { useWatchlists } from '@/hooks/useWatchlists'
 import { useLanguage } from '@/i18n/useLanguage'
-import { uiText } from '@/i18n/translations'
 import { marketDataService } from '@/services/market/marketDataService'
 import { venueForStockId } from '@/services/market/explorer/StockCatalogProvider'
 import type { MarketInstrument, MarketVenue } from '@/types/market'
@@ -62,10 +56,9 @@ function initialVenue(instrument: MarketInstrument): MarketVenue {
 
 export function MarketPage() {
   const { language } = useLanguage()
-  const { displayMode } = useDisplayMode()
   useDocumentTitle(marketExplorerText[language].title)
   const { selectedInstrument, selectedTimeframe, marketDataMode, selectInstrument, clearInstrument, selectTimeframe, setMarketDataMode } = useMarketWorkspace()
-  const { favoriteIds, toggleWatchlist, trackRecentlyViewed, watchlistItems, activeReview } = useWatchlists()
+  const { favoriteIds, toggleWatchlist, trackRecentlyViewed } = useWatchlists()
   const [initialLastInstrumentIds] = useState(loadLastMarketInstrumentIds)
   const lastInstrumentIdsRef = useRef<LastMarketInstrumentIds>(initialLastInstrumentIds)
   const synchronizedInstrumentIdRef = useRef<string | null>(null)
@@ -88,8 +81,6 @@ export function MarketPage() {
   const [search, setSearch] = useState('')
   const [favoritesOnly, setFavoritesOnly] = useState(false)
   const [reviewOnly, setReviewOnly] = useState(false)
-  const [reviewClock, setReviewClock] = useState(Date.now)
-  useEffect(() => { const timer = window.setInterval(() => setReviewClock(Date.now()), 60_000); return () => window.clearInterval(timer) }, [])
   const [sortField, setSortField] = useState<ExplorerSortField>('volume')
   const [sortDirection, setSortDirection] = useState<ExplorerSortDirection>('desc')
   const [spotQuoteFilter, setSpotQuoteFilter] = useState<BinanceSpotQuoteFilter>('USDT')
@@ -176,9 +167,7 @@ export function MarketPage() {
     }
     setSearch('')
   }, [assetMode, clearInstrument, updatePendingAssetSelection])
-  const returnToExplorer = useCallback(() => {
-    clearInstrument()
-  }, [clearInstrument])
+
   const changeSortField = useCallback((field: ExplorerSortField) => {
     const next = nextExplorerSort(sortField, sortDirection, field)
     setSortField(next.field)
@@ -195,26 +184,6 @@ export function MarketPage() {
       return next
     })
   }, [])
-
-  const reviewInstruments = useMemo(() => {
-    const rows = new Map<string, MarketInstrument>()
-    if (!catalogState.loading && !catalogState.error) for (const row of catalogState.catalog?.instruments ?? []) rows.set(row.id, row)
-    const live = selectedSnapshot?.instrument ?? null
-    if (live && live.id === selectedInstrument?.id) rows.set(live.id, live)
-    return rows
-  }, [catalogState.catalog, catalogState.loading, catalogState.error, selectedSnapshot, selectedInstrument?.id])
-  const todayReview = useMemo(() => {
-    const current = new Map<string, CurrentReviewData>()
-    for (const [id, instrument] of reviewInstruments) current.set(id, currentReviewData(instrument, activeReview))
-    if (activeReview) current.set(activeReview.instrumentId, { ...current.get(activeReview.instrumentId), snapshot: activeReview.snapshot })
-    return buildTodayReviewSummary(watchlistItems, current, reviewClock)
-  }, [watchlistItems, reviewInstruments, activeReview, reviewClock])
-  const changeReviewScope = (scope: TodayReviewScope) => {
-    setFavoritesOnly(true)
-    setReviewOnly(scope === 'review')
-    setSearch('')
-    setInstrumentListCollapsed(false)
-  }
 
   const explorerPanel = (
     <MarketExplorer
@@ -243,7 +212,6 @@ export function MarketPage() {
       onSelect={openInstrument}
       onToggleFavorite={changeFavorite}
       onRetry={() => setRetry((value) => value + 1)}
-      onBack={returnToExplorer}
       compact={Boolean(selectedInstrument)}
     />
   )
@@ -251,12 +219,9 @@ export function MarketPage() {
   const layoutText = marketExplorerText[language].layout
   const workspaceSwitcher = <div className={styles.workspaceControls}>
     <MarketAssetSwitcher activeMode={assetMode} onChange={(mode) => changeVenue(defaultVenueByAssetMode[mode])} />
-    {!listIsCollapsed && <label className={styles.workspaceSearch}><span aria-hidden="true">⌕</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={marketExplorerText[language].search} aria-label={marketExplorerText[language].search} /></label>}
+    {!listIsCollapsed && <label className={styles.workspaceSearch}><span aria-hidden="true">⌕</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={language === 'ko' ? '종목 검색' : 'Search instruments'} aria-label={language === 'ko' ? '종목 검색' : 'Search instruments'} /></label>}
   </div>
-  const workspaceHeader = <div>
-    {workspaceSwitcher}
-    <TodayReviewDashboard model={todayReview} language={language} instruments={reviewInstruments} onOpen={openInstrument} onScopeChange={changeReviewScope} />
-  </div>
+  const workspaceHeader = workspaceSwitcher
   const explorer = <div className={`${styles.navigator} ${selectedInstrument ? styles.navigatorDetail : ''} ${listIsCollapsed ? styles.navigatorCollapsed : ''}`}>
     {selectedInstrument && <div className={styles.navigatorToolbar}>
       {!listIsCollapsed && <strong>{layoutText.instrumentList}</strong>}
@@ -273,7 +238,6 @@ export function MarketPage() {
       </button>
     </div>}
     <div id="market-instrument-list" className={styles.navigatorContent} hidden={listIsCollapsed}>
-      {displayMode === 'simple' && <DisplayModeNotice variant="panel">{uiText[language].displayMode.marketHint}</DisplayModeNotice>}
       {explorerPanel}
     </div>
   </div>

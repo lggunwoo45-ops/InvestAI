@@ -38,6 +38,12 @@ vi.mock('@/components/market-detail/MarketDetailWorkspace/MarketDetailWorkspace'
   </div>,
 }))
 
+function openReviewInstrument() {
+  const scopes = screen.getByRole('group', { name: 'List scope' })
+  fireEvent.click(within(scopes).getByRole('button', { name: 'Review queue 1' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Open XRP/KRW' }))
+}
+
 describe('Market Today Review integration', () => {
   beforeEach(() => {
     localStorage.clear()
@@ -46,6 +52,52 @@ describe('Market Today Review integration', () => {
     vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('Network disabled in fixture test'))
   })
   afterEach(() => vi.restoreAllMocks())
+
+  it.each([{ language: 'ko', search: '종목 검색', panel: '마켓 탐색' }, { language: 'en', search: 'Search instruments', panel: 'Market Explorer' }])('prioritizes instrument rows with compact controls in $language', async ({ language, search, panel }) => {
+    localStorage.setItem('market-copilot.language', language)
+    renderWithProviders(<MarketPage />)
+    expect(screen.queryByRole('region', { name: /^(Today review|오늘의 검토)$/ })).toBeNull()
+    const explorer = screen.getByRole('region', { name: panel })
+    expect(explorer.querySelector('h1')).toBeNull()
+    for (const text of ['코인이나 주식을 검색해 가격, 움직임, 기본 맥락을 확인하세요.', 'Search a coin or stock to review price, movement, and basic context.', '암호화폐 / 시장 흐름', '코인 마켓', '한국 주식 Beta', '미국 주식 Beta', 'Crypto Market', 'Korea Stocks Beta', 'US Stocks Beta']) {
+      expect(screen.queryByText(text)).toBeNull()
+    }
+    expect(screen.queryByPlaceholderText('심볼·한국어·영어 이름 검색')).toBeNull()
+    expect(screen.queryByPlaceholderText('Search symbol, Korean or English name')).toBeNull()
+    const input = screen.getByRole('searchbox', { name: search })
+    expect(input.getAttribute('placeholder')).toBe(search)
+    const label = language === 'ko' ? '열기' : 'Open'
+    const row = within(explorer).getByRole('button', { name: `${label} XRP/KRW` })
+    expect(input.compareDocumentPosition(row) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    fireEvent.change(input, { target: { value: 'XRP' } })
+    await waitFor(() => expect(within(explorer).queryByRole('button', { name: `${label} BTC/KRW` })).toBeNull())
+    expect(within(explorer).getByRole('button', { name: `${label} XRP/KRW` })).toBeTruthy()
+    expect(globalThis.fetch).not.toHaveBeenCalled()
+  })
+
+  it('preserves provider, quote, sorting and watchlist controls in the compact list', () => {
+    renderWithProviders(<MarketPage />)
+    for (const quote of ['BTC', 'USDT', 'KRW']) {
+      fireEvent.click(screen.getByRole('tab', { name: quote }))
+      expect(screen.getByRole('tab', { name: quote, selected: true })).toBeTruthy()
+    }
+    fireEvent.click(screen.getByRole('tab', { name: 'Binance' }))
+    expect(screen.getByRole('tab', { name: 'Binance', selected: true })).toBeTruthy()
+    fireEvent.click(screen.getByRole('tab', { name: 'Upbit' }))
+    expect(screen.getByRole('tab', { name: 'KRW', selected: true })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: /Sort by Price/ }))
+    expect(screen.getByRole('button', { name: /Sort by Price/, pressed: true })).toBeTruthy()
+    expect(screen.getAllByRole('button', { name: /^Open .*\/KRW$/ })[0].getAttribute('aria-label')).toBe('Open BTC/KRW')
+    fireEvent.click(screen.getByRole('button', { name: /Sort by Price/ }))
+    expect(screen.getAllByRole('button', { name: /^Open .*\/KRW$/ })[0].getAttribute('aria-label')).toBe('Open XRP/KRW')
+    fireEvent.click(screen.getByRole('button', { name: 'Add to watchlist BTC/KRW' }))
+    expect(screen.getByRole('button', { name: 'Remove from watchlist BTC/KRW', pressed: true })).toBeTruthy()
+    const scopes = screen.getByRole('group', { name: 'List scope' })
+    expect(within(scopes).getByRole('button', { name: 'Watchlist 2' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Remove from watchlist BTC/KRW' }))
+    expect(within(scopes).getByRole('button', { name: 'Watchlist 1' })).toBeTruthy()
+    expect(globalThis.fetch).not.toHaveBeenCalled()
+  })
 
   it('keeps empty Korean scopes distinct and exposes the active scope', () => {
     saveWatchlist([])
@@ -67,7 +119,7 @@ describe('Market Today Review integration', () => {
 
   it('groups notes, changes and history, and persists a note without confirming review', async () => {
     renderWithProviders(<MarketPage />)
-    fireEvent.click(screen.getByRole('button', { name: 'Open XRP/KRW · Today review' }))
+    openReviewInstrument()
     await screen.findByRole('img', { name: 'Chart XRP/KRW' })
     const record = screen.getByRole('region', { name: 'Review record' })
     expect(within(record).getByRole('textbox', { name: 'Review note' })).toBeTruthy()
@@ -92,8 +144,7 @@ describe('Market Today Review integration', () => {
       analysisEvidence: { instrumentId: xrp.id, market: 'upbit', exchange: 'upbit-krw', quoteCurrency: 'KRW', timeframe: '1H', source: 'mock', observedAt: at, stale: true, technicalTrend: 'neutral', momentumState: 'neutral', volumeState: 'normal', dataQuality: 'mock' },
     }))
     renderWithProviders(<MarketPage />)
-    const dashboard = screen.getByRole('region', { name: 'Today review' })
-    fireEvent.click(within(dashboard).getByRole('button', { name: 'Open XRP/KRW · Today review' }))
+    openReviewInstrument()
     await screen.findByRole('img', { name: 'Chart XRP/KRW' })
     fireEvent.click(screen.getByText('Analysis changes'))
     const changes = screen.getByRole('region', { name: 'Analysis changes' })
@@ -108,30 +159,26 @@ describe('Market Today Review integration', () => {
     expect(globalThis.fetch).not.toHaveBeenCalled()
   })
 
-  it('switches list scopes, opens highlights, updates confirmation counts and preserves hide/show', async () => {
+  it('switches list scopes, confirms review counts and preserves hide/show without a dashboard', async () => {
     renderWithProviders(<MarketPage />)
-    const dashboard = screen.getByRole('region', { name: 'Today review' })
-    expect(within(dashboard).getByRole('button', { name: 'Watchlist 1 Saved instruments' })).toBeTruthy()
-    fireEvent.click(within(dashboard).getByRole('button', { name: 'Watchlist 1 Saved instruments' }))
+    expect(screen.queryByRole('region', { name: 'Today review' })).toBeNull()
     const listScope = screen.getByRole('group', { name: 'List scope' })
-    expect(within(listScope).getByRole('button', { name: 'Watchlist 1' }).getAttribute('aria-pressed')).toBe('true')
-    fireEvent.click(within(dashboard).getByRole('button', { name: 'Review queue 1 Instruments needing review' }))
-    expect(within(listScope).getByRole('button', { name: 'Review queue 1' }).getAttribute('aria-pressed')).toBe('true')
-    fireEvent.click(within(dashboard).getByRole('button', { name: 'Open XRP/KRW · Today review' }))
+    fireEvent.click(within(listScope).getByRole('button', { name: 'Watchlist 1' }))
+    expect(within(listScope).getByRole('button', { name: 'Watchlist 1', pressed: true })).toBeTruthy()
+    openReviewInstrument()
+    expect(within(listScope).getByRole('button', { name: 'Review queue 1', pressed: true })).toBeTruthy()
     expect(await screen.findByRole('img', { name: 'Chart XRP/KRW' })).toBeTruthy()
     expect(screen.getByRole('complementary', { name: 'Fixture AI Copilot' }).textContent).toContain('XRP/KRW')
     fireEvent.click(screen.getByRole('button', { name: 'Mark reviewed' }))
-    await waitFor(() => expect(within(dashboard).getByRole('button', { name: 'Review queue 0 Instruments needing review' })).toBeTruthy())
-    expect(within(dashboard).getByRole('button', { name: 'Watchlist 1 Saved instruments' })).toBeTruthy()
+    await waitFor(() => expect(within(listScope).getByRole('button', { name: 'Review queue 0', pressed: true })).toBeTruthy())
+    expect(within(listScope).getByRole('button', { name: 'Watchlist 1' })).toBeTruthy()
     expect(loadWatchlist()[0]?.lastReviewedSnapshot?.finalReadState).toBe('wait')
-    expect(within(dashboard).getByText('No instruments need review today.')).toBeTruthy()
+    expect(screen.getByText('No instruments need review.')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Hide instruments' }))
     expect(screen.getByRole('button', { name: 'Show instruments' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Show instruments' }))
     expect(screen.getByRole('group', { name: 'List scope' })).toBeTruthy()
-    // The summary occupies the existing header, and highlights do not insert helper paragraphs.
-    expect(dashboard.parentElement?.parentElement?.tagName).toBe('MAIN')
-    expect(dashboard.querySelector('p')).toBeNull()
+    expect(screen.queryByRole('region', { name: 'Today review' })).toBeNull()
     expect(document.body.textContent).not.toMatch(/매수|매도|매수가|진입가|손절가|익절가|목표가|buy signal|sell signal|entry price|stop loss|take profit|target price/i)
     expect(globalThis.fetch).not.toHaveBeenCalled()
   })
