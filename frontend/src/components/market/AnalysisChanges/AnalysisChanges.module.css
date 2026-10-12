@@ -1,5 +1,6 @@
 .changes { border: 1px solid var(--border-color, #354154); border-radius: 6px; padding: 8px; font-size: 12px; }
-.changes summary { cursor: pointer; font-weight: 600; }
+.toggle { display: block; width: 100%; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; font-weight: 600; text-align: start; cursor: pointer; }
+.toggle:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; border-radius: 2px; }
 .changes section { margin-top: 8px; }
 .changes dl { margin: 0; }
 .changes dl > div { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }

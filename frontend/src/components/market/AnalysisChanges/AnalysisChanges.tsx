@@ -32,12 +32,11 @@ export function AnalysisChanges({ previous, current, language }: { previous?: Re
   const comparison = compareAnalysisChanges(previous, current)
   const format = (value: string | number | undefined) => value === undefined ? text.values.unavailable
     : typeof value === 'number' ? String(value) : text.values[value as keyof typeof text.values] ?? value
-  return <details className={styles.changes} open={expanded}>
-    <summary role="button" aria-expanded={expanded} aria-controls={expanded ? detailsId : undefined} onClick={event => {
-      event.preventDefault()
+  return <div className={styles.changes}>
+    <button type="button" className={styles.toggle} aria-label={text.title} aria-expanded={expanded} aria-controls={expanded ? detailsId : undefined} onClick={() => {
       setExpanded(currentExpanded => !currentExpanded)
-    }}>{text.title}</summary>
-    {expanded && <section id={detailsId} aria-label={text.title}>
+    }}><span aria-hidden="true">{expanded ? '▾' : '▸'}</span> {text.title}</button>
+    {expanded && <section id={detailsId} role="region" aria-label={text.title}>
       <dl>
         <div><dt>{text.previous}</dt><dd>{previous?.finalReadTitle || previous?.finalReadState || text.values.unavailable}</dd></div>
         <div><dt>{text.current}</dt><dd>{current?.finalReadTitle || current?.finalReadState || text.values.unavailable}</dd></div>
@@ -54,5 +53,5 @@ export function AnalysisChanges({ previous, current, language }: { previous?: Re
       </li>)}</ul>
       <small>{text.neutral}</small>
     </section>}
-  </details>
+  </div>
 }
