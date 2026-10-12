@@ -1,0 +1,9 @@
+.changes { border: 1px solid var(--border-color, #354154); border-radius: 6px; padding: 8px; font-size: 12px; }
+.changes summary { cursor: pointer; font-weight: 600; }
+.changes section { margin-top: 8px; }
+.changes dl { margin: 0; }
+.changes dl > div { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
+.changes dd { margin: 0; overflow-wrap: anywhere; }
+.changes ul { padding-left: 18px; }
+.changes li { margin-bottom: 6px; }
+.changes small { opacity: .8; }

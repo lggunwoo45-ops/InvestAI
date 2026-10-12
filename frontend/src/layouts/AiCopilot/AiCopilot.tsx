@@ -48,7 +48,7 @@ export function AiCopilot() {
     language,
   }), [activeMarketState?.connection.status, baseScenarioAnalysis, displayedInstrument, language, marketDataMode, newsProviderMode, newsResult])
   const foundationResult = useMemo(() => analysisContext.status === 'ready' ? createMockAiAnalysis(analysisContext.input, language) : null, [analysisContext, language])
-  const finalRead = useMemo(() => {
+  const finalReadContext = useMemo(() => {
     if (!displayedInstrument) return null
     const matchingSnapshot = activeMarketState?.snapshot?.instrument.id === displayedInstrument.id ? activeMarketState.snapshot : null
     const catalogSource = activeMarketState?.connection.effectiveMode ?? marketDataMode
@@ -93,8 +93,9 @@ export function AiCopilot() {
       technicalAnalysis,
       dataQuality: analysis.dataQuality,
     })
-    return buildAiCopilotFinalRead({ language, evidence, practicalDecision, reviewScore })
+    return { result: buildAiCopilotFinalRead({ language, evidence, practicalDecision, reviewScore }), evidence }
   }, [activeMarketState, displayedInstrument, language, marketDataMode, newsResult, scenarioTimeframe])
+  const finalRead = finalReadContext?.result ?? null
   const scenarioAnalysis = useMemo(() => baseScenarioAnalysis && finalRead
     ? applyFinalReadToScenarioAnalysis(baseScenarioAnalysis, finalRead, language)
     : baseScenarioAnalysis, [baseScenarioAnalysis, finalRead, language])
@@ -127,7 +128,9 @@ export function AiCopilot() {
               </div>
             </dl>
 
-            <WatchlistReviewActions instrument={displayedInstrument!} finalRead={finalRead} language={language} />
+            <WatchlistReviewActions instrument={displayedInstrument!} finalRead={finalRead} language={language}
+              evidence={finalReadContext?.evidence} timeframe={selectedTimeframe}
+              marketState={activeMarketState} />
             {finalRead && <AiCopilotFinalReadCard result={finalRead} language={language} />}
 
             <AiForecastPanel instrument={displayedInstrument!} timeframe={scenarioTimeframe} displayTimeframe={selectedTimeframe} analysis={scenarioAnalysis} />
