@@ -47,6 +47,44 @@ describe('Market Today Review integration', () => {
   })
   afterEach(() => vi.restoreAllMocks())
 
+  it('keeps empty Korean scopes distinct and exposes the active scope', () => {
+    saveWatchlist([])
+    localStorage.setItem('market-copilot.language', 'ko')
+    renderWithProviders(<MarketPage />)
+    const scopes = screen.getByRole('group', { name: '목록 범위' })
+    expect(within(scopes).getByRole('button', { name: '전체', pressed: true })).toBeTruthy()
+    fireEvent.click(within(scopes).getByRole('button', { name: '관심 0' }))
+    expect(within(scopes).getByRole('button', { name: '관심 0', pressed: true })).toBeTruthy()
+    expect(screen.getByText('관심종목이 없습니다.')).toBeTruthy()
+    fireEvent.click(within(scopes).getByRole('button', { name: '다시 볼 종목 0' }))
+    expect(within(scopes).getByRole('button', { name: '다시 볼 종목 0', pressed: true })).toBeTruthy()
+    expect(screen.getByText('다시 볼 종목이 없습니다.')).toBeTruthy()
+    fireEvent.click(within(scopes).getByRole('button', { name: '전체' }))
+    expect(within(scopes).getByRole('button', { name: '전체', pressed: true })).toBeTruthy()
+    expect(screen.queryByText('다시 볼 종목이 없습니다.')).toBeNull()
+    expect(globalThis.fetch).not.toHaveBeenCalled()
+  })
+
+  it('groups notes, changes and history, and persists a note without confirming review', async () => {
+    renderWithProviders(<MarketPage />)
+    fireEvent.click(screen.getByRole('button', { name: 'Open XRP/KRW · Today review' }))
+    await screen.findByRole('img', { name: 'Chart XRP/KRW' })
+    const record = screen.getByRole('region', { name: 'Review record' })
+    expect(within(record).getByRole('textbox', { name: 'Review note' })).toBeTruthy()
+    expect(within(record).getByRole('button', { name: 'Analysis changes', expanded: false })).toBeTruthy()
+    expect(within(record).getByRole('button', { name: 'Recent review history', expanded: false })).toBeTruthy()
+    fireEvent.change(within(record).getByRole('textbox', { name: 'Review note' }), { target: { value: 'Check evidence quality' } })
+    fireEvent.click(within(record).getByRole('button', { name: 'Save' }))
+    expect(loadWatchlist()[0]?.note).toBe('Check evidence quality')
+    expect(loadWatchlist()[0]?.lastReviewedAt).toBeUndefined()
+    fireEvent.click(within(record).getByRole('button', { name: 'Mark reviewed' }))
+    expect(within(record).getByText('Marked reviewed')).toBeTruthy()
+    expect(loadWatchlist()[0]?.reviewHistory?.[0]?.note).toBe('Check evidence quality')
+    fireEvent.click(within(record).getByRole('button', { name: 'Recent review history' }))
+    expect(within(record).getByRole('region', { name: 'Recent review history' })).toBeTruthy()
+    expect(globalThis.fetch).not.toHaveBeenCalled()
+  })
+
   it('opens a queue instrument with its comparison and confirms the current baseline', async () => {
     const at = '2026-10-10T00:00:00Z'
     saveWatchlist(reviewItem([itemFromInstrument(xrp)], xrp.id, {

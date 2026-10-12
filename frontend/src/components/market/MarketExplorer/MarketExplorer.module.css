@@ -191,7 +191,10 @@
   .numeric { font-size: 13px; }
 }
 .scopes { display: flex; flex-wrap: wrap; gap: 3px; }
-.scopes button[aria-pressed='true'] { color: #8ebcff; background: #22344b; }
+.scopes button[aria-pressed='true'] { color: #b9d7ff; background: #22344b; box-shadow: inset 0 -2px #8ebcff; font-weight: 700; }
+.scopes button:focus-visible { outline: 2px solid #8ebcff; outline-offset: 2px; }
+.reviewReason strong { font-size: 10px; font-weight: 600; }
+.reviewReason small { display: block; font-size: 10px; }
 .reviewRow { height: 100px !important; }
 .reviewReason { white-space: normal !important; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.35; }
 .unavailable { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px; font-size: 11px; border-bottom: 1px solid #354154; }

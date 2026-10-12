@@ -1,5 +1,6 @@
 import { useWatchlists } from '@/hooks/useWatchlists'
-import { getReviewReasons, currentReviewData, reviewReasonText } from '@/services/watchlist/reviewQueue'
+import { getReviewReasons, currentReviewData } from '@/services/watchlist/reviewQueue'
+import { ReviewReasonDisplay } from '@/components/market/ReviewReasonDisplay/ReviewReasonDisplay'
 import { itemFromInstrument } from '@/services/watchlist/watchlistStorage'
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
@@ -188,7 +189,7 @@ export function MarketExplorer({
                 <small title={[instrument.koreanName, instrument.englishName ?? instrument.name].filter(Boolean).join(' · ')}>
                   {instrument.koreanName ? `${instrument.koreanName} · ${instrument.englishName ?? instrument.name}` : instrument.englishName ?? instrument.name}
                 </small>
-                {favoritesOnly && <small className={styles.reviewReason} title={reasonsFor(instrument).map(reason => reviewReasonText[language][reason]).join(' · ')}>{activeReview?.instrumentId === instrument.id ? activeReview.snapshot.finalReadTitle : ''} · {reasonsFor(instrument).map(reason => reviewReasonText[language][reason]).join(' · ') || (language === 'ko' ? '확인 완료' : 'Reviewed')}</small>}
+                {favoritesOnly && <span className={styles.reviewReason}><ReviewReasonDisplay item={getWatchlistItem(instrument.id) ?? itemFromInstrument(instrument)} current={activeReview?.instrumentId === instrument.id ? activeReview.snapshot : undefined} reasons={reasonsFor(instrument)} language={language} /></span>}
                 {selectedInstrumentId === instrument.id && <em>{text.selected}</em>}
               </button>
               <span className={styles.numeric}>{formatMarketPrice(instrument)}</span>
@@ -199,7 +200,7 @@ export function MarketExplorer({
           })}
         </div>}
         {!loading && favoritesOnly && unavailableVisible.map(item => <div key={item.instrumentId} className={styles.unavailable}>
-          <strong>{item.symbol} · {item.displayName}</strong><small>{getReviewReasons(item, {}, clock).map(reason => reviewReasonText[language][reason]).join(' · ')}</small>
+          <strong>{item.symbol} · {item.displayName}</strong><ReviewReasonDisplay item={item} reasons={getReviewReasons(item, {}, clock)} language={language} />
           <button type="button" aria-label={`${language === 'ko' ? '관심 해제' : 'Remove from watchlist'} ${item.symbol}`} onClick={() => removeFromWatchlist(item.instrumentId)}>★</button>
         </div>)}
       </div>

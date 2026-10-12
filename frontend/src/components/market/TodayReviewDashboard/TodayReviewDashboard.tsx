@@ -1,7 +1,7 @@
 import { useId, useState } from 'react'
 
 import type { Language } from '@/i18n/translations'
-import { reviewReasonText } from '@/services/watchlist/reviewQueue'
+import { ReviewReasonDisplay } from '@/components/market/ReviewReasonDisplay/ReviewReasonDisplay'
 import type { TodayReviewModel, TodayReviewSummary } from '@/services/watchlist/todayReviewSummary'
 import type { MarketInstrument } from '@/types/market'
 import { formatMarketChange, formatMarketPrice } from '@/utils/formatMarketValue'
@@ -37,7 +37,7 @@ export function TodayReviewDashboard({ model, language, instruments, onOpen, onS
           <span>{text.cards[index]![0]}</span><b>{model.summary[key]}</b><small>{text.cards[index]![1]}</small>
         </button>)}
       </div>
-      <button type="button" className={styles.toggle} aria-expanded={showHighlights} aria-controls={panelId} onClick={() => setShowHighlights(value => !value)}>{text.highlights} {model.summary.reviewQueueCount} {showHighlights ? '▴' : '▾'}</button>
+      <button type="button" className={styles.toggle} aria-label={`${text.highlights} ${model.summary.reviewQueueCount}`} aria-expanded={showHighlights} aria-controls={panelId} onClick={() => setShowHighlights(value => !value)}>{text.highlights} {model.summary.reviewQueueCount} {showHighlights ? '▴' : '▾'}</button>
     </div>
     {model.summary.reviewQueueCount === 0 && !showHighlights && <span className={styles.empty}>{text.empty}</span>}
     <div className={styles.highlights} id={panelId} hidden={!showHighlights}>
@@ -48,7 +48,7 @@ export function TodayReviewDashboard({ model, language, instruments, onOpen, onS
         const price = instrument && Number.isFinite(instrument.lastPrice) ? formatMarketPrice(instrument) : snapshot?.currentPrice !== undefined && Number.isFinite(snapshot.currentPrice) ? `${snapshot.currentPrice.toLocaleString()} ${entry.item.quote ?? ''}` : null
         return <li key={entry.item.instrumentId}>
           <div><strong>{entry.item.symbol}</strong><small>{entry.item.displayName}</small></div>
-          <div><span>{snapshot?.finalReadTitle || text.limited}</span><small>{entry.reasons[0] ? reviewReasonText[language][entry.reasons[0]] : text.limited}</small></div>
+          <div><ReviewReasonDisplay item={entry.item} current={snapshot} reasons={entry.reasons} language={language} /><small>{snapshot?.finalReadTitle || text.limited}</small></div>
           <span className={styles.quote}>{price}{typeof change === 'number' && Number.isFinite(change) ? ` · ${formatMarketChange(change)}` : ''}</span>
           <button type="button" aria-label={`${text.open} ${entry.item.symbol} · ${text.title}`} disabled={!instrument} title={!instrument ? text.unavailable : undefined} onClick={() => { if (instrument) { onOpen(instrument); setShowHighlights(false) } }}>{text.open}</button>
         </li>

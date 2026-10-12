@@ -9,6 +9,7 @@ export interface WatchlistValue {
   addToWatchlist: (item: WatchlistItem) => void
   toggleWatchlist: (item: WatchlistItem) => void
   markReviewed: (id: string, snapshot: ReviewSnapshot) => void
+  saveReviewJournal: (id: string, note: string, reason: string) => void
   getWatchlistItem: (id: string) => WatchlistItem | undefined
   activeReview: { instrumentId: string; snapshot: ReviewSnapshot } | null
   setActiveReview: (value: { instrumentId: string; snapshot: ReviewSnapshot } | null) => void

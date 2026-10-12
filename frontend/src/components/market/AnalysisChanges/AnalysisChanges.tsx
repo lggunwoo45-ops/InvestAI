@@ -30,12 +30,26 @@ export function AnalysisChanges({ previous, current, language }: { previous?: Re
   const detailsId = useId()
   const text = copy[language]
   const comparison = compareAnalysisChanges(previous, current)
+  const summary = !previous?.analysisEvidence || !current?.analysisEvidence
+    ? (language === 'ko' ? '비교 가능한 이전 근거가 부족합니다.' : 'Previous comparable evidence is limited.')
+    : !comparison.compatible
+      ? (language === 'ko' ? '종목 또는 시장 기준이 달라 비교가 제한됩니다.' : 'Comparison is limited because the instrument or market context changed.')
+      : comparison.limited
+        ? (language === 'ko' ? '데이터 상태로 비교가 제한됩니다.' : 'Data availability limits comparison.')
+        : comparison.differences.some(value => value.status === 'weakened')
+          ? (language === 'ko' ? '이전 확인 이후 일부 근거가 약해졌습니다.' : 'Some evidence weakened since last review.')
+          : comparison.differences.some(value => value.status === 'improved')
+            ? (language === 'ko' ? '이전 확인 이후 주요 근거가 개선되었습니다.' : 'Key evidence improved since last review.')
+            : comparison.differences.some(value => value.status === 'unavailable' && value.previous !== value.current)
+              ? (language === 'ko' ? '일부 변화는 방향 판정이 어렵습니다.' : 'Some changes have no directional classification.')
+              : (language === 'ko' ? '비교 가능한 근거의 변화가 없습니다.' : 'Comparable evidence is unchanged.')
   const format = (value: string | number | undefined) => value === undefined ? text.values.unavailable
     : typeof value === 'number' ? String(value) : text.values[value as keyof typeof text.values] ?? value
   return <div className={styles.changes}>
     <button type="button" className={styles.toggle} aria-label={text.title} aria-expanded={expanded} aria-controls={expanded ? detailsId : undefined} onClick={() => {
       setExpanded(currentExpanded => !currentExpanded)
     }}><span aria-hidden="true">{expanded ? '▾' : '▸'}</span> {text.title}</button>
+    <small className={styles.summary}>{summary}</small>
     {expanded && <section id={detailsId} role="region" aria-label={text.title}>
       <dl>
         <div><dt>{text.previous}</dt><dd>{previous?.finalReadTitle || previous?.finalReadState || text.values.unavailable}</dd></div>
