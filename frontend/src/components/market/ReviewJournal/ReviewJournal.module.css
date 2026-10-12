@@ -1,0 +1,12 @@
+.journal { font-size: 11px; color: #c7d5e2; border-top: 1px solid #304456; padding-top: 5px; }
+.journal summary { cursor: pointer; padding: 4px 0; }
+.journal form { display: grid; gap: 4px; margin: 6px 0; }
+.journal input,.journal textarea { width: 100%; box-sizing: border-box; border: 1px solid #405668; border-radius: 4px; background: #101b27; color: inherit; padding: 5px; font: inherit; }
+.journal textarea { resize: vertical; max-height: 100px; }
+.journal button { padding: 4px 9px; border: 1px solid #405668; border-radius: 4px; background: #142432; color: inherit; cursor: pointer; }
+.journal form div { display: flex; gap: 8px; align-items: center; }
+.journal section { display: grid; gap: 4px; }
+.journal ol { list-style: none; margin: 0; padding: 0; max-height: 190px; overflow: auto; }
+.journal li { display: grid; gap: 3px; padding: 5px 0; border-bottom: 1px solid #263442; }
+.journal time,.journal small,.locked { color: #9eafbd; font-size: 10px; }
+.journal li span,.journal li small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
