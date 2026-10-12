@@ -41,7 +41,7 @@ describe('Market instrument-list layout', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'MOCK' }))
     await screen.findByRole('img', { name: /BTC\/KRW 1H TradingView candlestick chart in mock mode/i })
 
-    const search = screen.getByRole('searchbox', { name: 'Search symbol, Korean or English name' })
+    const search = screen.getByRole('searchbox', { name: 'Search instruments' })
     const switcher = screen.getByRole('tab', { name: 'Crypto' }).closest('[data-market-workspace-switcher]')!
     expect(switcher.parentElement?.contains(search)).toBe(true)
     expect(document.getElementById('market-instrument-list')?.contains(switcher)).toBe(false)
@@ -59,14 +59,14 @@ describe('Market instrument-list layout', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Hide instruments' }))
 
     expect(screen.getByRole('button', { name: 'Show instruments' }).getAttribute('aria-expanded')).toBe('false')
-    expect(screen.queryByRole('searchbox', { name: 'Search symbol, Korean or English name' })).toBeNull()
+    expect(screen.queryByRole('searchbox', { name: 'Search instruments' })).toBeNull()
     expect(screen.getByRole('img', { name: /XRP\/KRW 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
     expect(screen.getByRole('complementary', { name: 'AI Copilot' }).textContent).toContain('XRP/KRW')
     expect(window.localStorage.getItem(MARKET_LIST_COLLAPSED_KEY)).toBe('true')
 
     fireEvent.click(screen.getByRole('button', { name: 'Show instruments' }))
-    expect((screen.getByRole('searchbox', { name: 'Search symbol, Korean or English name' }) as HTMLInputElement).value).toBe('XRP')
-    expect(screen.getByText('Sorted by').closest('[role="status"]')?.textContent).toContain('Price')
+    expect((screen.getByRole('searchbox', { name: 'Search instruments' }) as HTMLInputElement).value).toBe('XRP')
+    expect(screen.getByRole('button', { name: /Sort by Price/ }).getAttribute('aria-pressed')).toBe('true')
     expect(screen.getByRole('button', { name: 'Remove from watchlist XRP/KRW' }).getAttribute('aria-pressed')).toBe('true')
     expect(screen.getByRole('button', { name: 'Open XRP/KRW' }).getAttribute('aria-current')).toBe('true')
     expect(window.localStorage.getItem(MARKET_LIST_COLLAPSED_KEY)).toBe('false')

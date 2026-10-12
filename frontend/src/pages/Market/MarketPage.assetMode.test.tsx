@@ -16,7 +16,7 @@ describe('Market asset separation', () => {
   it('defaults to Crypto and selects BTC/KRW as soon as a catalog is available', async () => {
     render(<App />)
 
-    expect(await screen.findByRole('heading', { name: 'Crypto Market' })).toBeTruthy()
+    expect(await screen.findByRole('region', { name: 'Market Explorer' })).toBeTruthy()
     expect(screen.queryByText('Review crypto movement from Upbit and Binance markets.')).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'MOCK' }))
 
@@ -35,7 +35,7 @@ describe('Market asset separation', () => {
     await screen.findByRole('img', { name: /BTC\/KRW 1H TradingView candlestick chart in mock mode/i })
 
     fireEvent.click(screen.getByRole('tab', { name: 'Korea Stocks' }))
-    expect(await screen.findByRole('heading', { name: 'Korea Stocks Beta' })).toBeTruthy()
+    expect(await screen.findByRole('region', { name: 'Market Explorer' })).toBeTruthy()
     expect(screen.queryByText('KOSPI / KOSDAQ instruments are shown with beta data. A live stock provider is not connected yet.')).toBeNull()
     expect(await screen.findByRole('img', { name: /005930 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
     expect(screen.getByRole('tab', { name: 'KOSPI' }).getAttribute('aria-selected')).toBe('true')
@@ -52,13 +52,13 @@ describe('Market asset separation', () => {
     render(<App />)
     fireEvent.click(await screen.findByRole('tab', { name: 'US Stocks' }))
 
-    expect(await screen.findByRole('heading', { name: 'US Stocks Beta' })).toBeTruthy()
+    expect(await screen.findByRole('region', { name: 'Market Explorer' })).toBeTruthy()
     expect(screen.queryByText('US stock instruments are shown with beta data. A live stock provider is not connected yet.')).toBeNull()
     expect(await screen.findByRole('img', { name: /AAPL 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
     expect(screen.getByRole('tab', { name: 'NASDAQ' }).getAttribute('aria-selected')).toBe('true')
     expect(screen.getByRole('tab', { name: 'NYSE' })).toBeTruthy()
 
-    const search = screen.getByRole('searchbox', { name: 'Search symbol, Korean or English name' })
+    const search = screen.getByRole('searchbox', { name: 'Search instruments' })
     fireEvent.change(search, { target: { value: 'XRP/KRW' } })
     expect(await screen.findByText('No instruments match this market search.')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Open BTC/KRW' })).toBeNull()
@@ -84,16 +84,16 @@ describe('Market asset separation', () => {
     expect(await screen.findByRole('tab', { name: '코인' })).toBeTruthy()
     expect(screen.getByRole('tab', { name: '한국 주식' })).toBeTruthy()
     expect(screen.getByRole('tab', { name: '미국 주식' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: '코인 마켓' })).toBeTruthy()
+    expect(screen.getByRole('region', { name: '마켓 탐색' })).toBeTruthy()
     expect(screen.queryByText('업비트와 바이낸스 기준으로 코인 흐름을 확인합니다.')).toBeNull()
     expect(screen.getByRole('tab', { name: '코인' }).closest('[data-market-workspace-switcher]')).toBeTruthy()
     expect(screen.getAllByRole('tab', { name: '코인' })).toHaveLength(1)
 
     fireEvent.click(screen.getByRole('tab', { name: '한국 주식' }))
-    expect(await screen.findByRole('heading', { name: '한국 주식 Beta' })).toBeTruthy()
+    expect(await screen.findByRole('region', { name: '마켓 탐색' })).toBeTruthy()
     expect(screen.queryByText('KOSPI / KOSDAQ 종목은 베타 데이터로 표시됩니다. 실시간 주식 공급자는 아직 연결되지 않았습니다.')).toBeNull()
     fireEvent.click(screen.getByRole('tab', { name: '미국 주식' }))
-    expect(await screen.findByRole('heading', { name: '미국 주식 Beta' })).toBeTruthy()
+    expect(await screen.findByRole('region', { name: '마켓 탐색' })).toBeTruthy()
     expect(screen.queryByText('미국 주식은 베타 데이터로 표시됩니다. 실시간 주식 공급자는 아직 연결되지 않았습니다.')).toBeNull()
   })
 })
