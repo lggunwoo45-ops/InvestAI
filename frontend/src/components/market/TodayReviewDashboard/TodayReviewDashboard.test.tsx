@@ -37,6 +37,16 @@ describe('TodayReviewDashboard', () => {
     }
     expect(document.body.textContent).not.toMatch(/매수|매도|매수가|진입가|손절가|익절가|목표가|buy signal|sell signal|entry price|stop loss|take profit|target price/i)
   })
+  it('keeps the primary reason first and collapses highlights without removing summary cards', () => {
+    renderWithProviders(<TodayReviewDashboard model={model} language="en" instruments={rows} onOpen={vi.fn()} onScopeChange={vi.fn()} />)
+    const first = screen.getAllByRole('listitem')[0]
+    expect(first.querySelectorAll('strong')[1]?.textContent).toBe('First review needed')
+    fireEvent.click(screen.getByRole('button', { name: 'Review highlights 7', expanded: true }))
+    expect(screen.queryByRole('listitem')).toBeNull()
+    expect(screen.getByRole('button', { name: 'Watchlist 7 Saved instruments' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Review highlights 7', expanded: false }))
+    expect(screen.getAllByRole('listitem')).toHaveLength(5)
+  })
   it('starts compact when empty and shows the empty state', () => {
     renderWithProviders(<TodayReviewDashboard model={buildTodayReviewSummary([])} language="en" instruments={new Map()} onOpen={vi.fn()} onScopeChange={vi.fn()} />)
     expect(screen.getByText('No instruments need review today.')).toBeTruthy()

@@ -44,6 +44,25 @@ describe('Analysis changes', () => {
   })
   afterEach(() => vi.restoreAllMocks())
 
+  it('shows an evidence summary while keeping comparison details collapsed', () => {
+    const previous = baseline(first)
+    if (!previous.analysisEvidence) throw new Error('Fixture evidence required')
+    const current = { ...previous, analysisEvidence: { ...previous.analysisEvidence, technicalTrend: 'upward' as const } }
+    const view = renderWithProviders(<AnalysisChanges previous={previous} current={current} language="en" />)
+    expect(screen.getByText('Key evidence improved since last review.')).toBeTruthy()
+    expect(screen.queryByRole('region', { name: 'Analysis changes' })).toBeNull()
+    view.rerender(<AnalysisChanges previous={current} current={previous} language="en" />)
+    expect(screen.getByText('Some evidence weakened since last review.')).toBeTruthy()
+    view.rerender(<AnalysisChanges previous={previous} current={{ ...previous, currentPrice: 110 }} language="en" />)
+    expect(screen.getByText('Some changes have no directional classification.')).toBeTruthy()
+    expect(screen.queryByText('Key evidence improved since last review.')).toBeNull()
+    view.rerender(<AnalysisChanges previous={{ ...previous, analysisEvidence: undefined }} current={current} language="ko" />)
+    expect(screen.getByText('비교 가능한 이전 근거가 부족합니다.')).toBeTruthy()
+    view.rerender(<AnalysisChanges previous={previous} current={{ ...current, analysisEvidence: { ...current.analysisEvidence, exchange: 'other' } }} language="ko" />)
+    expect(screen.getByText('종목 또는 시장 기준이 달라 비교가 제한됩니다.')).toBeTruthy()
+    expect(document.body.textContent).not.toMatch(/매수|매도|매수가|진입가|손절가|익절가|목표가|buy signal|sell signal|entry price|stop loss|take profit|target price/i)
+  })
+
   it('starts collapsed and exposes explicit states, timestamps and neutral indicators', () => {
     renderWithProviders(<AnalysisChanges previous={baseline(first)} current={{ ...baseline(first), currentPrice: 110 }} language="en" />)
     expect(screen.getByRole('button', { name: 'Analysis changes', expanded: false })).toBeTruthy()

@@ -1,4 +1,4 @@
-import { loadWatchlist, saveWatchlist, itemFromInstrument, reviewItem, sanitizeItems, type ReviewSnapshot, type WatchlistItem } from '@/services/watchlist/watchlistStorage'
+import { loadWatchlist, saveWatchlist, itemFromInstrument, reviewItem, updateReviewJournal, sanitizeItems, type ReviewSnapshot, type WatchlistItem } from '@/services/watchlist/watchlistStorage'
 import { marketDataService } from '@/services/market/marketDataService'
 import { useCallback, useEffect, useMemo, useState, type PropsWithChildren } from 'react'
 
@@ -120,8 +120,12 @@ export function WatchlistProvider({ children }: PropsWithChildren) {
     if (!favoriteIds.has(id)) return
     setMetadata(current => reviewItem(watchlistItems.map(item => current.find(entry => entry.instrumentId === item.instrumentId) ?? item), id, snapshot))
   }, [favoriteIds, watchlistItems])
+  const saveReviewJournal = useCallback((id: string, note: string, reason: string) => {
+    if (!favoriteIds.has(id)) return
+    setMetadata(current => updateReviewJournal(watchlistItems.map(item => current.find(entry => entry.instrumentId === item.instrumentId) ?? item), id, note, reason))
+  }, [favoriteIds, watchlistItems])
   const value = useMemo<WatchlistValue>(() => ({
-    watchlistItems, isWatchlisted, addToWatchlist, toggleWatchlist, markReviewed, getWatchlistItem, activeReview, setActiveReview,
+    watchlistItems, isWatchlisted, addToWatchlist, toggleWatchlist, markReviewed, saveReviewJournal, getWatchlistItem, activeReview, setActiveReview,
     watchlists,
     activeWatchlistId,
     favoriteIds,
@@ -134,7 +138,7 @@ export function WatchlistProvider({ children }: PropsWithChildren) {
     removeFromWatchlist,
     reorderWatchlist,
     trackRecentlyViewed,
-  }), [watchlistItems, isWatchlisted, addToWatchlist, toggleWatchlist, markReviewed, getWatchlistItem, activeReview, activeWatchlistId, createWatchlist, deleteWatchlist, favoriteIds, recentlyViewedIds, removeFromWatchlist, reorderWatchlist, toggleFavorite, toggleInWatchlist, trackRecentlyViewed, watchlists])
+  }), [watchlistItems, isWatchlisted, addToWatchlist, toggleWatchlist, markReviewed, saveReviewJournal, getWatchlistItem, activeReview, activeWatchlistId, createWatchlist, deleteWatchlist, favoriteIds, recentlyViewedIds, removeFromWatchlist, reorderWatchlist, toggleFavorite, toggleInWatchlist, trackRecentlyViewed, watchlists])
 
   return <WatchlistContext value={value}>{children}</WatchlistContext>
 }

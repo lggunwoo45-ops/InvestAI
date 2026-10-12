@@ -8,3 +8,4 @@
 .changes ul { padding-left: 18px; }
 .changes li { margin-bottom: 6px; }
 .changes small { opacity: .8; }
+.summary { display: block; margin-top: 3px; line-height: 1.35; }
