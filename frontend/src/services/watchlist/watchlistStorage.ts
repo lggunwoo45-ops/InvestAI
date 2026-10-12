@@ -1,9 +1,11 @@
 import type { MarketInstrument } from '@/types/market'
 import type { AiCopilotFinalReadState } from '@/services/aiCopilot/aiCopilotFinalRead'
 import { getReviewReasons } from './reviewQueue'
+import { sanitizeAnalysisEvidence, type AnalysisChangeEvidence } from './analysisChangeEvidence'
 
 export const WATCHLIST_REVIEW_KEY = 'market-copilot.watchlist.v1'
 export interface ReviewSnapshot {
+  analysisEvidence?: AnalysisChangeEvidence
   finalReadState: AiCopilotFinalReadState
   finalReadTitle: string
   finalReadSummary: string
@@ -31,6 +33,7 @@ export interface WatchlistItem {
   reviewHistory?: readonly ReviewHistoryEntry[]
 }
 export interface ReviewHistoryEntry {
+  analysisEvidence?: AnalysisChangeEvidence
   reviewedAt: string
   finalReadState: AiCopilotFinalReadState
   finalReadTitle: string
@@ -55,7 +58,7 @@ function normalizeHistory(value: unknown): ReviewHistoryEntry[] {
     if (!record(entry) || !timestamp(entry.reviewedAt)) continue
     const snapshot = sanitizeSnapshot({ ...entry, capturedAt: entry.reviewedAt })
     if (!snapshot) continue
-    history.push({ reviewedAt: entry.reviewedAt, finalReadState: snapshot.finalReadState, finalReadTitle: snapshot.finalReadTitle, finalReadSummary: snapshot.finalReadSummary, currentPrice: snapshot.currentPrice, priceChange24h: snapshot.priceChange24h, primaryReviewReason: journalText(entry.primaryReviewReason, WATCH_REASON_LIMIT), note: journalText(entry.note, REVIEW_NOTE_LIMIT) })
+    history.push({ reviewedAt: entry.reviewedAt, finalReadState: snapshot.finalReadState, finalReadTitle: snapshot.finalReadTitle, finalReadSummary: snapshot.finalReadSummary, currentPrice: snapshot.currentPrice, priceChange24h: snapshot.priceChange24h, ...(snapshot.analysisEvidence ? { analysisEvidence: snapshot.analysisEvidence } : {}), primaryReviewReason: journalText(entry.primaryReviewReason, WATCH_REASON_LIMIT), note: journalText(entry.note, REVIEW_NOTE_LIMIT) })
   }
   return history.sort((a, b) => Date.parse(b.reviewedAt) - Date.parse(a.reviewedAt)).slice(0, 10)
 }
@@ -70,6 +73,8 @@ function timestamp(value: unknown): value is string {
 export function sanitizeSnapshot(value: unknown): ReviewSnapshot | undefined {
   if (!record(value) || !states.has(value.finalReadState as string) || typeof value.finalReadTitle !== 'string' || typeof value.finalReadSummary !== 'string' || !timestamp(value.capturedAt)) return undefined
   const snapshot: ReviewSnapshot = { finalReadState: value.finalReadState as AiCopilotFinalReadState, finalReadTitle: value.finalReadTitle, finalReadSummary: value.finalReadSummary, capturedAt: value.capturedAt }
+  const analysisEvidence = sanitizeAnalysisEvidence(value.analysisEvidence)
+  if (analysisEvidence) snapshot.analysisEvidence = analysisEvidence
   for (const field of ['currentPrice', 'priceChange24h', 'candidateReviewScore'] as const) {
     const number = value[field]
     if (typeof number === 'number' && Number.isFinite(number)) snapshot[field] = number
@@ -136,6 +141,7 @@ export function reviewItem(items: readonly WatchlistItem[], id: string, value: R
       finalReadSummary: snapshot.finalReadSummary,
       currentPrice: snapshot.currentPrice,
       priceChange24h: snapshot.priceChange24h,
+      ...(snapshot.analysisEvidence ? { analysisEvidence: snapshot.analysisEvidence } : {}),
       primaryReviewReason: getReviewReasons(item, { snapshot, priceChange24h: snapshot.priceChange24h }, Date.parse(snapshot.capturedAt))[0],
       note,
     }
