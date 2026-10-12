@@ -68,3 +68,6 @@ These items do not authorize real AI, paid access, news proxy, account, payment,
 # Sprint 10.33 — Developer workflow hardening
 
 Repository PowerShell preflight, frontend validation and local sprint finish scripts; shared component test providers and provider regression coverage. Product behavior and investment calculations are unchanged. Validation must complete before a local commit; no push, PR, merge or deployment is part of this workflow.
+# Sprint 10.34 — Watchlist and Review Queue
+
+Shared Market/dashboard watchlist membership, local reviewed snapshots, compact venue scopes and deterministic daily review reasons. AI Copilot offers confirmation without changing analysis calculations. Implementation written; finish-script validation and local commit pending. Cloud sync, notifications and trading integrations remain deferred.

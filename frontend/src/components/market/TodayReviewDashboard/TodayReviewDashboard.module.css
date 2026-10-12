@@ -1,0 +1,17 @@
+.dashboard { position: relative; min-width: 0; border-bottom: 1px solid #263442; background: #0c141d; color: #dce7ef; }
+.strip { display: flex; align-items: center; gap: 8px; padding: 5px 12px; }
+.title { flex-shrink: 0; font-size: 11px; }
+.cards { display: flex; flex: 1; gap: 4px; min-width: 0; overflow-x: auto; }
+.card { flex: 1 0 auto; display: grid; grid-template-columns: 1fr auto; gap: 1px 8px; padding: 4px 7px; border: 1px solid #304456; border-radius: 4px; background: #111d28; color: inherit; cursor: pointer; text-align: left; }
+.card span,.card b { font-size: 11px; }
+.card small { grid-column: 1 / -1; font-size: 9px; color: #9fadb9; }
+.toggle { flex-shrink: 0; padding: 5px; border: 0; background: transparent; color: #b5cddd; cursor: pointer; font-size: 10px; }
+.empty { display: block; padding: 0 12px 4px; font-size: 10px; color: #98aaba; }
+.highlights { position: absolute; z-index: 20; top: 100%; right: 8px; width: min(680px, calc(100% - 16px)); max-height: 240px; overflow: auto; padding: 8px; border: 1px solid #405668; border-radius: 4px; background: #101b27; box-shadow: 0 8px 24px #0008; font-size: 11px; }
+.highlights ul { margin: 0; padding: 0; list-style: none; }
+.highlights li { display: grid; grid-template-columns: minmax(70px, 1fr) minmax(90px, 1.4fr) auto auto; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid #263442; }
+.highlights small { display: block; margin-top: 2px; color: #a6b6c4; }
+.highlights button { padding: 4px 7px; border: 1px solid #405668; background: transparent; color: inherit; cursor: pointer; }
+.highlights button:disabled { opacity: .45; cursor: default; }
+.dashboard button:focus-visible { outline: 2px solid #8ebcff; outline-offset: -2px; }
+@media (max-width: 900px) { .title { display: none; } .card small { display: none; } .highlights li { grid-template-columns: 1fr 1fr auto; } .quote { grid-column: 1 / 3; grid-row: 2; } }

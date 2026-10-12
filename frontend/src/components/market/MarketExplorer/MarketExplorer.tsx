@@ -1,4 +1,7 @@
-import { useCallback, useDeferredValue, useEffect, useMemo, useRef } from 'react'
+import { useWatchlists } from '@/hooks/useWatchlists'
+import { getReviewReasons, currentReviewData, reviewReasonText } from '@/services/watchlist/reviewQueue'
+import { itemFromInstrument } from '@/services/watchlist/watchlistStorage'
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 
 import { DataModeControl } from '@/components/market-data/DataModeControl/DataModeControl'
@@ -19,6 +22,8 @@ interface MarketExplorerProps {
   activeInstrument?: MarketInstrument | null
   search: string
   onSearchChange: (value: string) => void
+  reviewOnly?: boolean
+  onReviewOnlyChange?: (value: boolean) => void
   favoritesOnly: boolean
   onFavoritesOnlyChange: (value: boolean) => void
   sortField: ExplorerSortField
@@ -43,6 +48,7 @@ const spotQuotes: readonly BinanceSpotQuoteFilter[] = ['USDT', 'FDUSD', 'BTC', '
 export function MarketExplorer({
   venue, mode, catalog, loading, error, selectedInstrumentId, activeInstrument,
   search, onSearchChange, favoritesOnly, onFavoritesOnlyChange,
+  reviewOnly: controlledReviewOnly, onReviewOnlyChange,
   sortField, onSortFieldChange, sortDirection, onSortDirectionChange,
   spotQuoteFilter, onSpotQuoteFilterChange,
   favoriteIds, onVenueChange, onModeChange,
@@ -50,6 +56,18 @@ export function MarketExplorer({
 }: MarketExplorerProps) {
   const { language } = useLanguage()
   const text = marketExplorerText[language]
+  const { watchlistItems, getWatchlistItem, activeReview, removeFromWatchlist } = useWatchlists()
+  const [localReviewOnly, setLocalReviewOnly] = useState(false)
+  const reviewOnly = controlledReviewOnly ?? localReviewOnly
+  const setReviewOnly = onReviewOnlyChange ?? setLocalReviewOnly
+  const [clock, setClock] = useState(Date.now)
+  useEffect(() => { const timer = window.setInterval(() => setClock(Date.now()), 60_000); return () => window.clearInterval(timer) }, [])
+  const reasonsFor = (instrument: MarketInstrument) => getReviewReasons(getWatchlistItem(instrument.id) ?? itemFromInstrument(instrument), currentReviewData(instrument, activeReview), clock)
+  const savedRows = (catalog?.instruments ?? []).filter(item => favoriteIds.has(item.id))
+  const unavailable = watchlistItems.filter(item => item.marketType === venue && !catalog?.instruments.some(row => row.id === item.instrumentId))
+  const savedCount = savedRows.length + unavailable.length
+  const reviewCount = savedRows.filter(item => reasonsFor(item).length > 0).length + unavailable.filter(item => getReviewReasons(item, {}, clock).length > 0).length
+  const unavailableVisible = favoritesOnly ? unavailable.filter(item => (!reviewOnly || getReviewReasons(item, {}, clock).length > 0) && `${item.symbol} ${item.displayName}`.toLowerCase().includes(search.toLowerCase())) : []
   const scrollRef = useRef<HTMLDivElement>(null)
   const deferredSearch = useDeferredValue(search)
   const group = groupForVenue(venue)
@@ -59,10 +77,11 @@ export function MarketExplorer({
   const venues = group === 'crypto'
     ? venuesByGroup.crypto.filter((item) => item.startsWith(cryptoProvider))
     : venuesByGroup[group]
-  const instruments = useMemo(() => queryMarketInstruments(catalog?.instruments ?? [], {
+  const queried = useMemo(() => queryMarketInstruments(catalog?.instruments ?? [], {
     search: deferredSearch, favoritesOnly, favoriteIds, sortField, sortDirection,
-    spotQuoteFilter: venue === 'binance-spot' ? spotQuoteFilter : undefined,
+    spotQuoteFilter: !favoritesOnly && venue === 'binance-spot' ? spotQuoteFilter : undefined,
   }), [catalog, deferredSearch, favoriteIds, favoritesOnly, sortDirection, sortField, spotQuoteFilter, venue])
+  const instruments = reviewOnly && favoritesOnly ? queried.filter(item => reasonsFor(item).length > 0) : queried
   const providerLabel = isCrypto ? text.provider[cryptoProvider] : text.provider.stock
   const source = catalog?.source ?? (isCrypto && mode === 'live' ? 'live' : 'mock')
   const venueLabel = text.venue[venue].split(' · ').at(-1)
@@ -74,20 +93,20 @@ export function MarketExplorer({
   const virtualizer = useVirtualizer({
     count: instruments.length,
     getScrollElement: () => scrollRef.current,
-    estimateSize: () => compact ? 58 : 62,
+    estimateSize: () => favoritesOnly ? 100 : compact ? 58 : 62,
     getItemKey,
     overscan: 8,
     useFlushSync: false,
     initialRect: { width: compact ? 260 : 900, height: 600 },
   })
-  const rowHeight = compact ? 58 : 62
+  const rowHeight = favoritesOnly ? 100 : compact ? 58 : 62
   const measuredItems = virtualizer.getVirtualItems()
   // The initial rows remain accessible before ResizeObserver reports a viewport.
   const visibleItems = measuredItems.length > 0
     ? measuredItems
     : instruments.slice(0, 20).map((instrument, index) => ({ key: instrument.id, index, start: index * rowHeight }))
 
-  useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = 0 }, [venue, search, favoritesOnly, sortField, sortDirection, spotQuoteFilter])
+  useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = 0 }, [venue, search, favoritesOnly, reviewOnly, sortField, sortDirection, spotQuoteFilter])
 
   const changeProvider = (provider: 'upbit' | 'binance') =>
     onVenueChange(provider === 'upbit' ? 'upbit-krw' : 'binance-spot')
@@ -118,7 +137,11 @@ export function MarketExplorer({
 
       <div className={styles.controls}>
         <div className={styles.filterRow}>
-          <button type="button" className={favoritesOnly ? styles.activeFavorite : ''} aria-pressed={favoritesOnly} onClick={() => onFavoritesOnlyChange(!favoritesOnly)}>★ {text.favorites}</button>
+          <div className={styles.scopes} role="group" aria-label={language === 'ko' ? '목록 범위' : 'List scope'}>
+            <button type="button" aria-pressed={!favoritesOnly} onClick={() => { onFavoritesOnlyChange(false); setReviewOnly(false) }}>{language === 'ko' ? '전체' : 'All'}</button>
+            <button type="button" aria-pressed={favoritesOnly && !reviewOnly} onClick={() => { onFavoritesOnlyChange(true); setReviewOnly(false) }}>{language === 'ko' ? '관심' : 'Watchlist'} {savedCount}</button>
+            <button type="button" aria-pressed={favoritesOnly && reviewOnly} onClick={() => { onFavoritesOnlyChange(true); setReviewOnly(true) }}>{language === 'ko' ? '다시 볼 종목' : 'Review queue'} {reviewCount}</button>
+          </div>
           <span className={styles.sortHint}>{text.sortHint}</span>
           <label className={styles.sortFallback}><span>{text.sort}</span><select aria-label={text.sort} value={sortField} onChange={(event) => onSortFieldChange(event.target.value as ExplorerSortField)}>
             {sortFields.map((field) => <option key={field} value={field}>{field === 'change' ? text.change : text[field]}</option>)}
@@ -151,12 +174,12 @@ export function MarketExplorer({
       <div className={styles.scroll} ref={scrollRef} role="region" aria-label={`${text.venue[venue]} ${text.instruments}`}>
         {loading && <div className={styles.state}>{text.loading}</div>}
         {!loading && error && <div className={styles.state}><p>{text.sourceUnavailable}</p><small>{error}</small><button type="button" onClick={onRetry}>{text.retry}</button></div>}
-        {!loading && !error && instruments.length === 0 && <div className={styles.state}><p>{text.empty}</p>{search && <button type="button" onClick={() => onSearchChange('')}>{text.clearSearch}</button>}</div>}
+        {!loading && !error && instruments.length === 0 && unavailableVisible.length === 0 && <div className={styles.state}><p>{favoritesOnly ? (language === 'ko' ? (reviewOnly ? '다시 볼 종목이 없습니다.' : '관심종목이 없습니다.') : (reviewOnly ? 'No instruments need review.' : 'No watchlist items.')) : text.empty}</p>{search && <button type="button" onClick={() => onSearchChange('')}>{text.clearSearch}</button>}</div>}
         {!loading && !error && instruments.length > 0 && <div className={styles.virtualSize} style={{ height: Math.max(virtualizer.getTotalSize(), instruments.length * rowHeight) }}>
           {visibleItems.map((item) => {
             const instrument = instruments[item.index]
             const favorite = favoriteIds.has(instrument.id)
-            return <div key={item.key} className={`${styles.row} ${selectedInstrumentId === instrument.id ? styles.selected : ''}`} style={{ transform: `translateY(${item.start}px)` }} data-index={item.index}>
+            return <div key={item.key} className={`${styles.row} ${favoritesOnly ? styles.reviewRow : ''} ${selectedInstrumentId === instrument.id ? styles.selected : ''}`} style={{ transform: `translateY(${item.start}px)` }} data-index={item.index}>
               <button type="button" className={styles.instrument} onClick={() => onSelect(instrument)} aria-label={`${text.open} ${instrument.symbol}`} aria-current={selectedInstrumentId === instrument.id ? 'true' : undefined}>
                 <span className={styles.identityLine}>
                   <strong>{instrument.displaySymbol ?? instrument.symbol}</strong>
@@ -165,15 +188,20 @@ export function MarketExplorer({
                 <small title={[instrument.koreanName, instrument.englishName ?? instrument.name].filter(Boolean).join(' · ')}>
                   {instrument.koreanName ? `${instrument.koreanName} · ${instrument.englishName ?? instrument.name}` : instrument.englishName ?? instrument.name}
                 </small>
+                {favoritesOnly && <small className={styles.reviewReason} title={reasonsFor(instrument).map(reason => reviewReasonText[language][reason]).join(' · ')}>{activeReview?.instrumentId === instrument.id ? activeReview.snapshot.finalReadTitle : ''} · {reasonsFor(instrument).map(reason => reviewReasonText[language][reason]).join(' · ') || (language === 'ko' ? '확인 완료' : 'Reviewed')}</small>}
                 {selectedInstrumentId === instrument.id && <em>{text.selected}</em>}
               </button>
               <span className={styles.numeric}>{formatMarketPrice(instrument)}</span>
               <span className={`${styles.numeric} ${instrument.change24hPercent >= 0 ? styles.positive : styles.negative}`}>{formatMarketChange(instrument.change24hPercent)}</span>
               <span className={styles.numeric}>{formatMarketVolume(instrument.volume24h, instrument.quoteCurrency)}</span>
-              <button type="button" className={styles.star} aria-label={`${favorite ? text.removeFavorite : text.addFavorite} ${instrument.symbol} ${text.favorite}`} aria-pressed={favorite} onClick={() => onToggleFavorite(instrument.id)}>{favorite ? '★' : '☆'}</button>
+              <button type="button" className={styles.star} aria-label={`${language === 'ko' ? (favorite ? '관심 해제' : '관심 등록') : (favorite ? 'Remove from watchlist' : 'Add to watchlist')} ${instrument.symbol}`} aria-pressed={favorite} onClick={() => onToggleFavorite(instrument.id)}>{favorite ? '★' : '☆'}</button>
             </div>
           })}
         </div>}
+        {!loading && favoritesOnly && unavailableVisible.map(item => <div key={item.instrumentId} className={styles.unavailable}>
+          <strong>{item.symbol} · {item.displayName}</strong><small>{getReviewReasons(item, {}, clock).map(reason => reviewReasonText[language][reason]).join(' · ')}</small>
+          <button type="button" aria-label={`${language === 'ko' ? '관심 해제' : 'Remove from watchlist'} ${item.symbol}`} onClick={() => removeFromWatchlist(item.instrumentId)}>★</button>
+        </div>)}
       </div>
     </section>
   )

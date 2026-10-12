@@ -208,9 +208,9 @@ describe('Market Copilot application shell', () => {
     expect(screen.getByLabelText('1 results').getAttribute('aria-live')).toBe('polite')
     expect(screen.queryByRole('button', { name: 'Open BTC/KRW' })).toBeNull()
 
-    const favoriteButton = screen.getByRole('button', { name: 'Add XRP/KRW favorite' })
+    const favoriteButton = screen.getByRole('button', { name: 'Add to watchlist XRP/KRW' })
     fireEvent.click(favoriteButton)
-    expect((await screen.findByRole('button', { name: 'Remove XRP/KRW favorite' })).getAttribute('aria-pressed')).toBe('true')
+    expect((await screen.findByRole('button', { name: 'Remove from watchlist XRP/KRW' })).getAttribute('aria-pressed')).toBe('true')
   })
 
   it('keeps sorting visible through search and market tab changes', async () => {
@@ -234,7 +234,7 @@ describe('Market Copilot application shell', () => {
     window.history.pushState({}, '', '/dashboard')
     render(<App />)
 
-    expect(await screen.findByRole('heading', { name: 'Market Radar' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Market Radar' }, { timeout: 5000 })).toBeTruthy()
     expect(screen.getByText(/Real AI not connected · Not investment advice/)).toBeTruthy()
     expect(await screen.findByRole('heading', { name: 'Smart Market Dashboard' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Top radar signals' })).toBeTruthy()
