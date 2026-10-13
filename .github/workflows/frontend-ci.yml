@@ -11,6 +11,8 @@ on:
 jobs:
   frontend-validation:
     runs-on: ubuntu-latest
+    env:
+      TZ: Asia/Seoul
 
     defaults:
       run:
@@ -39,13 +41,8 @@ jobs:
       - name: Run typecheck
         run: npm run typecheck
 
-      # Temporary CI quarantine: these two full-app route tests rely on fake timers
-      # and daily-snapshot route setup that is unstable on GitHub Actions.
-      # Sprint 10.44 should stabilize and restore them to the CI unit-test set.
-      - name: Run stable unit tests
-        run: |
-          TEST_FILES="$(find src -type f \( -name "*.test.ts" -o -name "*.test.tsx" \) ! -path "src/app/App.test.tsx" ! -path "src/pages/MyAnalysis/MyAnalysisPage.test.tsx" | sort | tr '\n' ' ')"
-          npm run test -- --maxWorkers=1 $TEST_FILES
+      - name: Run unit tests
+        run: npm run test -- --maxWorkers=1
 
       - name: Run production build
         run: npm run build
