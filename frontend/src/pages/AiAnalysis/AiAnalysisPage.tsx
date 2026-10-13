@@ -29,6 +29,8 @@ import { selectDailyBucketCandidates } from '@/services/candidateSnapshot/dailyB
 import { buildDailyBucketSnapshot } from '@/services/candidateSnapshot/dailyBucketSnapshot'
 import { loadDailyBucketSnapshots, saveDailyBucketSnapshot } from '@/services/candidateSnapshot/dailyBucketSnapshotStorage'
 import { buildMyInstrumentAnalysis } from '@/services/myAnalysis/myAnalysisEngine'
+import { EvidenceCandidatePanel } from '@/components/ai-analysis/EvidenceRecommendation'
+import { buildEvidenceCandidateRecommendation, recommendationAnchorContext } from '@/services/recommendation/evidenceCandidateRecommendation'
 import { buildBitcoinMarketAnchor } from '@/services/marketAnchor/bitcoinMarketAnchor'
 import { buildPracticalDecision } from '@/services/practicalDecision/practicalDecisionModel'
 import { buildReviewRanges } from '@/services/practicalDecision/reviewRangeModel'
@@ -158,6 +160,12 @@ export function AiAnalysisPage() {
     })
   }, [language, selectedInstrument, technicalLevelData.candles, technicalLevelData.currentPrice, technicalLevelData.dataQuality])
   const qualityDisplayedCount = candidateQualityStatus.displayed.length
+  const evidenceRecommendations = useMemo(() => activeInstruments.map((instrument) => {
+    const source = activeCatalogs.find((catalog) => catalog?.instruments.some((entry) => entry.id === instrument.id))
+    const hasTechnical = selectedInstrument?.id === instrument.id
+    const dataQuality = source?.source === 'mock' || (hasTechnical && technicalLevelData.dataQuality === 'mock') ? 'mock' : hasTechnical && !technicalLevelData.isLoading && technicalLevelData.dataQuality !== 'live' ? 'limited' : source?.source ?? 'unavailable'
+    return buildEvidenceCandidateRecommendation({ instrument, language, dataQuality, reviewScore: candidateSourceQualityInputs.get(instrument.id)?.reviewScore, btcAnchorContext: recommendationAnchorContext(bitcoinAnchor), ...(hasTechnical ? { candles: technicalLevelData.candles, technicalAnalysis } : {}), updatedAt: source ? new Date(source.fetchedAt).toISOString() : null })
+  }), [activeCatalogs, activeInstruments, bitcoinAnchor, candidateSourceQualityInputs, language, selectedInstrument, technicalAnalysis, technicalLevelData.candles, technicalLevelData.dataQuality, technicalLevelData.isLoading])
   const heldCount = candidateQualityStatus.heldForReview.length
   const excludedCount = candidateQualityStatus.excluded.length
   const snapshotStatus = !displaySnapshot ? 'pending' : displaySnapshot.tradingDate === basis.tradingDateLabel ? 'today' : 'previous'
@@ -188,6 +196,7 @@ export function AiAnalysisPage() {
   const heldVisibility = candidateDisplayFilter === 'wider' ? 'expanded' : displayMode === 'expert' ? 'collapsed' : 'hidden'
 
   return <>
+    <EvidenceCandidatePanel items={evidenceRecommendations} language={language} onSelect={(instrumentId) => navigate(`/my-analysis?instrumentId=${encodeURIComponent(instrumentId)}`)} />
     <AiAnalysisTerminalLayout
       header={<MarketTerminalHeader bucketLabel={bucketLabel} displayedCount={qualityDisplayedCount} heldCount={heldCount} excludedCount={excludedCount} dataState={activeCatalogSource} snapshotStatus={snapshotStatus} bitcoinAnchorStatus={bitcoinAnchor?.status ?? null} language={language} />}
       tabs={<MarketBucketSelector selected={bucketId} language={language} onChange={setBucketId} />}
