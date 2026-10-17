@@ -29,3 +29,15 @@
 @container (max-width: 900px) { .strip, .strip[data-asset-context='stock'] { grid-template-columns: repeat(2, 1fr); }.strip > section:nth-child(3) { border-left: 0; border-top: 1px solid var(--color-border); }.strip > section:nth-child(4) { border-top: 1px solid var(--color-border); } }
 @container (max-width: 520px) { .strip, .strip[data-asset-context='stock'] { grid-template-columns: 1fr; }.strip > section { border-left: 0; border-top: 1px solid var(--color-border); }.strip > section:first-child { border-top: 0; } }
 @media (max-width: 760px) { .strip { margin-inline: 15px; } }
+
+/* Optional evidence details remain compact and do not change the scan layout. */
+.recordView strong { color: var(--color-text); font-variant-numeric: tabular-nums; }
+.screeningDetails { margin-top: 9px; padding: 7px; border: 1px solid var(--color-border); background: #0d1820; }
+.screeningDetails summary { cursor: pointer; color: var(--color-text); font-size: 10px; font-weight: 650; line-height: 1.4; }
+.screeningDetails summary:focus-visible { outline: 2px solid #668d86; outline-offset: 3px; }
+.screeningGroup { margin-top: 8px; }
+.screeningGroup > strong { display: block; color: #b7c8c5; font-size: 9px; }
+.screeningGroup ul { display: grid; gap: 5px; margin: 5px 0 0; padding: 0; list-style: none; }
+.screeningGroup li { display: grid; gap: 3px; min-width: 0; padding: 5px 6px; border: 1px solid #24333c; color: var(--color-text-muted); font-size: 9px; overflow-wrap: anywhere; }
+.screeningGroup li strong { color: var(--color-text); font-size: 10px; }
+.screeningGroup li small { color: var(--color-text-subtle); font-size: 8px; }
