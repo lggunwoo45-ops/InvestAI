@@ -18,6 +18,9 @@ provider layer; trading and real AI remain intentionally unimplemented.
 
 - `frontend`: React 19, TypeScript, Vite, and a route-based desktop workspace
 - `docs`: architecture, security, API, UI, and roadmap documentation
+- `backend`: opt-in local AI explanation foundation; disabled by default,
+  server-only credentials and durable budget reservations. See
+  [Sprint 11.0](docs/sprint-11.0-secure-ai-backend.md) before any activation.
 
 ## Supported roadmap
 
