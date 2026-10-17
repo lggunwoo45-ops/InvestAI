@@ -3,7 +3,17 @@ import type { CandidateDisplayFilter, CandidateDisplayReason } from '@/services/
 import type { BitcoinMarketAnchor } from '@/services/marketAnchor/bitcoinMarketAnchor'
 import type { NewsProviderState } from '@/services/news/newsService'
 import type { MarketBucketId } from '@/types/marketBucket'
+import type { AnalysisDataQuality } from '@/types/myAnalysis'
 import styles from './MarketContextStrip.module.css'
+
+/** Read-only evidence from the existing bounded quality scan; never changes candidate ranking. */
+export interface CandidateScreeningDetail {
+  readonly instrumentId: string
+  readonly symbol: string
+  readonly reason: CandidateDisplayReason
+  readonly reviewScore: number | null
+  readonly dataQuality: AnalysisDataQuality
+}
 
 interface MarketContextStripProps {
   bucketId: MarketBucketId
@@ -14,6 +24,11 @@ interface MarketContextStripProps {
   excludedCount: number
   heldReasonCounts?: Readonly<Partial<Record<CandidateDisplayReason, number>>>
   excludedReasonCounts?: Readonly<Partial<Record<CandidateDisplayReason, number>>>
+  heldDetails?: readonly CandidateScreeningDetail[]
+  excludedDetails?: readonly CandidateScreeningDetail[]
+  showScreeningDetails?: boolean
+  savedRecordCount?: number | null
+  visibleRecordCount?: number | null
   displayFilter?: CandidateDisplayFilter
   onDisplayFilterChange?: (filter: CandidateDisplayFilter) => void
   dataState: 'live' | 'mock' | 'unavailable'
@@ -27,6 +42,10 @@ const copy = {
     filters: { strict: 'Strict', standard: 'Standard', wider: 'Wider view' },
     filterHelp: { strict: 'Review score 70 or above', standard: 'Review score 60 or above', wider: 'Standard candidates plus a separate held list' },
     reasons: { currentPriceUnavailable: 'Current price unavailable', reviewBasisInsufficient: 'Review basis insufficient', reviewScoreTooLow: 'Review score too low', dataQualityInsufficient: 'Data quality insufficient', currentBasisUnavailable: 'Current basis unavailable' },
+    savedRecord: 'Saved record', visibleRecord: 'Shown',
+    screeningTitle: 'Why candidates were held or excluded',
+    screeningNote: 'Current quality scan only. Opening this explanation does not change the saved daily record.',
+    qualities: { live: 'Live', mock: 'Mock / demo', limited: 'Limited', unavailable: 'Unavailable' },
     newsStates: { mock: 'Mock source', 'rss-ready': 'RSS available', 'rss-unavailable': 'RSS unavailable', 'local-proxy-ready': 'Local proxy available', 'local-proxy-unavailable': 'Local proxy unavailable', 'provider-not-configured': 'Provider not configured' },
   },
   ko: {
@@ -34,6 +53,10 @@ const copy = {
     filters: { strict: '엄격', standard: '표준', wider: '넓게 보기' },
     filterHelp: { strict: '검토 점수 70점 이상', standard: '검토 점수 60점 이상', wider: '표준 후보와 보류 후보를 구분해 표시' },
     reasons: { currentPriceUnavailable: '현재 가격 확인 불가', reviewBasisInsufficient: '판단 근거 부족', reviewScoreTooLow: '검토 점수 부족', dataQualityInsufficient: '데이터 품질 부족', currentBasisUnavailable: '현재 기준 비교 불가' },
+    savedRecord: '저장된 후보', visibleRecord: '현재 표시',
+    screeningTitle: '후보 보류·제외 사유 상세',
+    screeningNote: '현재 품질 검토 결과이며, 이 설명을 열어도 저장된 일일 기록은 변경되지 않습니다.',
+    qualities: { live: '실시간', mock: '모의 데이터', limited: '제한됨', unavailable: '사용 불가' },
     newsStates: { mock: '모의 뉴스', 'rss-ready': 'RSS 사용 가능', 'rss-unavailable': 'RSS 사용 불가', 'local-proxy-ready': '로컬 프록시 사용 가능', 'local-proxy-unavailable': '로컬 프록시 사용 불가', 'provider-not-configured': '뉴스 제공자 미설정' },
   },
 } as const
@@ -49,7 +72,7 @@ function labelledReasons(reasonCounts: Readonly<Partial<Record<CandidateDisplayR
   return (Object.entries(reasonCounts) as [CandidateDisplayReason, number][]).filter(([, count]) => count > 0).map(([reason, count]) => [labels[reason], count] as const)
 }
 
-export function MarketContextStrip({ bucketId, bucketLabel, bitcoinAnchor, displayedCount, heldCount = 0, excludedCount, heldReasonCounts = {}, excludedReasonCounts = {}, displayFilter = 'standard', onDisplayFilterChange, dataState, newsState, language }: MarketContextStripProps) {
+export function MarketContextStrip({ bucketId, bucketLabel, bitcoinAnchor, displayedCount, heldCount = 0, excludedCount, heldReasonCounts = {}, excludedReasonCounts = {}, heldDetails = [], excludedDetails = [], showScreeningDetails = false, savedRecordCount = null, visibleRecordCount = null, displayFilter = 'standard', onDisplayFilterChange, dataState, newsState, language }: MarketContextStripProps) {
   const t = copy[language]
   const crypto = bucketId === 'upbit' || bucketId === 'binance'
   const heldReasons = labelledReasons(heldReasonCounts, t.reasons)
@@ -73,10 +96,26 @@ export function MarketContextStrip({ bucketId, bucketLabel, bitcoinAnchor, displ
       <div className={styles.sectionTitle}><span>{t.quality}</span><strong>{t.filters[displayFilter]}</strong></div>
       <div className={styles.filters} role="group" aria-label={t.quality}>{filters.map((filter) => <button key={filter} type="button" aria-pressed={displayFilter === filter} title={t.filterHelp[filter]} onClick={() => onDisplayFilterChange?.(filter)}>{t.filters[filter]}</button>)}</div>
       <p>{t.filterHelp[displayFilter]}</p>
+      {savedRecordCount !== null && visibleRecordCount !== null && <p className={styles.recordView}>{t.savedRecord}: <strong>{savedRecordCount}</strong> · {t.visibleRecord}: <strong>{visibleRecordCount}</strong></p>}
       {heldReasons.length + excludedReasons.length > 0 ? <ul className={styles.reasons}>
         {heldReasons.map(([label, count]) => <li key={`held-${label}`}><span>{t.held}</span>{label} <b>{count}</b></li>)}
         {excludedReasons.map(([label, count]) => <li key={`excluded-${label}`}><span>{t.excluded}</span>{label} <b>{count}</b></li>)}
       </ul> : <p>{t.noIssues}</p>}
+      {showScreeningDetails && (heldDetails.length > 0 || excludedDetails.length > 0) && <details className={styles.screeningDetails}>
+        <summary>{t.screeningTitle} ({heldDetails.length + excludedDetails.length})</summary>
+        <p>{t.screeningNote}</p>
+        {[
+          { key: 'held', title: t.held, entries: heldDetails },
+          { key: 'excluded', title: t.excluded, entries: excludedDetails },
+        ].filter((group) => group.entries.length > 0).map((group) => <div className={styles.screeningGroup} key={group.key}>
+          <strong>{group.title}</strong>
+          <ul>{group.entries.map((entry) => <li key={entry.instrumentId}>
+            <strong>{entry.symbol}</strong>
+            <span>{t.reasons[entry.reason]}</span>
+            <small>{t.score}: {entry.reviewScore === null ? '—' : entry.reviewScore + '/100'} · {t.data}: {t.qualities[entry.dataQuality]}</small>
+          </li>)}</ul>
+        </div>)}
+      </details>}
     </section>
     <section className={styles.checks} aria-label={t.checks}>
       <div className={styles.sectionTitle}><span>{t.checks}</span><strong>{t.states[dataState]}</strong></div>
