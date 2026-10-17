@@ -38,6 +38,9 @@ jobs:
       - name: Run AI backend tests (mock provider only)
         run: npm test --prefix ../backend
 
+      - name: Run local AI gateway security tests
+        run: node --test tools/local-ai/*.test.mjs
+
       - name: Run lint
         run: npm run lint
 

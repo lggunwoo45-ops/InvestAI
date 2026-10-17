@@ -26,12 +26,20 @@ export function authorized(header, token) {
 }
 export function validate(input) {
   if (!input || Array.isArray(input) || typeof input !== 'object' ||
-      Object.keys(input).sort().join(',') !== 'consent,evidence,language,symbol' ||
+      !['consent,evidence,language,symbol', 'consent,evidence,language,maxCostUsd,symbol'].includes(Object.keys(input).sort().join(',')) ||
+      ('maxCostUsd' in input && (!Number.isFinite(input.maxCostUsd) || input.maxCostUsd <= 0 || input.maxCostUsd > 10000)) ||
       input.consent !== true || !['ko', 'en'].includes(input.language) ||
       typeof input.symbol !== 'string' || !/^[A-Za-z0-9._:/-]{1,32}$/.test(input.symbol) ||
       typeof input.evidence !== 'string' || !input.evidence.trim() ||
       Buffer.byteLength(input.evidence) > 4000 || /[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(input.evidence)) fail(400, 'invalid_input')
   return { symbol: input.symbol, language: input.language, evidence: input.evidence }
+}
+export function estimate(config, input) {
+  if (!config) fail(503, 'ai_disabled')
+  const evidence = validate(input)
+  const inputCeiling = Buffer.byteLength(JSON.stringify(evidence) + instructions) + 2048
+  const micros = Math.ceil(inputCeiling * config.inputRate + 512 * config.outputRate)
+  return { reservedUsd: micros / 1e6, inputTokenCeiling: inputCeiling, outputTokenCeiling: 512 }
 }
 // Exclusive lock serializes concurrent processes. A crash leaves the lock closed:
 // manual reconciliation is required rather than risking a duplicate reservation.
@@ -63,9 +71,10 @@ export function createAnalysis({ config, ledgerPath, fetchImpl = fetch, reserveI
     try {
       const text = JSON.stringify(evidence)
       // UTF-8 byte count is a conservative text token ceiling, with framing margin.
-      const inputCeiling = Buffer.byteLength(text + instructions) + 2048
       const outputCeiling = 512
-      const micros = Math.ceil(inputCeiling * config.inputRate + outputCeiling * config.outputRate)
+      const quoted = estimate(config, input)
+      if (input.maxCostUsd !== undefined && quoted.reservedUsd > input.maxCostUsd) fail(409, 'cost_limit_changed')
+      const micros = Math.round(quoted.reservedUsd * 1e6)
       await reserveImpl(ledgerPath, micros, Math.floor(config.budget * 1e6))
       // Never retry: timeouts, rejected responses and unknown outcomes keep reservation.
       const response = await fetchImpl('https://api.openai.com/v1/responses', {

@@ -1,10 +1,15 @@
 import { fileURLToPath, URL } from 'node:url'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
+import { createLocalAiGateway } from './tools/local-ai/gateway.mjs'
 
 export default defineConfig({
   base: './',
-  plugins: [react()],
+  plugins: [react(), {
+    name: 'local-ai-gateway',
+    configureServer(server) { server.middlewares.use(createLocalAiGateway()) },
+    configurePreviewServer(server) { server.middlewares.use(createLocalAiGateway()) },
+  }],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

@@ -1,10 +1,12 @@
 import type { RealtimeMarketProvider } from '@/services/market/contracts/RealtimeMarketProvider'
 import { ReconnectingWebSocket } from '@/services/market/realtime/ReconnectingWebSocket'
 import type { Candle, MarketDetailSnapshot, RecentTrade } from '@/types/marketDetail'
-import { applyTrade, buildOrderbookLevels, decodeWebSocketData, fetchJson, mergeCandle, updateInstrumentPrice } from './providerUtils'
+import { applyTrade, buildOrderbookLevels, createTradeCandle, decodeWebSocketData, fetchJson, mergeCandle, timeframeMilliseconds, updateInstrumentPrice } from './providerUtils'
+import { upbitRequestGate } from './upbitRequestGate'
 
 interface UpbitCandle {
   timestamp: number
+  candle_date_time_utc?: string
   opening_price: number
   high_price: number
   low_price: number
@@ -19,22 +21,12 @@ interface UpbitOrderbookUnit {
   bid_size: number
 }
 
-interface UpbitOrderbook {
-  orderbook_units: readonly UpbitOrderbookUnit[]
-}
-
 interface UpbitTrade {
   sequential_id: number
   timestamp: number
   trade_price: number
   trade_volume: number
   ask_bid: 'ASK' | 'BID'
-}
-
-interface UpbitTicker {
-  trade_price: number
-  signed_change_rate: number
-  acc_trade_volume_24h: number
 }
 
 type UpbitMessage = Record<string, unknown>
@@ -45,7 +37,7 @@ const candlePath = {
   '1m': 'minutes/1', '5m': 'minutes/5', '15m': 'minutes/15', '1H': 'minutes/60', '4H': 'minutes/240', '1D': 'days',
 } as const
 const candleStream = {
-  '1m': 'candle.1m', '5m': 'candle.5m', '15m': 'candle.15m', '1H': 'candle.60m', '4H': 'candle.240m', '1D': 'candle.1d',
+  '1m': 'candle.1m', '5m': 'candle.5m', '15m': 'candle.15m', '1H': 'candle.60m', '4H': 'candle.240m',
 } as const
 
 function upbitMarketCode(symbol: string): string {
@@ -75,15 +67,11 @@ export const upbitMarketDataProvider: RealtimeMarketProvider = {
 
   async loadSnapshot(instrument, timeframe, signal) {
     const market = instrument.providerSymbol ?? upbitMarketCode(instrument.symbol)
-    const [candleRows, orderbookRows, tradeRows, tickerRows] = await Promise.all([
-      fetchJson<readonly UpbitCandle[]>(`${restBaseUrl}/candles/${candlePath[timeframe]}?market=${market}&count=120`, signal),
-      fetchJson<readonly UpbitOrderbook[]>(`${restBaseUrl}/orderbook?markets=${market}`, signal),
-      fetchJson<readonly UpbitTrade[]>(`${restBaseUrl}/trades/ticks?market=${market}&count=20`, signal),
-      fetchJson<readonly UpbitTicker[]>(`${restBaseUrl}/ticker?markets=${market}`, signal),
-    ])
-    const ticker = tickerRows[0]
+    // Only historical candles need REST. Initial ticker/orderbook/trades arrive
+    // through the public stream instead of four competing browser REST calls.
+    const candleRows = await fetchJson<readonly UpbitCandle[]>(`${restBaseUrl}/candles/${candlePath[timeframe]}?market=${encodeURIComponent(market)}&count=120`, signal)
     const candles: readonly Candle[] = candleRows.map((row) => ({
-      timestamp: row.timestamp,
+      timestamp: row.candle_date_time_utc ? Date.parse(`${row.candle_date_time_utc}Z`) : Math.floor(row.timestamp / timeframeMilliseconds[timeframe]) * timeframeMilliseconds[timeframe],
       open: row.opening_price,
       high: row.high_price,
       low: row.low_price,
@@ -91,14 +79,11 @@ export const upbitMarketDataProvider: RealtimeMarketProvider = {
       volume: row.candle_acc_trade_volume,
     })).toReversed()
     return {
-      instrument: ticker ? {
-        ...updateInstrumentPrice(instrument, ticker.trade_price, ticker.signed_change_rate * 100),
-        volume24h: ticker.acc_trade_volume_24h,
-      } : instrument,
+      instrument,
       timeframe,
       candles,
-      orderbook: mapOrderbook(instrument.id, orderbookRows[0]?.orderbook_units ?? []),
-      recentTrades: tradeRows.map((trade, index) => mapTrade(trade, `snapshot-${index}`)).toSorted((left, right) => right.timestamp - left.timestamp),
+      orderbook: mapOrderbook(instrument.id, []),
+      recentTrades: [],
     }
   },
 
@@ -108,12 +93,13 @@ export const upbitMarketDataProvider: RealtimeMarketProvider = {
     let streamSequence = 0
     const socket = new ReconnectingWebSocket({
       createUrl: () => socketUrl,
+      beforeConnect: (signal) => upbitRequestGate.run(() => undefined, signal),
       onOpen: (activeSocket) => activeSocket.send(JSON.stringify([
         { ticket: `investai-${instrument.id}-${Date.now()}` },
-        { type: 'ticker', codes: [market], is_only_realtime: true },
-        { type: 'trade', codes: [market], is_only_realtime: true },
-        { type: 'orderbook', codes: [market], is_only_realtime: true },
-        { type: candleStream[timeframe], codes: [market], is_only_realtime: true },
+        { type: 'ticker', codes: [market] },
+        { type: 'trade', codes: [market] },
+        { type: 'orderbook', codes: [market] },
+        ...(timeframe === '1D' ? [] : [{ type: candleStream[timeframe], codes: [market] }]),
         { format: 'DEFAULT' },
       ])),
       onStatus: (status, reconnectAttempt) => onEvent({ status, reconnectAttempt }),
@@ -123,15 +109,19 @@ export const upbitMarketDataProvider: RealtimeMarketProvider = {
           const type = String(data.type)
           if (type === 'trade') {
             streamSequence += 1
-            snapshot = applyTrade(snapshot, mapTrade({
+            const trade = mapTrade({
               sequential_id: Number(data.sequential_id), timestamp: Number(data.trade_timestamp ?? data.timestamp), trade_price: Number(data.trade_price), trade_volume: Number(data.trade_volume), ask_bid: String(data.ask_bid) as 'ASK' | 'BID',
-            }, `stream-${streamSequence}`))
+            }, `stream-${streamSequence}`)
+            // Upbit has no daily candle websocket channel. Daily candles use
+            // timestamp-aligned trades after the REST history is loaded.
+            if (timeframe === '1D' && data.stream_type !== 'SNAPSHOT') snapshot = { ...snapshot, candles: mergeCandle(snapshot.candles, createTradeCandle(snapshot, trade)) }
+            snapshot = applyTrade(snapshot, trade)
           } else if (type === 'ticker') {
             snapshot = {
               ...snapshot,
               instrument: {
                 ...updateInstrumentPrice(snapshot.instrument, Number(data.trade_price), Number(data.signed_change_rate) * 100),
-                volume24h: Number(data.acc_trade_volume_24h),
+                volume24h: Number(data.acc_trade_price_24h),
               },
             }
           } else if (type === 'orderbook') {
@@ -146,7 +136,7 @@ export const upbitMarketDataProvider: RealtimeMarketProvider = {
             }
           }
           onEvent({ snapshot })
-        })()
+        })().catch(() => onEvent({ message: 'An invalid Upbit stream message was ignored.' }))
       },
     })
     socket.connect()

@@ -1,6 +1,7 @@
 import type { Language } from '@/i18n/translations'
 import { uiText } from '@/i18n/translations'
 import { AiNewsEvidence } from '@/components/ai/AiNewsEvidence/AiNewsEvidence'
+import { LocalAiAnalysis } from '@/components/ai/LocalAiAnalysis/LocalAiAnalysis'
 import type { AiAnalysisInput, AiAnalysisResult, AiEvidenceStatus } from '@/types/aiAnalysis'
 import styles from './AiAnalysisFoundation.module.css'
 
@@ -17,7 +18,7 @@ function statusLabel(status: AiEvidenceStatus, language: Language) {
   return text.missing
 }
 
-/** Transparent display of the evidence package; this component never invokes AI. */
+/** Mock evidence remains separate from the explicitly requested local AI result. */
 export function AiAnalysisFoundation({ input, result, language }: AiAnalysisFoundationProps) {
   const text = uiText[language].copilot.analysisFoundation
   const newsData = input.newsContext.evidenceLabel === 'local-proxy-rss' ? text.localProxyRss
@@ -56,5 +57,6 @@ export function AiAnalysisFoundation({ input, result, language }: AiAnalysisFoun
       <dl>{packageRows.map(([label, value, status]) => <div key={label} data-status={status}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
     </details>
     <p className={styles.disclaimer}>{text.disclaimer} · {text.finalDecision}</p>
+    <LocalAiAnalysis key={`${input.instrument.id}:${language}`} input={input} language={language} />
   </section>
 }

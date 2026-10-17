@@ -1,7 +1,7 @@
 import { createServer } from 'node:http'
 import { fileURLToPath } from 'node:url'
 import { resolve } from 'node:path'
-import { authorized, configuration, createAnalysis, SafeError } from './analysis.mjs'
+import { authorized, configuration, createAnalysis, estimate, SafeError } from './analysis.mjs'
 
 export function createHandler({ env = process.env, fetchImpl, ledgerPath = fileURLToPath(new URL('./budget.json', import.meta.url)) } = {}) {
   const config = configuration(env)
@@ -13,7 +13,7 @@ export function createHandler({ env = process.env, fetchImpl, ledgerPath = fileU
     }
     try {
       if (req.url === '/api/ai/health' && req.method === 'GET') return send(200, { enabled: Boolean(config) })
-      if (req.url !== '/api/ai/analyze') return send(404, { error: 'not_found' })
+      if (!['/api/ai/analyze', '/api/ai/estimate'].includes(req.url)) return send(404, { error: 'not_found' })
       if (req.method !== 'POST') return send(405, { error: 'method_not_allowed' })
       if (!config) return send(503, { error: 'ai_disabled' })
       // Local CLI foundation: browser origins are deliberately unsupported.
@@ -27,7 +27,7 @@ export function createHandler({ env = process.env, fetchImpl, ledgerPath = fileU
       }
       let input
       try { input = JSON.parse(Buffer.concat(chunks).toString('utf8')) } catch { return send(400, { error: 'invalid_json' }) }
-      return send(200, await analyze(input))
+      return send(200, req.url === '/api/ai/estimate' ? estimate(config, input) : await analyze(input))
     } catch (error) { return send(error instanceof SafeError ? error.status : 503, { error: error instanceof SafeError ? error.message : 'unavailable' }) }
   }
 }

@@ -4,7 +4,7 @@ import { mkdtemp, readFile, writeFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createServer } from 'node:http'
-import { configuration, createAnalysis, validate, reserve } from './analysis.mjs'
+import { configuration, createAnalysis, estimate, validate, reserve } from './analysis.mjs'
 import { createHandler } from './server.mjs'
 
 const env = { AI_ENABLED: 'true', OPENAI_API_KEY: 'server-secret', AI_ACCESS_TOKEN: 'a'.repeat(32), AI_MODEL: 'reviewed-model', AI_INPUT_USD_PER_MILLION: '10', AI_OUTPUT_USD_PER_MILLION: '30', AI_BUDGET_USD: '1' }
@@ -74,6 +74,14 @@ test('in-flight concurrency is rejected before a second reservation', async () =
   await first
   assert.equal(reservations, 1)
 })
+test('estimate is free and client cost ceiling is enforced before reservation or network', async () => {
+  const config = configuration(env)
+  const quoted = estimate(config, input)
+  assert.ok(quoted.reservedUsd > 0); assert.equal(quoted.outputTokenCeiling, 512)
+  const analyze = createAnalysis({ config, reserveImpl: () => assert.fail('reservation'), fetchImpl: () => assert.fail('network') })
+  await assert.rejects(analyze({ ...input, maxCostUsd: quoted.reservedUsd / 2 }), /cost_limit_changed/)
+  assert.throws(() => validate({ ...input, maxCostUsd: '1' }), /invalid_input/)
+})
 test('provider errors, timeout and malformed/incomplete/refusal responses retain reservations without retry', async t => {
   for (const fake of [() => { throw new Error('server-secret') }, () => new Response('secret', { status: 429 }), () => response(payload({ status: 'incomplete' })), () => response(payload({ output: [{ type: 'message', content: [{ type: 'refusal' }] }] })), () => response(payload({ output: [] })), () => response({ status: 'completed', output: [{ type: 'message', content: [{ type: 'output_text', text: '{"summary":"invalid"}' }] }] }), () => new Response('x'.repeat(65537))]) {
     const path = await temp(t); let calls = 0
@@ -99,6 +107,10 @@ test('HTTP authentication, origin, body and method boundaries before provider', 
     [{ method: 'POST', headers, body: JSON.stringify({ ...input, consent: false }) }, 400],
     [{ method: 'POST', headers, body: 'x'.repeat(8193) }, 413]
   ]) assert.equal((await fetch(`${url}/api/ai/analyze`, options)).status, status)
+  assert.equal(calls, 0)
+  const quote = await fetch(`${url}/api/ai/estimate`, { method: 'POST', headers, body: JSON.stringify(input) })
+  assert.equal(quote.status, 200)
+  assert.ok((await quote.json()).reservedUsd > 0)
   assert.equal(calls, 0)
   const result = await fetch(`${url}/api/ai/analyze`, { method: 'POST', headers, body: JSON.stringify(input) })
   assert.equal(result.status, 200); assert.equal(result.headers.get('cache-control'), 'no-store')
