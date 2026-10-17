@@ -41,6 +41,9 @@ jobs:
       - name: Run local AI gateway security tests
         run: node --test tools/local-ai/*.test.mjs
 
+      - name: Verify Pages entry-route packaging
+        run: node --test tools/prepare-pages.test.mjs
+
       - name: Run lint
         run: npm run lint
 

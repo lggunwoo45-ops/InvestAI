@@ -38,7 +38,12 @@ jobs:
         run: npm ci
 
       - name: Build
-        run: npm run build
+        env:
+          VITE_APP_ENV: production
+        run: npm run build -- --base=/InvestAI/
+
+      - name: Prepare direct-entry routes
+        run: node tools/prepare-pages.mjs
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
