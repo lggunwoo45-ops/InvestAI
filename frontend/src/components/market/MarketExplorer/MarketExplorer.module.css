@@ -216,3 +216,8 @@
 .row,.compact .row { height: 50px; }
 .instrument { padding-top: 3px; padding-bottom: 3px; }
 .instrument small { margin-top: 2px; }
+
+/* Upbit quote markets sit below the exchange selector as compact tabs. */
+.upbitNavigation { display: grid; grid-template-columns: minmax(0, 1fr); }
+.upbitNavigation .venueTabs { gap: 2px; padding: 2px 6px 4px; }
+.upbitNavigation .venueTabs button { flex: 0 0 auto; padding: 3px 6px; font-size: 10px; }
