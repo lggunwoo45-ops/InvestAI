@@ -128,7 +128,7 @@ describe('MarketContextStrip', () => {
     view.rerender(<MarketContextStrip {...props} showScreeningDetails />)
     expect(screen.getByText('후보 보류·제외 사유 상세 (1)')).toBeTruthy()
     expect(screen.getByText('005930')).toBeTruthy()
-    expect(screen.getByText('모의 데이터')).toBeTruthy()
+    expect(screen.getByText(/데이터: 모의 데이터/)).toBeTruthy()
     expect(screen.getByText('판단 근거 부족')).toBeTruthy()
   })
 })
