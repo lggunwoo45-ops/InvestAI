@@ -92,4 +92,43 @@ describe('MarketContextStrip', () => {
     expect(filter.textContent).toContain('제외 후보현재 기준 비교 불가 1')
     expect(filter.textContent).not.toMatch(/매수|매도|손절가|익절가|목표가/)
   })
+
+  it('shows bounded per-instrument screening reasons only in an explicit disclosure', () => {
+    render(<MarketContextStrip
+      bucketId="upbit" bucketLabel="Upbit" bitcoinAnchor={bitcoinAnchor}
+      displayedCount={1} heldCount={1} excludedCount={1}
+      heldDetails={[{ instrumentId: 'held-eth', symbol: 'ETH/KRW', reason: 'reviewScoreTooLow', reviewScore: 55, dataQuality: 'limited' }]}
+      excludedDetails={[{ instrumentId: 'excluded-xrp', symbol: 'XRP/KRW', reason: 'currentPriceUnavailable', reviewScore: null, dataQuality: 'unavailable' }]}
+      showScreeningDetails savedRecordCount={4} visibleRecordCount={1}
+      dataState="live" newsState="rss-ready" language="en"
+    />)
+    const quality = screen.getByRole('region', { name: 'Display filter' })
+    expect(quality.textContent).toContain('Saved record: 4 · Shown: 1')
+    const disclosure = within(quality).getByText('Why candidates were held or excluded (2)')
+    expect(disclosure.closest('details')?.open).toBe(false)
+    expect(quality.textContent).toContain('ETH/KRW')
+    expect(quality.textContent).toContain('XRP/KRW')
+    expect(quality.textContent).toContain('55/100')
+    expect(quality.textContent).toContain('Current price unavailable')
+    expect(quality.textContent).toContain('Data: Limited')
+    fireEvent.click(disclosure)
+    expect(disclosure.closest('details')?.open).toBe(true)
+    expect(quality.textContent).toContain('Opening this explanation does not change the saved daily record.')
+  })
+
+  it('keeps screening details hidden in simple presentation and localizes expert explanations', () => {
+    const props = {
+      bucketId: 'kospi' as const, bucketLabel: 'KOSPI', bitcoinAnchor: null,
+      displayedCount: 0, heldCount: 0, excludedCount: 1,
+      excludedDetails: [{ instrumentId: 'krx-005930', symbol: '005930', reason: 'reviewBasisInsufficient' as const, reviewScore: 48, dataQuality: 'mock' as const }],
+      dataState: 'mock' as const, newsState: 'mock' as const, language: 'ko' as const,
+    }
+    const view = render(<MarketContextStrip {...props} showScreeningDetails={false} />)
+    expect(screen.queryByText(/후보 보류·제외 사유 상세/)).toBeNull()
+    view.rerender(<MarketContextStrip {...props} showScreeningDetails />)
+    expect(screen.getByText('후보 보류·제외 사유 상세 (1)')).toBeTruthy()
+    expect(screen.getByText('005930')).toBeTruthy()
+    expect(screen.getByText(/데이터: 모의 데이터/)).toBeTruthy()
+    expect(screen.getByText('판단 근거 부족')).toBeTruthy()
+  })
 })

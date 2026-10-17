@@ -7,7 +7,7 @@ import { AiAnalysisTerminalLayout } from '@/components/ai-analysis/AiAnalysisTer
 import { CandidateInspectorPanel } from '@/components/ai-analysis/CandidateInspectorPanel'
 import { CandidateTerminalList } from '@/components/ai-analysis/CandidateTerminalList'
 import { buildCandidateTerminalItems } from '@/components/ai-analysis/candidateTerminalModel'
-import { MarketContextStrip } from '@/components/ai-analysis/MarketContextStrip'
+import { MarketContextStrip, type CandidateScreeningDetail } from '@/components/ai-analysis/MarketContextStrip'
 import { MarketTerminalHeader } from '@/components/ai-analysis/MarketTerminalHeader'
 import { CandidateHorizonSelector } from '@/components/candidates/CandidateHorizonSelector/CandidateHorizonSelector'
 import { MarketBucketSelector } from '@/components/candidates/MarketBucketSelector/MarketBucketSelector'
@@ -159,6 +159,21 @@ export function AiAnalysisPage() {
       dataQuality: technicalLevelData.dataQuality,
     })
   }, [language, selectedInstrument, technicalLevelData.candles, technicalLevelData.currentPrice, technicalLevelData.dataQuality])
+  // Explain only the already-scanned candidates. These details never affect
+  // the saved daily list, the review score, or candidate selection.
+  const screeningDetails = useMemo(() => {
+    const toDetail = ({ item, reason }: { item: CandidateSnapshotBuildSource; reason: CandidateScreeningDetail['reason'] }): CandidateScreeningDetail => ({
+      instrumentId: item.instrument.id,
+      symbol: item.instrument.displaySymbol ?? item.instrument.symbol,
+      reason,
+      reviewScore: candidateSourceQualityInputs.get(item.instrument.id)?.reviewScore.score ?? null,
+      dataQuality: item.analysis.dataQuality,
+    })
+    return {
+      held: candidateQualityStatus.heldForReview.map(toDetail),
+      excluded: candidateQualityStatus.excluded.map(toDetail),
+    }
+  }, [candidateQualityStatus.excluded, candidateQualityStatus.heldForReview, candidateSourceQualityInputs])
   const qualityDisplayedCount = candidateQualityStatus.displayed.length
   const evidenceRecommendations = useMemo(() => activeInstruments.map((instrument) => {
     const source = activeCatalogs.find((catalog) => catalog?.instruments.some((entry) => entry.id === instrument.id))
@@ -200,7 +215,7 @@ export function AiAnalysisPage() {
     <AiAnalysisTerminalLayout
       header={<MarketTerminalHeader bucketLabel={bucketLabel} displayedCount={qualityDisplayedCount} heldCount={heldCount} excludedCount={excludedCount} dataState={activeCatalogSource} snapshotStatus={snapshotStatus} bitcoinAnchorStatus={bitcoinAnchor?.status ?? null} language={language} />}
       tabs={<MarketBucketSelector selected={bucketId} language={language} onChange={setBucketId} />}
-      context={<MarketContextStrip bucketId={bucketId} bucketLabel={bucketLabel} bitcoinAnchor={bitcoinAnchor} displayedCount={qualityDisplayedCount} heldCount={heldCount} excludedCount={excludedCount} heldReasonCounts={candidateQualityStatus.heldReasonCounts} excludedReasonCounts={candidateQualityStatus.excludedReasonCounts} displayFilter={candidateDisplayFilter} onDisplayFilterChange={changeCandidateDisplayFilter} dataState={activeCatalogSource} newsState={newsResult?.state ?? null} language={language} />}
+      context={<MarketContextStrip bucketId={bucketId} bucketLabel={bucketLabel} bitcoinAnchor={bitcoinAnchor} displayedCount={qualityDisplayedCount} heldCount={heldCount} excludedCount={excludedCount} heldReasonCounts={candidateQualityStatus.heldReasonCounts} excludedReasonCounts={candidateQualityStatus.excludedReasonCounts} heldDetails={screeningDetails.held} excludedDetails={screeningDetails.excluded} showScreeningDetails={displayMode === 'expert'} savedRecordCount={activeSnapshot?.items.length ?? null} visibleRecordCount={terminalItems.length} displayFilter={candidateDisplayFilter} onDisplayFilterChange={changeCandidateDisplayFilter} dataState={activeCatalogSource} newsState={newsResult?.state ?? null} language={language} />}
       advanced={displayMode === 'expert' ? <details className={styles.advanced}><summary>{pageCopy.advanced}</summary><p>{pageCopy.advancedHelp}</p><CandidateHorizonSelector horizon={horizon} language={language} onChange={setHorizon} /></details> : undefined}
       candidateList={<CandidateTerminalList key={recalculationContextKey} snapshot={displaySnapshot} items={terminalItems} selectedInstrumentId={selectedInstrumentId} language={language} now={clock} canRecalculate={!basis.isBeforeTodayBasis && activeInstruments.length > 0} beforeTodayBasis={basis.isBeforeTodayBasis} contextKey={recalculationContextKey} heldCandidates={heldTerminalItems} heldCandidateCount={heldCount} heldVisibility={heldVisibility} onSelect={selectCandidate} onRecalculate={createSnapshot} />}
       inspector={<CandidateInspectorPanel candidate={selectedTerminalItem} snapshotId={displaySnapshot?.snapshotId ?? null} generatedAt={displaySnapshot?.generatedAt ?? null} language={language} technicalAnalysis={technicalAnalysis} technicalLoading={technicalLevelData.isLoading} onOpenAnalysis={openSnapshotAnalysis} />}
