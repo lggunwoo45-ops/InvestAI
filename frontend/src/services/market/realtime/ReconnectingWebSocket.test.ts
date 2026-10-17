@@ -54,4 +54,14 @@ describe('ReconnectingWebSocket', () => {
     expect(statuses.at(-1)).toBe('reconnecting:1')
     client.close()
   })
+
+  it('does not open a queued connection after unsubscribe', async () => {
+    vi.stubGlobal('WebSocket', FakeWebSocket)
+    let release: () => void = () => undefined
+    const gate = new Promise<void>(resolve => { release = resolve })
+    const client = new ReconnectingWebSocket({ createUrl: () => 'wss://example.test', beforeConnect: () => gate, onOpen: vi.fn(), onMessage: vi.fn(), onStatus: vi.fn() })
+    client.connect(); client.close(); release()
+    await Promise.resolve()
+    expect(FakeWebSocket.instances).toHaveLength(0)
+  })
 })

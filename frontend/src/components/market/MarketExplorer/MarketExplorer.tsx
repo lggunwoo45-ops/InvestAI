@@ -116,7 +116,7 @@ export function MarketExplorer({
         <div className={styles.count}><DataModeControl value={mode} onChange={onModeChange} /><span aria-live="polite" aria-atomic="true" aria-label={`${instruments.length.toLocaleString()} ${text.results}`}>{instruments.length.toLocaleString()} {text.results}</span><span className={source === 'live' ? styles.live : styles.mock} title={!isCrypto ? text.mockDisclosure : undefined}>{source === 'live' ? text.realPublicApi : text.mockData}</span></div>
       </header>
 
-      <div className={styles.navigation}>
+      <div className={`${styles.navigation} ${cryptoProvider === 'upbit' && isCrypto ? styles.upbitNavigation : ''}`}>
         {group === 'crypto' && <div className={styles.providerTabs} role="tablist" aria-label={text.cryptoProvider}>
           <button type="button" role="tab" aria-selected={cryptoProvider === 'upbit'} onClick={() => changeProvider('upbit')}>Upbit</button>
           <button type="button" role="tab" aria-selected={cryptoProvider === 'binance'} onClick={() => changeProvider('binance')}>Binance</button>
