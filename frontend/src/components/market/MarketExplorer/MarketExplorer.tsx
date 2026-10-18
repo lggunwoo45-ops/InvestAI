@@ -116,16 +116,25 @@ export function MarketExplorer({
         <div className={styles.count}><DataModeControl value={mode} onChange={onModeChange} /><span aria-live="polite" aria-atomic="true" aria-label={`${instruments.length.toLocaleString()} ${text.results}`}>{instruments.length.toLocaleString()} {text.results}</span><span className={source === 'live' ? styles.live : styles.mock} title={!isCrypto ? text.mockDisclosure : undefined}>{source === 'live' ? text.realPublicApi : text.mockData}</span></div>
       </header>
 
-      <div className={`${styles.navigation} ${cryptoProvider === 'upbit' && isCrypto ? styles.upbitNavigation : ''}`}>
-        {group === 'crypto' && <div className={styles.providerTabs} role="tablist" aria-label={text.cryptoProvider}>
-          <button type="button" role="tab" aria-selected={cryptoProvider === 'upbit'} onClick={() => changeProvider('upbit')}>Upbit</button>
-          <button type="button" role="tab" aria-selected={cryptoProvider === 'binance'} onClick={() => changeProvider('binance')}>Binance</button>
+      <div className={styles.navigation} data-market-navigation="hierarchical">
+        {isCrypto && <div className={styles.providerSection}>
+          <span className={styles.navLabel}>{language === 'ko' ? '거래소' : 'Exchange'}</span>
+          <div className={styles.providerTabs} role="tablist" aria-label={text.cryptoProvider}>
+            <button type="button" role="tab" aria-selected={cryptoProvider === 'upbit'} onClick={() => changeProvider('upbit')}>Upbit</button>
+            <button type="button" role="tab" aria-selected={cryptoProvider === 'binance'} onClick={() => changeProvider('binance')}>Binance</button>
+          </div>
         </div>}
-        <div className={styles.venueTabs} role="tablist" aria-label={text.marketVenue}>
-          {venues.map((item) => <button key={item} type="button" role="tab" aria-selected={venue === item} onClick={() => onVenueChange(item)}>{text.venue[item].split(' · ').at(-1)}</button>)}
+        <div className={styles.marketSection}>
+          <span className={styles.navLabel}>{language === 'ko' ? (cryptoProvider === 'binance' && isCrypto ? '거래 유형' : '마켓') : (cryptoProvider === 'binance' && isCrypto ? 'Trading type' : 'Market')}</span>
+          <div className={styles.venueTabs} role="tablist" aria-label={text.marketVenue}>
+            {venues.map((item) => <button key={item} type="button" role="tab" aria-selected={venue === item} onClick={() => onVenueChange(item)}>{text.venue[item].split(' · ').at(-1)}</button>)}
+          </div>
         </div>
-        {venue === 'binance-spot' && <div className={styles.quoteTabs} role="tablist" aria-label="Binance Spot quote asset">
-          {spotQuotes.map((quote) => <button key={quote} type="button" role="tab" aria-selected={spotQuoteFilter === quote} onClick={() => onSpotQuoteFilterChange(quote)}>{quote === 'Other' ? text.other : quote}</button>)}
+        {venue === 'binance-spot' && <div className={styles.quoteSection}>
+          <span className={styles.navLabel}>{language === 'ko' ? '현물 기준 통화' : 'Spot quote asset'}</span>
+          <div className={styles.quoteTabs} role="tablist" aria-label="Binance Spot quote asset">
+            {spotQuotes.map((quote) => <button key={quote} type="button" role="tab" aria-selected={spotQuoteFilter === quote} onClick={() => onSpotQuoteFilterChange(quote)}>{quote === 'Other' ? text.other : quote}</button>)}
+          </div>
         </div>}
       </div>
 
