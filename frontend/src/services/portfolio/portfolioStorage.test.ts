@@ -5,6 +5,32 @@ const position: Position = { id: 'p1', exchange: 'upbit', venue: 'upbit-krw', in
 describe('portfolio persistence and valuation', () => {
   beforeEach(() => localStorage.clear())
   afterEach(() => vi.restoreAllMocks())
+  it('loads legacy holdings and adds, edits and removes optional plan prices without a migration', () => {
+    const original = JSON.stringify({ version: 1, positions: [position] })
+    localStorage.setItem(PORTFOLIO_KEY, original)
+    expect(readPortfolio().positions[0].targetPrice).toBeUndefined()
+    expect(localStorage.getItem(PORTFOLIO_KEY)).toBe(original)
+    const saved = writePortfolio([{ ...position, targetPrice: 150, stopPrice: 110 }], original)
+    expect(readPortfolio().positions[0]).toMatchObject({ targetPrice: 150, stopPrice: 110 })
+    writePortfolio([{ ...saved.positions[0], targetPrice: undefined, stopPrice: undefined }], saved.raw)
+    expect(readPortfolio().positions[0].targetPrice).toBeUndefined()
+    expect(readPortfolio().positions[0].quantity).toBe(2)
+  })
+  it.each([
+    { targetPrice: 0 }, { stopPrice: -1 }, { targetPrice: NaN }, { stopPrice: Infinity },
+    { targetPrice: 100, stopPrice: 100 }, { targetPrice: 90, stopPrice: 100 }, { targetPrice: Number.MAX_VALUE },
+  ])('rejects invalid plan values without overwriting saved holdings: %s', plan => {
+    const saved = writePortfolio([position], null)
+    expect(() => writePortfolio([{ ...position, ...plan }], saved.raw)).toThrow('validation')
+    expect(readPortfolio().raw).toBe(saved.raw)
+  })
+  it('preserves malformed stored plan fields instead of discarding them', () => {
+    const raw = JSON.stringify({ version: 1, positions: [{ ...position, stopPrice: null }] })
+    localStorage.setItem(PORTFOLIO_KEY, raw)
+    expect(readPortfolio().error).toBe('storage')
+    expect(() => writePortfolio([], raw)).toThrow('storage')
+    expect(localStorage.getItem(PORTFOLIO_KEY)).toBe(raw)
+  })
   it('round trips CRUD without touching watchlists', () => {
     localStorage.setItem('watchlist', 'keep')
     const first = writePortfolio([position], null)

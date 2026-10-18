@@ -12,6 +12,8 @@ export interface Position {
   quoteCurrency: string
   averagePrice: number
   quantity: number
+  targetPrice?: number
+  stopPrice?: number
 }
 export interface PortfolioState { positions: Position[]; raw: string | null; error: string | null }
 const positive = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value) && value > 0
@@ -23,6 +25,8 @@ export function validPosition(value: unknown): value is Position {
     && coinVenues.includes(p.venue) && p.exchange === (p.venue.startsWith('upbit') ? 'upbit' : 'binance')
     && (p.venue === 'upbit-krw' ? p.quoteCurrency === 'KRW' : p.venue === 'upbit-btc' ? p.quoteCurrency === 'BTC' : p.venue === 'upbit-usdt' ? p.quoteCurrency === 'USDT' : /^[A-Z0-9]{2,20}$/.test(p.quoteCurrency))
     && positive(p.averagePrice) && positive(p.quantity) && positive(p.averagePrice * p.quantity)
+    && [p.targetPrice, p.stopPrice].every(price => price === undefined || (positive(price) && valuation(p, price) !== null))
+    && (p.targetPrice === undefined || p.stopPrice === undefined || p.stopPrice < p.targetPrice)
 }
 export function readPortfolio(): PortfolioState {
   try {
