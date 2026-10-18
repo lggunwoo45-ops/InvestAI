@@ -27,7 +27,7 @@ export function Header({ hideCopilotToggle = false }: { hideCopilotToggle?: bool
         : 'unconfigured'
 
   return (
-    <header className={`${styles.header} ${hideCopilotToggle ? styles.exploreHeader : ''}`}>
+    <header className={styles.header}>
       <GlobalSearch />
 
       <div className={styles.actions}>

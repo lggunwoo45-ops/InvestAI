@@ -1,6 +1,6 @@
-.panel { border: 1px solid var(--border-color, #334155); border-radius: 10px; padding: 12px; margin-bottom: 12px; }
+.panel { border: 1px solid var(--border-color, var(--color-border-strong)); border-radius: 10px; padding: 12px; margin-bottom: 12px; }
 .panel h2 { font-size: 1rem; margin: 0 0 8px; }
 .panel article { padding: 6px 0; }
 .panel p { font-size: .8rem; margin: 4px 0; }
 .factors { display: flex; flex-wrap: wrap; gap: 5px; list-style: none; padding: 0; }
-.factors li { border: 1px solid var(--border-color, #334155); border-radius: 6px; padding: 3px 6px; font-size: .75rem; }
+.factors li { border: 1px solid var(--border-color, var(--color-border-strong)); border-radius: 6px; padding: 3px 6px; font-size: .75rem; }

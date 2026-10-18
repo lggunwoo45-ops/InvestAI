@@ -1,13 +1,13 @@
-.card { border: 1px solid #273542; background: #0e161f; }
-.card header { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 9px 10px; border-bottom: 1px solid #273542; }
-.card header strong { color: #c2d0d8; font-size: 10px; }
-.card header span { color: #667586; font-size: 8px; }
+.card { border: 1px solid var(--color-border); background: var(--color-surface); }
+.card header { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 9px 10px; border-bottom: 1px solid var(--color-border); }
+.card header strong { color: var(--color-text); font-size: 10px; }
+.card header span { color: var(--color-text-muted); font-size: 8px; }
 .card header > div { display: flex; align-items: center; gap: 6px; }
-.card header .status { padding: 3px 5px; border: 1px solid #46535e; color: #aab5bd; background: #171f27; font-weight: 650; }
-.card[data-scenario] header { border-left: 2px solid #66747f; }
-.card > p { margin: 0; padding: 9px 10px; color: #98a7b4; font-size: 9px; line-height: 1.5; }
+.card header .status { padding: 3px 5px; border: 1px solid var(--color-border-strong); color: var(--color-text); background: var(--color-surface-raised); font-weight: 650; }
+.card[data-scenario] header { border-left: 2px solid var(--color-border-strong); }
+.card > p { margin: 0; padding: 9px 10px; color: var(--color-text); font-size: 9px; line-height: 1.5; }
 .card dl { margin: 0; padding: 0 10px 9px; }
-.card dl > div { padding: 7px 0; border-top: 1px solid #202d38; }
-.card dt { color: #80929f; font-size: 8px; font-weight: 600; }
-.card dd { margin: 4px 0 0; color: #9baab6; font-size: 8px; line-height: 1.5; }
+.card dl > div { padding: 7px 0; border-top: 1px solid var(--color-border); }
+.card dt { color: var(--color-text-muted); font-size: 8px; font-weight: 600; }
+.card dd { margin: 4px 0 0; color: var(--color-text); font-size: 8px; line-height: 1.5; }
 .card ul { margin: 0; padding-left: 14px; }

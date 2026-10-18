@@ -1,10 +1,10 @@
-.panel { display: grid; gap: 8px; margin: 12px 0; padding: 12px; border: 1px solid #3b5360; background: #101b25; font-size: 12px; }
+.panel { display: grid; gap: 8px; margin: 12px 0; padding: 12px; border: 1px solid var(--color-border-strong); background: var(--color-surface-raised); font-size: 12px; }
 .panel p { margin: 0; line-height: 1.5; }
-.panel button { justify-self: start; padding: 7px 10px; border: 1px solid #55796e; background: #20363a; color: #e1ece7; cursor: pointer; }
+.panel button { justify-self: start; padding: 7px 10px; border: 1px solid var(--color-border-strong); background: var(--color-surface-raised); color: var(--color-text); cursor: pointer; }
 .panel button:disabled { opacity: .5; cursor: default; }
 .panel label { display: flex; align-items: flex-start; gap: 6px; line-height: 1.5; }
 .panel input { margin-top: 3px; }
 .panel pre { max-height: 180px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 11px; }
-.panel small { color: #a6b5c3; line-height: 1.5; }
+.panel small { color: var(--color-text); line-height: 1.5; }
 .panel h4 { margin: 10px 0 4px; }
-.panel [role=alert] { color: #e2b0ab; }
+.panel [role=alert] { color: var(--color-text); }

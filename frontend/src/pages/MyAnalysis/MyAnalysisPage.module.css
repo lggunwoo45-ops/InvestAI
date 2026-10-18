@@ -15,3 +15,6 @@
 @media(max-width:1250px){.sections{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:1100px){.page{padding:16px}.inputGrid,.sections,.expertGrid,.reviewPanels{grid-template-columns:1fr}.instrumentHeader{grid-template-columns:1fr auto}.quality{grid-column:1/-1;border-left:0;border-top:1px solid var(--color-border);padding:12px 0 0}.results button{grid-template-columns:minmax(160px,1fr) 120px}.results em{display:none}}
 @media(max-width:700px){.header,.analysisHeading{display:grid}.mode{justify-self:stretch;justify-content:space-between}.guidance{grid-template-columns:1fr}.instrumentHeader{grid-template-columns:1fr}.quote{text-align:left}.inputGrid{grid-template-columns:1fr}.filterChips{display:grid;grid-template-columns:1fr 1fr}.results button{grid-template-columns:1fr}.resultMarket{display:none}}
+.header, .instrumentHeader, .searchPanel, .inputs, .userContext, .analysis { border-radius: var(--radius-lg); }
+.searchPanel input, .inputs input, .inputs select, .inputs textarea, .mode, .mode button, .filterChips button { border-radius: var(--radius-sm); }
+.mode { flex-shrink: 0; white-space: nowrap; }

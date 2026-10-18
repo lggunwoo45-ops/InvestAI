@@ -1,0 +1,46 @@
+/* Shared semantic palette. A future dark theme can override these tokens
+   without changing page components or the user's stored investment data. */
+:root {
+  color-scheme: light;
+  --color-bg: #f4f7fb;
+  --color-sidebar: #0f172a;
+  --color-surface: #ffffff;
+  --color-surface-raised: #f8faff;
+  --color-surface-hover: #eef3fc;
+  --color-border: #e2e8f1;
+  --color-border-strong: #cbd5e4;
+  --color-text: #18243b;
+  --color-text-muted: #52637b;
+  --color-text-subtle: #5f6f86;
+  --color-accent: #315eea;
+  --color-accent-soft: #eaf0ff;
+  --color-on-accent: #ffffff;
+  --color-positive: #087b5e;
+  --color-positive-soft: #e5f5ee;
+  --color-warning: #8d5909;
+  --color-warning-soft: #fff4db;
+  --color-danger: #c0344d;
+  --color-danger-soft: #fff0f2;
+  --color-negative: var(--color-danger);
+  --color-info: #315eea;
+  --color-info-soft: #eaf0ff;
+  --color-purple: #7051b3;
+  --color-purple-soft: #f0eaff;
+  --color-shadow: #20365d14;
+  --color-overlay: #18243b66;
+  --color-scrollbar: #c4cedd;
+  --color-scrollbar-hover: #94a3b8;
+  --color-surface-primary: var(--color-surface);
+  --color-surface-canvas: var(--color-bg);
+  --color-surface-elevated: var(--color-surface-raised);
+  --color-text-primary: var(--color-text);
+  --color-text-secondary: var(--color-text-muted);
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --nav-surface: #152137;
+  --nav-surface-hover: #20314e;
+  --nav-border: #273650;
+  --nav-text: #f1f5fc;
+  --nav-text-muted: #a6b4cb;
+  --nav-accent: #9bb5ff;
+  --nav-accent-soft: #23385f;
+}

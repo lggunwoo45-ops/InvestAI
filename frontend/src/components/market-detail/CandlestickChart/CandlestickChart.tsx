@@ -55,11 +55,15 @@ function overlayGroup(line: ChartOverlayLine): ChartOverlayGroup | null {
   return null
 }
 
+function chartColor(token: string, fallback: string) {
+  return getComputedStyle(document.documentElement).getPropertyValue(token).trim() || fallback
+}
+
 function overlayColor(line: ChartOverlayLine) {
-  if (line.kind === 'support') return '#4f8f83'
-  if (line.kind === 'resistance') return '#a45f68'
-  if (line.kind === 'movingAverage') return '#a79261'
-  return '#677b91'
+  if (line.kind === 'support') return chartColor('--color-positive', '#087b5e')
+  if (line.kind === 'resistance') return chartColor('--color-danger', '#c0344d')
+  if (line.kind === 'movingAverage') return chartColor('--color-warning', '#8d5909')
+  return chartColor('--color-accent', '#315eea')
 }
 
 function overlayStyle(line: ChartOverlayLine) {
@@ -107,7 +111,7 @@ export const CandlestickChart = memo(function CandlestickChart({ candles, instru
       return [{ id: `automatic:${line.id}`, label: line.label, price: line.price, color: overlayColor(line), style: overlayStyle(line), width: 1 }]
     })
     const manual = visibility.user ? userLines.flatMap((line): readonly RenderedPriceLine[] => line.visible
-      ? [{ id: `user:${line.id}`, label: line.label, price: line.price, color: '#8b7da8', style: LineStyle.LargeDashed, width: 2 }]
+      ? [{ id: `user:${line.id}`, label: line.label, price: line.price, color: chartColor('--color-purple', '#7051b3'), style: LineStyle.LargeDashed, width: 2 }]
       : []) : []
     return [...automatic, ...manual]
   }, [technicalLines, userLines, visibility])
@@ -122,20 +126,20 @@ export const CandlestickChart = memo(function CandlestickChart({ candles, instru
       width: container.clientWidth,
       height: container.clientHeight,
       layout: {
-        background: { type: ColorType.Solid, color: '#090e14' },
-        textColor: '#526074',
+        background: { type: ColorType.Solid, color: chartColor('--color-surface', '#ffffff') },
+        textColor: chartColor('--color-text-muted', '#52637b'),
         fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
         fontSize: 10,
       },
-      grid: { vertLines: { color: '#17212c' }, horzLines: { color: '#17212c' } },
-      crosshair: { vertLine: { color: '#526b6a', labelBackgroundColor: '#263737' }, horzLine: { color: '#526b6a', labelBackgroundColor: '#263737' } },
-      rightPriceScale: { borderColor: '#26313e', scaleMargins: { top: 0.08, bottom: 0.24 } },
-      timeScale: { borderColor: '#26313e', timeVisible: timeframe !== '1D', secondsVisible: false, rightOffset: 4, barSpacing: 7 },
+      grid: { vertLines: { color: chartColor('--color-border', '#e2e8f1') }, horzLines: { color: chartColor('--color-border', '#e2e8f1') } },
+      crosshair: { vertLine: { color: chartColor('--color-text-muted', '#52637b'), labelBackgroundColor: chartColor('--color-accent', '#315eea') }, horzLine: { color: chartColor('--color-text-muted', '#52637b'), labelBackgroundColor: chartColor('--color-accent', '#315eea') } },
+      rightPriceScale: { borderColor: chartColor('--color-border', '#e2e8f1'), scaleMargins: { top: 0.08, bottom: 0.24 } },
+      timeScale: { borderColor: chartColor('--color-border', '#e2e8f1'), timeVisible: timeframe !== '1D', secondsVisible: false, rightOffset: 4, barSpacing: 7 },
       handleScale: true,
       handleScroll: true,
     })
     const candleSeries = chart.addSeries(CandlestickSeries, {
-      upColor: '#5cae9b', downColor: '#b9636b', wickUpColor: '#5cae9b', wickDownColor: '#b9636b', borderVisible: false,
+      upColor: chartColor('--color-positive', '#087b5e'), downColor: chartColor('--color-danger', '#c0344d'), wickUpColor: chartColor('--color-positive', '#087b5e'), wickDownColor: chartColor('--color-danger', '#c0344d'), borderVisible: false,
       priceFormat: { type: 'price', precision, minMove: minimumMove },
     })
     const volumeSeries = chart.addSeries(HistogramSeries, {
@@ -173,7 +177,7 @@ export const CandlestickChart = memo(function CandlestickChart({ candles, instru
     const volumeData: HistogramData<UTCTimestamp>[] = candles.map((candle) => ({
       time: Math.floor(candle.timestamp / 1_000) as UTCTimestamp,
       value: candle.volume,
-      color: candle.close >= candle.open ? 'rgba(92, 174, 155, .22)' : 'rgba(185, 99, 107, .22)',
+      color: candle.close >= candle.open ? chartColor('--color-positive-soft', '#e5f5ee') : chartColor('--color-danger-soft', '#fff0f2'),
     }))
     const dataKey = `${instrument.id}:${timeframe}`
     if (dataKeyRef.current !== dataKey) {

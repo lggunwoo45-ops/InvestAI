@@ -1,4 +1,4 @@
-.workspace { display: grid; min-width: 0; min-height: 0; height: 100%; overflow: hidden; background: #080d13; }
+.workspace { display: grid; min-width: 0; min-height: 0; height: 100%; overflow: hidden; background: var(--color-surface); }
 .crypto { grid-template-columns: clamp(460px, 29vw, 560px) minmax(0, 1fr) minmax(245px, 18vw); }
 .stock { grid-template-columns: clamp(460px, 29vw, 560px) minmax(0, 1fr) minmax(225px, 18vw); }
 .instrumentListCollapsed { grid-template-columns: 56px minmax(420px, 1fr) minmax(245px, 22vw); }

@@ -5,7 +5,7 @@
 .filterBar > div:first-child span, .filterBar > small { color: var(--color-text-muted); font-size: 12px; }
 .filters { display: flex; gap: 4px; padding: 4px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 10px; }
 .filters button { padding: 6px 12px; min-height: 32px; border: 0; border-radius: 7px; background: transparent; color: var(--color-text-muted); font-size: 12px; cursor: pointer; }
-.filters button[aria-pressed='true'] { color: var(--color-text); background: var(--color-surface-hover); box-shadow: 0 1px 4px #0003; }
+.filters button[aria-pressed='true'] { color: var(--color-text); background: var(--color-surface-hover); box-shadow: 0 1px 4px var(--color-shadow); }
 .filters button:focus-visible { outline: 2px solid var(--color-accent); }
 .contextDetails { margin-top: 8px; border: 1px solid transparent; border-radius: 10px; }
 .contextDetails[open] { border-color: var(--color-border); background: var(--color-surface); }
