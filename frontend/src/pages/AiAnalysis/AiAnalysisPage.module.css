@@ -1,4 +1,21 @@
-.page { width: 100%; max-width: 1480px; margin: 0 auto; padding: 24px 32px; }
+.page {
+  --color-bg: #f4f7fb;
+  --color-surface: #fff;
+  --color-surface-raised: #fff;
+  --color-surface-hover: #eef3fc;
+  --color-border: #e2e8f1;
+  --color-border-strong: #cbd5e4;
+  --color-text: #18243b;
+  --color-text-muted: #5b6b82;
+  --color-accent: #315eea;
+  --color-accent-soft: #eaf0ff;
+  --color-warning: #95600c;
+  --color-surface-primary: var(--color-surface);
+  --color-surface-canvas: var(--color-bg);
+  --color-text-primary: var(--color-text);
+  --color-text-secondary: var(--color-text-muted);
+  width: 100%; max-width: 1480px; min-height: 100%; margin: 0 auto; padding: 24px 32px; color: var(--color-text); background: var(--color-bg);
+}
 .advanced, .additional { border: 1px solid var(--color-border); border-radius: 12px; background: var(--color-surface); }
 .advanced { margin: 20px 0 0; }
 .additional { margin-top: 16px; }

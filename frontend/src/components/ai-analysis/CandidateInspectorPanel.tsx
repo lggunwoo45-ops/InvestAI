@@ -4,6 +4,9 @@ import { ChartOverlayLegend } from '@/components/technicalLevels/ChartOverlayLeg
 import { TechnicalLevelsPanel } from '@/components/technicalLevels/TechnicalLevelsPanel/TechnicalLevelsPanel'
 import type { Language } from '@/i18n/translations'
 import type { TechnicalLevelAnalysis } from '@/types/technicalLevels'
+import type { Candle } from '@/types/marketDetail'
+import type { AnalysisDataQuality } from '@/types/myAnalysis'
+import { CandidatePriceHistory } from './CandidatePriceHistory'
 import type { CandidateTerminalItem } from './candidateTerminalModel'
 import styles from './CandidateInspectorPanel.module.css'
 
@@ -14,6 +17,8 @@ interface CandidateInspectorPanelProps {
   language: Language
   technicalAnalysis?: TechnicalLevelAnalysis | null
   technicalLoading?: boolean
+  candles?: readonly Candle[]
+  candleDataQuality?: AnalysisDataQuality
   onOpenAnalysis: (instrumentId: string, snapshotId: string) => void
 }
 
@@ -44,7 +49,7 @@ function newsStateLabel(value: string, language: Language) {
   return labels[normalized as keyof typeof labels] ?? value
 }
 
-export function CandidateInspectorPanel({ candidate, snapshotId, generatedAt, language, technicalAnalysis = null, technicalLoading = false, onOpenAnalysis }: CandidateInspectorPanelProps) {
+export function CandidateInspectorPanel({ candidate, snapshotId, generatedAt, language, technicalAnalysis = null, technicalLoading = false, candles = [], candleDataQuality = 'unavailable', onOpenAnalysis }: CandidateInspectorPanelProps) {
   const t = copy[language]
   if (!candidate) return <aside className={styles.inspector} aria-label={t.title} data-empty="true"><header><h2>{t.title}</h2></header><p className={styles.empty}>{t.empty}</p></aside>
 
@@ -52,7 +57,7 @@ export function CandidateInspectorPanel({ candidate, snapshotId, generatedAt, la
   const cautions = [candidate.practicalDecision.caution, ...candidate.reviewScore.cautions].filter((value, index, values) => value && values.indexOf(value) === index)
   return <aside className={styles.inspector} aria-label={t.title} data-freshness={candidate.freshness}>
     <header><div><span>{t.title}</span><h2 aria-live="polite">{item.symbol}</h2><p>{item.displayName} · {item.marketId}</p></div><strong>{candidate.reviewScore.label}</strong></header>
-    <dl className={styles.metrics}>
+    <dl className={styles.metrics} data-direction={candidate.changeSinceBasis === null ? 'unknown' : candidate.changeSinceBasis < 0 ? 'down' : candidate.changeSinceBasis > 0 ? 'up' : 'flat'}>
       <div><dt>{t.rank}</dt><dd>{item.order} / 5</dd></div>
       <div><dt>{t.basis}</dt><dd>{number(item.basisPrice, language)} {item.quoteCurrency}</dd></div>
       <div><dt>{t.current}</dt><dd>{number(candidate.currentPrice, language)} {candidate.currentPrice === null ? '' : item.quoteCurrency}</dd></div>
@@ -60,6 +65,7 @@ export function CandidateInspectorPanel({ candidate, snapshotId, generatedAt, la
       <div><dt>{t.score}</dt><dd>{candidate.reviewScore.score === null ? '—' : `${candidate.reviewScore.score}/100`}</dd></div>
       <div><dt>{t.freshness}</dt><dd>{t.freshnessLabels[candidate.freshness]}</dd></div>
     </dl>
+    {!technicalLoading && <CandidatePriceHistory candles={candles} dataQuality={candleDataQuality} language={language} />}
     <PracticalDecisionCard result={candidate.practicalDecision} language={language} compact showSafety={false} />
     <footer><button type="button" disabled={!snapshotId} onClick={() => snapshotId && onOpenAnalysis(item.instrumentId, snapshotId)}>{t.open} →</button><small>{t.recorded}: {time(generatedAt, language)} · {t.safety}</small></footer>
     <details className={styles.details}>

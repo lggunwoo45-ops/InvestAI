@@ -64,7 +64,7 @@ export function CandidateTerminalList({ snapshot, items, selectedInstrumentId, l
       const range = firstRange && firstRange.lowPrice !== null && firstRange.highPrice !== null ? `${number(firstRange.lowPrice, language)}–${number(firstRange.highPrice, language)} ${item.quoteCurrency}` : t.rangeUnavailable
       return <li key={item.instrumentId} data-selected={selectedInstrumentId === item.instrumentId || undefined}>
         <button type="button" className={styles.select} aria-label={`${t.select} ${item.symbol}; ${t.price}: ${number(candidate.currentPrice, language)} ${item.quoteCurrency}; ${t.change}: ${change}; ${t.score}: ${candidate.reviewScore.score === null ? '—' : `${candidate.reviewScore.score}/100`}; ${t.read}: ${candidate.practicalDecision.title}; ${t.range}: ${range}`} aria-pressed={selectedInstrumentId === item.instrumentId} onClick={() => onSelect(item.instrumentId)}>
-          <span className={styles.identity}><strong>{item.symbol}</strong><small>{item.displayName}</small><em>{item.reasonText}</em></span>
+          <span className={styles.identity} data-mark={item.symbol.slice(0, 1)} data-tone={(item.order - 1) % 5}><strong>{item.symbol}</strong><small>{item.displayName}</small><em>{item.reasonText}</em></span>
           <span className={styles.numeric}><small className={styles.mobileLabel}>{t.price}</small><strong>{number(candidate.currentPrice, language)}</strong><small>{item.quoteCurrency}</small></span>
           <span className={styles.numeric}>{change}</span>
           <span className={styles.score}><small className={styles.mobileLabel}>{t.score}</small>{candidate.reviewScore.score === null ? '—' : `${candidate.reviewScore.score}/100`}</span>
