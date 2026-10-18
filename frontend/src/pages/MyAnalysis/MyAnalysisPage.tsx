@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 
 import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
@@ -10,6 +10,7 @@ import { DartDisclosurePanel } from '@/components/my-analysis/DartDisclosurePane
 import { DartDisclosureReviewCard } from '@/components/my-analysis/DartDisclosureReviewCard/DartDisclosureReviewCard'
 import { MyAnalysisReportSummary } from '@/components/my-analysis/MyAnalysisReportSummary/MyAnalysisReportSummary'
 import { PositionReviewPanel } from '@/components/my-analysis/PositionReviewPanel/PositionReviewPanel'
+import { PositionPlan } from '@/components/portfolio/PositionPlan'
 import { ReviewModeSelector, type MyAnalysisReviewMode } from '@/components/my-analysis/ReviewModeSelector/ReviewModeSelector'
 import { PracticalDecisionCard } from '@/components/practicalDecision/PracticalDecisionCard/PracticalDecisionCard'
 import { ReviewRangePanel } from '@/components/practicalDecision/ReviewRangePanel/ReviewRangePanel'
@@ -40,7 +41,7 @@ import type { MarketGroup, MarketInstrument } from '@/types/market'
 import { marketBucketIds, type MarketBucketId } from '@/types/marketBucket'
 import type { AnalysisIntent } from '@/types/myAnalysis'
 import { formatMarketChange, formatMarketPrice } from '@/utils/formatMarketValue'
-import { readPortfolio } from '@/services/portfolio/portfolioStorage'
+import { PORTFOLIO_KEY, readPortfolio } from '@/services/portfolio/portfolioStorage'
 import styles from './MyAnalysisPage.module.css'
 
 const copy = {
@@ -79,7 +80,13 @@ export function MyAnalysisPage() {
   const { marketDataMode, selectInstrument } = useMarketWorkspace()
   const { result: newsResult } = useNewsProviderMode()
   const [params, setParams] = useSearchParams()
-  const [savedPosition] = useState(() => readPortfolio().positions.find(p => p.id === params.get('positionId') && p.instrumentId === params.get('instrumentId')))
+  const [savedPortfolio, setSavedPortfolio] = useState(readPortfolio)
+  const savedPosition = savedPortfolio.positions.find(p => p.id === params.get('positionId') && p.instrumentId === params.get('instrumentId'))
+  useEffect(() => {
+    const sync = (event: StorageEvent) => { if (event.key === PORTFOLIO_KEY || event.key === null) setSavedPortfolio(readPortfolio()) }
+    window.addEventListener('storage', sync)
+    return () => window.removeEventListener('storage', sync)
+  }, [])
   const [query, setQuery] = useState('')
   const [requestedInstrumentId] = useState<string | null>(() => params.get('instrumentId'))
   const [requestedSnapshotId] = useState<string | null>(() => params.get('snapshotId'))
@@ -244,6 +251,7 @@ export function MyAnalysisPage() {
         <div className={styles.quote}><small>{t.availableData}</small><strong>{Number.isFinite(selected.lastPrice) ? formatMarketPrice(selected) : t.qualities.unavailable}</strong>{Number.isFinite(selected.change24hPercent) && <span data-direction={selected.change24hPercent >= 0 ? 'positive' : 'negative'}>{formatMarketChange(selected.change24hPercent)}</span>}</div>
         <div className={styles.quality}><small>{t.quality}</small><b data-quality={analysis.dataQuality}>{analysis.dataQualityLabel}</b><small>{t.qualityHelp[analysis.dataQuality]}</small></div>
       </section>
+      {savedPosition && savedPosition.instrumentId === selected.id && savedPosition.quoteCurrency === selected.quoteCurrency && <PositionPlan position={savedPosition} price={currentPrice} language={language} quoteLabel={analysis.dataQualityLabel} showPosition />}
       <MyAnalysisReportSummary recommendation={recommendation} analysis={analysis} language={language} mode={displayMode} symbol={selected.displaySymbol ?? selected.symbol} name={selected.name} reviewMode={reviewMode} basisPrice={validAveragePrice} currentPrice={currentPrice} quoteCurrency={selected.quoteCurrency} disclosureReview={selected.marketId === 'korea-stock' ? dartReview : null} practicalDecision={practicalDecision ?? undefined} reviewRanges={reviewRanges} candidateReviewScore={candidateReviewScore ?? undefined} technicalAnalysis={technicalData.isLoading ? undefined : technicalAnalysis ?? undefined} aiCopilotFinalRead={aiCopilotFinalRead ?? undefined} />
       {practicalDecision && <PracticalDecisionCard result={recommendation ? { ...practicalDecision, title: recommendation.title, summary: recommendation.summary, reason: recommendation.why, nextCheck: recommendation.nextCheck } : practicalDecision} language={language} />}
       <ReviewRangePanel ranges={reviewRanges} language={language} quoteCurrency={selected.quoteCurrency} />
