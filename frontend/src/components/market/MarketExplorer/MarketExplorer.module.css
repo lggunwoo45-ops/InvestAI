@@ -221,3 +221,20 @@
 .upbitNavigation { display: grid; grid-template-columns: minmax(0, 1fr); }
 .upbitNavigation .venueTabs { gap: 2px; padding: 2px 6px 4px; }
 .upbitNavigation .venueTabs button { flex: 0 0 auto; padding: 3px 6px; font-size: 10px; }
+
+/* Explicit vertical hierarchy: exchange -> market/type -> Binance spot quote. */
+.navigation { display: flex; flex-direction: column; min-width: 0; }
+.providerSection,.marketSection,.quoteSection { display: flex; flex-direction: column; min-width: 0; width: 100%; }
+.providerSection { background: #152833; border-bottom: 2px solid #456a70; }
+.marketSection { padding-left: 12px; background: #0d1b25; border-bottom: 1px solid #344653; }
+.quoteSection { padding-left: 24px; background: #101d27; border-bottom: 1px solid #293d48; }
+.navLabel { display: block; padding: 7px 12px 0; font: 700 10px ui-monospace, monospace; letter-spacing: .04em; color: #93b4bd; }
+.providerTabs,.venueTabs,.quoteTabs { display: flex; width: 100%; box-sizing: border-box; }
+.providerTabs button { min-width: 90px; font-size: 13px; }
+.marketSection .venueTabs button { font-size: 12px; }
+.quoteSection .quoteTabs { border-top: 0; background: transparent; }
+.quoteSection .quoteTabs button { font-size: 11px; }
+.compact .providerSection,.compact .marketSection,.compact .quoteSection { min-width: 0; }
+.compact .marketSection { padding-left: 8px; }
+.compact .quoteSection { padding-left: 16px; }
+.compact .navLabel { padding: 5px 8px 0; font-size: 9px; }
