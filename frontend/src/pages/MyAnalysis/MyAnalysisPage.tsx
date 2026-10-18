@@ -40,6 +40,7 @@ import type { MarketGroup, MarketInstrument } from '@/types/market'
 import { marketBucketIds, type MarketBucketId } from '@/types/marketBucket'
 import type { AnalysisIntent } from '@/types/myAnalysis'
 import { formatMarketChange, formatMarketPrice } from '@/utils/formatMarketValue'
+import { readPortfolio } from '@/services/portfolio/portfolioStorage'
 import styles from './MyAnalysisPage.module.css'
 
 const copy = {
@@ -78,6 +79,7 @@ export function MyAnalysisPage() {
   const { marketDataMode, selectInstrument } = useMarketWorkspace()
   const { result: newsResult } = useNewsProviderMode()
   const [params, setParams] = useSearchParams()
+  const [savedPosition] = useState(() => readPortfolio().positions.find(p => p.id === params.get('positionId') && p.instrumentId === params.get('instrumentId')))
   const [query, setQuery] = useState('')
   const [requestedInstrumentId] = useState<string | null>(() => params.get('instrumentId'))
   const [requestedSnapshotId] = useState<string | null>(() => params.get('snapshotId'))
@@ -91,10 +93,10 @@ export function MyAnalysisPage() {
   const [requestedSnapshot] = useState(() => requestedSnapshotId && !requestedBucketId ? findCandidateSnapshot(requestedSnapshotId) : null)
   const [selectedId, setSelectedId] = useState<string | null>(requestedInstrumentId)
   const [searchFilter, setSearchFilter] = useState<SearchFilter>('all')
-  const [intent, setIntent] = useState<AnalysisIntent>('watching')
+  const [intent, setIntent] = useState<AnalysisIntent>(savedPosition ? 'holding' : 'watching')
   const [note, setNote] = useState('')
-  const [averagePrice, setAveragePrice] = useState('')
-  const [reviewMode, setReviewMode] = useState<MyAnalysisReviewMode>('interest')
+  const [averagePrice, setAveragePrice] = useState(savedPosition ? String(savedPosition.averagePrice) : '')
+  const [reviewMode, setReviewMode] = useState<MyAnalysisReviewMode>(savedPosition ? 'position' : 'interest')
   const t = copy[language]
   useDocumentTitle(t.title)
 
@@ -189,6 +191,7 @@ export function MyAnalysisPage() {
   }) : undefined
 
   const choose = (instrument: MarketInstrument) => {
+    if (instrument.id !== selectedId) { setAveragePrice(''); setIntent('watching'); setReviewMode('interest') }
     setSelectedId(instrument.id)
     setParams({ instrumentId: instrument.id }, { replace: true })
   }
@@ -201,6 +204,7 @@ export function MyAnalysisPage() {
       <div><span>{t.eyebrow}</span><h1>{t.title}</h1><p>{t.description}</p></div>
       <div className={styles.mode} aria-label={t.analyze}><span>{displayMode === 'simple' ? t.simple : t.expert}</span><button type="button" onClick={() => setDisplayMode(displayMode === 'simple' ? 'expert' : 'simple')}>{displayMode === 'simple' ? t.switchExpert : t.switchSimple}</button></div>
     </header>
+    {params.has('positionId') && <p role="status">{savedPosition ? (language === 'ko' ? '내 코인의 저장 평단가를 보유 검토에 반영했습니다. 이 화면의 입력 변경은 저장 기록을 수정하지 않습니다.' : 'Saved average price applied to position review. Inputs here do not edit the saved position.') : (language === 'ko' ? '저장한 보유 기록을 찾을 수 없습니다.' : 'Saved position not found.')} <Link to="/portfolio">{language === 'ko' ? '내 코인' : 'My Coins'}</Link></p>}
     <section className={styles.searchPanel} aria-label={t.search}>
       <label><span>{t.search}</span><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t.searchPlaceholder} /></label>
       <div className={styles.searchMeta}><span>{t.loadedCatalogs}: {loadedCatalogCount}/{states.length}</span>{normalized && <span aria-live="polite">{t.searchResults}: {matchingResults.length}</span>}</div>

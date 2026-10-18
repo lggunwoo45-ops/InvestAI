@@ -1,0 +1,76 @@
+import { fireEvent, render, screen, within } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { PortfolioPage } from './PortfolioPage'
+import { PORTFOLIO_KEY, readPortfolio, writePortfolio } from '@/services/portfolio/portfolioStorage'
+
+const state = vi.hoisted(() => ({ unavailable: false }))
+vi.mock('@/i18n/useLanguage', () => ({ useLanguage: () => ({ language: 'en' }) }))
+vi.mock('@/hooks/useMarketWorkspace', () => ({ useMarketWorkspace: () => ({ marketDataMode: 'mock' }) }))
+vi.mock('@/hooks/useMarketCatalog', () => ({ useMarketCatalog: (venue: string) => ({ loading: false, error: state.unavailable ? 'offline' : null, catalog: state.unavailable ? null : { source: 'mock', fetchedAt: 1000, instruments: [{ id: `${venue}-btc`, marketId: venue.startsWith('upbit') ? 'upbit' : 'binance-spot', symbol: 'BTC', name: 'Bitcoin', quoteCurrency: venue === 'upbit-btc' ? 'BTC' : venue === 'upbit-krw' ? 'KRW' : 'USDT', lastPrice: 125 }] } }) }))
+const show = () => render(<MemoryRouter><PortfolioPage /></MemoryRouter>)
+const add = () => {
+  fireEvent.change(screen.getByLabelText('Instrument · quote currency'), { target: { value: 'upbit-krw-btc' } })
+  fireEvent.change(screen.getByLabelText('Average price'), { target: { value: '100' } })
+  fireEvent.change(screen.getByLabelText('Quantity'), { target: { value: '2' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+}
+describe('My Coins workflow', () => {
+  beforeEach(() => { localStorage.clear(); state.unavailable = false })
+  afterEach(() => vi.restoreAllMocks())
+  it('rejects zero inputs and never shows success after quota failure', () => {
+    show()
+    fireEvent.change(screen.getByLabelText('Instrument · quote currency'), { target: { value: 'upbit-krw-btc' } })
+    fireEvent.change(screen.getByLabelText('Average price'), { target: { value: '0' } })
+    fireEvent.change(screen.getByLabelText('Quantity'), { target: { value: '2' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    expect(readPortfolio().positions).toHaveLength(0)
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('quota') })
+    add()
+    expect(screen.getByText(/Change failed/)).toBeTruthy()
+    expect(screen.queryByText('Saved.')).toBeNull()
+    expect(readPortfolio().positions).toHaveLength(0)
+  })
+  it('syncs another tab and cancels an outdated edit', () => {
+    show(); add()
+    fireEvent.click(screen.getByRole('button', { name: 'Edit' }))
+    const current = readPortfolio()
+    writePortfolio([], current.raw)
+    fireEvent(window, new StorageEvent('storage', { key: PORTFOLIO_KEY }))
+    expect(screen.getByText('No saved coins.')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull()
+  })
+  it('adds, reloads, edits, confirms deletion, and links a saved position to analysis', () => {
+    const view = show()
+    add()
+    const id = readPortfolio().positions[0].id
+    expect(screen.getByText('50 KRW')).toBeTruthy()
+    expect(screen.getByText('25%')).toBeTruthy()
+    expect(screen.getByText(/Mock quote/)).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'My Instrument Analysis' }).getAttribute('href')).toContain(`positionId=${id}`)
+    view.unmount(); show()
+    fireEvent.click(screen.getByRole('button', { name: 'Edit' }))
+    fireEvent.change(screen.getByLabelText('Quantity'), { target: { value: '3' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    expect(readPortfolio().positions[0].quantity).toBe(3)
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
+    expect(readPortfolio().positions).toHaveLength(1)
+    fireEvent.click(within(screen.getByRole('group', { name: 'Delete this position?' })).getByRole('button', { name: 'Delete' }))
+    expect(readPortfolio().positions).toHaveLength(0)
+  })
+  it('retains holdings but suppresses valuation when quotes fail', () => {
+    writePortfolio([{ id: '1', exchange: 'upbit', venue: 'upbit-krw', instrumentId: 'upbit-krw-btc', symbol: 'BTC', quoteCurrency: 'KRW', averagePrice: 100, quantity: 2 }], null)
+    state.unavailable = true
+    show()
+    expect(screen.getByRole('heading', { name: 'BTC' })).toBeTruthy()
+    expect(screen.getAllByText('—')).toHaveLength(3)
+    expect(screen.queryByText('25%')).toBeNull()
+  })
+  it('blocks malformed storage without replacing it', () => {
+    localStorage.setItem(PORTFOLIO_KEY, 'broken')
+    show()
+    expect(screen.getByRole('alert')).toBeTruthy()
+    expect((screen.getByRole('button', { name: 'Save' }) as HTMLButtonElement).disabled).toBe(true)
+    expect(localStorage.getItem(PORTFOLIO_KEY)).toBe('broken')
+  })
+})
