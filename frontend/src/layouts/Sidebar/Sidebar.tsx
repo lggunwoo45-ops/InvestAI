@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 
-import { primaryNavigation, utilityNavigation } from '@/app/navigation'
+import { primaryNavigation, secondaryNavigation, utilityNavigation } from '@/app/navigation'
 import { BrandMark } from '@/components/BrandMark/BrandMark'
 import { Icon } from '@/components/Icon/Icon'
 import { SidebarNavItem } from '@/components/SidebarNavItem/SidebarNavItem'
@@ -35,6 +35,7 @@ export function Sidebar() {
   const { isSidebarPinned, toggleSidebarPin } = useUiStore()
   const { language } = useLanguage()
   const text = uiText[language]
+  const coreLabels = language === 'ko' ? { dashboard: '홈', analyze: '종목 분석', portfolio: '내 투자', ai: 'AI 탐색' } : { dashboard: 'Home', analyze: 'Instrument Analysis', portfolio: 'My Investments', ai: 'AI Explore' }
   const isNarrow = useNarrowSidebar()
   const [isHovered, setIsHovered] = useState(false)
   const [hasFocus, setHasFocus] = useState(false)
@@ -130,7 +131,11 @@ export function Sidebar() {
       <nav id="primary-navigation" className={styles.navigation} aria-label="Primary navigation">
         {isExpanded && <span className={styles.sectionLabel}>{text.workspace}</span>}
         <div className={styles.navigationList}>
-          {primaryNavigation.map((item) => <SidebarNavItem key={item.path} item={item} label={text.navigation[item.icon]} compact={!isExpanded} />)}
+          {primaryNavigation.map((item) => <SidebarNavItem key={item.path} item={item} label={coreLabels[item.icon as keyof typeof coreLabels] ?? text.navigation[item.icon]} compact={!isExpanded} />)}
+        </div>
+        {isExpanded && <span className={styles.sectionLabel}>{language === 'ko' ? '시장 · 자료' : 'Markets · Resources'}</span>}
+        <div className={styles.navigationList}>
+          {secondaryNavigation.map((item) => <SidebarNavItem key={item.path} item={item} label={text.navigation[item.icon]} compact={!isExpanded} />)}
         </div>
       </nav>
 

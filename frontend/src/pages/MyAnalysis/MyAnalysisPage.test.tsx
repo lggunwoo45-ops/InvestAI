@@ -11,6 +11,7 @@ import type { CandidateSnapshot } from '@/types/candidateSnapshot'
 import type { MarketInstrument, MarketVenue } from '@/types/market'
 import { renderWithProviders } from '@/test/renderWithProviders'
 import { MyAnalysisPage } from './MyAnalysisPage'
+import { writePortfolio } from '@/services/portfolio/portfolioStorage'
 
 const catalogMockState = vi.hoisted(() => ({ failedVenue: null as string | null }))
 const technicalMockState = vi.hoisted(() => ({ isLoading: false }))
@@ -40,6 +41,16 @@ vi.mock('@/hooks/useTechnicalLevelData', () => ({
 }))
 
 describe('MyAnalysisPage', () => {
+  it('applies saved average price and clears it when selecting another asset', async () => {
+    writePortfolio([{ id: 'p1', exchange: 'upbit', venue: 'upbit-krw', instrumentId: 'upbit-btc', symbol: 'BTC/KRW', quoteCurrency: 'KRW', averagePrice: 80, quantity: 2 }], null)
+    render(<AppProviders><MemoryRouter initialEntries={['/my-analysis?instrumentId=upbit-btc&positionId=p1']}><AppRoutes /></MemoryRouter></AppProviders>)
+    await screen.findByRole('heading', { level: 1, name: 'My Instrument Analysis' })
+    expect((screen.getByRole('spinbutton', { name: 'Average price (optional)' }) as HTMLInputElement).value).toBe('80')
+    expect(screen.getByText(/Saved average price applied/)).toBeTruthy()
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search instrument' }), { target: { value: 'Apple' } })
+    fireEvent.click(screen.getByRole('button', { name: /AAPL/ }))
+    expect((screen.getByRole('spinbutton', { name: 'Average price (optional)' }) as HTMLInputElement).value).toBe('')
+  })
   it('connects selected current evidence to the report recommendation', () => {
     window.localStorage.setItem('market-copilot.language', 'en')
     renderWithProviders(<MyAnalysisPage />)
@@ -189,9 +200,9 @@ describe('MyAnalysisPage', () => {
     expect(screen.getByText('Optional personal context')).toBeTruthy()
     expect(screen.getByText('Review intent changes checklist wording only.')).toBeTruthy()
     expect(screen.getAllByText('Next checks').length).toBeGreaterThan(1)
-    expect(screen.getByRole('link', { name: 'My Analysis' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Instrument Analysis' })).toBeTruthy()
     fireEvent.change(screen.getByRole('combobox', { name: 'Language' }), { target: { value: 'ko' } })
-    expect(screen.getByRole('link', { name: '내 종목 분석' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: '종목 분석' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: '내 종목 분석' })).toBeTruthy()
     expect(screen.getByText('마켓 작업공간에서 이동했습니다.')).toBeTruthy()
     expect(screen.getByRole('region', { name: '판단 보조 정보' }).textContent).toContain('지금 판단: 보유 기준 재확인')
