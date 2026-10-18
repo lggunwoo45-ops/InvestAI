@@ -46,6 +46,8 @@ describe('CandidateInspectorPanel', () => {
     expect(inspector.textContent).toContain('Some evidence is missing.')
     expect(inspector.textContent).toContain('Review score is not return probability')
     expect(inspector.textContent).toContain('Review ranges are reference areas, not order prices')
+    expect(within(inspector).getByText('Chart and review ranges').closest('details')?.open).toBe(false)
+    fireEvent.click(within(inspector).getByText('Chart and review ranges'))
     const reviewRanges = within(inspector).getByRole('region', { name: 'Review ranges' })
     const chartStructure = within(inspector).getByRole('region', { name: 'Chart structure analysis' })
     expect(chartStructure.textContent).toContain('First support')

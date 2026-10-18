@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
 import { AiUsagePlans } from '@/components/ai/AiUsagePlans/AiUsagePlans'
@@ -64,6 +64,7 @@ function savedSnapshotFilterInput(item: CandidateSnapshotItem, horizon: WatchCan
 
 export function AiAnalysisPage() {
   const navigate = useNavigate()
+  const { hash } = useLocation()
   const { language } = useLanguage()
   const { displayMode } = useDisplayMode()
   const { marketDataMode } = useMarketWorkspace()
@@ -89,7 +90,7 @@ export function AiAnalysisPage() {
   const pageCopy = language === 'ko'
     ? { eyebrow: '일일 시장 검토', title: '오늘의 관심 후보', description: '매일 08:00 기준으로 확인하는 시장별 후보입니다.', advanced: '상세 기준 보기', advancedHelp: '기존 기간 기준은 전문가 검토용입니다. 저장된 일일 후보는 새로고침 전까지 바뀌지 않습니다.' }
     : { eyebrow: 'DAILY MARKET REVIEW', title: 'Today’s interest candidates', description: 'Daily market candidates reviewed around the 08:00 basis.', advanced: 'Advanced criteria', advancedHelp: 'The existing horizon criteria are for expert review. A saved daily list does not change until refreshed.' }
-  useDocumentTitle(pageCopy.title)
+  useDocumentTitle(language === 'ko' ? 'AI 탐색' : 'AI Explore')
 
   const catalogs = useMemo(() => ({
     upbit: [upbitKrw.catalog, upbitBtc.catalog, upbitUsdt.catalog],
@@ -210,16 +211,22 @@ export function AiAnalysisPage() {
   }, [])
   const heldVisibility = candidateDisplayFilter === 'wider' ? 'expanded' : displayMode === 'expert' ? 'collapsed' : 'hidden'
 
-  return <>
-    <EvidenceCandidatePanel items={evidenceRecommendations} language={language} onSelect={(instrumentId) => navigate(`/my-analysis?instrumentId=${encodeURIComponent(instrumentId)}`)} />
+  return <div className={styles.page}>
     <AiAnalysisTerminalLayout
-      header={<MarketTerminalHeader bucketLabel={bucketLabel} displayedCount={qualityDisplayedCount} heldCount={heldCount} excludedCount={excludedCount} dataState={activeCatalogSource} snapshotStatus={snapshotStatus} bitcoinAnchorStatus={bitcoinAnchor?.status ?? null} language={language} />}
+      header={<MarketTerminalHeader bucketLabel={bucketLabel} dataState={activeCatalogSource} snapshotStatus={snapshotStatus} language={language} />}
       tabs={<MarketBucketSelector selected={bucketId} language={language} onChange={setBucketId} />}
       context={<MarketContextStrip bucketId={bucketId} bucketLabel={bucketLabel} bitcoinAnchor={bitcoinAnchor} displayedCount={qualityDisplayedCount} heldCount={heldCount} excludedCount={excludedCount} heldReasonCounts={candidateQualityStatus.heldReasonCounts} excludedReasonCounts={candidateQualityStatus.excludedReasonCounts} heldDetails={screeningDetails.held} excludedDetails={screeningDetails.excluded} showScreeningDetails={displayMode === 'expert'} savedRecordCount={activeSnapshot?.items.length ?? null} visibleRecordCount={terminalItems.length} displayFilter={candidateDisplayFilter} onDisplayFilterChange={changeCandidateDisplayFilter} dataState={activeCatalogSource} newsState={newsResult?.state ?? null} language={language} />}
       advanced={displayMode === 'expert' ? <details className={styles.advanced}><summary>{pageCopy.advanced}</summary><p>{pageCopy.advancedHelp}</p><CandidateHorizonSelector horizon={horizon} language={language} onChange={setHorizon} /></details> : undefined}
       candidateList={<CandidateTerminalList key={recalculationContextKey} snapshot={displaySnapshot} items={terminalItems} selectedInstrumentId={selectedInstrumentId} language={language} now={clock} canRecalculate={!basis.isBeforeTodayBasis && activeInstruments.length > 0} beforeTodayBasis={basis.isBeforeTodayBasis} contextKey={recalculationContextKey} heldCandidates={heldTerminalItems} heldCandidateCount={heldCount} heldVisibility={heldVisibility} onSelect={selectCandidate} onRecalculate={createSnapshot} />}
       inspector={<CandidateInspectorPanel candidate={selectedTerminalItem} snapshotId={displaySnapshot?.snapshotId ?? null} generatedAt={displaySnapshot?.generatedAt ?? null} language={language} technicalAnalysis={technicalAnalysis} technicalLoading={technicalLevelData.isLoading} onOpenAnalysis={openSnapshotAnalysis} />}
     />
-    <AiUsagePlans language={language} />
-  </>
+    <details className={styles.additional}>
+      <summary><span>{language === 'ko' ? '현재 시세로 다른 후보 살펴보기' : 'Explore more with current data'}</span><small>{language === 'ko' ? '저장된 일일 후보와 별도로 확인합니다' : 'Separate from the saved daily list'}</small></summary>
+      <EvidenceCandidatePanel items={evidenceRecommendations} language={language} onSelect={(instrumentId) => navigate(`/my-analysis?instrumentId=${encodeURIComponent(instrumentId)}`)} />
+    </details>
+    <details className={styles.additional} open={hash === '#ai-usage-plans-title' || undefined}>
+      <summary>{language === 'ko' ? 'AI 사용량 및 플랜 안내' : 'AI usage and plan information'}</summary>
+      <AiUsagePlans language={language} />
+    </details>
+  </div>
 }

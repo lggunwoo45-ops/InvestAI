@@ -17,3 +17,10 @@
 @media (max-width: 1500px) { .statuses { display: none; } .userText { display: none; } }
 @media (max-width: 1400px) { .header { gap: 12px; padding-inline: 16px; } .actions { gap: 10px; } .divider { display: none; } }
 @media (min-width: 2200px) { .header { padding-inline: 30px; } }
+@media (max-width: 760px) {
+  .exploreHeader { flex-wrap: wrap; gap: 8px; padding: 10px 16px; align-content: center; }
+  .exploreHeader > div:first-child { order: 2; width: 100%; }
+  .exploreHeader .actions { order: 1; width: 100%; gap: 8px; }
+  .exploreHeader .actions [role='group'] { flex: 1; width: auto; min-width: 0; }
+  .exploreHeader .clock, .exploreHeader .userMenu { display: none; }
+}

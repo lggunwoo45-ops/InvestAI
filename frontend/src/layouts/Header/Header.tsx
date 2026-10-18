@@ -11,7 +11,7 @@ import { useLanguage } from '@/i18n/useLanguage'
 import { formatDate, formatTime } from '@/utils/formatDateTime'
 import styles from './Header.module.css'
 
-export function Header() {
+export function Header({ hideCopilotToggle = false }: { hideCopilotToggle?: boolean }) {
   const now = useCurrentTime()
   const { isAiCopilotOpen, toggleAiCopilot } = useUiStore()
   const { activeMarketState } = useMarketWorkspace()
@@ -27,7 +27,7 @@ export function Header() {
         : 'unconfigured'
 
   return (
-    <header className={styles.header}>
+    <header className={`${styles.header} ${hideCopilotToggle ? styles.exploreHeader : ''}`}>
       <GlobalSearch />
 
       <div className={styles.actions}>
@@ -46,9 +46,9 @@ export function Header() {
           <strong>{formatTime(now)}</strong>
           <span>{formatDate(now)}</span>
         </div>
-        <button className={styles.iconButton} type="button" onClick={toggleAiCopilot} aria-pressed={isAiCopilotOpen} aria-label="Toggle AI Copilot">
+        {!hideCopilotToggle && <button className={styles.iconButton} type="button" onClick={toggleAiCopilot} aria-pressed={isAiCopilotOpen} aria-label="Toggle AI Copilot">
           <Icon name="panel" size={18} />
-        </button>
+        </button>}
         <button className={styles.userMenu} type="button" aria-label="Open user menu">
           <span className={styles.avatar}>IA</span>
           <span className={styles.userText}><strong>{text.operator}</strong><small>{text.workspaceOwner}</small></span>
