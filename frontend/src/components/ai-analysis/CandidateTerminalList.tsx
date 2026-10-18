@@ -50,14 +50,13 @@ export function CandidateTerminalList({ snapshot, items, selectedInstrumentId, l
     onRecalculate()
   }
   return <section className={styles.panel} aria-label={isToday || !snapshot ? t.panelToday : t.panelPrevious} data-terminal-list>
-    <header><div><span>{isToday || !snapshot ? t.panelToday : t.panelPrevious}</span><h2>{isToday ? t.title : snapshot ? t.previous : t.title}</h2><p>{snapshot ? isToday ? t.fixed : t.previousNote : beforeTodayBasis ? t.pending : t.notReady}</p></div><button type="button" className={styles.recalculate} disabled={!canRecalculate} onClick={recalculate}>{t.advanced}</button></header>
+    <header><div><span>{isToday || !snapshot ? t.panelToday : t.panelPrevious}</span><h2>{isToday ? t.title : snapshot ? t.previous : t.title} <b aria-hidden="true">{items.length}</b></h2><p>{snapshot ? isToday ? t.fixed : t.previousNote : beforeTodayBasis ? t.pending : t.notReady}</p></div><button type="button" className={styles.recalculate} aria-label={t.advanced} disabled={!canRecalculate} onClick={recalculate}>{language === 'ko' ? '후보 다시 계산' : 'Recalculate'}</button></header>
     {confirmationPending && <p className={styles.confirmation} role="status">{t.confirm}</p>}
     {expired && <p className={styles.stale}>{t.expiredNote}</p>}
     {snapshot && items.length > 0 && items.length < 5 && <p className={styles.limit} role="status">{t.fewer}</p>}
     {snapshot && items.length === 0 && <p className={styles.empty} role="status">{t.zero}</p>}
     {!snapshot && <p className={styles.empty} role="status">{beforeTodayBasis ? t.pending : t.notReady}</p>}
-    <div className={styles.columns} aria-hidden="true"><span>{t.symbol}</span><span>{t.price}</span><span>{t.change}</span><span>{t.score}</span><span>{t.read}</span><span>{t.range}</span></div>
-    <p className={styles.boundary}>{t.boundary}</p>
+    {items.length > 0 && <div className={styles.columns} aria-hidden="true"><span>{t.symbol}</span><span>{t.price}</span><span>{t.change}</span><span>{t.score}</span><span>{t.read}</span><span>{t.range}</span></div>}
     <ol className={styles.rows}>{items.map((candidate) => {
       const item = candidate.item
       const firstRange = candidate.reviewRanges[0]
@@ -65,15 +64,16 @@ export function CandidateTerminalList({ snapshot, items, selectedInstrumentId, l
       const range = firstRange && firstRange.lowPrice !== null && firstRange.highPrice !== null ? `${number(firstRange.lowPrice, language)}–${number(firstRange.highPrice, language)} ${item.quoteCurrency}` : t.rangeUnavailable
       return <li key={item.instrumentId} data-selected={selectedInstrumentId === item.instrumentId || undefined}>
         <button type="button" className={styles.select} aria-label={`${t.select} ${item.symbol}; ${t.price}: ${number(candidate.currentPrice, language)} ${item.quoteCurrency}; ${t.change}: ${change}; ${t.score}: ${candidate.reviewScore.score === null ? '—' : `${candidate.reviewScore.score}/100`}; ${t.read}: ${candidate.practicalDecision.title}; ${t.range}: ${range}`} aria-pressed={selectedInstrumentId === item.instrumentId} onClick={() => onSelect(item.instrumentId)}>
-          <span className={styles.identity}><strong>{item.symbol}</strong><small>{item.displayName}</small><em>{item.reasonText}</em></span>
-          <span className={styles.numeric}><strong>{number(candidate.currentPrice, language)}</strong><small>{item.quoteCurrency}</small></span>
+          <span className={styles.identity} data-mark={item.symbol.slice(0, 1)} data-tone={(item.order - 1) % 5}><strong>{item.symbol}</strong><small>{item.displayName}</small><em>{item.reasonText}</em></span>
+          <span className={styles.numeric}><small className={styles.mobileLabel}>{t.price}</small><strong>{number(candidate.currentPrice, language)}</strong><small>{item.quoteCurrency}</small></span>
           <span className={styles.numeric}>{change}</span>
-          <span className={styles.score}>{candidate.reviewScore.score === null ? '—' : `${candidate.reviewScore.score}/100`}</span>
+          <span className={styles.score}><small className={styles.mobileLabel}>{t.score}</small>{candidate.reviewScore.score === null ? '—' : `${candidate.reviewScore.score}/100`}</span>
           <span className={styles.read}>{candidate.practicalDecision.title}</span>
           <span className={styles.range}>{range}</span>
         </button>
       </li>
     })}</ol>
+    <p className={styles.boundary}>{t.boundary}</p>
     {heldVisibility !== 'hidden' && heldCandidates.length > 0 && <details className={styles.held} open={heldVisibility === 'expanded' || undefined}>
       <summary><span><strong>{t.held}</strong><small>{t.heldHelp}</small>{heldCandidateCount > heldCandidates.length && <small>{t.heldLimit(heldCandidates.length, heldCandidateCount)}</small>}</span><b>{heldCandidateCount}</b></summary>
       <ol>{heldCandidates.map(({ candidate, reason }) => <li key={candidate.item.instrumentId}>

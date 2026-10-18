@@ -1,1 +1,6 @@
-.tabs{position:sticky;z-index:4;top:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));padding:10px 26px 0;border-bottom:1px solid #263740;background:#091117}.tabs button{min-width:0;padding:10px 12px;border:1px solid #30434d;border-bottom:0;background:#0b141a;color:#7f919b;font:650 9px ui-monospace,monospace;cursor:pointer}.tabs button+button{border-left:0}.tabs button:hover{background:#102026;color:#a9c1bd}.tabs button[aria-selected=true]{background:#172827;color:#c2d7d2;box-shadow:inset 0 -2px #739a93}@media(max-width:760px){.tabs{display:flex;padding-inline:15px;overflow-x:auto}.tabs button{min-width:105px}}
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 0 12px; border-bottom: 1px solid var(--color-border); }
+.tabs button { min-width: 80px; min-height: 42px; padding: 10px 18px; border: 1px solid transparent; border-radius: 10px; background: transparent; color: var(--color-text-muted); font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.tabs button:hover { background: var(--color-surface-hover); color: var(--color-text); }
+.tabs button[aria-selected='true'] { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-on-accent); box-shadow: 0 3px 8px var(--color-shadow); }
+.tabs button:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+@media (max-width: 760px) { .tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px; }.tabs button { min-width: 0; padding: 8px 2px; font-size: 12px; overflow-wrap: anywhere; } }

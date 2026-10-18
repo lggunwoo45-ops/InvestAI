@@ -15,6 +15,8 @@ describe('AI Analysis evidence recommendations', () => {
   beforeEach(() => { window.localStorage.clear(); window.localStorage.setItem('market-copilot.language', 'en') })
   it('updates useful recommendations and exclusions when the bucket changes', () => {
     renderWithProviders(<AiAnalysisPage />)
+    expect(screen.getByText('Explore more with current data').closest('details')?.open).toBe(false)
+    fireEvent.click(screen.getByText('Explore more with current data'))
     const panel = () => screen.getByRole('region', { name: 'AI candidates' })
     expect(within(panel()).getByRole('button', { name: 'Select evidence candidate BTC/KRW' })).toBeTruthy()
     expect(panel().textContent).toContain('Keep watching')

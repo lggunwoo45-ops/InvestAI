@@ -15,7 +15,7 @@ export function AiAnalysisTerminalLayout({ header, tabs, context, advanced, cand
     {header}
     {tabs}
     {context}
-    {advanced}
     <div className={styles.workspace}><div className={styles.list}>{candidateList}</div><div className={styles.inspector}>{inspector}</div></div>
+    {advanced}
   </div>
 }

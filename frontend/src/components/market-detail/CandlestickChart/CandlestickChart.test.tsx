@@ -100,7 +100,7 @@ describe('CandlestickChart chart overlays', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save line' }))
     await waitFor(() => expect(chartMock.createPriceLine.mock.calls.some(([options]) => {
       const value = options as { id: string; title: string; color: string; lineWidth: number }
-      return value.id.startsWith('user:') && value.title === 'Manual chart review' && value.color === '#8b7da8' && value.lineWidth === 2
+      return value.id.startsWith('user:') && value.title === 'Manual chart review' && value.color === '#7051b3' && value.lineWidth === 2
     })).toBe(true))
   })
 

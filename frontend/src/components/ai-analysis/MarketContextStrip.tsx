@@ -79,6 +79,14 @@ export function MarketContextStrip({ bucketId, bucketLabel, bitcoinAnchor, displ
   const excludedReasons = labelledReasons(excludedReasonCounts, t.reasons)
   const newsLabel = newsState ? t.newsStates[newsState] : t.unavailable
   return <section className={styles.strip} aria-label={t.title} data-asset-context={crypto ? 'crypto' : 'stock'}>
+    <section className={styles.filterBar} aria-label={t.quality}>
+      <div><strong>{t.quality}</strong><span>{t.filterHelp[displayFilter]}</span></div>
+      <div className={styles.filters} role="group" aria-label={t.quality}>{filters.map((filter) => <button key={filter} type="button" aria-pressed={displayFilter === filter} title={t.filterHelp[filter]} onClick={() => onDisplayFilterChange?.(filter)}>{t.filters[filter]}</button>)}</div>
+      {savedRecordCount !== null && visibleRecordCount !== null && <small>{t.savedRecord}: <strong>{savedRecordCount}</strong> · {t.visibleRecord}: <strong>{visibleRecordCount}</strong></small>}
+    </section>
+    <details className={styles.contextDetails}>
+      <summary><span>{language === 'ko' ? '시장 흐름과 후보 선정 근거' : 'Market context and screening details'}</span><small>{crypto && bitcoinAnchor ? `BTC · ${bitcoinAnchor.practicalDecision.title}` : `${t.news}: ${newsLabel}`}</small></summary>
+      <div className={styles.contextGrid}>
     {crypto && bitcoinAnchor && <section className={styles.anchor} aria-label={language === 'ko' ? '비트코인 시장 기준' : 'Bitcoin market anchor'} data-market-bucket={bucketId}>
       <div className={styles.sectionTitle}><span>{t.anchor}</span><strong>{bitcoinAnchor.symbol}</strong></div>
       <dl><div><dt>{t.current}</dt><dd>{number(bitcoinAnchor.currentPrice, language)} {bitcoinAnchor.currentPrice === null ? '' : bitcoinAnchor.symbol.split('/')[1]}</dd></div><div><dt>{t.read}</dt><dd>{bitcoinAnchor.practicalDecision.title}</dd></div><div><dt>{t.score}</dt><dd>{bitcoinAnchor.reviewScore.score === null ? '—' : `${bitcoinAnchor.reviewScore.score}/100`}</dd></div></dl>
@@ -92,11 +100,8 @@ export function MarketContextStrip({ bucketId, bucketLabel, bitcoinAnchor, displ
       <p>{t.limited} {t.notFilled}</p>
       <small>{t.scanBoundary}</small>
     </section>
-    <section className={styles.quality} aria-label={t.quality}>
-      <div className={styles.sectionTitle}><span>{t.quality}</span><strong>{t.filters[displayFilter]}</strong></div>
-      <div className={styles.filters} role="group" aria-label={t.quality}>{filters.map((filter) => <button key={filter} type="button" aria-pressed={displayFilter === filter} title={t.filterHelp[filter]} onClick={() => onDisplayFilterChange?.(filter)}>{t.filters[filter]}</button>)}</div>
-      <p>{t.filterHelp[displayFilter]}</p>
-      {savedRecordCount !== null && visibleRecordCount !== null && <p className={styles.recordView}>{t.savedRecord}: <strong>{savedRecordCount}</strong> · {t.visibleRecord}: <strong>{visibleRecordCount}</strong></p>}
+    <section className={styles.quality} aria-label={t.screeningTitle}>
+      <div className={styles.sectionTitle}><span>{t.screeningTitle}</span></div>
       {heldReasons.length + excludedReasons.length > 0 ? <ul className={styles.reasons}>
         {heldReasons.map(([label, count]) => <li key={`held-${label}`}><span>{t.held}</span>{label} <b>{count}</b></li>)}
         {excludedReasons.map(([label, count]) => <li key={`excluded-${label}`}><span>{t.excluded}</span>{label} <b>{count}</b></li>)}
@@ -122,5 +127,7 @@ export function MarketContextStrip({ bucketId, bucketLabel, bitcoinAnchor, displ
       <p>{t.data}: {t.states[dataState]} · {t.news}: {newsLabel}</p>
       {!crypto && bucketId !== 'usStocks' && <p>{t.dart}</p>}
     </section>
+      </div>
+    </details>
   </section>
 }

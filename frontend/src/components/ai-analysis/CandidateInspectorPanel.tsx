@@ -4,6 +4,9 @@ import { ChartOverlayLegend } from '@/components/technicalLevels/ChartOverlayLeg
 import { TechnicalLevelsPanel } from '@/components/technicalLevels/TechnicalLevelsPanel/TechnicalLevelsPanel'
 import type { Language } from '@/i18n/translations'
 import type { TechnicalLevelAnalysis } from '@/types/technicalLevels'
+import type { Candle } from '@/types/marketDetail'
+import type { AnalysisDataQuality } from '@/types/myAnalysis'
+import { CandidatePriceHistory } from './CandidatePriceHistory'
 import type { CandidateTerminalItem } from './candidateTerminalModel'
 import styles from './CandidateInspectorPanel.module.css'
 
@@ -14,6 +17,8 @@ interface CandidateInspectorPanelProps {
   language: Language
   technicalAnalysis?: TechnicalLevelAnalysis | null
   technicalLoading?: boolean
+  candles?: readonly Candle[]
+  candleDataQuality?: AnalysisDataQuality
   onOpenAnalysis: (instrumentId: string, snapshotId: string) => void
 }
 
@@ -44,15 +49,15 @@ function newsStateLabel(value: string, language: Language) {
   return labels[normalized as keyof typeof labels] ?? value
 }
 
-export function CandidateInspectorPanel({ candidate, snapshotId, generatedAt, language, technicalAnalysis = null, technicalLoading = false, onOpenAnalysis }: CandidateInspectorPanelProps) {
+export function CandidateInspectorPanel({ candidate, snapshotId, generatedAt, language, technicalAnalysis = null, technicalLoading = false, candles = [], candleDataQuality = 'unavailable', onOpenAnalysis }: CandidateInspectorPanelProps) {
   const t = copy[language]
-  if (!candidate) return <aside className={styles.inspector} aria-label={t.title} data-empty="true"><header><span>INSPECTOR</span><h2>{t.title}</h2></header><p className={styles.empty}>{t.empty}</p></aside>
+  if (!candidate) return <aside className={styles.inspector} aria-label={t.title} data-empty="true"><header><h2>{t.title}</h2></header><p className={styles.empty}>{t.empty}</p></aside>
 
   const { item } = candidate
   const cautions = [candidate.practicalDecision.caution, ...candidate.reviewScore.cautions].filter((value, index, values) => value && values.indexOf(value) === index)
   return <aside className={styles.inspector} aria-label={t.title} data-freshness={candidate.freshness}>
-    <header><div><span>INSPECTOR · RECORD {item.order}</span><h2 aria-live="polite">{item.symbol}</h2><p>{item.displayName} · {item.marketId}</p></div><strong>{candidate.reviewScore.label}</strong></header>
-    <dl className={styles.metrics}>
+    <header><div><span>{t.title}</span><h2 aria-live="polite">{item.symbol}</h2><p>{item.displayName} · {item.marketId}</p></div><strong>{candidate.reviewScore.label}</strong></header>
+    <dl className={styles.metrics} data-direction={candidate.changeSinceBasis === null ? 'unknown' : candidate.changeSinceBasis < 0 ? 'down' : candidate.changeSinceBasis > 0 ? 'up' : 'flat'}>
       <div><dt>{t.rank}</dt><dd>{item.order} / 5</dd></div>
       <div><dt>{t.basis}</dt><dd>{number(item.basisPrice, language)} {item.quoteCurrency}</dd></div>
       <div><dt>{t.current}</dt><dd>{number(candidate.currentPrice, language)} {candidate.currentPrice === null ? '' : item.quoteCurrency}</dd></div>
@@ -60,15 +65,22 @@ export function CandidateInspectorPanel({ candidate, snapshotId, generatedAt, la
       <div><dt>{t.score}</dt><dd>{candidate.reviewScore.score === null ? '—' : `${candidate.reviewScore.score}/100`}</dd></div>
       <div><dt>{t.freshness}</dt><dd>{t.freshnessLabels[candidate.freshness]}</dd></div>
     </dl>
+    {!technicalLoading && <CandidatePriceHistory candles={candles} dataQuality={candleDataQuality} language={language} />}
     <PracticalDecisionCard result={candidate.practicalDecision} language={language} compact showSafety={false} />
+    <footer><button type="button" disabled={!snapshotId} onClick={() => snapshotId && onOpenAnalysis(item.instrumentId, snapshotId)}>{t.open} →</button><small>{t.recorded}: {time(generatedAt, language)} · {t.safety}</small></footer>
+    <details className={styles.details}>
+      <summary>{language === 'ko' ? '차트와 검토 범위' : 'Chart and review ranges'}</summary>
     <ReviewRangePanel ranges={candidate.reviewRanges} language={language} quoteCurrency={item.quoteCurrency} compact showSafety={false} />
     {technicalAnalysis && <>
       <TechnicalLevelsPanel levelSet={technicalAnalysis.levelSet} movingAverageContext={technicalAnalysis.movingAverageContext} displayMode="simple" language={language} isLoading={technicalLoading} />
       <ChartOverlayLegend status={technicalAnalysis.levelSet.status} lines={technicalAnalysis.overlayLines} displayMode="simple" language={language} isLoading={technicalLoading} />
     </>}
-    <section className={styles.evidence} aria-label={t.evidence}><header><span>{t.evidence}</span><strong>{t.ruleBasis}</strong></header><dl>{item.ruleBasis.map((entry) => <div key={entry.key}><dt>{entry.label}</dt><dd>{entry.value}</dd></div>)}</dl><p>{t.news}: {newsStateLabel(item.newsState, language)}</p><p>{t.disclosure}: {item.disclosureCount > 0 ? item.disclosureCount : t.disclosureNone}</p></section>
+    </details>
+    <details className={styles.details}>
+      <summary>{language === 'ko' ? '근거와 변경 기록' : 'Evidence and changes'}</summary>
+    <section className={styles.evidence} aria-label={t.evidence}><header><span>{t.evidence}</span><strong>{t.ruleBasis}</strong></header><p>{item.reasonText}</p><dl>{item.ruleBasis.map((entry) => <div key={entry.key}><dt>{entry.label}</dt><dd>{entry.value}</dd></div>)}</dl><p>{t.news}: {newsStateLabel(item.newsState, language)}</p><p>{t.disclosure}: {item.disclosureCount > 0 ? item.disclosureCount : t.disclosureNone}</p></section>
     <section className={styles.changes} aria-label={t.changes}><strong>{t.changes}</strong>{candidate.freshnessChanges.length > 0 ? <ul>{candidate.freshnessChanges.map((change) => <li key={change.field}>{t.fields[change.field]}: {change.previousValue} → {change.currentValue}</li>)}</ul> : <p>{t.noChanges}</p>}</section>
     <section className={styles.cautions} aria-label={t.caution}><strong>{t.caution}</strong>{cautions.length > 0 ? <ul>{cautions.map((caution) => <li key={caution}>{caution}</li>)}</ul> : <p>{t.noCaution}</p>}</section>
-    <footer><small>{t.recorded}: {time(generatedAt, language)} · {t.safety}</small><button type="button" disabled={!snapshotId} onClick={() => snapshotId && onOpenAnalysis(item.instrumentId, snapshotId)}>{t.open} →</button></footer>
+    </details>
   </aside>
 }

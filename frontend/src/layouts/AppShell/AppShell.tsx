@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 
 import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
 import { BetaRouteBanner } from '@/components/demo/BetaRouteBanner/BetaRouteBanner'
@@ -12,18 +12,21 @@ import styles from './AppShell.module.css'
 export function AppShell() {
   const { isAiCopilotOpen, isSidebarPinned } = useUiStore()
   const { displayMode } = useDisplayMode()
+  const { pathname } = useLocation()
+  const isExplore = pathname.replace(/\/$/, '') === '/ai-analysis'
+  const showCopilot = isAiCopilotOpen && !isExplore
 
   return (
-    <div className={classNames(styles.shell, !isSidebarPinned && styles.sidebarUnpinned)} data-display-mode={displayMode}>
+    <div className={classNames(styles.shell, !isSidebarPinned && styles.sidebarUnpinned)} data-display-mode={displayMode} data-explore={isExplore || undefined}>
       <Sidebar />
       <div className={styles.workspace}>
-        <Header />
-        <div className={classNames(styles.body, !isAiCopilotOpen && styles.aiCopilotClosed)}>
+        <Header hideCopilotToggle={isExplore} />
+        <div className={classNames(styles.body, !showCopilot && styles.aiCopilotClosed)}>
           <main className={styles.main}>
             <BetaRouteBanner />
             <Outlet />
           </main>
-          {isAiCopilotOpen && <AiCopilot />}
+          {showCopilot && <AiCopilot />}
         </div>
       </div>
     </div>
