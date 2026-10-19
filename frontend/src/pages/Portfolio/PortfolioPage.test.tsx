@@ -1,8 +1,10 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { PortfolioPage } from './PortfolioPage'
 import { PORTFOLIO_KEY, readPortfolio, writePortfolio } from '@/services/portfolio/portfolioStorage'
+import { calculateLedger } from '@/services/portfolio/tradeLedger'
+import { createPortfolioBackup } from '@/services/portfolio/portfolioBackup'
 
 const state = vi.hoisted(() => ({ unavailable: false }))
 vi.mock('@/i18n/useLanguage', () => ({ useLanguage: () => ({ language: 'en' }) }))
@@ -72,6 +74,80 @@ describe('My Coins workflow', () => {
     expect(screen.getByRole('alert')).toBeTruthy()
     expect((screen.getByRole('button', { name: 'Save' }) as HTMLButtonElement).disabled).toBe(true)
     expect(localStorage.getItem(PORTFOLIO_KEY)).toBe('broken')
+  })
+  it('records buys and sells, previews the result, keeps a closed holding and undoes the last trade', () => {
+    show(); add()
+    fireEvent.click(screen.getByRole('button', { name: 'Add trade' }))
+    fireEvent.change(screen.getByLabelText('Execution price (KRW)'), { target: { value: '200' } })
+    fireEvent.change(screen.getByLabelText('Trade quantity'), { target: { value: '2' } })
+    expect(screen.getByText('Average after trade')).toBeTruthy()
+    expect(readPortfolio().positions[0].quantity).toBe(2)
+    fireEvent.click(screen.getByRole('button', { name: 'Save trade' }))
+    expect(readPortfolio().positions[0]).toMatchObject({ quantity: 4, averagePrice: 150 })
+    fireEvent.click(screen.getByRole('button', { name: 'Edit' }))
+    expect((screen.getByLabelText('Average price') as HTMLInputElement).readOnly).toBe(true)
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add trade' }))
+    fireEvent.change(screen.getByLabelText('Trade side'), { target: { value: 'sell' } })
+    fireEvent.change(screen.getByLabelText('Execution price (KRW)'), { target: { value: '180' } })
+    fireEvent.change(screen.getByLabelText('Trade quantity'), { target: { value: '5' } })
+    expect(screen.getByText(/Cannot sell more/)).toBeTruthy()
+    expect((screen.getByRole('button', { name: 'Save trade' }) as HTMLButtonElement).disabled).toBe(true)
+    fireEvent.change(screen.getByLabelText('Trade quantity'), { target: { value: '4' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save trade' }))
+    const closed = readPortfolio().positions[0]
+    expect(closed.quantity).toBe(0)
+    expect(calculateLedger(closed.ledger).realized).toBe(120)
+    expect(screen.getByText('Closed holding')).toBeTruthy()
+    expect(screen.queryByRole('region', { name: 'Investment overview KRW' })).toBeNull()
+    expect(screen.queryByRole('link', { name: 'My Instrument Analysis' })).toBeNull()
+    fireEvent.click(screen.getByText(/View trade history/))
+    fireEvent.click(screen.getByRole('button', { name: 'Undo last trade' }))
+    expect(readPortfolio().positions[0].quantity).toBe(0)
+    const confirm = screen.getByRole('group', { name: 'Undo the last trade and restore the preceding balance?' })
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Undo last trade' }))
+    expect(readPortfolio().positions[0].quantity).toBe(4)
+  })
+  it('previews a backup before additive restore and prevents duplicate restoration', async () => {
+    show(); add()
+    const existing = readPortfolio()
+    const extra = { ...existing.positions[0], id: 'restored', symbol: 'Restored BTC' }
+    const text = createPortfolioBackup({ positions: [extra], raw: null, error: null })
+    const file = new File([text], 'backup.json', { type: 'application/json' })
+    Object.defineProperty(file, 'text', { value: async () => text })
+    fireEvent.change(screen.getByLabelText('Choose backup file'), { target: { files: [file] } })
+    await screen.findByRole('region', { name: 'Restore preview' })
+    expect(readPortfolio().positions).toHaveLength(1)
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm additive restore' }))
+    expect(readPortfolio().positions).toHaveLength(2)
+    fireEvent.change(screen.getByLabelText('Choose backup file'), { target: { files: [file] } })
+    await screen.findByRole('region', { name: 'Restore preview' })
+    expect((screen.getByRole('button', { name: 'Confirm additive restore' }) as HTMLButtonElement).disabled).toBe(true)
+  })
+  it('rejects conflicting backups without changing stored holdings', async () => {
+    show(); add()
+    const existing = readPortfolio()
+    const text = createPortfolioBackup({ ...existing, positions: [{ ...existing.positions[0], quantity: 9 }] })
+    const file = new File([text], 'conflict.json')
+    Object.defineProperty(file, 'text', { value: async () => text })
+    fireEvent.change(screen.getByLabelText('Choose backup file'), { target: { files: [file] } })
+    await screen.findByText(/Cannot restore/)
+    expect(readPortfolio().raw).toBe(existing.raw)
+    expect(screen.queryByRole('region', { name: 'Restore preview' })).toBeNull()
+  })
+  it('cancels a pending import if another tab changes the portfolio', async () => {
+    show(); add()
+    const existing = readPortfolio()
+    let finish: (text: string) => void = () => undefined
+    const file = new File(['pending'], 'backup.json')
+    Object.defineProperty(file, 'text', { value: () => new Promise<string>(resolve => { finish = resolve }) })
+    fireEvent.change(screen.getByLabelText('Choose backup file'), { target: { files: [file] } })
+    writePortfolio([], existing.raw)
+    fireEvent(window, new StorageEvent('storage', { key: PORTFOLIO_KEY }))
+    finish(createPortfolioBackup(existing))
+    await waitFor(() => expect(screen.queryByText('Checking file')).toBeNull())
+    expect(screen.queryByRole('region', { name: 'Restore preview' })).toBeNull()
+    expect(readPortfolio().positions).toHaveLength(0)
   })
   it('saves a plan, rejects inverted thresholds and lets users clear their criteria', () => {
     show()

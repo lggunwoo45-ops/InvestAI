@@ -5,6 +5,10 @@ import { useMarketWorkspace } from '@/hooks/useMarketWorkspace'
 import { useLanguage } from '@/i18n/useLanguage'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { PositionPlan } from '@/components/portfolio/PositionPlan'
+import { TradeLedgerPanel } from '@/components/portfolio/TradeLedgerPanel'
+import { PortfolioBackupPanel } from '@/components/portfolio/PortfolioBackupPanel'
+import { mergePortfolioBackup } from '@/services/portfolio/portfolioBackup'
+import { realizedByCurrency } from '@/services/portfolio/tradeLedger'
 import { portfolioNumber as number, portfolioPercent } from '@/utils/formatPortfolio'
 import { summarizePortfolio } from '@/services/portfolio/portfolioReview'
 import { coinVenues, PORTFOLIO_KEY, positionFor, readPortfolio, valuation, writePortfolio, type CoinVenue, type Position } from '@/services/portfolio/portfolioStorage'
@@ -26,6 +30,7 @@ export function PortfolioPage() {
   useDocumentTitle(t.title)
   const { marketDataMode } = useMarketWorkspace()
   const [store, setStore] = useState(readPortfolio)
+  const [revision, setRevision] = useState(0)
   const [venue, setVenue] = useState<CoinVenue>('upbit-krw')
   const [retry, setRetry] = useState(0)
   const upbit = useMarketCatalog('upbit-krw', marketDataMode, retry)
@@ -50,6 +55,7 @@ export function PortfolioPage() {
   useEffect(() => {
     const sync = (event: StorageEvent) => {
       if (event.key === PORTFOLIO_KEY || event.key === null) {
+        setRevision(n => n + 1)
         setStore(readPortfolio()); setEditing(null); setDeleting(null); setAverage(''); setQuantity(''); setTarget(''); setStop(''); setInstrumentId(''); setMessage('')
       }
     }
@@ -58,7 +64,7 @@ export function PortfolioPage() {
   }, [])
   const reset = () => { setEditing(null); setAverage(''); setQuantity(''); setTarget(''); setStop(''); setInstrumentId(''); setQuery(''); setFormOpen(false) }
   const commit = (positions: Position[], success: string) => {
-    try { setStore(writePortfolio(positions, store.raw)); setMessage(success); return true }
+    try { setStore(writePortfolio(positions, store.raw)); setRevision(n => n + 1); setMessage(success); return true }
     catch { setMessage(t.error); return false }
   }
   const save = () => {
@@ -69,7 +75,7 @@ export function PortfolioPage() {
       if (!position) throw new Error('selection')
       const targetPrice = target.trim() ? Number(target) : undefined
       const stopPrice = stop.trim() ? Number(stop) : undefined
-      if ([targetPrice, stopPrice].some(price => price !== undefined && (!Number.isFinite(price) || price <= 0 || valuation(position, price) === null))
+      if ([targetPrice, stopPrice].some(price => price !== undefined && (!Number.isFinite(price) || price <= 0 || valuation({ ...position, quantity: position.quantity || 1 }, price) === null))
         || (targetPrice !== undefined && stopPrice !== undefined && stopPrice >= targetPrice)) { setMessage(pt.error); return }
       const next = { ...position, targetPrice, stopPrice }
       if (commit(editing ? store.positions.map(p => p.id === editing.id ? next : p) : [...store.positions, next], t.saved)) reset()
@@ -82,7 +88,11 @@ export function PortfolioPage() {
     const instrument = state.catalog?.instruments.find(i => i.id === position.instrumentId && i.quoteCurrency === position.quoteCurrency)
     return { position, state, price: state.loading || state.error ? null : instrument?.lastPrice ?? null }
   })
-  const totals = summarizePortfolio(entries)
+  const totals = summarizePortfolio(entries.filter(entry => entry.position.quantity > 0))
+  const realized = realizedByCurrency(store.positions)
+  const ledgerText = language === 'ko'
+    ? { realized: '기록된 실현손익', closed: '보유 종료', locked: '평단가와 수량은 거래 기록에서 자동 계산됩니다. 정정하려면 마지막 거래부터 취소하세요.', delete: '이 기록의 거래 내역과 실현손익도 함께 삭제됩니다.', notice: '현물 보유 기준 · 기록한 수수료 반영 · 세금/환율 미반영. 서로 다른 기준통화를 합산하지 않습니다. 시세는 조회 시점 기준입니다.' }
+    : { realized: 'Recorded realized P/L', closed: 'Closed holding', locked: 'Average and quantity are calculated from the ledger. Correct entries by undoing from the last trade.', delete: 'The trade history and realized P/L of this holding will also be removed.', notice: 'Spot holdings. Includes recorded fees; excludes taxes and FX. Different currencies are never summed. Quotes reflect the time fetched.' }
   return <main className={styles.page}>
     <header className={styles.heading}><span>MY INVESTMENTS</span><h1>{t.title}</h1><p>{pt.subtitle}</p></header>
     <nav className={styles.actions}><strong>{t.coins}</strong><Link to="/market">{language === 'ko' ? '관심종목 · 마켓' : 'Watchlists · Market'}</Link>{store.positions.length > 0 && <button type="button" aria-expanded={formOpen || !!editing} aria-controls="portfolio-form" onClick={() => { reset(); setFormOpen(true) }}>{pt.add}</button>}<button type="button" onClick={() => setRetry(n => n + 1)}>{t.refresh}</button></nav>
@@ -98,14 +108,16 @@ export function PortfolioPage() {
         {total.value === null && <p role="status">{total.pricedCount < total.count ? pt.incomplete : pt.range}</p>}
       </section>)}</div>
     </section>}
+    {realized.length > 0 && <section className={styles.realized} aria-label={ledgerText.realized}><h2>{ledgerText.realized}</h2>{realized.map(item => <div key={item.currency}><span>{item.currency}</span><strong>{item.realized === null ? '—' : number(item.realized)}</strong></div>)}</section>}
     <form id="portfolio-form" hidden={!formOpen && !editing && store.positions.length > 0} ref={formRef} className={styles.form} onSubmit={e => { e.preventDefault(); save() }}>
       <h2 className={styles.formTitle}>{editing ? pt.edit : pt.add}</h2>
       <label>{t.venue}<select disabled={!!editing} value={venue} onChange={e => { setVenue(e.target.value as CoinVenue); setInstrumentId(''); setQuery('') }}>{coinVenues.map(v => <option key={v}>{v}</option>)}</select></label>
       {!editing && <label>{t.search}<input value={query} onChange={e => { setQuery(e.target.value); setInstrumentId('') }} /></label>}
       <label>{t.asset}{editing ? <strong>{editing.symbol} · {editing.quoteCurrency}</strong> : <select required value={instrumentId} onChange={e => setInstrumentId(e.target.value)}><option value="">{t.select}</option>{options.map(i => <option key={i.id} value={i.id}>{i.displaySymbol ?? i.symbol} · {i.name} · {i.quoteCurrency}</option>)}</select>}</label>
       {!editing && (catalog.loading || catalog.error) && <p role="status">{catalog.loading ? t.loading : t.unavailable}</p>}
-      <label>{t.average}<input required type="number" min="0" step="any" value={average} onChange={e => setAverage(e.target.value)} /></label>
-      <label>{t.quantity}<input required type="number" min="0" step="any" value={quantity} onChange={e => setQuantity(e.target.value)} /></label>
+      <label>{t.average}<input required readOnly={!!editing?.ledger} type="number" min="0" step="any" value={average} onChange={e => setAverage(e.target.value)} /></label>
+      <label>{t.quantity}<input required readOnly={!!editing?.ledger} type="number" min="0" step="any" value={quantity} onChange={e => setQuantity(e.target.value)} /></label>
+      {editing?.ledger && <p className={styles.formTitle}>{ledgerText.locked}</p>}
       <fieldset className={styles.planFields}><legend>{pt.plan}</legend><p id="plan-help">{pt.help}</p><div>
         <label>{pt.target}<input aria-describedby="plan-help" type="number" min="0" step="any" value={target} onChange={e => setTarget(e.target.value)} /></label>
         <label>{pt.stop}<input aria-describedby="plan-help" type="number" min="0" step="any" value={stop} onChange={e => setStop(e.target.value)} /></label>
@@ -113,20 +125,30 @@ export function PortfolioPage() {
       <div className={styles.actions}><button disabled={!!store.error} type="submit">{t.save}</button>{(editing || formOpen) && <button type="button" onClick={reset}>{t.cancel}</button>}</div>
     </form>
     {message && <p role="status" className={styles.message}>{message}</p>}
-    <p className={styles.notice}>{t.notice}</p>
+    <p className={styles.notice}>{ledgerText.notice}</p>
     {!store.error && store.positions.length === 0 && <p>{t.empty}</p>}
     <div className={styles.positions}>{entries.map(({ position: p, state, price }) => {
       const result = valuation(p, price)
       const quoteLabel = state.loading ? t.loading : !result ? t.unavailable : state.catalog?.source === 'mock' ? t.mock : t.live
       return <article key={p.id} aria-label={`${p.symbol} · ${p.venue}`}>
         <h2>{p.symbol}</h2><p>{p.exchange} · {p.venue} · {p.quoteCurrency}</p>
-        <p>{state.loading ? t.loading : !result ? t.unavailable : state.catalog?.source === 'mock' ? t.mock : t.live}{result && state.catalog && ` · ${new Date(state.catalog.fetchedAt).toLocaleString()}`}</p>
+        <p>{p.quantity === 0 ? ledgerText.closed : quoteLabel}{result && state.catalog && ` · ${new Date(state.catalog.fetchedAt).toLocaleString()}`}</p>
         <dl className={styles.positionMetrics}><div><dt>{t.average}</dt><dd>{number(p.averagePrice)} {p.quoteCurrency}</dd></div><div><dt>{t.quantity}</dt><dd>{number(p.quantity)}</dd></div><div><dt>{t.cost}</dt><dd>{number(p.averagePrice * p.quantity)} {p.quoteCurrency}</dd></div><div><dt>{t.value}</dt><dd>{result ? `${number(result.value)} ${p.quoteCurrency}` : '—'}</dd></div><div data-direction={result && result.profit !== 0 ? result.profit > 0 ? 'positive' : 'negative' : undefined}><dt>{t.profit}</dt><dd>{result ? `${number(result.profit)} ${p.quoteCurrency}` : '—'}</dd></div><div><dt>{t.rate}</dt><dd>{result ? portfolioPercent(result.percent) : '—'}</dd></div></dl>
-        <PositionPlan position={p} price={price} language={language} quoteLabel={quoteLabel} />
-        <div className={styles.actions}><Link to={`/my-analysis?${new URLSearchParams({ instrumentId: p.instrumentId, positionId: p.id })}`}>{t.analyze}</Link><button onClick={() => { setEditing(p); setVenue(p.venue); setAverage(String(p.averagePrice)); setQuantity(String(p.quantity)); setTarget(p.targetPrice === undefined ? '' : String(p.targetPrice)); setStop(p.stopPrice === undefined ? '' : String(p.stopPrice)); setMessage(''); formRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' }) }}>{t.edit}</button><button onClick={() => setDeleting(p.id)}>{t.remove}</button></div>
-        {deleting === p.id && <div role="group" aria-label={t.confirm}><p>{t.confirm}</p><button onClick={() => { if (commit(store.positions.filter(item => item.id !== p.id), t.deleted)) { setDeleting(null); if (editing?.id === p.id) reset() } }}>{t.remove}</button><button onClick={() => setDeleting(null)}>{t.cancel}</button></div>}
+        <TradeLedgerPanel key={`${p.id}:${revision}`} position={p} language={language} disabled={!!store.error} onSave={next => { const saved = commit(store.positions.map(item => item.id === p.id ? next : item), t.saved); if (saved) reset(); return saved }} />
+        {p.quantity > 0 && <PositionPlan position={p} price={price} language={language} quoteLabel={quoteLabel} />}
+        <div className={styles.actions}>{p.quantity > 0 && <Link to={`/my-analysis?${new URLSearchParams({ instrumentId: p.instrumentId, positionId: p.id })}`}>{t.analyze}</Link>}<button onClick={() => { setEditing(p); setVenue(p.venue); setAverage(String(p.averagePrice)); setQuantity(String(p.quantity)); setTarget(p.targetPrice === undefined ? '' : String(p.targetPrice)); setStop(p.stopPrice === undefined ? '' : String(p.stopPrice)); setMessage(''); formRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' }) }}>{t.edit}</button><button onClick={() => setDeleting(p.id)}>{t.remove}</button></div>
+        {deleting === p.id && <div role="group" aria-label={t.confirm}><p>{t.confirm}</p>{p.ledger && <p>{ledgerText.delete}</p>}<button onClick={() => { if (commit(store.positions.filter(item => item.id !== p.id), t.deleted)) { setDeleting(null); if (editing?.id === p.id) reset() } }}>{t.remove}</button><button onClick={() => setDeleting(null)}>{t.cancel}</button></div>}
       </article>
     })}</div>
-    <footer className={styles.storage}><p>{t.help}</p><button type="button" onClick={() => { setStore(readPortfolio()); reset(); setDeleting(null); setMessage('') }}>{t.reload}</button></footer>
+    <PortfolioBackupPanel key={revision} store={store} language={language} onRestore={(incoming, expectedRaw) => {
+      try {
+        if (store.raw !== expectedRaw) return false
+        const merged = mergePortfolioBackup(store.positions, incoming)
+        const saved = commit(merged.positions, t.saved)
+        if (saved) { reset(); setDeleting(null) }
+        return saved
+      } catch { return false }
+    }} />
+    <footer className={styles.storage}><p>{t.help}</p><button type="button" onClick={() => { setStore(readPortfolio()); setRevision(n => n + 1); reset(); setDeleting(null); setMessage('') }}>{t.reload}</button></footer>
   </main>
 }

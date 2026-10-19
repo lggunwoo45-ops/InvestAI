@@ -1,0 +1,16 @@
+.panel { padding: 18px; border: 1px solid var(--color-border); border-radius: 10px; display: grid; gap: 14px; background: var(--color-surface-raised); }
+.panel header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.panel h3 { font-size: 15px; margin: 0 0 8px; }
+.panel header span, .panel small, .panel p { font-size: 12px; line-height: 1.6; color: var(--color-text-muted); }
+.panel summary { cursor: pointer; font-weight: 600; font-size: 13px; }
+.form { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr)); gap: 14px; padding-top: 8px; }
+.form label { display: grid; gap: 8px; min-width: 0; font-size: 12px; }
+.preview { grid-column: 1/-1; display: flex; flex-wrap: wrap; gap: 24px; padding: 14px; margin: 0; background: var(--color-accent-soft); border-radius: 8px; }
+.preview dt { font-size: 12px; color: var(--color-text-muted); }
+.preview dd { margin: 8px 0 0; font-weight: 650; }
+.panel .error { grid-column: 1/-1; color: var(--color-danger); margin: 0; }
+.history { list-style: none; padding: 0; max-height: 340px; overflow: auto; }
+.history li { display: grid; gap: 8px; padding: 12px 0; border-bottom: 1px solid var(--color-border); font-size: 12px; }
+.history li > div { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+.history time { color: var(--color-text-muted); }
+.panel :is(span, dd) { overflow-wrap: anywhere; }

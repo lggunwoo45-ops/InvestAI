@@ -81,7 +81,7 @@ export function MyAnalysisPage() {
   const { result: newsResult } = useNewsProviderMode()
   const [params, setParams] = useSearchParams()
   const [savedPortfolio, setSavedPortfolio] = useState(readPortfolio)
-  const savedPosition = savedPortfolio.positions.find(p => p.id === params.get('positionId') && p.instrumentId === params.get('instrumentId'))
+  const savedPosition = savedPortfolio.positions.find(p => p.id === params.get('positionId') && p.instrumentId === params.get('instrumentId') && p.quantity > 0)
   useEffect(() => {
     const sync = (event: StorageEvent) => { if (event.key === PORTFOLIO_KEY || event.key === null) setSavedPortfolio(readPortfolio()) }
     window.addEventListener('storage', sync)
