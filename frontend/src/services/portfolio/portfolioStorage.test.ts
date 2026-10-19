@@ -52,7 +52,7 @@ describe('portfolio persistence and valuation', () => {
     expect(() => writePortfolio([position, position], null)).toThrow()
     expect(() => positionFor({ id: 'x', symbol: 'BTC', name: 'BTC', marketId: 'binance-futures', quoteCurrency: 'USDT', lastPrice: 1, change24hPercent: 0, volume24h: 0 }, 'binance-futures', 1, 1, 'id')).toThrow()
   })
-  it.each(['{broken', '{"version":2,"positions":[]}', '{"version":1,"positions":[{}]}', 'null'])('preserves malformed or unknown schemas: %s', raw => {
+  it.each(['{broken', '{"version":99,"positions":[]}', '{"version":1,"positions":[{}]}', 'null'])('preserves malformed or unknown schemas: %s', raw => {
     localStorage.setItem(PORTFOLIO_KEY, raw)
     expect(readPortfolio().error).toBeTruthy()
     expect(() => writePortfolio([], null)).toThrow()
