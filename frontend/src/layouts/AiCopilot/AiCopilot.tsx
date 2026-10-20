@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { WatchlistReviewActions } from '@/components/ai-copilot/WatchlistReviewActions'
+import { EvidenceAssistant } from '@/components/ai-copilot/EvidenceAssistant'
 
 import { EmptyState } from '@/components/EmptyState/EmptyState'
 import { Icon } from '@/components/Icon/Icon'
@@ -153,11 +154,7 @@ export function AiCopilot() {
       </div>
 
       <div className={styles.composer}>
-        <div className={styles.composerInput}>
-          <span>{text.noModels}</span>
-          <button type="button" disabled aria-label="Send message"><Icon name="arrowUpRight" size={15} /></button>
-        </div>
-        <p>{text.judgment}</p>
+        {displayedInstrument && <EvidenceAssistant instrument={displayedInstrument} live={marketDataMode === 'live' && !isStock} />}
       </div>
     </aside>
   )

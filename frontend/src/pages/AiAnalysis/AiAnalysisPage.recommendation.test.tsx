@@ -16,6 +16,8 @@ describe('AI Analysis evidence recommendations', () => {
   beforeEach(() => { vi.clearAllMocks(); window.localStorage.clear(); window.localStorage.setItem('market-copilot.language', 'en') })
   it('updates useful recommendations and exclusions when the bucket changes', () => {
     renderWithProviders(<AiAnalysisPage />)
+    expect(vi.mocked(useMarketCatalog)).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'Daily candidate records' }))
     expect(vi.mocked(useMarketCatalog).mock.calls.filter(call => call[3]).map(call => call[0])).toEqual(expect.arrayContaining(['upbit-krw', 'upbit-btc', 'upbit-usdt']))
     expect(vi.mocked(useMarketCatalog).mock.calls.filter(call => call[3]).every(call => call[0].startsWith('upbit-'))).toBe(true)
     expect(screen.getByText('Explore more with current data').closest('details')?.open).toBe(false)

@@ -51,6 +51,8 @@ describe('MyAnalysisPage', () => {
     fireEvent.change(screen.getByRole('textbox', { name: 'My note (optional)' }), { target: { value: 'Keep my draft' } })
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Average price (optional)' }), { target: { value: '90' } })
     fireEvent.click(screen.getByRole('tab', { name: 'Summary' }))
+    expect(screen.getByRole('button', { name: 'Already holding' }).getAttribute('aria-pressed')).toBe('true')
+    expect(readPortfolio().positions).toHaveLength(0)
     expect(screen.queryByRole('spinbutton')).toBeNull()
     fireEvent.click(screen.getByRole('tab', { name: 'My investment' }))
     expect((screen.getByRole('textbox', { name: 'My note (optional)' }) as HTMLTextAreaElement).value).toBe('Keep my draft')
@@ -59,6 +61,7 @@ describe('MyAnalysisPage', () => {
     fireEvent.change(screen.getByRole('searchbox', { name: 'Search instrument' }), { target: { value: 'BTCUSDT' } })
     fireEvent.click(screen.getByRole('button', { name: /BTCUSDT/ }))
     expect(screen.getByRole('tab', { name: 'Summary' }).getAttribute('aria-selected')).toBe('true')
+    expect(screen.getByRole('button', { name: 'Considering a buy' }).getAttribute('aria-pressed')).toBe('true')
     expect(screen.getByText('Change or search instrument').closest('details')?.open).toBe(false)
     fireEvent.click(screen.getByRole('tab', { name: 'My investment' }))
     expect((screen.getByRole('spinbutton', { name: 'Average price (optional)' }) as HTMLInputElement).value).toBe('')
@@ -93,6 +96,7 @@ describe('MyAnalysisPage', () => {
     expect(screen.getByText(/Saved position not found/)).toBeTruthy()
   })
   it('uses one crypto conclusion and removes competing current-state cards in expert view', () => {
+    window.localStorage.setItem('market-copilot.displayMode.v1', 'expert')
     renderWithProviders(<MyAnalysisPage />)
     fireEvent.change(screen.getByRole('searchbox', { name: 'Search instrument' }), { target: { value: 'Bitcoin' } })
     fireEvent.click(screen.getByRole('button', { name: /BTC\/KRW/ }))
@@ -219,7 +223,7 @@ describe('MyAnalysisPage', () => {
     expect(screen.getByRole('region', { name: '지금의 방향과 가격 계획' })).toBeTruthy()
     expect(screen.queryByRole('region', { name: '액션 준비도' })).toBeNull()
     expect(screen.queryByRole('region', { name: '분석 요약' })).toBeNull()
-    expect((screen.getByRole('spinbutton', { name: '평균 가격 (선택)' }) as HTMLInputElement).value).toBe('90')
+    expect((screen.getByRole('spinbutton', { name: '내 평단가 (선택)' }) as HTMLInputElement).value).toBe('90')
     expect(screen.getByRole('button', { name: '요약 복사' })).toBeTruthy()
   })
 
@@ -227,7 +231,7 @@ describe('MyAnalysisPage', () => {
     technicalMockState.isLoading = true
     render(<AppProviders><MemoryRouter initialEntries={['/my-analysis?instrumentId=upbit-btc']}><AppRoutes /></MemoryRouter></AppProviders>)
     expect(await screen.findByRole('heading', { name: 'BTC/KRW' })).toBeTruthy()
-    expect(screen.getByText('Checking analysis data')).toBeTruthy()
+    expect(screen.getByText('Analysis data is unavailable')).toBeTruthy()
     expect(screen.queryByText('Wait for direction before a new entry')).toBeNull()
     expect(screen.queryByRole('region', { name: 'Review summary' })).toBeNull()
     fireEvent.click(screen.getByRole('tab', { name: 'Evidence' }))

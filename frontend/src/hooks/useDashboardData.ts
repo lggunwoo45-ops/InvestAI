@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 
 import { dashboardService, type DashboardSnapshot } from '@/services/dashboard/dashboardService'
+import { useNewsProviderMode } from './useNewsProviderMode'
 
 export function useDashboardData() {
+  const { result } = useNewsProviderMode()
   const [snapshot, setSnapshot] = useState<DashboardSnapshot | null>(null)
 
   useEffect(() => {
@@ -11,5 +13,5 @@ export function useDashboardData() {
     return () => { active = false }
   }, [])
 
-  return snapshot
+  return snapshot ? { ...snapshot, news: result?.articles ?? [] } : null
 }

@@ -9,9 +9,9 @@ export function isDisplayMode(value: unknown): value is DisplayMode {
 export function readDisplayMode(storage: Pick<Storage, 'getItem'> = window.localStorage): DisplayMode {
   try {
     const stored = storage.getItem(DISPLAY_MODE_STORAGE_KEY)
-    return isDisplayMode(stored) ? stored : 'expert'
+    return isDisplayMode(stored) ? stored : 'simple'
   } catch {
-    return 'expert'
+    return 'simple'
   }
 }
 

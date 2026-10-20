@@ -1,4 +1,5 @@
 import { memo, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 
 import { NewsInsightPanel } from '@/components/news/NewsInsightPanel/NewsInsightPanel'
 import { useOpenNewsInstrument } from '@/hooks/useOpenNewsInstrument'
@@ -27,15 +28,18 @@ export const NewsCard = memo(function NewsCard({ article, availableInstruments =
       <div className={styles.content}>
         <span className={styles.category}>{text.categories[article.category]} · {article.isMock ? text.demo : text.provider.realRss}</span>
         <h2>{article.title}</h2>
-        <p className={styles.summary}>{article.summary}</p>
+        {article.summary && <p className={styles.summary}>{article.summary}</p>}
         <footer><strong>{article.source}</strong><time dateTime={article.publishedAt}>{published}</time></footer>
+        {!article.isMock && href && <a href={href} target="_blank" rel="noopener noreferrer">{text.externalSource} ↗</a>}
         <div className={styles.symbols} aria-label={text.relatedSymbols}>
           {article.relatedSymbols.length === 0 && <span>{text.provider.relatedUnavailable}</span>}
           {article.relatedSymbols.map((symbol) => {
             const id = article.relatedInstrumentIds?.[symbol]
             return id && canOpenInstrument(id)
               ? <button key={symbol} type="button" onClick={() => openInstrument(id)} aria-label={`${text.openInMarket}: ${symbol}`} title={text.viewSymbol}>{symbol} ↗</button>
-              : <span key={symbol}>{symbol}</span>
+              : !article.isMock && ['BTC', 'ETH', 'XRP', 'SOL', 'ADA', 'DOGE', 'LINK', 'AVAX', 'DOT'].includes(symbol)
+                ? <Link key={symbol} to={`/my-analysis?instrumentId=upbit-${symbol.toLowerCase()}`} aria-label={`${symbol} ${language === 'ko' ? '종목 분석' : 'analysis'}`}>{symbol} ↗</Link>
+                : <span key={symbol}>{symbol}</span>
           })}
         </div>
         <button className={styles.detailsToggle} type="button" aria-expanded={expanded} onClick={() => setExpanded((value) => !value)}>{expanded ? text.hideDetails : text.details}</button>
@@ -48,7 +52,7 @@ export const NewsCard = memo(function NewsCard({ article, availableInstruments =
             <div><dt>{text.importance}</dt><dd>{text.importanceLevels[article.importance]}</dd></div>
             <div><dt>{text.relatedMarkets}</dt><dd>{article.relatedMarkets.map((market) => market === 'macro' ? text.categories.macro : uiText[language].sessions[market]).join(' · ')}</dd></div>
           </dl>
-          <p>{text.summary}: {article.summary}</p>
+          {article.summary && <p>{text.summary}: {article.summary}</p>}
           <p>{article.isMock && `${text.demo} · `}{uiText[language].briefing.trust} {uiText[language].briefing.finalDecision}</p>
           {href && <a href={href} target="_blank" rel="noopener noreferrer">{text.externalSource} ↗</a>}
         </div>}

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import { CryptoDecisionPanel } from '@/components/crypto-analysis/CryptoDecisionPanel'
+import { LiveCandidateSearch } from '@/components/ai-analysis/LiveCandidateSearch'
 import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
 import { AiUsagePlans } from '@/components/ai/AiUsagePlans/AiUsagePlans'
 import { AiAnalysisTerminalLayout } from '@/components/ai-analysis/AiAnalysisTerminalLayout'
@@ -64,6 +65,24 @@ function savedSnapshotFilterInput(item: CandidateSnapshotItem, horizon: WatchCan
 }
 
 export function AiAnalysisPage() {
+  const { hash } = useLocation()
+  return <ExploreView key={hash} initialView={hash ? 'daily' : 'live'} />
+}
+
+function ExploreView({ initialView }: { initialView: 'live' | 'daily' }) {
+  const { language } = useLanguage()
+  const [view, setView] = useState(initialView)
+  useDocumentTitle(language === 'ko' ? 'AI 탐색' : 'AI Explore')
+  return <div>
+    <nav className={styles.views} aria-label={language === 'ko' ? '탐색 방식' : 'Explore mode'}>
+      <button type="button" aria-pressed={view === 'live'} onClick={() => setView('live')}>{language === 'ko' ? '실시간 조건 검색' : 'Live condition search'}</button>
+      <button type="button" aria-pressed={view === 'daily'} onClick={() => setView('daily')}>{language === 'ko' ? '일일 후보 기록' : 'Daily candidate records'}</button>
+    </nav>
+    {view === 'live' ? <div className={styles.page}><LiveCandidateSearch /></div> : <DailyCandidatePage />}
+  </div>
+}
+
+function DailyCandidatePage() {
   const navigate = useNavigate()
   const { hash } = useLocation()
   const { language } = useLanguage()

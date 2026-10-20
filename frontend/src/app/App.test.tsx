@@ -67,7 +67,14 @@ describe('Market Copilot application shell', () => {
   it('focuses AI Explore on candidates without changing the saved Copilot preference', async () => {
     render(<App />)
     fireEvent.click(screen.getByRole('link', { name: 'AI Explore' }))
-    expect(await screen.findByRole('heading', { level: 1, name: 'AI Explore' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { level: 1, name: 'Find coins to review' })).toBeTruthy()
+    expect(screen.queryByRole('complementary', { name: 'AI Copilot' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Toggle AI Copilot' })).toBeNull()
+    fireEvent.click(screen.getByRole('link', { name: 'Home' }))
+    expect(await screen.findByRole('complementary', { name: 'AI Copilot' })).toBeTruthy()
+
+    openRoute('/my-analysis')
+    expect(await screen.findByRole('heading', { name: 'My Instrument Analysis' })).toBeTruthy()
     expect(screen.queryByRole('complementary', { name: 'AI Copilot' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Toggle AI Copilot' })).toBeNull()
     fireEvent.click(screen.getByRole('link', { name: 'Home' }))
@@ -75,7 +82,7 @@ describe('Market Copilot application shell', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Close AI Copilot' }))
     fireEvent.click(screen.getByRole('link', { name: 'AI Explore' }))
-    expect(await screen.findByRole('heading', { level: 1, name: 'AI Explore' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { level: 1, name: 'Find coins to review' })).toBeTruthy()
     fireEvent.click(screen.getByRole('link', { name: 'Home' }))
     expect(screen.queryByRole('complementary', { name: 'AI Copilot' })).toBeNull()
     expect(screen.getByRole('button', { name: 'Toggle AI Copilot' }).getAttribute('aria-pressed')).toBe('false')
@@ -84,10 +91,11 @@ describe('Market Copilot application shell', () => {
   it('keeps plan information collapsed and opens it for the existing deep link', async () => {
     window.history.pushState({}, '', '/ai-analysis')
     render(<App />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Daily candidate records' }))
     const plans = await screen.findByText('AI usage and plan information')
     expect(plans.closest('details')?.open).toBe(false)
     openRoute('/ai-analysis#ai-usage-plans-title')
-    await waitFor(() => expect(plans.closest('details')?.open).toBe(true))
+    await waitFor(() => expect(screen.getByText('AI usage and plan information').closest('details')?.open).toBe(true))
     expect(screen.getByRole('heading', { name: 'AI Usage & Plans' })).toBeTruthy()
   })
 
@@ -260,6 +268,7 @@ describe('Market Copilot application shell', () => {
   })
 
   it('provides persisted multi-watchlist dashboard controls', async () => {
+    window.localStorage.setItem('market-copilot.displayMode.v1', 'expert')
     window.history.pushState({}, '', '/dashboard')
     render(<App />)
 
@@ -294,6 +303,7 @@ describe('Market Copilot application shell', () => {
     saveDailyBucketSnapshot(dailyBucketSnapshot('usStocks', 'NVDA', 'stock'))
     window.history.pushState({}, '', '/ai-analysis')
     render(<App />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Daily candidate records' }))
     expect(await screen.findByRole('tab', { name: 'Upbit' }, { timeout: 5000 })).toBeTruthy()
     expect(screen.getByRole('heading', { level: 1, name: 'AI Explore' })).toBeTruthy()
     fireEvent.click(screen.getByText('Market context and screening details'))
@@ -351,6 +361,7 @@ describe('Market Copilot application shell', () => {
     render(<App />)
     fireEvent.click(await screen.findByRole('button', { name: 'MOCK' }, { timeout: 5000 }))
     openRoute('/ai-analysis')
+    fireEvent.click(await screen.findByRole('button', { name: 'Daily candidate records' }))
     const refresh = await screen.findByRole('button', { name: 'Advanced: Recalculate today’s candidates' }, { timeout: 5000 })
     await waitFor(() => expect((refresh as HTMLButtonElement).disabled).toBe(false))
     fireEvent.click(refresh)
@@ -396,6 +407,7 @@ describe('Market Copilot application shell', () => {
     fireEvent.click(screen.getByRole('button', { name: /Simple Mode/ }))
     expect(document.querySelector('[data-display-mode]')?.getAttribute('data-display-mode')).toBe('simple')
     fireEvent.click(screen.getByRole('link', { name: 'AI Explore' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Daily candidate records' }))
     expect(await screen.findByRole('tab', { name: 'Upbit' })).toBeTruthy()
     expect(screen.getByRole('region', { name: 'Today’s 08:00 snapshot record' })).toBeTruthy()
     expect(screen.getAllByRole('group', { name: 'Display mode' })).toHaveLength(1)

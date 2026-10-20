@@ -6,6 +6,7 @@ export interface NewsProviderModeValue {
   mode: NewsProviderMode
   result: NewsLoadResult | null
   setMode: (mode: NewsProviderMode) => void
+  refresh?: () => void
 }
 
 export const NewsProviderModeContext = createContext<NewsProviderModeValue | null>(null)
