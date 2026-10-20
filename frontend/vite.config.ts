@@ -2,6 +2,7 @@ import { fileURLToPath, URL } from 'node:url'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { createLocalAiGateway } from './tools/local-ai/gateway.mjs'
+import { createMarketHandler } from '../backend/market-data/server.mjs'
 
 export default defineConfig({
   base: './',
@@ -9,6 +10,10 @@ export default defineConfig({
     name: 'local-ai-gateway',
     configureServer(server) { server.middlewares.use(createLocalAiGateway()) },
     configurePreviewServer(server) { server.middlewares.use(createLocalAiGateway()) },
+  }, {
+    name: 'local-public-market-data',
+    configureServer(server) { const handler = createMarketHandler({ local: true }); server.middlewares.use(handler); server.httpServer?.on('close', handler.close) },
+    configurePreviewServer(server) { const handler = createMarketHandler({ local: true }); server.middlewares.use(handler); server.httpServer?.on('close', handler.close) },
   }],
   resolve: {
     alias: {

@@ -35,7 +35,7 @@ jobs:
       - name: Run proxy tests
         run: npm run test:proxy
 
-      - name: Run AI backend tests (mock provider only)
+      - name: Run backend tests (mock upstreams only)
         run: npm test --prefix ../backend
 
       - name: Run local AI gateway security tests

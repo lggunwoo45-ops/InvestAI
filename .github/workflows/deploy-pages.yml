@@ -37,9 +37,17 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Verify configured market relay before publishing
+        if: ${{ vars.UPBIT_RELAY_URL != '' }}
+        env:
+          UPBIT_RELAY_URL: ${{ vars.UPBIT_RELAY_URL }}
+          UPBIT_SITE_ORIGIN: https://lggunwoo45-ops.github.io
+        run: npm run market:verify --prefix ../backend
+
       - name: Build
         env:
           VITE_APP_ENV: production
+          VITE_UPBIT_RELAY_URL: ${{ vars.UPBIT_RELAY_URL }}
         run: npm run build -- --base=/InvestAI/
 
       - name: Prepare direct-entry routes
