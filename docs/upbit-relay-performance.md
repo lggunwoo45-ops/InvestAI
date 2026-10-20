@@ -196,10 +196,20 @@ Origin and method validation still apply to health.
 
 ### Concrete first hosted trial
 
-Railway was found as an available integration, but no connection/account was
-confirmed and no hosted resource has been created. The account owner must connect
-it before deployment can proceed. Start within the account's free trial if it is
-available; do not upgrade or add a paid plan without the owner's authorization.
+The Railway account is now connected. An isolated `InvestAI Market Relay` project
+and a staged `upbit-market-relay` service in its `trial` environment are prepared.
+The service source is pinned to tested commit
+`7c47674ac90b612a434cb82e600eec424e2e6719`; all GitHub checks passed for that code.
+The Docker path, origin, health check, one Singapore replica and disabled sleep
+are staged, not deployed. No public domain or running server exists yet.
+
+Account-specific free-trial/credit status is not exposed by the connected tools.
+The separate dashboard login requires the user's authorization before checking
+it. Start only within a confirmed free trial; do not upgrade or add a paid plan
+without the owner's authorization. Railway's commit/deploy operation also
+requires explicit deployment confirmation. The prepared changes remain staged.
+The attempt to stage CPU/memory limits reported `Service Instance not found`;
+these limits were not applied and must be checked once an instance exists.
 
 Use these settings when preparing the isolated relay service:
 
