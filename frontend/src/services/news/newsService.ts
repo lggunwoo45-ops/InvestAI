@@ -4,8 +4,9 @@ import type { NewsProvider } from './NewsProvider'
 import type { NewsLoadOptions } from './NewsProvider'
 import { RssNewsProvider, RssProviderError, type RssFailureReason } from './RssNewsProvider'
 import { LocalProxyNewsProvider } from './LocalProxyNewsProvider'
+import { LiveNewsProvider, type NewsSourceStatus } from './LiveNewsProvider'
 
-export type NewsProviderMode = 'mock' | 'rss-ready' | 'local-proxy'
+export type NewsProviderMode = 'mock' | 'rss-ready' | 'local-proxy' | 'live'
 export type NewsProviderState = 'mock' | 'rss-ready' | 'rss-unavailable' | 'local-proxy-ready' | 'local-proxy-unavailable' | 'provider-not-configured'
 
 export interface NewsLoadResult {
@@ -17,17 +18,36 @@ export interface NewsLoadResult {
   lastUpdatedAt: string | null
   error: RssFailureReason | 'provider-not-configured' | null
   fallback: boolean
+  sources?: readonly NewsSourceStatus[]
+  checkedAt?: string
 }
 
-/** Mock remains the default; the real-feed experiment is opt-in and never mixes sources. */
+/** Explicit provider boundary. Live failures never fall back to example articles. */
 export class NewsService {
   constructor(
     private readonly mock: NewsProvider = newsProvider,
     private readonly rss: NewsProvider = new RssNewsProvider(),
     private readonly localProxy: NewsProvider = new LocalProxyNewsProvider(),
+    private readonly live = new LiveNewsProvider(),
   ) {}
 
   async loadNews(mode: NewsProviderMode = 'mock', options?: NewsLoadOptions): Promise<NewsLoadResult> {
+    if (mode === 'live') {
+      try {
+        const result = await this.live.load(options)
+        const fetched = result.sources.filter(source => source.state !== 'unavailable' && source.fetchedAt).map(source => source.fetchedAt!).sort()
+        return {
+          requestedMode: mode, state: result.articles.length ? 'rss-ready' : 'rss-unavailable',
+          source: result.articles.length ? 'rss' : null, providerLabel: 'CoinDesk · Federal Reserve Board',
+          articles: result.articles, lastUpdatedAt: fetched[0] ?? null,
+          error: result.articles.length ? null : 'network', fallback: false,
+          sources: result.sources, checkedAt: result.checkedAt,
+        }
+      } catch (error) {
+        return { requestedMode: mode, state: 'rss-unavailable', source: null, providerLabel: 'Public RSS',
+          articles: [], lastUpdatedAt: null, error: error instanceof RssProviderError ? error.reason : 'network', fallback: false }
+      }
+    }
     if (mode === 'local-proxy') {
       try {
         const articles = await this.localProxy.loadNews(options)

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 
 import { CryptoDecisionPanel } from '@/components/crypto-analysis/CryptoDecisionPanel'
+import { EvidenceAssistant } from '@/components/ai-copilot/EvidenceAssistant'
 import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
 import { ActionReadinessCard } from '@/components/my-analysis/ActionReadinessCard/ActionReadinessCard'
 import { AnalysisBaselinePanel } from '@/components/my-analysis/AnalysisBaselinePanel/AnalysisBaselinePanel'
@@ -283,6 +284,7 @@ export function MyAnalysisPage() {
       </section>
 
       {analysis.assetType === 'crypto' && <CryptoDecisionPanel key={selected.id} instrument={selected} daily={technicalData} language={language} averagePrice={validAveragePrice} quantity={savedPosition?.instrumentId === selected.id ? savedPosition.quantity : undefined} positionId={savedPosition?.instrumentId === selected.id ? savedPosition.id : undefined} detailsContent={cryptoReferences} investmentContent={<>{positionNotice}{positionPlan}{personalContext}<Link to="/portfolio">{language === 'ko' ? '내 코인·저장한 시나리오 관리 →' : 'Manage my coins and saved scenarios →'}</Link></>} expert={displayMode === 'expert'} />}
+      {analysis.assetType === 'crypto' && <details key={`questions-${selected.id}`} className={styles.referenceDetails}><summary>{language === 'ko' ? '이 분석에 질문하기' : 'Ask about this analysis'}</summary><EvidenceAssistant instrument={selected} live={marketDataMode === 'live'} /></details>}
       {analysis.assetType !== 'crypto' && <>{positionNotice}{positionPlan}</>}
       {analysis.assetType !== 'crypto' && <section>
       <MyAnalysisReportSummary recommendation={recommendation} analysis={analysis} language={language} mode={displayMode} symbol={selected.displaySymbol ?? selected.symbol} name={selected.name} reviewMode={reviewMode} basisPrice={validAveragePrice} currentPrice={currentPrice} quoteCurrency={selected.quoteCurrency} disclosureReview={selected.marketId === 'korea-stock' ? dartReview : null} practicalDecision={practicalDecision ?? undefined} reviewRanges={reviewRanges} candidateReviewScore={candidateReviewScore ?? undefined} technicalAnalysis={technicalData.isLoading ? undefined : technicalAnalysis ?? undefined} aiCopilotFinalRead={aiCopilotFinalRead ?? undefined} />

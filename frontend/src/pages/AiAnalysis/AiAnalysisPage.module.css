@@ -1,6 +1,9 @@
 .page {
   width: 100%; max-width: 1480px; min-height: 100%; margin: 0 auto; padding: 24px 32px; color: var(--color-text); background: var(--color-bg);
 }
+.views { display: flex; gap: 8px; padding: 20px 32px 0; max-width: 1480px; margin: 0 auto; }
+.views button { border: 1px solid var(--color-border); border-radius: 9px; background: var(--color-surface); color: var(--color-text-muted); padding: 10px 16px; font-size: 13px; cursor: pointer; }
+.views button[aria-pressed="true"] { color: var(--color-accent); border-color: var(--color-accent); font-weight: 700; }
 .advanced, .additional { border: 1px solid var(--color-border); border-radius: 12px; background: var(--color-surface); }
 .advanced { margin: 20px 0 0; }
 .additional { margin-top: 16px; }

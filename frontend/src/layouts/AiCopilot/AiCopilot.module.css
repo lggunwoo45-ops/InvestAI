@@ -24,7 +24,7 @@
 .boundaryNote { display: flex; align-items: flex-start; gap: 8px; padding: 10px; color: var(--color-text-muted); background: var(--color-positive-soft); }
 .boundaryNote svg { flex: 0 0 auto; color: var(--color-text-muted); }
 .boundaryNote p { margin: 0; font-size: 8px; line-height: 1.5; }
-.composer { padding: 14px 16px 16px; border-top: 1px solid var(--color-border); }
+.composer { padding: 14px 16px 16px; border-top: 1px solid var(--color-border); max-height: 48vh; overflow: auto; }
 .composerInput { display: flex; height: 48px; align-items: center; justify-content: space-between; padding: 0 9px 0 13px; border: 1px solid var(--color-border); border-radius: 8px; color: var(--color-text-muted); background: var(--color-surface); font-size: 10px; }
 .composerInput button { display: grid; width: 28px; height: 28px; place-items: center; padding: 0; border: 1px solid var(--color-border); border-radius: 6px; color: var(--color-text-muted); background: var(--color-surface-raised); }
 .composer p { margin: 8px 2px 0; color: var(--color-text-muted); font-size: 8px; text-align: center; }

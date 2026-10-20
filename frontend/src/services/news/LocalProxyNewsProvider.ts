@@ -15,7 +15,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value && typeof value === 'object' && !Array.isArray(value))
 }
 
-function parseArticle(value: unknown): NewsArticle | null {
+export function parseArticle(value: unknown): NewsArticle | null {
   if (!isRecord(value) || typeof value.id !== 'string' || typeof value.title !== 'string' || typeof value.summary !== 'string'
     || typeof value.source !== 'string' || typeof value.publishedAt !== 'string' || value.isMock !== false
     || !categories.has(value.category as NewsCategory) || !sentiments.has(value.sentiment as NewsSentiment)

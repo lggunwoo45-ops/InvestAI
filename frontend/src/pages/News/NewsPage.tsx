@@ -37,6 +37,7 @@ export function NewsPage() {
   const { language } = useLanguage()
   const { displayMode } = useDisplayMode()
   const text = uiText[language].news
+  const liveSubtitle = language === 'ko' ? '실제 발행된 뉴스의 제목·출처·시각을 확인하고 종목 분석으로 이어갑니다.' : 'Read published headlines, sources and dates, then open related instrument analysis.'
   useDocumentTitle(text.title)
   const location = useLocation()
   const routeState = location.state as NewsRouteState | null
@@ -67,7 +68,7 @@ export function NewsPage() {
 
   return (
     <div className={styles.page} data-display-mode={displayMode}>
-      <header className={styles.heading}><div><span>MARKET INTELLIGENCE</span><h1>{text.title}</h1><p>{text.subtitle}</p>{feed?.source === 'mock' && <strong className={styles.demo}>{text.demo}</strong>}{feed?.source === 'rss' && <strong className={styles.demo}>{text.provider.realRss}</strong>}{feed?.source === 'local-proxy' && <strong className={styles.demo}>{text.provider.localProxyRealRss}</strong>}</div><div className={styles.context}><span>{text.relatedMarket}</span><button type="button" disabled={!selectedInstrument} aria-pressed={symbolFilter} onClick={() => updateFilters({ symbolFilter: !symbolFilter })}>{selectedInstrument ? `${selectedInstrument.symbol} ${symbolFilter ? text.on : text.off}` : text.noSymbol}</button></div></header>
+      <header className={styles.heading}><div><span>MARKET INTELLIGENCE</span><h1>{text.title}</h1><p>{providerMode === 'live' ? liveSubtitle : text.subtitle}</p>{feed?.source === 'mock' && <strong className={styles.demo}>{text.demo}</strong>}{feed?.source === 'rss' && <strong className={styles.demo}>{text.provider.realRss}</strong>}{feed?.source === 'local-proxy' && <strong className={styles.demo}>{text.provider.localProxyRealRss}</strong>}</div><div className={styles.context}><span>{text.relatedMarket}</span><button type="button" disabled={!selectedInstrument} aria-pressed={symbolFilter} onClick={() => updateFilters({ symbolFilter: !symbolFilter })}>{selectedInstrument ? `${selectedInstrument.symbol} ${symbolFilter ? text.on : text.off}` : text.noSymbol}</button></div></header>
       {displayMode === 'simple' && <DisplayModeNotice variant="panel">{uiText[language].displayMode.newsHint}</DisplayModeNotice>}
       <NewsProviderStatus mode={providerMode} result={feed} onModeChange={setProviderMode} />
       <div className={styles.controls}>

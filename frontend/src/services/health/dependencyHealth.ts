@@ -55,6 +55,7 @@ export function getDartHealthUiState(health?: DartProxyHealthResult | null): Dar
 }
 
 function newsStatus(mode: NewsProviderMode, state?: NewsProviderState): DependencyHealthStatus {
+  if (mode === 'live') return !state ? 'unknown' : state === 'rss-ready' ? 'ready' : 'unavailable'
   if (mode !== 'local-proxy') return 'disabled'
   if (!state) return 'unknown'
   if (state === 'local-proxy-ready') return 'ready'
@@ -82,6 +83,7 @@ export function buildDependencyHealth(input: DependencyHealthInput): readonly De
 }
 
 function newsApiUsage(mode: NewsProviderMode, state?: NewsProviderState): ApiUsageStatus {
+  if (mode === 'live') return !state ? 'unknown' : state === 'rss-ready' ? 'active' : 'unavailable'
   if (mode !== 'local-proxy') return 'notConfigured'
   if (!state) return 'unknown'
   if (state === 'local-proxy-ready') return 'active'

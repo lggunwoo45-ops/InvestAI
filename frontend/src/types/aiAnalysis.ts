@@ -28,7 +28,7 @@ export interface AiAnalysisInput {
     sessionStatus: 'always-open' | 'unknown'
   }
   newsContext: {
-    providerMode: 'mock' | 'rss-ready' | 'local-proxy'
+    providerMode: 'mock' | 'rss-ready' | 'local-proxy' | 'live'
     providerStatus: 'mock' | 'rss-ready' | 'rss-unavailable' | 'local-proxy-ready' | 'local-proxy-unavailable' | 'provider-not-configured' | 'not-observed'
     source: 'mock' | 'rss' | 'local-proxy' | 'none'
     relatedNewsCount: number

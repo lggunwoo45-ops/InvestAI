@@ -40,7 +40,7 @@ export function createRuntimeConfig(environment: RuntimeConfigEnvironment = {
   const dartProxyUrl = clean(environment.VITE_DART_PROXY_URL, defaults.dartProxyUrl)
   return {
     appEnv,
-    newsProxyUrl: clean(environment.VITE_NEWS_PROXY_URL, defaults.newsProxyUrl),
+    newsProxyUrl: clean(environment.VITE_NEWS_PROXY_URL, ['production', 'preview', 'staging'].includes(appEnv) ? '' : defaults.newsProxyUrl),
     dartProxyUrl,
     dartHealthUrl: `${dartProxyUrl}${dartPaths.health}`,
     dartDisclosuresUrl: `${dartProxyUrl}${dartPaths.disclosures}`,

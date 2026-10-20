@@ -44,10 +44,18 @@ jobs:
           UPBIT_SITE_ORIGIN: https://lggunwoo45-ops.github.io
         run: npm run market:verify --prefix ../backend
 
+      - name: Verify configured news sources before publishing
+        if: ${{ vars.NEWS_PROXY_URL != '' }}
+        env:
+          NEWS_PROXY_URL: ${{ vars.NEWS_PROXY_URL }}
+          NEWS_SITE_ORIGIN: https://lggunwoo45-ops.github.io
+        run: node ../backend/news/verify-news.mjs
+
       - name: Build
         env:
           VITE_APP_ENV: production
           VITE_UPBIT_RELAY_URL: ${{ vars.UPBIT_RELAY_URL }}
+          VITE_NEWS_PROXY_URL: ${{ vars.NEWS_PROXY_URL }}
         run: npm run build -- --base=/InvestAI/
 
       - name: Prepare direct-entry routes
