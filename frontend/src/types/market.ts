@@ -57,5 +57,7 @@ export interface MarketConnectionState {
   provider: string
   reconnectAttempt: number
   lastUpdatedAt: number | null
+  /** Exchange clock at lastUpdatedAt, when provided by the feed. */
+  marketTime?: number
   message: string
 }

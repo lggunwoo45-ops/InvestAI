@@ -11,6 +11,27 @@ export function fixture(frame: AnalysisFrame, trend = 1): AnalysisSeries {
 const all = (trend = 1) => ({ '1H': fixture('1H', trend), '4H': fixture('4H', trend), '1D': fixture('1D', trend) })
 
 describe('closed-bar crypto direction and price plans', () => {
+  it('distinguishes initial loading from retries, even before history arrives', () => {
+    const series = { ...fixture('1H'), dataQuality: 'unavailable' as const, candles: [] }
+    expect(readFrame('1H', { ...series, connectionStatus: 'connecting' }, now).issue).toBe('loading')
+    expect(readFrame('1H', { ...series, connectionStatus: 'reconnecting' }, now).issue).toBe('disconnected')
+  })
+  it('uses exchange time for closed bars but local receipt age for stale-feed rejection', () => {
+    const series = { ...fixture('1H'), marketTime: now - 310_000 }
+    const result = readFrame('1H', series, now)
+    expect(result).toMatchObject({ issue: null, count: 79, asOf: now - 3_600_000 })
+    expect(readFrame('1H', series, now + 91_000).issue).toBe('stale')
+    expect(readFrame('1H', { ...series, marketTime: now + 310_000 }, now)).toMatchObject({ issue: null, count: 80, asOf: now })
+  })
+  it('reports a source gap without synthesizing bars, while healthy frames still produce a plan', () => {
+    const hourly = fixture('1H')
+    const gapped = { ...hourly, candles: hourly.candles.filter((_, i) => i < 65 || i > 68) }
+    const result = buildCryptoDecision({ ...all(), '1H': gapped }, now)
+    expect(result).toMatchObject({ direction: 'buy', coverage: 2 })
+    expect(result.plan).not.toBeNull()
+    expect(result.frames[0]).toMatchObject({ issue: 'gaps', candles: [], gap: { from: hourly.candles[65].timestamp, to: hourly.candles[69].timestamp, missing: 4 } })
+    expect(gapped.candles).toHaveLength(76)
+  })
   it('computes Wilder RSI from a known 14-change seed, including zero gain/loss cases', () => {
     expect(wilderRsi([44.34,44.09,44.15,43.61,44.33,44.83,45.1,45.42,45.84,46.08,45.89,46.03,45.61,46.28,46.28])).toBeCloseTo(70.4641, 3)
     expect(wilderRsi(Array(20).fill(100))).toBe(50)

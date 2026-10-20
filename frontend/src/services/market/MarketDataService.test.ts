@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import type { RealtimeMarketProvider } from '@/services/market/contracts/RealtimeMarketProvider'
+import type { ProviderStreamEvent } from '@/services/market/contracts/RealtimeMarketProvider'
 import type { MarketCatalogProvider } from '@/services/market/explorer/MarketCatalogProvider'
 import type { MarketCatalog, MarketInstrument } from '@/types/market'
 import type { MarketDetailSnapshot, RealtimeMarketState } from '@/types/marketDetail'
@@ -32,6 +33,19 @@ function createProvider(id: string, supports: boolean): RealtimeMarketProvider {
 }
 
 describe('MarketDataService', () => {
+  it('retains the quote receipt and exchange clock across book-only updates', async () => {
+    const provider = createProvider('live', true)
+    let emit: (event: ProviderStreamEvent) => void = () => {}
+    provider.subscribe = (_instrument, _frame, _snapshot, onEvent) => { emit = onEvent; return () => {} }
+    const states: RealtimeMarketState[] = []
+    const service = new MarketDataService([provider], createProvider('mock', true))
+    const stop = service.subscribe({ instrument, timeframe: '1m', mode: 'live', onState: state => states.push(state) })
+    await vi.waitFor(() => expect(states.at(-1)?.snapshot).toBe(snapshot))
+    emit({ snapshot, status: 'live', quoteUpdatedAt: 1000, marketTime: 700 })
+    emit({ snapshot, quoteUpdatedAt: null })
+    expect(states.at(-1)?.connection).toMatchObject({ lastUpdatedAt: 1000, marketTime: 700 })
+    stop()
+  })
   it('keeps display-only cached catalogs separate from fresh results, venue and mode', async () => {
     const started = Date.parse('2026-10-20T00:00:00Z')
     const clock = vi.spyOn(Date, 'now').mockReturnValue(started)
