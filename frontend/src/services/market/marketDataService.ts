@@ -160,6 +160,13 @@ export class MarketDataService implements MarketOverviewService {
 
   rememberInstrument = rememberInstrument
 
+  /** Display-only recovery data. Never returned as a successful fresh catalog. */
+  getRecentCatalog(venue: MarketVenue, mode: MarketDataMode): MarketCatalog | null {
+    const cached = this.catalogCache.get(`${mode}:${venue}`)?.value
+    const age = cached ? Date.now() - cached.fetchedAt : Infinity
+    return cached && age >= 0 && age <= 300_000 ? cached : null
+  }
+
   subscribe({ instrument, timeframe, mode, onState }: MarketStreamOptions): () => void {
     const liveProvider = this.providers.find((provider) => provider.supports(instrument))
     const provider = mode === 'live' && liveProvider ? liveProvider : this.mockProvider

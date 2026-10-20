@@ -32,6 +32,25 @@ function createProvider(id: string, supports: boolean): RealtimeMarketProvider {
 }
 
 describe('MarketDataService', () => {
+  it('keeps display-only cached catalogs separate from fresh results, venue and mode', async () => {
+    const started = Date.parse('2026-10-20T00:00:00Z')
+    const clock = vi.spyOn(Date, 'now').mockReturnValue(started)
+    try {
+      const catalog: MarketCatalog = { venue: 'upbit-krw', instruments: [], source: 'live', fetchedAt: started }
+      const provider: MarketCatalogProvider = { id: 'controlled', supports: () => true, load: vi.fn().mockResolvedValueOnce(catalog).mockRejectedValue(new Error('Temporary failure')) }
+      const service = new MarketDataService([], createProvider('mock', true), [provider])
+      await service.getMarketCatalog('upbit-krw', 'live')
+      clock.mockReturnValue(started + 61_000)
+      await expect(service.getMarketCatalog('upbit-krw', 'live')).rejects.toThrow('Temporary failure')
+      expect(service.getRecentCatalog('upbit-krw', 'live')).toBe(catalog)
+      expect(service.getRecentCatalog('upbit-btc', 'live')).toBeNull()
+      expect(service.getRecentCatalog('upbit-krw', 'mock')).toBeNull()
+      clock.mockReturnValue(started + 300_001)
+      expect(service.getRecentCatalog('upbit-krw', 'live')).toBeNull()
+      clock.mockReturnValue(started - 1)
+      expect(service.getRecentCatalog('upbit-krw', 'live')).toBeNull()
+    } finally { clock.mockRestore() }
+  })
   it('does not let one aborted catalog request poison another caller', async () => {
     const pending: Array<{ resolve: (catalog: MarketCatalog) => void }> = []
     const catalog: MarketCatalog = { venue: 'upbit-krw', instruments: [], source: 'live', fetchedAt: 1 }
