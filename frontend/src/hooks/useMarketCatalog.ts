@@ -5,6 +5,7 @@ import type { MarketCatalog, MarketDataMode, MarketVenue } from '@/types/market'
 
 interface CatalogState {
   catalog: MarketCatalog | null
+  cachedCatalog?: MarketCatalog | null
   loading: boolean
   error: string | null
   loadingMilliseconds: number | null
@@ -30,6 +31,6 @@ export function useMarketCatalog(venue: MarketVenue, mode: MarketDataMode, retry
   }, [key, venue, mode, retry])
 
   return result.key === key
-    ? result
-    : { catalog: null, loading: true, error: null, loadingMilliseconds: null }
+    ? { ...result, cachedCatalog: result.catalog ? null : marketDataService.getRecentCatalog(venue, mode) }
+    : { catalog: null, cachedCatalog: marketDataService.getRecentCatalog(venue, mode), loading: true, error: null, loadingMilliseconds: null }
 }

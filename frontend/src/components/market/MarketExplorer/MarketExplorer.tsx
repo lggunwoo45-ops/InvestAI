@@ -17,6 +17,7 @@ interface MarketExplorerProps {
   venue: MarketVenue
   mode: MarketDataMode
   catalog: MarketCatalog | null
+  cachedCatalog?: MarketCatalog | null
   loading: boolean
   error: string | null
   selectedInstrumentId: string | null
@@ -47,7 +48,7 @@ const sortFields: readonly ExplorerSortField[] = ['alphabet', 'price', 'change',
 const spotQuotes: readonly BinanceSpotQuoteFilter[] = ['USDT', 'FDUSD', 'BTC', 'ETH', 'Other']
 
 export function MarketExplorer({
-  venue, mode, catalog, loading, error, selectedInstrumentId,
+  venue, mode, catalog: freshCatalog, cachedCatalog, loading, error, selectedInstrumentId,
   search, onSearchChange, favoritesOnly, onFavoritesOnlyChange,
   reviewOnly: controlledReviewOnly, onReviewOnlyChange,
   sortField, onSortFieldChange, sortDirection, onSortDirectionChange,
@@ -57,6 +58,15 @@ export function MarketExplorer({
 }: MarketExplorerProps) {
   const { language } = useLanguage()
   const text = marketExplorerText[language]
+  const catalog = freshCatalog ?? cachedCatalog ?? null
+  const showingCached = !freshCatalog && !!cachedCatalog
+  const rateLimited = /429|rate-limit/.test(error ?? '')
+  const blocked = /418|blocked/.test(error ?? '')
+  const errorHelp = venue.startsWith('upbit-')
+    ? language === 'ko'
+      ? blocked ? '업비트가 요청을 일시 차단했습니다. 잠시 후 다시 시도해 주세요.' : rateLimited ? '업비트 요청 제한으로 목록을 받지 못했습니다. 잠시 후 다시 시도해 주세요.' : '업비트 응답이 지연되거나 연결되지 않습니다. 연결을 확인하고 다시 시도해 주세요.'
+      : blocked ? 'Upbit temporarily blocked requests. Wait before retrying.' : rateLimited ? 'Upbit rate-limited this request. Wait before retrying.' : 'Upbit is delayed or unreachable. Check the connection and retry.'
+    : text.sourceUnavailable
   const { watchlistItems, getWatchlistItem, activeReview, removeFromWatchlist } = useWatchlists()
   const [localReviewOnly, setLocalReviewOnly] = useState(false)
   const reviewOnly = controlledReviewOnly ?? localReviewOnly
@@ -113,7 +123,7 @@ export function MarketExplorer({
     <section className={`${styles.explorer} ${isCrypto ? styles.crypto : styles.stock} ${compact ? styles.compact : ''}`} data-workspace={isCrypto ? 'crypto' : 'stock'} aria-label={text.title}>
       <header className={styles.header}>
         <strong>{text.layout.instrumentList}</strong>
-        <div className={styles.count}><DataModeControl value={mode} onChange={onModeChange} /><span aria-live="polite" aria-atomic="true" aria-label={`${instruments.length.toLocaleString()} ${text.results}`}>{instruments.length.toLocaleString()} {text.results}</span><span className={source === 'live' ? styles.live : styles.mock} title={!isCrypto ? text.mockDisclosure : undefined}>{source === 'live' ? text.realPublicApi : text.mockData}</span></div>
+        <div className={styles.count}><DataModeControl value={mode} onChange={onModeChange} /><span aria-live="polite" aria-atomic="true" aria-label={`${instruments.length.toLocaleString()} ${text.results}`}>{instruments.length.toLocaleString()} {text.results}</span><span className={source === 'live' ? styles.live : styles.mock} title={!isCrypto ? text.mockDisclosure : undefined}>{showingCached ? (language === 'ko' ? '이전 조회 목록' : 'Previous catalog') : source === 'live' ? text.realPublicApi : text.mockData}</span></div>
       </header>
 
       <div className={styles.navigation} data-market-navigation="hierarchical">
@@ -161,10 +171,11 @@ export function MarketExplorer({
         <span aria-label={text.favorites}>★</span>
       </div>
       <div className={styles.scroll} ref={scrollRef} role="region" aria-label={`${text.venue[venue]} ${text.instruments}`}>
-        {loading && <div className={styles.state}>{text.loading}</div>}
-        {!loading && error && <div className={styles.state}><p>{text.sourceUnavailable}</p><small>{error}</small><button type="button" onClick={onRetry}>{text.retry}</button></div>}
+        {showingCached && catalog && <div className={styles.recovery} role="status">{language === 'ko' ? '재연결 중에는 이전 목록을 표시합니다. 가격은 현재 시세가 아닙니다. 조회 시각: ' : 'Showing the previous list while reconnecting. Prices are not current. Retrieved: '}{new Date(catalog.fetchedAt).toLocaleString(language === 'ko' ? 'ko-KR' : 'en-US')}</div>}
+        {loading && <div className={styles.recovery} role="status">{venue.startsWith('upbit-') ? (language === 'ko' ? '업비트 응답을 기다리고 있습니다. 일시 실패 시 자동으로 다시 시도합니다.' : 'Waiting for Upbit. Temporary failures are retried automatically.') : text.loading}</div>}
+        {!loading && error && <div className={styles.recovery} role="alert"><p>{errorHelp}</p><details><summary>{language === 'ko' ? '오류 정보' : 'Error details'}</summary><small>{error}</small></details><button type="button" onClick={onRetry}>{text.retry}</button></div>}
         {!loading && !error && instruments.length === 0 && unavailableVisible.length === 0 && <div className={styles.state}><p>{favoritesOnly ? (language === 'ko' ? (reviewOnly ? '다시 볼 종목이 없습니다.' : '관심종목이 없습니다.') : (reviewOnly ? 'No instruments need review.' : 'No watchlist items.')) : text.empty}</p>{search && <button type="button" onClick={() => onSearchChange('')}>{text.clearSearch}</button>}</div>}
-        {!loading && !error && instruments.length > 0 && <div className={styles.virtualSize} style={{ height: Math.max(virtualizer.getTotalSize(), instruments.length * rowHeight) }}>
+        {instruments.length > 0 && <div className={styles.virtualSize} style={{ height: Math.max(virtualizer.getTotalSize(), instruments.length * rowHeight) }}>
           {visibleItems.map((item) => {
             const instrument = instruments[item.index]
             const favorite = favoriteIds.has(instrument.id)

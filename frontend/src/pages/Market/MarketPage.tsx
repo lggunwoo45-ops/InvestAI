@@ -147,10 +147,10 @@ export function MarketPage() {
     if (fallback) openInstrument(fallback)
   }, [assetMode, catalogState.catalog, openInstrument, pendingAssetSelection, updatePendingAssetSelection, venue])
   const changeFavorite = useCallback((id: string) => {
-    const instrument = catalogState.catalog?.instruments.find((item) => item.id === id)
+    const instrument = (catalogState.catalog ?? catalogState.cachedCatalog)?.instruments.find((item) => item.id === id)
     if (instrument) marketDataService.rememberInstrument(instrument)
     if (instrument) toggleWatchlist(itemFromInstrument(instrument))
-  }, [catalogState.catalog, toggleWatchlist])
+  }, [catalogState.catalog, catalogState.cachedCatalog, toggleWatchlist])
   const changeVenue = useCallback((next: MarketVenue) => {
     const nextAssetMode = assetModeForVenue(next)
     if (nextAssetMode !== assetMode) {
@@ -190,6 +190,7 @@ export function MarketPage() {
       venue={venue}
       mode={marketDataMode}
       catalog={catalogState.catalog}
+      cachedCatalog={catalogState.cachedCatalog}
       loading={catalogState.loading}
       error={catalogState.error}
       selectedInstrumentId={selectedInstrument?.id ?? null}

@@ -1,5 +1,5 @@
 import type { MarketInstrument } from '@/types/market'
-import { upbitRequestGate } from './upbitRequestGate'
+import { fetchUpbitJson } from './upbitRequest'
 import type { Candle, ChartTimeframe, MarketDetailSnapshot, OrderbookLevel, RecentTrade } from '@/types/marketDetail'
 
 export const timeframeMilliseconds: Record<ChartTimeframe, number> = {
@@ -71,17 +71,10 @@ export function createTradeCandle(snapshot: MarketDetailSnapshot, trade: RecentT
 }
 
 export async function fetchJson<T>(url: string, signal?: AbortSignal): Promise<T> {
-  const isUpbit = url.startsWith('https://api.upbit.com/v1/')
-  const request = async () => {
-    const response = await fetch(url, { signal, headers: { Accept: 'application/json' } })
-    if (isUpbit && (response.status === 429 || response.status === 418)) {
-      const retryAfter = Number(response.headers?.get('Retry-After'))
-      upbitRequestGate.defer(Math.max(response.status === 418 ? 60_000 : 10_500, Number.isFinite(retryAfter) ? retryAfter * 1000 : 0))
-    }
-    if (!response.ok) throw new Error(`Market request failed with ${response.status}`)
-    return response.json() as Promise<T>
-  }
-  return isUpbit ? upbitRequestGate.run(request, signal) : request()
+  if (url.startsWith('https://api.upbit.com/v1/')) return fetchUpbitJson<T>(url, signal)
+  const response = await fetch(url, { signal, headers: { Accept: 'application/json' } })
+  if (!response.ok) throw new Error(`Market request failed with ${response.status}`)
+  return response.json() as Promise<T>
 }
 
 export async function decodeWebSocketData(data: unknown): Promise<string> {
