@@ -18,3 +18,10 @@
 .header, .instrumentHeader, .searchPanel, .inputs, .userContext, .analysis { border-radius: var(--radius-lg); }
 .searchPanel input, .inputs input, .inputs select, .inputs textarea, .mode, .mode button, .filterChips button { border-radius: var(--radius-sm); }
 .mode { flex-shrink: 0; white-space: nowrap; }
+.referenceDetails { border:1px solid var(--color-border); border-radius:var(--radius-lg); background:var(--color-surface-primary); padding:16px 20px; min-width:0; }
+.referenceDetails summary { cursor:pointer; font-size:13px; font-weight:600; }
+.referenceDetails > p,.referenceDetails details > p { color:var(--color-text-secondary); font-size:12px; line-height:1.7; }
+.referenceDetails > details { margin-top:16px; border-top:1px solid var(--color-border); padding-top:14px; }
+.referenceDetails > details[open] > summary { margin-bottom:14px; }
+.referenceDetails article h3 { font-size:13px; }
+.referenceDetails article p,.referenceDetails article small { font-size:12px; color:var(--color-text-secondary); line-height:1.6; }

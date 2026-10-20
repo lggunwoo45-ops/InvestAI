@@ -254,7 +254,20 @@ export function MyAnalysisPage() {
       </section>
       {savedPosition && savedPosition.instrumentId === selected.id && savedPosition.quoteCurrency === selected.quoteCurrency && <PositionPlan position={savedPosition} price={currentPrice} language={language} quoteLabel={analysis.dataQualityLabel} showPosition />}
       {analysis.assetType === 'crypto' && <CryptoDecisionPanel key={selected.id} instrument={selected} daily={technicalData} language={language} averagePrice={validAveragePrice} quantity={savedPosition?.instrumentId === selected.id ? savedPosition.quantity : undefined} positionId={savedPosition?.instrumentId === selected.id ? savedPosition.id : undefined} expert={displayMode === 'expert'} />}
-      <section hidden={displayMode === 'simple' && analysis.assetType === 'crypto'}>
+      {analysis.assetType === 'crypto' && <details key={`references:${selected.id}`} className={styles.referenceDetails}>
+        <summary>{language === 'ko' ? '기준 기록·추가 참고 자료' : 'Baseline records and further references'}</summary>
+        <p>{language === 'ko' ? '후보 기록과 일봉 차트의 참고 자료입니다. 현재 판단과 가격 기준은 위의 가격 계획에서 확인하세요.' : 'Candidate records and daily-chart context. Use the price plan above for the current read and price criteria.'}</p>
+        <AnalysisBaselinePanel key={`${selected.id}:${snapshotItem?.instrumentId ?? 'current'}`} actionStatus={analysis.actionReadiness.status} currentPrice={currentPrice} instrumentId={selected.id} interestStage={interestStage} language={language} quoteCurrency={selected.quoteCurrency} initialSnapshot={snapshotItem ? { actionStatus: snapshotItem.actionStatus, capturedAt: snapshotRecord?.generatedAt ?? openedAt, interestStage: snapshotItem.interestStage, price: snapshotItem.basisPrice } : null} />
+        {technicalAnalysis && <details><summary>{language === 'ko' ? '일봉 차트 구조 (참고)' : 'Daily chart structure (reference)'}</summary>
+          <p>{language === 'ko' ? '일봉 기준이며 상단 가격 계획의 기준 시간대와 다를 수 있습니다.' : 'Daily-chart references may use a different timeframe from the price plan above.'}</p>
+          <TechnicalLevelsPanel levelSet={technicalAnalysis.levelSet} movingAverageContext={technicalAnalysis.movingAverageContext} displayMode={displayMode} language={language} isLoading={technicalData.isLoading} />
+          {displayMode === 'expert' && <ChartOverlayLegend status={technicalAnalysis.levelSet.status} lines={technicalAnalysis.overlayLines} displayMode={displayMode} language={language} isLoading={technicalData.isLoading} />}
+        </details>}
+        <details><summary>{language === 'ko' ? '연결된 뉴스와 부족한 근거' : 'Linked news and missing evidence'}</summary>
+          {[...analysis.evidence, ...analysis.missingEvidence].filter(entry => entry.type === 'news' || entry.type === 'market').map(entry => <article key={entry.id}><h3>{entry.label}</h3><p>{entry.detail}</p><small>{t.source}: {entry.source}</small></article>)}
+        </details>
+      </details>}
+      {analysis.assetType !== 'crypto' && <section>
       <MyAnalysisReportSummary recommendation={recommendation} analysis={analysis} language={language} mode={displayMode} symbol={selected.displaySymbol ?? selected.symbol} name={selected.name} reviewMode={reviewMode} basisPrice={validAveragePrice} currentPrice={currentPrice} quoteCurrency={selected.quoteCurrency} disclosureReview={selected.marketId === 'korea-stock' ? dartReview : null} practicalDecision={practicalDecision ?? undefined} reviewRanges={reviewRanges} candidateReviewScore={candidateReviewScore ?? undefined} technicalAnalysis={technicalData.isLoading ? undefined : technicalAnalysis ?? undefined} aiCopilotFinalRead={aiCopilotFinalRead ?? undefined} />
       {practicalDecision && <PracticalDecisionCard result={recommendation ? { ...practicalDecision, title: recommendation.title, summary: recommendation.summary, reason: recommendation.why, nextCheck: recommendation.nextCheck } : practicalDecision} language={language} />}
       <ReviewRangePanel ranges={reviewRanges} language={language} quoteCurrency={selected.quoteCurrency} />
@@ -286,8 +299,8 @@ export function MyAnalysisPage() {
           <article><span className={styles.sectionLabel}>{t.nextChecks}</span><h3>{expertTitles.checklist ?? t.checklist}</h3><ul>{analysis.reviewChecklist.map((entry) => <li key={entry}>{entry}</li>)}</ul></article>
         </div>}
       </section>
-      </section>
-      <details className={styles.inputs} open={displayMode === 'expert' || analysis.assetType !== 'crypto'}>
+      </section>}
+      <details key={`inputs:${selected.id}`} className={styles.inputs} open={analysis.assetType !== 'crypto'}>
         <summary>{t.optionalContext}</summary>
         <p className={styles.inputNotice}>{t.userContextNotice}</p>
         <div className={styles.inputGrid}>
@@ -296,8 +309,8 @@ export function MyAnalysisPage() {
           <label className={styles.note}><span>{t.note}</span><textarea maxLength={500} placeholder={t.notePlaceholder} value={note} onChange={(event) => setNote(event.target.value)} /></label>
         </div>
       </details>
-      <section className={styles.userContext} hidden={displayMode === 'simple' && analysis.assetType === 'crypto'} aria-label={t.yourInputs}><h2>{t.yourInputs}</h2><dl><div><dt>{t.intent}</dt><dd>{analysis.userContext.intent}</dd></div>{analysis.userContext.userNote && <div><dt>{t.note}</dt><dd>{analysis.userContext.userNote}</dd></div>}{analysis.userContext.averagePrice && <div><dt>{t.average}</dt><dd>{analysis.userContext.averagePrice}</dd></div>}</dl><p>{analysis.userContext.notice}</p><small>{analysis.userContext.intentNotice}</small></section>
-      <footer className={styles.pageSafety} hidden={displayMode === 'simple' && analysis.assetType === 'crypto'}>{analysis.disclaimer}</footer>
+      {analysis.assetType !== 'crypto' && <><section className={styles.userContext} aria-label={t.yourInputs}><h2>{t.yourInputs}</h2><dl><div><dt>{t.intent}</dt><dd>{analysis.userContext.intent}</dd></div>{analysis.userContext.userNote && <div><dt>{t.note}</dt><dd>{analysis.userContext.userNote}</dd></div>}{analysis.userContext.averagePrice && <div><dt>{t.average}</dt><dd>{analysis.userContext.averagePrice}</dd></div>}</dl><p>{analysis.userContext.notice}</p><small>{analysis.userContext.intentNotice}</small></section>
+      <footer className={styles.pageSafety}>{analysis.disclaimer}</footer></>}
     </>}
   </main>
 }

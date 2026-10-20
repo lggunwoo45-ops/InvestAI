@@ -71,8 +71,8 @@ export function CandidateInspectorPanel({ candidate, snapshotId, generatedAt, la
     {analysisPanel ?? <PracticalDecisionCard result={candidate.practicalDecision} language={language} compact showSafety={false} />}
     <footer><button type="button" disabled={!snapshotId} onClick={() => snapshotId && onOpenAnalysis(item.instrumentId, snapshotId)}>{t.open} →</button><small>{t.recorded}: {time(generatedAt, language)} · {t.safety}</small></footer>
     <details className={styles.details}>
-      <summary>{language === 'ko' ? '차트와 검토 범위' : 'Chart and review ranges'}</summary>
-    <ReviewRangePanel ranges={candidate.reviewRanges} language={language} quoteCurrency={item.quoteCurrency} compact showSafety={false} />
+      <summary>{analysisPanel ? language === 'ko' ? '일봉 차트 구조 (참고)' : 'Daily chart structure (reference)' : language === 'ko' ? '차트와 검토 범위' : 'Chart and review ranges'}</summary>
+    {analysisPanel ? <p>{language === 'ko' ? '일봉 참고 자료입니다. 현재 판단과 가격 기준은 위의 가격 계획에서 확인하세요.' : 'Daily-chart context. Use the price plan above for the current read and price criteria.'}</p> : <ReviewRangePanel ranges={candidate.reviewRanges} language={language} quoteCurrency={item.quoteCurrency} compact showSafety={false} />}
     {technicalAnalysis && <>
       <TechnicalLevelsPanel levelSet={technicalAnalysis.levelSet} movingAverageContext={technicalAnalysis.movingAverageContext} displayMode="simple" language={language} isLoading={technicalLoading} />
       <ChartOverlayLegend status={technicalAnalysis.levelSet.status} lines={technicalAnalysis.overlayLines} displayMode="simple" language={language} isLoading={technicalLoading} />

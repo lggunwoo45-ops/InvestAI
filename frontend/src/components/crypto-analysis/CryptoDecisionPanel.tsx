@@ -11,7 +11,8 @@ import styles from './CryptoDecisionPanel.module.css'
 interface Props { instrument: MarketInstrument; daily: AnalysisSeries; language: Language; averagePrice?: number | null; quantity?: number; expert?: boolean; positionId?: string }
 const text = {
   ko: {
-    title: '지금의 방향과 가격 계획', direction: { buy: '매수 우세', neutral: '중립 · 방향 혼재', sell: '매도 우세', unavailable: '가격 흐름 확인 중' },
+    title: '지금의 방향과 가격 계획', direction: { buy: '매수 우세', neutral: '중립 · 방향 혼재', sell: '매도 우세', unavailable: '분석 데이터 확인 중' },
+    target: '목표 기준가', sellTarget: '반등 매도 검토 기준', core: '핵심 근거', trendLabel: '추세', dataPending: '아직 시장 방향을 판단할 데이터가 충분하지 않습니다. 아래 연결 상태를 확인하세요.', details: '시간대별 지표·계산 근거', contextDetails: '큰 체결·비트코인 도미넌스', copy: '요약 복사', copied: '복사했습니다', copyError: '복사 기능을 사용할 수 없습니다', checked: '분석 시각', riskLabel: '주의할 점', stopHint: '기준 시간대 종가 이탈 시 재검토', noVolume: '거래량 비교 근거 확인 중', noReward: '가격 계획이 준비되면 표시합니다',
     action: { poorReward: '손익비가 낮아 더 유리한 진입 구간 대기', pullback: '추격보다 눌림 구간 대기', entry: '지지 확인 후 분할 매수 검토', reduce: '추가 매수보다 반등 시 축소 검토', wait: '방향 확인 전 신규 진입 대기', refresh: '확인된 시간대부터 살펴보세요' },
     frame: { '1H': '1시간', '4H': '4시간', '1D': '일봉' }, trend: { buy: '상승 추세', neutral: '횡보·혼재', sell: '하락 추세' },
     issue: { loading: '시세 연결 중', mock: '모의 데이터', disconnected: '연결 확인 중', stale: '오래된 시세', history: '완료 봉 50개 미만', gaps: '봉 간격 누락', range: '변동 범위 산정 불가' },
@@ -23,7 +24,8 @@ const text = {
     detail: '계산 근거와 데이터 시점', close: '마지막 완료 봉', rule: '완료 봉의 20·50 이동평균 정렬을 1시간:4시간:일봉 = 1:2:3으로 합산합니다. 2개 이상 시간대와 방향 비중 50% 이상에서 우세를 표시합니다. RSI 14·ATR 14는 Wilder 방식이며, 거래량은 직전 20개 완료 봉 평균과 비교합니다.', note: '규칙 기반 가격 분석입니다. 우세는 수익 확률이 아니며 주문을 실행하지 않습니다. 가격 계획과 손익비는 수수료·세금·슬리피지 제외입니다.', demo: '모의 시세에서는 실제 매수·매도 우세와 가격 계획을 표시하지 않습니다.',
   },
   en: {
-    title: 'Direction and price plan', direction: { buy: 'Buy-side bias', neutral: 'Neutral · mixed', sell: 'Sell-side bias', unavailable: 'Checking price evidence' },
+    title: 'Direction and price plan', direction: { buy: 'Buy-side bias', neutral: 'Neutral · mixed', sell: 'Sell-side bias', unavailable: 'Checking analysis data' },
+    target: 'Target reference', sellTarget: 'Rebound sell-review reference', core: 'Key evidence', trendLabel: 'Trend', dataPending: 'There is not enough data to assess market direction yet. Check the connection status below.', details: 'Timeframe indicators and calculations', contextDetails: 'Large executions and Bitcoin dominance', copy: 'Copy summary', copied: 'Copied', copyError: 'Copy is unavailable', checked: 'Analysis time', riskLabel: 'Watch for', stopHint: 'Reassess on a reference-timeframe close below', noVolume: 'Checking volume evidence', noReward: 'Available when the price plan is ready',
     action: { poorReward: 'Wait for a better reward/risk entry', pullback: 'Wait for a pullback before chasing', entry: 'Consider staged entry after support holds', reduce: 'Review reducing on rebounds before adding', wait: 'Wait for direction before a new entry', refresh: 'Review the timeframes already available' },
     frame: { '1H': '1 hour', '4H': '4 hours', '1D': 'Daily' }, trend: { buy: 'Uptrend', neutral: 'Mixed / sideways', sell: 'Downtrend' },
     issue: { loading: 'Connecting quotes', mock: 'Mock data', disconnected: 'Checking connection', stale: 'Stale quotes', history: 'Fewer than 50 closed bars', gaps: 'Missing bar intervals', range: 'Volatility unavailable' },
@@ -41,6 +43,7 @@ export function CryptoDecisionPanel({ instrument, daily, language, averagePrice,
   const fourHourly = useTechnicalLevelData(instrument, '4H')
   const dominance = useDominance(daily.dataQuality === 'live')
   const [clock, setClock] = useState(Date.now)
+  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle')
   useEffect(() => { const timer = setInterval(() => setClock(Date.now()), 10_000); return () => clearInterval(timer) }, [])
   // These are local receipt times set by MarketDataService, not provider timestamps.
   // Include them so incoming trades between timer ticks are not treated as future data.
@@ -59,28 +62,51 @@ export function CryptoDecisionPanel({ instrument, daily, language, averagePrice,
   const date = (n: number) => new Date(n).toLocaleString(language === 'ko' ? 'ko-KR' : 'en-US')
   const issue = (value: SeriesIssue) => t.issue[value]
   const pnl = plan && averagePrice && averagePrice > 0 && quantity && quantity > 0 ? (plan.stop - averagePrice) * quantity : null
+  const trendSummary = decision.frames.filter(r => !r.issue).map(r => `${t.frame[r.frame]} ${t.trend[r.direction]}`).join(' · ')
+  const volumeSummary = reference?.volumeRatio != null ? `${t.frame[reference.frame]} · ${reference.volumeRatio.toFixed(2)}×` : t.noVolume
+  const caution = decision.direction === 'sell' ? t.bearish : decision.extended ? t.extended : decision.mixed ? t.mixed : reference?.volumeRatio != null && reference.volumeRatio < 0.6 ? t.lowVolume : t.balanced
+  const copySummary = async () => {
+    const lines = [instrument.symbol, `${t.checked}: ${date(now)}`, t.direction[decision.direction],
+      decision.direction === 'unavailable' ? t.dataPending : t.action[decision.action],
+      ...(plan ? [`${t.entry}: ${range(plan.entry)}`, `${decision.direction === 'sell' ? t.sellTarget : t.target}: ${price(plan.target)}`, `${t.stop}: ${price(plan.stop)} (${t.frame[plan.frame]})`, `${t.rr}: ${plan.rewardRisk.toFixed(2)} : 1`] : []),
+      `${t.trendLabel}: ${trendSummary || decision.frames.map(r => `${t.frame[r.frame]} ${r.issue ? issue(r.issue) : t.trend[r.direction]}`).join(' · ')}`,
+      `${t.volume}: ${volumeSummary}`, ...(decision.direction !== 'unavailable' ? [`${t.riskLabel}: ${caution}`] : []), t.note]
+    try { await navigator.clipboard.writeText(lines.join('\n')); setCopyState('copied') } catch { setCopyState('error') }
+  }
   return <section className={styles.panel} aria-label={t.title} data-bias={decision.direction}>
-    <header className={styles.heading}><div><span>CRYPTO ANALYSIS</span><h2>{t.title}</h2></div><small>{t.coverage} {decision.coverage}/3</small></header>
-    <div className={styles.verdict}><strong>{t.direction[decision.direction]}</strong><h3>{t.action[decision.action]}</h3>{decision.price !== null && <span>{t.live} · {price(decision.price)}</span>}</div>
-    <div className={styles.frames}>{decision.frames.map(r => <article key={r.frame} data-trend={r.issue ? 'unavailable' : r.direction}><span>{t.frame[r.frame]}</span><strong>{r.issue ? issue(r.issue) : t.trend[r.direction]}</strong>{!r.issue && <small>RSI {r.rsi?.toFixed(1)} · {r.volumeRatio === null ? '—' : `${r.volumeRatio.toFixed(2)}×`}</small>}</article>)}</div>
+    <header className={styles.heading}><div><span>CRYPTO ANALYSIS</span><h2>{t.title}</h2></div><div className={styles.tools}><small>{t.coverage} {decision.coverage}/3</small><button type="button" onClick={copySummary}>{t.copy}</button><small role="status">{copyState === 'copied' ? t.copied : copyState === 'error' ? t.copyError : ''}</small></div></header>
+    <div className={styles.verdict}><strong>{t.direction[decision.direction]}</strong><p>{decision.direction === 'unavailable' ? t.dataPending : t.action[decision.action]}</p>{decision.price !== null && <span>{t.live} · {price(decision.price)}</span>}</div>
     {daily.dataQuality === 'mock' && <p>{t.demo}</p>}
     {plan ? <>
       <div className={styles.prices}>
-        <article><span>{t.entry}</span><strong>{range(plan.entry)}</strong><p>{decision.direction === 'sell' ? t.bearish : t.condition}</p>{plan.supportBasis === 'range' && <small>{t.provisional}</small>}</article>
-        <article><span>{t.resistance}</span><strong>{range(plan.resistance)}</strong><p>{plan.targetBasis === 'observed' ? t.observed : t.atrTarget}</p></article>
-        <article className={styles.risk}><span>{t.stop}</span><strong>{price(plan.stop)}</strong><small>{t.frame[plan.frame]} · ATR 1×</small></article>
-        <article><span>{decision.direction === 'sell' ? t.sellInvalidation : t.rr}</span><strong>{decision.direction === 'sell' ? price(plan.sellInvalidation) : `${plan.rewardRisk.toFixed(2)} : 1`}</strong><p>{decision.direction === 'sell' ? t.invalidation : t.frame[plan.frame]}</p></article>
+        <article><span>{t.entry}</span><strong>{range(plan.entry)}</strong>{plan.supportBasis === 'range' && <small>{t.provisional}</small>}</article>
+        <article><span>{decision.direction === 'sell' ? t.sellTarget : t.target}</span><strong>{price(plan.target)}</strong><small>{plan.targetBasis === 'observed' ? t.observed : t.atrTarget}</small></article>
+        <article className={styles.risk}><span>{t.stop}</span><strong>{price(plan.stop)}</strong><small>{t.frame[plan.frame]} · {t.stopHint}</small></article>
       </div>
       {plan.rewardRisk < 1.5 && <p className={styles.notice}>{t.lowReward}</p>}
       {averagePrice != null && Number.isFinite(averagePrice) && averagePrice > 0 && <div className={styles.position}><strong>{t.position}: {price(averagePrice)}</strong><span>{t.percent}: {((plan.stop / averagePrice - 1) * 100).toFixed(2)}%</span>{pnl !== null && Number.isFinite(pnl) && <span>{t.pnl}: {price(pnl)}</span>}</div>}
-    </> : <p className={styles.notice}>{decision.direction === 'unavailable' ? t.noData : t.noPlan}</p>}
-    <div className={styles.reason}><div><h3>{t.reason}</h3><p>{decision.frames.filter(r => !r.issue).map(r => `${t.frame[r.frame]} ${t.trend[r.direction]}`).join(' · ') || t.action.refresh}</p>{reference && !reference.issue && <p>{t.volume}: {reference.volumeRatio === null ? '—' : `${reference.volumeRatio.toFixed(2)}×`} · {t.volatility}: {price(reference.atr!)}</p>}</div><div><h3>{t.contrary}</h3><p>{decision.mixed ? t.mixed : decision.extended ? t.extended : reference?.volumeRatio !== null && reference?.volumeRatio !== undefined && reference.volumeRatio < 0.6 ? t.lowVolume : t.balanced}</p></div></div>
+    </> : decision.direction !== 'unavailable' && <p className={styles.notice}>{t.noPlan}</p>}
+    {decision.direction === 'unavailable' ? <ul className={styles.dataIssues} aria-label={t.coverage}>{decision.frames.map(r => <li key={r.frame}>{t.frame[r.frame]} · {r.issue ? issue(r.issue) : t.trend[r.direction]}</li>)}</ul> : <>
+      <section className={styles.evidence} aria-label={t.core}><h3>{t.core}</h3><dl>
+        <div><dt>{t.trendLabel}</dt><dd>{trendSummary}</dd></div>
+        <div><dt>{t.volume}</dt><dd>{volumeSummary}</dd></div>
+        <div><dt>{t.rr}</dt><dd>{plan ? `${plan.rewardRisk.toFixed(2)} : 1` : t.noReward}</dd></div>
+      </dl></section>
+      <p className={styles.caution}><strong>{t.riskLabel}</strong> · {caution}</p>
+    </>}
     <SaveScenario instrument={instrument} decision={decision} language={language} positionId={positionId} />
+    <details className={styles.disclosure}><summary>{t.details}</summary>
+      <div className={styles.frames}>{decision.frames.map(r => <article key={r.frame} data-trend={r.issue ? 'unavailable' : r.direction}><span>{t.frame[r.frame]}</span><strong>{r.issue ? issue(r.issue) : t.trend[r.direction]}</strong>{!r.issue && <small>RSI {r.rsi?.toFixed(1)} · {t.volume} {r.volumeRatio === null ? '—' : `${r.volumeRatio.toFixed(2)}×`} · ATR {price(r.atr!)}</small>}<small>{t.close}: {r.asOf === null ? '—' : date(r.asOf)} · {r.count} bars</small>{expert && !r.issue && <small>SMA20 {number(r.sma20!)} / SMA50 {number(r.sma50!)}</small>}</article>)}</div>
+      {plan && <div className={styles.referencePrices}><p><strong>{t.resistance}</strong>: {range(plan.resistance)}</p>{decision.direction === 'sell' && <p><strong>{t.sellInvalidation}</strong>: {price(plan.sellInvalidation)} · {t.invalidation}</p>}<p>{t.condition}</p></div>}
+      <p>{t.rule}</p><small>{language === 'ko' ? '가격 구간: 최근 완료 봉의 지지·저항 ±0.25 ATR. 매수 가정 해제: 지지 −1 ATR.' : 'Zones: observed support/resistance ±0.25 ATR. Long invalidation: support −1 ATR.'}</small>
+    </details>
+    <details className={styles.disclosure}><summary>{t.contextDetails}</summary>
     <div className={styles.context}>
       <article aria-label={t.flow}><h3>{t.flow}</h3><strong>{flow.direction === 'unavailable' && latestTrade && now - latestTrade.timestamp > 60_000 ? t.flowStale : t.flowLabels[flow.direction]}</strong>{flow.ratio !== null && <p>{t.buyShare}: {(flow.ratio * 100).toFixed(1)}%</p>}<p>{t.sample}: {flow.count} · {t.large}: {flow.largeCount}</p>{flow.threshold !== null && <small>{t.threshold}: {price(flow.threshold)}</small>}{flow.from !== null && flow.to !== null && <small>{date(flow.from)} – {date(flow.to)}</small>}<p>{t.flowNote}</p>{flow.direction === 'unavailable' && <small>{t.flowMissing}</small>}{latestTrade && <small>{t.flowLast}: {date(latestTrade.timestamp)}</small>}</article>
       <article aria-label={t.dominance}><h3>{t.dominance}</h3>{global ? <><strong>{global.point.percent.toFixed(2)}%</strong><p>{t.dominanceHelp}</p>{delta !== null && global.previous ? <><p>{t.prior}: {delta >= 0 ? '+' : ''}{delta.toFixed(2)}%p<br />{date(global.previous.at)} → {date(global.point.at)}</p><p>{delta >= 0.15 ? t.dominanceUp : delta <= -0.15 ? t.dominanceDown : t.dominanceFlat}</p></> : <p>{t.dominanceHistory}</p>}<p>{t.marketChange}: {global.point.marketChange.toFixed(2)}%</p><small>{date(global.point.at)}</small></> : <p>{dominance.loading ? t.dominanceLoading : t.dominanceError}</p>}<a href="https://coinpaprika.com/overview" target="_blank" rel="noreferrer">CoinPaprika ↗</a><small>{t.dominanceNote}</small></article>
     </div>
-    <details open={expert || undefined}><summary>{t.detail}</summary><p>{t.rule}</p><p>{language === 'ko' ? '가격 구간: 최근 완료 봉의 지지·저항 ±0.25 ATR. 매수 가정 해제: 지지 −1 ATR. 대형 체결: 표본 금액 상위 25%이면서 중앙값의 1.5배 이상, 3건 이상일 때 금액 비중으로 우세 표시.' : 'Zones: observed support/resistance ±0.25 ATR. Long invalidation: support −1 ATR. Large trades: top quartile and at least 1.5× median notional; bias requires at least three large executions.'}</p>{decision.frames.map(r => <p key={r.frame}>{t.frame[r.frame]} · {t.close}: {r.asOf === null ? '—' : date(r.asOf)} · {r.count} bars{r.issue ? ` · ${issue(r.issue)}` : ` · SMA20 ${number(r.sma20!)} / SMA50 ${number(r.sma50!)}`}</p>)}</details>
+    <small>{language === 'ko' ? '대형 체결: 표본 금액 상위 25%이면서 중앙값의 1.5배 이상, 3건 이상일 때 금액 비중으로 우세 표시.' : 'Large trades: top quartile and at least 1.5× median notional; bias requires at least three large executions.'}</small>
+    </details>
     <footer>{t.note}{instrument.marketId === 'binance-futures' && <p>{t.futures}</p>}</footer>
   </section>
 }
