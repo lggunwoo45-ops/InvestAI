@@ -6,6 +6,7 @@ import { marketDataService } from '@/services/market/marketDataService'
 import { upbitRelayBase } from '@/services/market/providers/upbitRelay'
 import { matchesScan, scanCandidates, SCAN_LIMIT, selectScanPool, type ScanCriteria, type ScanResult } from '@/services/cryptoAnalysis/liveCandidateScan'
 import type { MarketVenue } from '@/types/market'
+import { formatAnalysisPrice } from '@/utils/formatAnalysisPrice'
 import styles from './LiveCandidateSearch.module.css'
 
 const venues = ['upbit-krw', 'upbit-btc', 'upbit-usdt', 'binance-spot', 'binance-futures'] as const
@@ -61,7 +62,7 @@ function SearchSession({ marketDataMode }: { marketDataMode: 'live' | 'mock' }) 
   const shown = results.filter(result => matchesScan(result, criteria, clock)).sort((a, b) => b.instrument.volume24h - a.instrument.volume24h)
   const excluded = results.filter(result => result.decision.direction === 'unavailable')
   const expired = results.filter(result => clock > result.expiresAt).length
-  const format = (value: number) => value.toLocaleString(ko ? 'ko-KR' : 'en-US', Math.abs(value) >= 10000 ? { maximumFractionDigits: 0 } : Math.abs(value) >= 1 ? { maximumFractionDigits: 2 } : { maximumSignificantDigits: 6 })
+  const format = (value: number) => formatAnalysisPrice(value, language)
   return <section className={styles.panel} aria-label={ko ? '실시간 조건 검색' : 'Live condition search'}>
     <header><div><span>LIVE MARKET SCAN</span><h1>{ko ? 'AI 탐색' : 'AI Explore'}</h1><p>{ko ? `선택한 시장의 거래대금 상위 ${SCAN_LIMIT}개를 실제 1시간·4시간·일봉으로 검사합니다. 검색 버튼을 눌렀을 때만 데이터를 조회합니다.` : `Inspect the top ${SCAN_LIMIT} assets by turnover in one market using real 1h, 4h and daily candles. Scans run only when requested.`}</p></div><strong>{ko ? '실제 데이터 · 규칙 기반' : 'Real data · rule based'}</strong></header>
     <div className={styles.controls}>

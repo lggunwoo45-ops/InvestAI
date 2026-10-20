@@ -3,6 +3,7 @@ import type { ScanResult } from '@/services/cryptoAnalysis/liveCandidateScan'
 import { newsForInstrument } from '@/services/news/newsSelectors'
 import type { NewsLoadResult } from '@/services/news/newsService'
 import type { MarketInstrument } from '@/types/market'
+import { formatAnalysisPrice } from '@/utils/formatAnalysisPrice'
 
 export type EvidenceQuestion = 'summary' | 'prices' | 'risk' | 'news' | 'unsupported'
 export function classifyQuestion(question: string): EvidenceQuestion {
@@ -30,7 +31,7 @@ export function evidenceAnswer(kind: EvidenceQuestion, instrument: MarketInstrum
       : `Insufficient current evidence.${issues ? ` Unavailable frames: ${issues}.` : ''} Retry after quotes and closed bars arrive. Missing data is not a sell signal.`
   }
   const { decision } = result, plan = decision.plan
-  const money = (value: number) => `${value.toLocaleString(ko ? 'ko-KR' : 'en-US', Math.abs(value) >= 10000 ? { maximumFractionDigits: 0 } : Math.abs(value) >= 1 ? { maximumFractionDigits: 2 } : { maximumSignificantDigits: 6 })} ${instrument.quoteCurrency}`
+  const money = (value: number) => `${formatAnalysisPrice(value, language)} ${instrument.quoteCurrency}`
   const zone = (values: readonly number[]) => values.map(money).join(' – ')
   const direction = ko ? { buy: '매수 우세', sell: '매도 우세', neutral: '중립' } : { buy: 'Buy-side strength', sell: 'Sell-side strength', neutral: 'Neutral' }
   const summary = `${instrument.displaySymbol ?? instrument.symbol}: ${direction[decision.direction as keyof typeof direction]} (${decision.coverage}/3)\n${decision.frames.filter(frame => !frame.issue).map(frame => `${frame.frame}: ${direction[frame.direction]}`).join(' · ')}`

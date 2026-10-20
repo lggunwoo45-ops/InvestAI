@@ -6,6 +6,7 @@ import { buildCryptoDecision, seriesMarketTime, tradeFlow, type AnalysisSeries, 
 import type { MarketInstrument } from '@/types/market'
 import type { Language } from '@/i18n/translations'
 import { portfolioNumber as number } from '@/utils/formatPortfolio'
+import { formatAnalysisPrice } from '@/utils/formatAnalysisPrice'
 import styles from './CryptoDecisionPanel.module.css'
 
 interface Props { instrument: MarketInstrument; daily: AnalysisSeries; language: Language; averagePrice?: number | null; quantity?: number; expert?: boolean; positionId?: string; detailsContent?: ReactNode; investmentContent?: ReactNode }
@@ -70,7 +71,7 @@ export function CryptoDecisionPanel({ instrument, daily, language, averagePrice,
   const latestTrade = daily.recentTrades?.find(trade => Number.isFinite(trade.timestamp) && trade.timestamp > 0)
   const global = dominance.data && now - dominance.data.point.at <= 3_600_000 ? dominance.data : null
   const delta = global?.previous ? global.point.percent - global.previous.percent : null
-  const priceNumber = (n: number) => n.toLocaleString(language === 'ko' ? 'ko-KR' : 'en-US', Math.abs(n) >= 10_000 ? { maximumFractionDigits: 0 } : Math.abs(n) >= 1 ? { maximumFractionDigits: 2 } : { maximumSignificantDigits: 6 })
+  const priceNumber = (n: number) => formatAnalysisPrice(n, language)
   const price = (n: number) => `${priceNumber(n)} ${instrument.quoteCurrency}`
   const range = (values: readonly [number, number]) => `${priceNumber(values[0])} – ${price(values[1])}`
   const date = (n: number) => new Date(n).toLocaleString(language === 'ko' ? 'ko-KR' : 'en-US')
