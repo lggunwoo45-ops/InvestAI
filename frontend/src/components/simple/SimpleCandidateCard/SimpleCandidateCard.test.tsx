@@ -14,11 +14,12 @@ describe('SimpleCandidateCard', () => {
     expect(screen.getByText('High attention')).toBeTruthy()
     expect(screen.queryByText('#1')).toBeNull()
     expect(screen.queryByText('Watch Score')).toBeNull()
-    expect(screen.getByRole('link', { name: 'View details' }).getAttribute('href')).toBe('/ai-analysis')
+    expect(screen.getByRole('link', { name: 'View direction and price zones' }).getAttribute('href')).toBe('/my-analysis?instrumentId=upbit-btc')
   })
-  it('renders percentage-only planning copy without absolute currency values', () => {
+  it('links crypto candidates to candle-based plans instead of fixed-percentage ranges', () => {
     render(<MemoryRouter><SimpleCandidateCard candidate={candidate} language="en" onOpenMarket={vi.fn()} /></MemoryRouter>)
-    expect(screen.getByText('About 1.5% to 5% below current price')).toBeTruthy()
+    expect(screen.queryByText('About 1.5% to 5% below current price')).toBeNull()
+    expect(screen.getByRole('link', { name: 'Open candle-based price plan' }).getAttribute('href')).toBe('/my-analysis?instrumentId=upbit-btc')
     expect(document.body.textContent).not.toMatch(/₩|\$[0-9]|[0-9] (KRW|USD|USDT)/)
     const fieldLabels = [...document.querySelectorAll('dt, h4, button')].map((element) => element.textContent).join(' ')
     expect(fieldLabels).not.toMatch(/Entry Price|Stop Loss|Take Profit|Target Price|Buy Signal|Sell Signal/)

@@ -24,7 +24,7 @@ describe('SimpleModePage', () => {
   it('shows beginner safety copy without a duplicate page-local mode switch', () => {
     renderPage()
     expect(screen.getByRole('heading', { name: 'Market Copilot Simple Mode' })).toBeTruthy()
-    expect(screen.getByText(/planning and review only/)).toBeTruthy()
+    expect(screen.getByText(/Directional labels describe rule-based market conditions/)).toBeTruthy()
     expect(screen.queryByRole('group', { name: 'Display mode' })).toBeNull()
     expect(screen.queryByText(/Watch Score/)).toBeNull()
     expect(screen.queryByText(/^#1$/)).toBeNull()

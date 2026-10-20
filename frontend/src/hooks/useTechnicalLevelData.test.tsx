@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { marketDataService } from '@/services/market/marketDataService'
 import type { MarketInstrument } from '@/types/market'
 import type { RealtimeMarketState } from '@/types/marketDetail'
+import type { ChartTimeframe } from '@/types/marketDetail'
 import { useTechnicalLevelData } from './useTechnicalLevelData'
 
 const instrument: MarketInstrument = { id: 'upbit-btc', marketId: 'upbit', symbol: 'BTC/KRW', name: 'Bitcoin', quoteCurrency: 'KRW', lastPrice: 100, change24hPercent: 1, volume24h: 1_000 }
@@ -44,7 +45,7 @@ describe('useTechnicalLevelData', () => {
   it('does not subscribe when no instrument is selected', () => {
     const subscribe = vi.spyOn(marketDataService, 'subscribe')
     const { result } = renderHook(() => useTechnicalLevelData(null))
-    expect(result.current).toEqual({ candles: [], currentPrice: null, dataQuality: 'unavailable', connectionStatus: 'idle', isLoading: false })
+    expect(result.current).toEqual({ candles: [], currentPrice: null, dataQuality: 'unavailable', connectionStatus: 'idle', isLoading: false, recentTrades: [], updatedAt: null })
     expect(subscribe).not.toHaveBeenCalled()
   })
 
@@ -57,5 +58,30 @@ describe('useTechnicalLevelData', () => {
     expect(unsubscribe).not.toHaveBeenCalled()
     unmount()
     expect(unsubscribe).toHaveBeenCalledOnce()
+  })
+
+  it('clears the old interval and ignores late messages after switching timeframe', () => {
+    const callbacks: Array<(state: RealtimeMarketState) => void> = []
+    const unsubscribe = vi.fn()
+    const subscribe = vi.spyOn(marketDataService, 'subscribe').mockImplementation(options => {
+      callbacks.push(options.onState)
+      return unsubscribe
+    })
+    const { result, rerender, unmount } = renderHook(({ frame }: { frame: ChartTimeframe }) => useTechnicalLevelData(instrument, frame), { initialProps: { frame: '1H' as ChartTimeframe } })
+    const state: RealtimeMarketState = {
+      snapshot: { instrument, timeframe: '1H', candles: [], orderbook: { symbolId: instrument.id, asks: [], bids: [], spread: 0 }, recentTrades: [{ id: 'a', price: 100, amount: 2, side: 'buy', timestamp: 123 }] },
+      connection: { requestedMode: 'mock', effectiveMode: 'mock', status: 'mock', provider: 'test', reconnectAttempt: 0, lastUpdatedAt: 123, message: 'Mock' },
+    }
+    act(() => callbacks[0](state))
+    expect(result.current).toMatchObject({ currentPrice: 100, updatedAt: 123, recentTrades: state.snapshot!.recentTrades })
+    rerender({ frame: '4H' })
+    expect(unsubscribe).toHaveBeenCalledTimes(1)
+    expect(subscribe).toHaveBeenLastCalledWith(expect.objectContaining({ timeframe: '4H' }))
+    expect(result.current).toMatchObject({ isLoading: true, currentPrice: null, recentTrades: [] })
+    act(() => callbacks[1](state))
+    act(() => callbacks[0]({ ...state, snapshot: { ...state.snapshot!, instrument: { ...instrument, lastPrice: 999 } } }))
+    expect(result.current.currentPrice).toBe(100)
+    unmount()
+    expect(unsubscribe).toHaveBeenCalledTimes(2)
   })
 })
