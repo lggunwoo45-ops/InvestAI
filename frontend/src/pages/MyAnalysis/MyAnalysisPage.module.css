@@ -25,3 +25,19 @@
 .referenceDetails > details[open] > summary { margin-bottom:14px; }
 .referenceDetails article h3 { font-size:13px; }
 .referenceDetails article p,.referenceDetails article small { font-size:12px; color:var(--color-text-secondary); line-height:1.6; }
+.searchDisclosure { min-width:0; }
+.searchDisclosure > summary { cursor:pointer; font-size:12px; color:var(--color-accent); padding:3px 0; }
+.searchDisclosure[open] > summary { margin-bottom:8px; }
+.page[data-asset="crypto"] { gap:12px; }
+.page[data-asset="crypto"] .header { padding:0; border:0; background:transparent; align-items:center; gap:12px; }
+.page[data-asset="crypto"] .header h1 { margin:0; font-size:22px; }
+.page[data-asset="crypto"] .header > div:first-child > span,.page[data-asset="crypto"] .header > div:first-child > p { display:none; }
+.page[data-asset="crypto"] .mode { padding:0; border:0; font-size:11px; }
+.page[data-asset="crypto"] .instrumentHeader { padding:12px 16px; gap:12px; grid-template-columns:minmax(0,1fr) auto; }
+.page[data-asset="crypto"] .instrumentHeader h2 { font-size:20px; margin:3px 0; }
+.page[data-asset="crypto"] .instrumentHeader p { font-size:12px; }
+.page[data-asset="crypto"] .instrumentMeta,.page[data-asset="crypto"] .quote > small,.page[data-asset="crypto"] .quality > small:first-child { display:none; }
+.page[data-asset="crypto"] .quote { text-align:right; }
+.page[data-asset="crypto"] .quote strong { font-size:18px; }
+.page[data-asset="crypto"] .quality { grid-column:1/-1; display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; padding:8px 0 0; border-left:0; border-top:1px solid var(--color-border); font-size:11px; }
+@media(max-width:700px) { .page[data-asset="crypto"] .header { display:flex; flex-wrap:wrap; } .page[data-asset="crypto"] .mode > span { display:none; } }

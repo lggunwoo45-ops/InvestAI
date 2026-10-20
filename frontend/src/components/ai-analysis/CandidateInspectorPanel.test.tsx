@@ -65,10 +65,12 @@ describe('CandidateInspectorPanel', () => {
     expect(inspector.getAttribute('data-empty')).toBe('true')
   })
   it('uses the crypto price plan alone and retains explicitly labeled daily references', () => {
-    render(<CandidateInspectorPanel candidate={candidate} snapshotId="daily-upbit" generatedAt="2026-10-03T00:00:00Z" language="en" technicalAnalysis={technicalAnalysis} analysisPanel={<section aria-label="Direction and price plan">Current crypto plan</section>} onOpenAnalysis={vi.fn()} />)
+    render(<CandidateInspectorPanel candidate={candidate} snapshotId="daily-upbit" generatedAt="2026-10-03T00:00:00Z" language="en" technicalAnalysis={technicalAnalysis} renderAnalysis={({ detailsContent, investmentContent }) => <section aria-label="Direction and price plan">Current crypto plan<div data-testid="evidence-slot">{detailsContent}</div><div data-testid="investment-slot">{investmentContent}</div></section>} onOpenAnalysis={vi.fn()} />)
     expect(screen.getByRole('region', { name: 'Direction and price plan' })).toBeTruthy()
     expect(screen.queryByText('Watch conditions')).toBeNull()
     expect(screen.queryByText('Approach review range')).toBeNull()
+    expect(within(screen.getByTestId('evidence-slot')).getByText('Snapshot order')).toBeTruthy()
+    expect(within(screen.getByTestId('investment-slot')).getByRole('button', { name: /Open in My Analysis/ })).toBeTruthy()
     const summary = screen.getByText('Daily chart structure (reference)')
     expect(summary.closest('details')?.open).toBe(false)
     fireEvent.click(summary)
