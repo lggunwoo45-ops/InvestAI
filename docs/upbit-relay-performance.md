@@ -142,3 +142,96 @@ that sleeps can add a cold-start delay independent of Upbit.
 
 Rollback: unset `UPBIT_RELAY_URL` and rebuild Pages to restore the paced direct
 path. Existing local portfolios, watchlists and source-data safeguards are intact.
+
+## Deployment verification and rollout plan (2026-10-20 follow-up)
+
+The Pages workflow now verifies a configured relay **before** building/publishing
+the frontend. A missing repository variable retains the current direct path.
+A nonempty but broken URL fails the workflow, leaving the previous site deployed.
+The check is also available independently:
+
+```sh
+npm run market:verify --prefix backend -- https://<deployed-host>/api/upbit
+```
+
+The check sends the real site's Origin, verifies its CORS response, reads the
+catalog and three 120-bar BTC histories, and receives a fresh ticker through SSE.
+It rejects redirects, incorrect health identities, missing freshness headers,
+wrong markets, stale quotes/trades, and a proxy that returns HTML or buffers the
+stream indefinitely. The total wait is bounded at 15 seconds. It reports queue
+time, upstream time and HIT/MISS separately; a warm run is never labelled cold.
+
+The exchange HTTP Date is carried as `X-Upbit-Server-Time`, preserving its original
+value on cache hits. Verification compares quotes/trades to that exchange clock,
+plus cache age and monotonic elapsed time, rather than the test PC's wall clock.
+The local PC was approximately 311 seconds ahead of Upbit during this test.
+The first verification exposed this difference; after correcting the diagnostic's
+clock source, fresh data passed while old trades continued to fail. The
+application's existing exchange-clock handling is unchanged.
+
+Final live run from a newly started local server, no retained histories:
+
+| Observation | Cumulative time |
+| --- | --- |
+| Relay health | 17 ms |
+| Catalog (872 markets, MISS) | 176 ms |
+| Daily history (120 bars, MISS) | 203 ms |
+| First fresh BTC ticker (replay age 1 ms) | 240 ms |
+| Four-hour history (120 bars, MISS) | 339 ms |
+| Hourly history (120 bars, MISS); all checks complete | 459 ms |
+
+The three history requests start together after catalog validation, as does SSE.
+These measurements include real Upbit responses but no public hosting network
+or browser render time. They do not replace the public-site acceptance test.
+
+Follow-up validation: all 30 backend tests passed (including ten deployment-check
+and health-quota tests); frontend typecheck, lint and production build passed.
+The prior full frontend suite passed 853 tests, including on GitHub Actions;
+frontend source code is unchanged in this follow-up. Three existing lint warnings
+and the existing bundle-size warning remain.
+
+The health route no longer consumes or depends on the client's data-request
+quota, preventing a busy reverse-proxy peer from invalidating deployment health.
+Origin and method validation still apply to health.
+
+### Concrete first hosted trial
+
+Railway was found as an available integration, but no connection/account was
+confirmed and no hosted resource has been created. The account owner must connect
+it before deployment can proceed. Start within the account's free trial if it is
+available; do not upgrade or add a paid plan without the owner's authorization.
+
+Use these settings when preparing the isolated relay service:
+
+| Setting | Value |
+| --- | --- |
+| Repository | `lggunwoo45-ops/InvestAI` |
+| Trial source branch | `perf/upbit-cold-data-path` (no main change) |
+| Build context | Repository root |
+| Dockerfile | `backend/market-data/Dockerfile` |
+| Listen host | `HOST=0.0.0.0` |
+| Port | Hosting `PORT`; image default 8790 |
+| Browser origin | `UPBIT_ALLOWED_ORIGINS=https://lggunwoo45-ops.github.io` |
+| Health check | `/api/upbit/health` |
+| Replicas | One |
+| Sleep/serverless | Disabled during latency testing |
+
+Keep the image's start command. This service needs no database, volume, private
+exchange key or portfolio upload. Choose an available nearby region, then test
+outbound Upbit access and the actual public HTTPS/SSE path before wiring Pages.
+Provider settings are described in the official
+[Docker build](https://docs.railway.com/builds/dockerfiles),
+[health check](https://docs.railway.com/deployments/healthchecks) and
+[deployment](https://docs.railway.com/overview/advanced-concepts) documentation.
+No untested provider configuration file or extra SDK is introduced.
+
+After the check passes, set `UPBIT_RELAY_URL`, obtain the user's merge approval,
+deploy Pages, and test a fresh browser document, unseen market selection, repeated
+market switching, and analysis loading. Initial trial targets are under two
+seconds for the first valid chart and under three seconds for the first usable
+analysis under an ordinary connection; record repeated observations, including
+failures, rather than treating this local sample as a production guarantee.
+Measure fresh data separately from saved chart previews and retain the existing
+data-quality exclusions. The existing peer limits can group users behind a hosting
+proxy; ingress identity/capacity and multi-user load remain rollout checks before
+inviting multiple testers.

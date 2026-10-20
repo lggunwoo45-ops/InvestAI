@@ -3,5 +3,5 @@
   "private": true,
   "type": "module",
   "engines": { "node": ">=22" },
-  "scripts": { "start": "node server.mjs", "market": "node market-data/server.mjs", "test": "node --test *.test.mjs market-data/*.test.mjs" }
+  "scripts": { "start": "node server.mjs", "market": "node market-data/server.mjs", "market:verify": "node market-data/verify-relay.mjs", "test": "node --test *.test.mjs market-data/*.test.mjs" }
 }

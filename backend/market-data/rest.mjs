@@ -70,7 +70,8 @@ export function createRest({ fetchImpl = fetch, interval = 125, ttl = 2000 } = {
         if (/sec=0(?:;|$)/.test(remaining)) gates[request.group].defer(/group=origin/.test(remaining) ? 10_500 : 1000)
         const data = await readJson(response)
         controller.signal.throwIfAborted()
-        const result = { data, receivedAt: Date.now(), cache: 'MISS', queueMs: started - queuedAt, networkMs: performance.now() - started }
+        const upstreamTime = Date.parse(response.headers.get('date'))
+        const result = { data, receivedAt: Date.now(), upstreamTime: Number.isFinite(upstreamTime) ? upstreamTime : null, cache: 'MISS', queueMs: started - queuedAt, networkMs: performance.now() - started }
         cache.delete(key); cache.set(key, result)
         while (cache.size > 256) cache.delete(cache.keys().next().value)
         return result
