@@ -6,6 +6,9 @@ export interface ProviderStreamEvent {
   status?: MarketConnectionStatus
   reconnectAttempt?: number
   message?: string
+  /** Local receipt time of a valid quote. null means no new quote. */
+  quoteUpdatedAt?: number | null
+  marketTime?: number
 }
 
 export interface RealtimeMarketProvider {

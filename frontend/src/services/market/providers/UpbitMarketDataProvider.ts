@@ -1,8 +1,7 @@
 import type { RealtimeMarketProvider } from '@/services/market/contracts/RealtimeMarketProvider'
-import { ReconnectingWebSocket } from '@/services/market/realtime/ReconnectingWebSocket'
 import type { Candle, MarketDetailSnapshot, RecentTrade } from '@/types/marketDetail'
-import { applyTrade, buildOrderbookLevels, createTradeCandle, decodeWebSocketData, fetchJson, mergeCandle, timeframeMilliseconds, updateInstrumentPrice } from './providerUtils'
-import { upbitRequestGate } from './upbitRequestGate'
+import { applyTrade, buildOrderbookLevels, fetchJson, mergeCandle, timeframeMilliseconds, updateInstrumentPrice } from './providerUtils'
+import { subscribeUpbitStream } from './upbitStream'
 
 interface UpbitCandle {
   timestamp: number
@@ -29,10 +28,7 @@ interface UpbitTrade {
   ask_bid: 'ASK' | 'BID'
 }
 
-type UpbitMessage = Record<string, unknown>
-
 const restBaseUrl = 'https://api.upbit.com/v1'
-const socketUrl = 'wss://api.upbit.com/websocket/v1'
 const candlePath = {
   '1m': 'minutes/1', '5m': 'minutes/5', '15m': 'minutes/15', '1H': 'minutes/60', '4H': 'minutes/240', '1D': 'days',
 } as const
@@ -45,14 +41,21 @@ function upbitMarketCode(symbol: string): string {
   return `${quote}-${asset}`.toUpperCase()
 }
 
-function mapTrade(trade: UpbitTrade, uniqueSuffix = ''): RecentTrade {
+function mapTrade(trade: UpbitTrade): RecentTrade {
   return {
-    id: `upbit-${trade.sequential_id}-${trade.timestamp}-${uniqueSuffix}`,
+    id: `upbit-${trade.sequential_id}-${trade.timestamp}`,
     timestamp: trade.timestamp,
     price: trade.trade_price,
     amount: trade.trade_volume,
     side: trade.ask_bid === 'BID' ? 'buy' : 'sell',
   }
+}
+
+const positive = (value: number) => Number.isFinite(value) && value > 0
+function validCandle(candle: Candle) {
+  return positive(candle.timestamp) && [candle.open, candle.high, candle.low, candle.close].every(positive)
+    && Number.isFinite(candle.volume) && candle.volume >= 0
+    && candle.high >= Math.max(candle.open, candle.close) && candle.low <= Math.min(candle.open, candle.close)
 }
 
 function mapOrderbook(instrumentId: string, units: readonly UpbitOrderbookUnit[]) {
@@ -79,7 +82,7 @@ export const upbitMarketDataProvider: RealtimeMarketProvider = {
       volume: row.candle_acc_trade_volume,
     })).toReversed()
     return {
-      instrument,
+      instrument: updateInstrumentPrice(instrument, candles.at(-1)?.close ?? instrument.lastPrice),
       timeframe,
       candles,
       orderbook: mapOrderbook(instrument.id, []),
@@ -90,56 +93,98 @@ export const upbitMarketDataProvider: RealtimeMarketProvider = {
   subscribe(instrument, timeframe, initialSnapshot, onEvent) {
     const market = instrument.providerSymbol ?? upbitMarketCode(instrument.symbol)
     let snapshot: MarketDetailSnapshot = initialSnapshot
-    let streamSequence = 0
-    const socket = new ReconnectingWebSocket({
-      createUrl: () => socketUrl,
-      beforeConnect: (signal) => upbitRequestGate.run(() => undefined, signal),
-      onOpen: (activeSocket) => activeSocket.send(JSON.stringify([
-        { ticket: `investai-${instrument.id}-${Date.now()}` },
-        { type: 'ticker', codes: [market] },
-        { type: 'trade', codes: [market] },
-        { type: 'orderbook', codes: [market] },
-        ...(timeframe === '1D' ? [] : [{ type: candleStream[timeframe], codes: [market] }]),
-        { format: 'DEFAULT' },
-      ])),
-      onStatus: (status, reconnectAttempt) => onEvent({ status, reconnectAttempt }),
-      onMessage: (message) => {
-        void (async () => {
-          const data = JSON.parse(await decodeWebSocketData(message.data)) as UpbitMessage
+    let connected = false
+    let recovering = false
+    let active = true
+    let refreshController: AbortController | null = null
+    let refreshTimer: ReturnType<typeof setTimeout> | null = null
+    let lastPriceAt = 0
+    const refresh = () => {
+      refreshController?.abort()
+      const controller = new AbortController()
+      refreshController = controller
+      recovering = true
+      void upbitMarketDataProvider.loadSnapshot(instrument, timeframe, controller.signal).then(value => {
+        if (!active || controller.signal.aborted) return
+        snapshot = value
+        lastPriceAt = 0
+        recovering = false
+        // Wait for a real quote before marking the recovered history live.
+        onEvent({ snapshot, status: 'connecting', quoteUpdatedAt: null })
+      }).catch(() => {
+        if (!active || controller.signal.aborted) return
+        onEvent({ status: 'reconnecting', message: 'Refreshing candle history after reconnect…' })
+        refreshTimer = setTimeout(refresh, 30_000)
+      })
+    }
+    const stop = subscribeUpbitStream(market, {
+      status: (status, reconnectAttempt) => {
+        if (status === 'live') {
+          if (connected) refresh()
+          connected = true
+          onEvent({ status: 'connecting', reconnectAttempt })
+        } else {
+          refreshController?.abort()
+          if (refreshTimer) clearTimeout(refreshTimer)
+          onEvent({ status, reconnectAttempt })
+        }
+      },
+      data: (data, receivedAt) => {
+        if (!active || recovering) return
+        try {
           const type = String(data.type)
+          const quoteAt = Number(data.trade_timestamp ?? data.timestamp)
+          const marketTime = Number(data.timestamp)
+          // Browser and exchange clocks need not agree. Validate quote age on
+          // the exchange clock, and transport freshness on the local clock.
+          const fresh = positive(quoteAt) && positive(marketTime) && marketTime - quoteAt <= 90_000
+            && quoteAt <= marketTime + 60_000 && Date.now() - receivedAt <= 90_000 && receivedAt <= Date.now()
+          let updatesQuote = false
           if (type === 'trade') {
-            streamSequence += 1
             const trade = mapTrade({
               sequential_id: Number(data.sequential_id), timestamp: Number(data.trade_timestamp ?? data.timestamp), trade_price: Number(data.trade_price), trade_volume: Number(data.trade_volume), ask_bid: String(data.ask_bid) as 'ASK' | 'BID',
-            }, `stream-${streamSequence}`)
-            // Upbit has no daily candle websocket channel. Daily candles use
-            // timestamp-aligned trades after the REST history is loaded.
-            if (timeframe === '1D' && data.stream_type !== 'SNAPSHOT') snapshot = { ...snapshot, candles: mergeCandle(snapshot.candles, createTradeCandle(snapshot, trade)) }
+            })
+            if (!fresh || quoteAt < lastPriceAt || !positive(trade.price) || !positive(trade.amount) || !['ASK', 'BID'].includes(String(data.ask_bid))) return
             snapshot = applyTrade(snapshot, trade)
+            updatesQuote = true
           } else if (type === 'ticker') {
+            if (!fresh || quoteAt < lastPriceAt || !positive(Number(data.trade_price))) return
             snapshot = {
               ...snapshot,
               instrument: {
                 ...updateInstrumentPrice(snapshot.instrument, Number(data.trade_price), Number(data.signed_change_rate) * 100),
-                volume24h: Number(data.acc_trade_price_24h),
+                volume24h: Number.isFinite(Number(data.acc_trade_price_24h)) ? Number(data.acc_trade_price_24h) : snapshot.instrument.volume24h,
               },
             }
+            // UTC-day totals include trades missed while REST/stream connections were pending.
+            if (timeframe === '1D') {
+              const candle: Candle = {
+                timestamp: Math.floor(quoteAt / timeframeMilliseconds['1D']) * timeframeMilliseconds['1D'],
+                open: Number(data.opening_price), high: Number(data.high_price), low: Number(data.low_price),
+                close: Number(data.trade_price), volume: Number(data.acc_trade_volume),
+              }
+              if (validCandle(candle)) snapshot = { ...snapshot, candles: mergeCandle(snapshot.candles, candle) }
+            }
+            updatesQuote = true
           } else if (type === 'orderbook') {
+            if (!Array.isArray(data.orderbook_units)) return
             snapshot = { ...snapshot, orderbook: mapOrderbook(instrument.id, data.orderbook_units as unknown as readonly UpbitOrderbookUnit[]) }
-          } else if (type.startsWith('candle.')) {
+          } else if (timeframe !== '1D' && type === candleStream[timeframe]) {
+            const candle: Candle = {
+              timestamp: Date.parse(`${String(data.candle_date_time_utc)}Z`),
+              open: Number(data.opening_price), high: Number(data.high_price), low: Number(data.low_price), close: Number(data.trade_price), volume: Number(data.candle_acc_trade_volume),
+            }
+            if (!validCandle(candle) || !fresh) return
             snapshot = {
               ...snapshot,
-              candles: mergeCandle(snapshot.candles, {
-                timestamp: Date.parse(`${String(data.candle_date_time_utc)}Z`),
-                open: Number(data.opening_price), high: Number(data.high_price), low: Number(data.low_price), close: Number(data.trade_price), volume: Number(data.candle_acc_trade_volume),
-              }),
+              candles: mergeCandle(snapshot.candles, candle),
             }
-          }
-          onEvent({ snapshot })
-        })().catch(() => onEvent({ message: 'An invalid Upbit stream message was ignored.' }))
+          } else return
+          if (updatesQuote) lastPriceAt = quoteAt
+          onEvent({ snapshot, ...(updatesQuote ? { status: 'live', quoteUpdatedAt: receivedAt, marketTime } : { quoteUpdatedAt: null }) })
+        } catch { /* Invalid messages cannot make cached prices appear fresh. */ }
       },
     })
-    socket.connect()
-    return () => socket.close()
+    return () => { active = false; refreshController?.abort(); if (refreshTimer) clearTimeout(refreshTimer); stop() }
   },
 }

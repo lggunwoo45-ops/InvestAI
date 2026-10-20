@@ -14,6 +14,7 @@ export interface TechnicalLevelDataState {
   isLoading: boolean
   recentTrades: readonly RecentTrade[]
   updatedAt: number | null
+  marketTime?: number
 }
 
 const emptyState: TechnicalLevelDataState = {
@@ -64,6 +65,7 @@ export function useTechnicalLevelData(instrument: MarketInstrument | null, timef
             isLoading: snapshot === null && (connection.status === 'idle' || connection.status === 'connecting'),
             recentTrades: snapshot?.recentTrades ?? [],
             updatedAt: connection.lastUpdatedAt,
+            marketTime: connection.marketTime,
           },
         })
       },

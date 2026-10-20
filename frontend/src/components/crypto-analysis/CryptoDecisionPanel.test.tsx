@@ -19,6 +19,24 @@ vi.mock('@/hooks/useTechnicalLevelData', () => ({ useTechnicalLevelData: (_: unk
 vi.mock('@/hooks/useDominance', () => ({ useDominance: () => ({ data: state.dominance, loading: false, error: !state.dominance }) }))
 
 describe('CryptoDecisionPanel', () => {
+  it('keeps the excluded timeframe visible alongside a valid two-frame analysis', () => {
+    const daily = candles('1D')
+    render(<CryptoDecisionPanel instrument={instrument} daily={{ ...daily, candles: daily.candles.filter((_, i) => i !== 65) }} language="ko" />)
+    expect(screen.getByText('매수 우세')).toBeTruthy()
+    expect(screen.getByRole('list', { name: '시간대 확인' }).textContent).toContain('원본 봉 공백 · 분석 제외')
+    expect(screen.getByText(/누락 구간은 임의로 채우지 않습니다/)).toBeTruthy()
+    fireEvent.click(screen.getByRole('tab', { name: '상세 근거' }))
+    fireEvent.click(screen.getByText('시간대별 지표·계산 근거'))
+    expect(screen.getByText(/원본 데이터가 없는 구간:/)).toBeTruthy()
+  })
+  it('explains initial rate-limit waiting separately from reconnecting', () => {
+    const daily = { ...candles('1D'), dataQuality: 'unavailable' as const, connectionStatus: 'connecting', candles: [] }
+    const { rerender } = render(<CryptoDecisionPanel instrument={instrument} daily={daily} language="ko" />)
+    expect(screen.getByText(/업비트 요청 제한에 맞춰/)).toBeTruthy()
+    rerender(<CryptoDecisionPanel instrument={instrument} daily={{ ...daily, connectionStatus: 'reconnecting' }} language="ko" />)
+    expect(screen.queryByText(/업비트 요청 제한에 맞춰/)).toBeNull()
+    expect(screen.getByText(/시세 연결을 복구하고 있습니다/)).toBeTruthy()
+  })
   it('supports keyboard tabs and preserves a scenario draft while keeping inactive views out of navigation', () => {
     window.localStorage.clear()
     render(<CryptoDecisionPanel instrument={instrument} daily={candles('1D')} language="en" />)

@@ -9,11 +9,13 @@ export interface AnalysisSeries {
   currentPrice: number | null
   connectionStatus: string
   updatedAt?: number | null
+  marketTime?: number
   recentTrades?: readonly RecentTrade[]
 }
 export type Direction = 'buy' | 'neutral' | 'sell'
 export type SeriesIssue = 'loading' | 'mock' | 'disconnected' | 'stale' | 'history' | 'gaps' | 'range'
 export interface FrameRead {
+  gap?: { from: number; to: number; missing: number }
   frame: AnalysisFrame
   issue: SeriesIssue | null
   count: number
@@ -32,6 +34,11 @@ const average = (values: readonly number[]) => values.reduce((sum, n) => sum + n
 const validCandle = (c: Candle) => Number.isFinite(c.timestamp) && c.timestamp > 0 && [c.open, c.high, c.low, c.close].every(positive)
   && Number.isFinite(c.volume) && c.volume >= 0 && c.high >= Math.max(c.open, c.close, c.low) && c.low <= Math.min(c.open, c.close, c.high)
 
+export function seriesMarketTime(series: AnalysisSeries, now: number): number {
+  return positive(series.marketTime) && positive(series.updatedAt)
+    ? series.marketTime + Math.max(0, now - series.updatedAt) : now
+}
+
 /** Wilder smoothing, with a full 14-change seed. A flat series is neutral, not overbought. */
 export function wilderRsi(closes: readonly number[], period = 14): number | null {
   if (closes.length <= period || !closes.every(positive)) return null
@@ -45,21 +52,27 @@ export function wilderRsi(closes: readonly number[], period = 14): number | null
 
 export function readFrame(frame: AnalysisFrame, series: AnalysisSeries, now: number): FrameRead {
   const interval = analysisIntervals[frame]
+  const marketNow = seriesMarketTime(series, now)
   const unique = new Map<number, Candle>()
-  for (const c of series.candles) if (validCandle(c) && c.timestamp + interval <= now) unique.set(c.timestamp, c)
+  for (const c of series.candles) if (validCandle(c) && c.timestamp + interval <= marketNow) unique.set(c.timestamp, c)
   const candles = [...unique.values()].sort((a, b) => a.timestamp - b.timestamp).slice(-120)
   const last = candles.at(-1)
   const empty: FrameRead = { frame, issue: null, count: candles.length, asOf: last ? last.timestamp + interval : null, direction: 'neutral', close: null, sma20: null, sma50: null, rsi: null, atr: null, volumeRatio: null, candles: [] }
   let issue: SeriesIssue | null = null
   if (series.dataQuality === 'mock') issue = 'mock'
-  else if (series.dataQuality !== 'live') issue = 'loading'
+  else if (['reconnecting', 'disconnected', 'unsupported'].includes(series.connectionStatus)) issue = 'disconnected'
+  else if (series.dataQuality !== 'live' || ['idle', 'connecting'].includes(series.connectionStatus)) issue = 'loading'
   else if (series.connectionStatus !== 'live') issue = 'disconnected'
   else if (!positive(series.updatedAt) || now - series.updatedAt > 90_000 || series.updatedAt > now + 60_000) issue = 'stale'
   else if (candles.length < 50) issue = 'history'
-  else if (!last || now - (last.timestamp + interval) > interval * 1.5) issue = 'stale'
+  else if (!last || marketNow - (last.timestamp + interval) > interval * 1.5) issue = 'stale'
   // Missing intervals must not silently turn an observation count into a time period.
   else if (candles.slice(-50).some((c, i, rows) => i > 0 && c.timestamp - rows[i - 1].timestamp !== interval)) issue = 'gaps'
-  if (issue) return { ...empty, issue }
+  if (issue) {
+    const rows = candles.slice(-50)
+    const index = issue === 'gaps' ? rows.findIndex((c, i) => i > 0 && c.timestamp - rows[i - 1].timestamp !== interval) : -1
+    return { ...empty, issue, ...(index > 0 ? { gap: { from: rows[index - 1].timestamp + interval, to: rows[index].timestamp, missing: Math.max(0, Math.ceil((rows[index].timestamp - rows[index - 1].timestamp) / interval) - 1) } } : {}) }
+  }
   const closes = candles.map(c => c.close)
   const sma20 = average(closes.slice(-20)), sma50 = average(closes.slice(-50))
   const rsi = wilderRsi(closes)

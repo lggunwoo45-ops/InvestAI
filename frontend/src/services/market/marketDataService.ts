@@ -229,7 +229,10 @@ export class MarketDataService implements MarketOverviewService {
                 ...currentState.connection,
                 status: effectiveMode === 'mock' ? 'mock' : nextStatus,
                 reconnectAttempt: event.reconnectAttempt ?? currentState.connection.reconnectAttempt,
-                lastUpdatedAt: event.snapshot ? Date.now() : currentState.connection.lastUpdatedAt,
+                marketTime: event.marketTime ?? currentState.connection.marketTime,
+                lastUpdatedAt: event.quoteUpdatedAt === undefined
+                  ? event.snapshot ? Date.now() : currentState.connection.lastUpdatedAt
+                  : event.quoteUpdatedAt ?? currentState.connection.lastUpdatedAt,
                 message: isFallback
                   ? 'Live data is unavailable for this market. Showing mock data.'
                   : event.message ?? this.statusMessage(nextStatus, event.reconnectAttempt ?? 0),
