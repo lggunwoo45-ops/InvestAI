@@ -10,7 +10,7 @@ import styles from '@/components/scenarios/Scenarios.module.css'
 import { ScenarioMonitorContext } from './scenarioMonitorContext'
 
 function ScenarioSensor({ scenario, publish }: { scenario: Scenario; publish: (id: string, observation: ScenarioObservation | null, events: ScenarioEvent[]) => void }) {
-  const data = useTechnicalLevelData(scenario.instrument, scenario.baseline.frame)
+  const data = useTechnicalLevelData(scenario.instrument, scenario.baseline.frame, 0)
   const previous = useRef<ScenarioObservation | null>(null)
   const sample = useEffectEvent(() => {
     const now = Date.now()

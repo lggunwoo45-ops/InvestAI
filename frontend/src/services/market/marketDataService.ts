@@ -12,6 +12,7 @@ import type { MarketCatalog, MarketDataMode, MarketInstrument, MarketSectionData
 import type { ChartTimeframe, RealtimeMarketState } from '@/types/marketDetail'
 import { getRememberedInstrument, rememberInstrument } from './instrumentRegistry'
 import { SharedRequests } from './sharedRequests'
+import { ChartHistoryCache } from './chartHistoryCache'
 
 export interface MarketOverviewService {
   getMarketOverview(): Promise<readonly MarketSectionData[]>
@@ -22,10 +23,12 @@ export interface MarketStreamOptions {
   timeframe: ChartTimeframe
   mode: MarketDataMode
   onState: (state: RealtimeMarketState) => void
+  /** Selected chart > analysis > background monitoring. Does not change pacing. */
+  priority?: number
 }
 
 interface StreamSession {
-  listeners: Set<{ onState: MarketStreamOptions['onState'] }>
+  listeners: Set<{ onState: MarketStreamOptions['onState']; priority: number }>
   state: RealtimeMarketState | null
   stop: () => void
   idleTimer: ReturnType<typeof setTimeout> | null
@@ -102,6 +105,7 @@ export class MarketDataService implements MarketOverviewService {
   private readonly instrumentIndex = new Map<string, MarketInstrument>()
   private readonly streams = new Map<string, StreamSession>()
   private readonly idleStreams = new Map<string, StreamSession>()
+  private readonly chartHistory = new ChartHistoryCache()
 
   constructor(
     private readonly providers: readonly RealtimeMarketProvider[] = liveProviders,
@@ -186,9 +190,13 @@ export class MarketDataService implements MarketOverviewService {
     return cached && age >= 0 && age <= 300_000 ? cached : null
   }
 
-  subscribe({ instrument, timeframe, mode, onState }: MarketStreamOptions): () => void {
+  getChartPreview(instrument: MarketInstrument, timeframe: ChartTimeframe, mode: MarketDataMode) {
+    return mode === 'live' ? this.chartHistory.get(instrument, timeframe) : null
+  }
+
+  subscribe({ instrument, timeframe, mode, onState, priority = 10 }: MarketStreamOptions): () => void {
     const key = JSON.stringify([mode, instrument.id, instrument.marketId, instrument.providerType, instrument.providerSymbol, instrument.quoteCurrency, timeframe])
-    const listener = { onState }
+    const listener = { onState, priority }
     let session = this.streams.get(key)
     if (session) {
       if (session.idleTimer !== null) clearTimeout(session.idleTimer)
@@ -208,7 +216,7 @@ export class MarketDataService implements MarketOverviewService {
           return
         }
         for (const subscriber of owned.listeners) subscriber.onState(state)
-      } })
+      } }, () => Math.max(0, ...[...owned.listeners].map(item => item.priority)))
     }
     const owned = session
     let released = false
@@ -239,7 +247,7 @@ export class MarketDataService implements MarketOverviewService {
     session.stop()
   }
 
-  private startSubscription({ instrument, timeframe, mode, onState }: MarketStreamOptions): () => void {
+  private startSubscription({ instrument, timeframe, mode, onState }: MarketStreamOptions, priority: () => number): () => void {
     const liveProvider = this.providers.find((provider) => provider.supports(instrument))
     const provider = mode === 'live' && liveProvider ? liveProvider : this.mockProvider
     const effectiveMode: MarketDataMode = provider === this.mockProvider ? 'mock' : 'live'
@@ -279,9 +287,10 @@ export class MarketDataService implements MarketOverviewService {
       })
 
       requestController = new AbortController()
-      provider.loadSnapshot(instrument, timeframe, requestController.signal)
+      provider.loadSnapshot(instrument, timeframe, requestController.signal, priority)
         .then((snapshot) => {
           if (disposed) return
+          if (effectiveMode === 'live') this.chartHistory.put(snapshot)
           retryAttempt = 0
           emit({
             snapshot,
@@ -310,7 +319,7 @@ export class MarketDataService implements MarketOverviewService {
                   : event.message ?? this.statusMessage(nextStatus, event.reconnectAttempt ?? 0),
               },
             })
-          })
+          }, priority)
         })
         .catch(() => {
           if (disposed) return

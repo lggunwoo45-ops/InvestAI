@@ -31,7 +31,7 @@ const emptyState: TechnicalLevelDataState = {
  * Reuses the normalized MarketDataService boundary for the requested candle interval.
  * Technical UI never selects an exchange adapter or fetches a provider directly.
  */
-export function useTechnicalLevelData(instrument: MarketInstrument | null, timeframe: ChartTimeframe = '1D'): TechnicalLevelDataState {
+export function useTechnicalLevelData(instrument: MarketInstrument | null, timeframe: ChartTimeframe = '1D', priority = 10): TechnicalLevelDataState {
   const { marketDataMode } = useMarketWorkspace()
   const requestKey = instrument ? `${instrument.id}:${timeframe}:${marketDataMode}` : null
   const readSubscriptionInstrument = useEffectEvent(() => instrument)
@@ -46,6 +46,7 @@ export function useTechnicalLevelData(instrument: MarketInstrument | null, timef
       instrument: subscriptionInstrument,
       timeframe,
       mode: marketDataMode,
+      priority,
       onState: ({ snapshot, connection }) => {
         if (!active) return
         const marketPrice = snapshot?.instrument.lastPrice
@@ -71,7 +72,7 @@ export function useTechnicalLevelData(instrument: MarketInstrument | null, timef
       },
     })
     return () => { active = false; unsubscribe() }
-  }, [marketDataMode, requestKey, timeframe])
+  }, [marketDataMode, requestKey, timeframe, priority])
 
   if (!instrument) return emptyState
   if (resolved.key !== requestKey) return { ...emptyState, isLoading: true }

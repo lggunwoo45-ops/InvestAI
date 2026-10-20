@@ -245,9 +245,10 @@ export function MarketPage() {
 
   if (!selectedInstrument) return <main className={styles.page}>{workspaceHeader}{explorer}</main>
 
-  const snapshot = selectedSnapshot
+  const preview = detailState.preview
+  const snapshot = selectedSnapshot ?? preview?.snapshot
   const currentSnapshot = snapshot?.instrument.id === selectedInstrument.id && snapshot.timeframe === selectedTimeframe
-  if (!currentSnapshot || !detailState.state) {
+  if (!currentSnapshot || (!detailState.state && !preview)) {
     return <main className={styles.page}>{workspaceHeader}<div className={`${styles.pendingWorkspace} ${listIsCollapsed ? styles.pendingWorkspaceCollapsed : ''}`}>
         {explorer}
         <div className={styles.detailState}>{detailState.error ?? `Connecting ${selectedInstrument.symbol} · ${detailState.state?.connection.message ?? 'Preparing market workspace…'}`}</div>
@@ -258,7 +259,8 @@ export function MarketPage() {
       navigator={explorer}
       instrumentListCollapsed={listIsCollapsed}
       snapshot={snapshot}
-      connection={detailState.state.connection}
+      connection={detailState.state?.connection ?? { requestedMode: marketDataMode, effectiveMode: 'live', status: 'connecting', provider: 'Upbit Korea', reconnectAttempt: 0, lastUpdatedAt: null, message: 'Checking latest candle history…' }}
+      previewAt={preview?.storedAt}
       selectedTimeframe={selectedTimeframe}
       onSelectTimeframe={selectTimeframe}
       marketDataMode={marketDataMode}

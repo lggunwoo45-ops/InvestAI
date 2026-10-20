@@ -1,4 +1,6 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
+import { AnalysisWarmup } from '@/components/market/AnalysisWarmup'
+import { loadLastMarketInstrumentIds } from '@/pages/Market/marketAssetMode'
 import { useNavigate } from 'react-router-dom'
 
 import { DiscoverTable } from '@/components/discover/DiscoverTable/DiscoverTable'
@@ -36,6 +38,9 @@ export function DashboardPage() {
   const { result: newsResult } = useNewsProviderMode()
   const { openInstrument } = useOpenNewsInstrument()
   const catalog = useMarketCatalog('upbit-krw', marketDataMode, 0)
+  const [lastInstrument] = useState(() => loadLastMarketInstrumentIds().crypto)
+  const warmInstrument = catalog.catalog?.instruments.find(item => item.id === lastInstrument)
+    ?? catalog.catalog?.instruments.find(item => item.id === 'upbit-btc')
   const { watchlists, trackRecentlyViewed } = useWatchlists()
   const resolvedInstruments = useResolvedInstruments(watchlists.flatMap((list) => list.instrumentIds), marketDataMode)
   const radarCandidates = useMemo(() => buildCryptoWatchCandidates({ instruments: catalog.catalog?.instruments ?? [], newsResult, language, limit: 5 }), [catalog.catalog?.instruments, language, newsResult])
@@ -50,6 +55,7 @@ export function DashboardPage() {
 
   return (
     <div className={styles.page}>
+      {marketDataMode === 'live' && catalog.catalog?.source === 'live' && warmInstrument && <AnalysisWarmup key={warmInstrument.id} instrument={warmInstrument} language={language} />}
       {displayMode === 'simple' && <ScenarioBoard compact />}
       {displayMode === 'simple' && <SimpleMarketSummary snapshot={radar} language={language} />}
       <MarketRadar snapshot={radar} language={language} simpleMode={displayMode === 'simple'} onOpenInstrument={openInstrument} />

@@ -1,4 +1,4 @@
-import { upbitRequestGate } from './upbitRequestGate'
+import { upbitRequestGate, type RequestPriority } from './upbitRequestGate'
 
 type Failure = 'rate-limit' | 'blocked' | 'timeout' | 'network' | 'server' | 'response'
 export class UpbitRequestError extends Error {
@@ -17,7 +17,7 @@ function retryDelay(value: string | null | undefined) {
 }
 
 /** Retry transient public-data failures through the existing Origin rate limiter. */
-export async function fetchUpbitJson<T>(url: string, signal?: AbortSignal): Promise<T> {
+export async function fetchUpbitJson<T>(url: string, signal?: AbortSignal, priority?: RequestPriority): Promise<T> {
   for (let attempt = 0; ; attempt++) {
     try {
       return await upbitRequestGate.run(async () => {
@@ -46,7 +46,7 @@ export async function fetchUpbitJson<T>(url: string, signal?: AbortSignal): Prom
           clearTimeout(timer)
           signal?.removeEventListener('abort', abort)
         }
-      }, signal)
+      }, signal, priority)
     } catch (error) {
       signal?.throwIfAborted()
       if (attempt >= 2 || !(error instanceof UpbitRequestError) || !['rate-limit', 'timeout', 'network', 'server'].includes(error.kind)) throw error

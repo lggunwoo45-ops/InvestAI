@@ -10,18 +10,19 @@ interface MarketDetailWorkspaceProps {
   instrumentListCollapsed: boolean
   snapshot: MarketDetailSnapshot
   connection: MarketConnectionState
+  previewAt?: number
   selectedTimeframe: ChartTimeframe
   onSelectTimeframe: (timeframe: ChartTimeframe) => void
   marketDataMode: MarketDataMode
   onMarketDataModeChange: (mode: MarketDataMode) => void
 }
 
-export function MarketDetailWorkspace({ navigator, instrumentListCollapsed, snapshot, connection, selectedTimeframe, marketDataMode, onSelectTimeframe, onMarketDataModeChange }: MarketDetailWorkspaceProps) {
+export function MarketDetailWorkspace({ navigator, instrumentListCollapsed, snapshot, connection, previewAt, selectedTimeframe, marketDataMode, onSelectTimeframe, onMarketDataModeChange }: MarketDetailWorkspaceProps) {
   const isStock = snapshot.instrument.marketId === 'korea-stock' || snapshot.instrument.marketId === 'us-stock'
   return (
     <div className={`${styles.workspace} ${isStock ? styles.stock : styles.crypto} ${instrumentListCollapsed ? styles.instrumentListCollapsed : ''}`} data-workspace={isStock ? 'stock' : 'crypto'}>
       {navigator}
-      <MarketDetailPanel snapshot={snapshot} connection={connection} selectedTimeframe={selectedTimeframe} marketDataMode={marketDataMode} onSelectTimeframe={onSelectTimeframe} onMarketDataModeChange={onMarketDataModeChange} />
+      <MarketDetailPanel snapshot={snapshot} connection={connection} previewAt={previewAt} selectedTimeframe={selectedTimeframe} marketDataMode={marketDataMode} onSelectTimeframe={onSelectTimeframe} onMarketDataModeChange={onMarketDataModeChange} />
       <TradingInformation snapshot={snapshot} connection={connection} />
     </div>
   )

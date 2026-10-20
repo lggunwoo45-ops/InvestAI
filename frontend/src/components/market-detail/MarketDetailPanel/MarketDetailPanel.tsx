@@ -18,23 +18,24 @@ import styles from './MarketDetailPanel.module.css'
 interface MarketDetailPanelProps {
   snapshot: MarketDetailSnapshot
   connection: MarketConnectionState
+  previewAt?: number
   selectedTimeframe: ChartTimeframe
   marketDataMode: MarketDataMode
   onSelectTimeframe: (timeframe: ChartTimeframe) => void
   onMarketDataModeChange: (mode: MarketDataMode) => void
 }
 
-export const MarketDetailPanel = memo(function MarketDetailPanel({ snapshot, connection, selectedTimeframe, marketDataMode, onSelectTimeframe, onMarketDataModeChange }: MarketDetailPanelProps) {
+export const MarketDetailPanel = memo(function MarketDetailPanel({ snapshot, connection, previewAt, selectedTimeframe, marketDataMode, onSelectTimeframe, onMarketDataModeChange }: MarketDetailPanelProps) {
   const { instrument, candles } = snapshot
   const { language } = useLanguage()
   const labels = uiText[language].detail
-  const technicalData = useTechnicalLevelData(instrument)
+  const technicalData = useTechnicalLevelData(instrument, '1D', 0)
   const technicalAnalysis = useMemo(() => buildTechnicalLevelAnalysis({
     instrument: technicalData.currentPrice !== null ? { ...instrument, lastPrice: technicalData.currentPrice } : instrument,
-    candles: technicalData.candles,
+    candles: previewAt === undefined ? technicalData.candles : [],
     language,
-    dataQuality: technicalData.dataQuality,
-  }), [instrument, language, technicalData.candles, technicalData.currentPrice, technicalData.dataQuality])
+    dataQuality: previewAt === undefined ? technicalData.dataQuality : 'unavailable',
+  }), [instrument, language, previewAt, technicalData.candles, technicalData.currentPrice, technicalData.dataQuality])
   const isStock = instrument.marketId === 'korea-stock' || instrument.marketId === 'us-stock'
   const workspace = marketExplorerText[language].workspace[
     instrument.marketId === 'korea-stock' ? 'korea' : instrument.marketId === 'us-stock' ? 'us' : 'crypto'
@@ -76,7 +77,10 @@ export const MarketDetailPanel = memo(function MarketDetailPanel({ snapshot, con
       </dl>
       <TimeframeToolbar selected={selectedTimeframe} mode={connection.effectiveMode} onSelect={onSelectTimeframe} />
       <div className={styles.chartArea}>
-        <CandlestickChart key={instrument.id} candles={candles} instrument={instrument} timeframe={selectedTimeframe} mode={connection.effectiveMode} technicalAnalysis={technicalAnalysis} technicalLoading={technicalData.isLoading} />
+        {previewAt !== undefined && <p className={styles.previewNotice} role="status">{language === 'ko'
+          ? `저장된 차트 · ${new Date(previewAt).toLocaleTimeString('ko-KR')} 수신. 최신 봉을 확인 중이며 아직 실시간 분석에 사용하지 않습니다.`
+          : `Saved chart · received ${new Date(previewAt).toLocaleTimeString('en-US')}. Checking latest bars; not yet used for live analysis.`}</p>}
+        <CandlestickChart key={instrument.id} candles={candles} instrument={instrument} timeframe={selectedTimeframe} mode={connection.effectiveMode} preview={previewAt !== undefined} technicalAnalysis={technicalAnalysis} technicalLoading={previewAt !== undefined || technicalData.isLoading} />
       </div>
     </section>
   )

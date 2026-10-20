@@ -5,6 +5,7 @@ import { upbitRequestGate } from './upbitRequestGate'
 
 type Message = Record<string, unknown>
 interface Listener {
+  priority?: () => number
   data: (message: Message, receivedAt: number) => void
   status: (status: MarketConnectionStatus, attempt: number) => void
 }
@@ -28,7 +29,7 @@ export function subscribeUpbitStream(market: string, listener: Listener): () => 
     }
     created.socket = new ReconnectingWebSocket({
       createUrl: () => 'wss://api.upbit.com/websocket/v1',
-      beforeConnect: signal => upbitRequestGate.run(() => undefined, signal),
+      beforeConnect: signal => upbitRequestGate.run(() => undefined, signal, () => Math.max(0, ...[...created.listeners].map(item => item.priority?.() ?? 0))),
       idleTimeoutMs: 90_000,
       onOpen: socket => socket.send(JSON.stringify([
         { ticket: `investai-${market}-${Date.now()}` },

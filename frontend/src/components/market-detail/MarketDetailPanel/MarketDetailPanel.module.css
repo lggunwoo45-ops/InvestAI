@@ -23,6 +23,7 @@
 .stats dt { color: var(--color-text-muted); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
 .stats dd { margin: 0; overflow: hidden; color: var(--color-text); font: 600 11px ui-monospace, monospace; text-overflow: ellipsis; text-transform: capitalize; white-space: nowrap; }
 .chartArea { min-height: 0; overflow: auto; }
+.previewNotice { position: sticky; top: 0; z-index: 3; margin: 0; padding: 8px 10px; border-bottom: 1px solid var(--color-border); background: var(--color-surface-raised); color: var(--color-text-muted); font-size: 11px; line-height: 1.5; }
 .stock .chartArea { border-top: 1px solid var(--color-border-strong); }
 @media (max-width: 1550px) { .detail { grid-template-rows: 98px 52px 34px minmax(0, 1fr); } .header { padding: 8px 12px; } .identity h1 { font-size: 19px; } .quote strong { font-size: 18px; } .stats > div { padding: 0 8px; } .stats dd { font-size: 10px; } }
 @media (max-width: 1550px) { .stock .identity h1 { font-size: 18px; } }
