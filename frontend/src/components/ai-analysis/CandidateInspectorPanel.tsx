@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { PracticalDecisionCard } from '@/components/practicalDecision/PracticalDecisionCard/PracticalDecisionCard'
 import { ReviewRangePanel } from '@/components/practicalDecision/ReviewRangePanel/ReviewRangePanel'
 import { ChartOverlayLegend } from '@/components/technicalLevels/ChartOverlayLegend/ChartOverlayLegend'
@@ -19,6 +20,7 @@ interface CandidateInspectorPanelProps {
   technicalLoading?: boolean
   candles?: readonly Candle[]
   candleDataQuality?: AnalysisDataQuality
+  analysisPanel?: ReactNode
   onOpenAnalysis: (instrumentId: string, snapshotId: string) => void
 }
 
@@ -49,7 +51,7 @@ function newsStateLabel(value: string, language: Language) {
   return labels[normalized as keyof typeof labels] ?? value
 }
 
-export function CandidateInspectorPanel({ candidate, snapshotId, generatedAt, language, technicalAnalysis = null, technicalLoading = false, candles = [], candleDataQuality = 'unavailable', onOpenAnalysis }: CandidateInspectorPanelProps) {
+export function CandidateInspectorPanel({ candidate, snapshotId, generatedAt, language, technicalAnalysis = null, technicalLoading = false, candles = [], candleDataQuality = 'unavailable', analysisPanel, onOpenAnalysis }: CandidateInspectorPanelProps) {
   const t = copy[language]
   if (!candidate) return <aside className={styles.inspector} aria-label={t.title} data-empty="true"><header><h2>{t.title}</h2></header><p className={styles.empty}>{t.empty}</p></aside>
 
@@ -66,7 +68,7 @@ export function CandidateInspectorPanel({ candidate, snapshotId, generatedAt, la
       <div><dt>{t.freshness}</dt><dd>{t.freshnessLabels[candidate.freshness]}</dd></div>
     </dl>
     {!technicalLoading && <CandidatePriceHistory candles={candles} dataQuality={candleDataQuality} language={language} />}
-    <PracticalDecisionCard result={candidate.practicalDecision} language={language} compact showSafety={false} />
+    {analysisPanel ?? <PracticalDecisionCard result={candidate.practicalDecision} language={language} compact showSafety={false} />}
     <footer><button type="button" disabled={!snapshotId} onClick={() => snapshotId && onOpenAnalysis(item.instrumentId, snapshotId)}>{t.open} →</button><small>{t.recorded}: {time(generatedAt, language)} · {t.safety}</small></footer>
     <details className={styles.details}>
       <summary>{language === 'ko' ? '차트와 검토 범위' : 'Chart and review ranges'}</summary>

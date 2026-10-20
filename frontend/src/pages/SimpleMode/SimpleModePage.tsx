@@ -19,20 +19,20 @@ import styles from './SimpleModePage.module.css'
 const copy = {
   en: {
     eyebrow: 'FOR BEGINNERS', title: 'Market Copilot Simple Mode', subtitle: 'A clear view of what needs attention, why it appeared, and what to check next.',
-    safety: 'Simple Mode is for planning and review only. It is not investment advice, a buy/sell signal, or a guarantee of profit.',
+    safety: 'Directional labels describe rule-based market conditions. Check the entry conditions and invalidation price; returns are not guaranteed.',
     cryptoTitle: 'Crypto Watch Candidates', cryptoStatus: 'ACTIVE BETA · UP TO 3', cryptoOrder: 'Crypto candidates are shown first when available.', cryptoLoading: 'Preparing crypto watch candidates…', cryptoEmpty: 'No crypto candidates are available from the current catalog.',
     cryptoError: 'Crypto data could not be loaded. Stock beta preview is shown separately and should not replace crypto candidates.', retry: 'Retry crypto data', useMock: 'Use MOCK data',
     stockTitle: 'Stock Beta Preview', stockStatus: 'EARLY BETA · KOREA + US', stockOrder: 'Stock candidates are shown as early beta.', stockLoading: 'Preparing the stock beta preview…', stockEmpty: 'No stock beta candidates are available.', stockNotice: 'Price planning stays disabled for mock or limited stock data. Reliable real stock data is required before numeric planning can be considered.',
-    how: 'How to read this screen', howItems: ['Attention level is a sorting aid, not a probability.', 'Percentage areas are fixed distances, not calculated support or resistance.', 'Check whether the movement continues before making any decision.', 'Open Expert Mode for the full evidence and controls.'],
+    how: 'How to read this screen', howItems: ['Attention level is a sorting aid, not a probability.', 'Open a crypto candidate to see candle-based direction and price zones.', 'Check whether the movement continues before making any decision.', 'Open Expert Mode for the full evidence and controls.'],
     quick: 'Continue exploring', radar: 'Open Market Radar', news: 'Open News Center', demo: 'Open Demo', limitations: 'No real AI, trading, account, payment, or production backend is connected.',
   },
   ko: {
     eyebrow: '초보자용', title: 'Market Copilot 간편모드', subtitle: '무엇을 살펴볼지, 왜 보이는지, 다음에 무엇을 확인할지 쉽게 정리한 화면입니다.',
-    safety: '간편모드는 계획과 검토를 위한 참고용입니다. 투자 조언, 매수·매도 신호, 수익 보장이 아닙니다.',
+    safety: '매수·매도 우세는 규칙으로 해석한 시장 상태입니다. 진입 조건과 가정 해제 가격을 함께 확인하세요. 수익을 보장하지 않습니다.',
     cryptoTitle: '가상자산 관찰 후보', cryptoStatus: '활성 베타 · 최대 3개', cryptoOrder: '가상자산 후보가 있으면 먼저 표시됩니다.', cryptoLoading: '가상자산 관찰 후보를 준비하고 있습니다…', cryptoEmpty: '현재 카탈로그에서 표시할 가상자산 후보가 없습니다.',
     cryptoError: '가상자산 데이터를 불러오지 못했습니다. 주식 베타 미리보기는 별도로 표시되며, 가상자산 후보를 대체하지 않습니다.', retry: '가상자산 데이터 다시 시도', useMock: 'MOCK 데이터 사용',
     stockTitle: '주식 베타 미리보기', stockStatus: '초기 베타 · 한국 + 미국', stockOrder: '주식 후보는 초기 베타로 표시됩니다.', stockLoading: '주식 베타 미리보기를 준비하고 있습니다…', stockEmpty: '표시할 주식 베타 후보가 없습니다.', stockNotice: '모의·제한 주식 데이터에는 가격 계획이 계속 비활성화됩니다. 숫자 계획을 검토하려면 신뢰할 수 있는 실제 주식 데이터가 필요합니다.',
-    how: '이 화면을 읽는 방법', howItems: ['관심도는 정렬 참고값이며 확률이 아닙니다.', '비율 구간은 고정 거리이며 계산된 지지선·저항선이 아닙니다.', '판단 전 움직임이 이어지는지 확인해야 합니다.', '전체 근거와 설정은 전문가모드에서 확인하세요.'],
+    how: '이 화면을 읽는 방법', howItems: ['관심도는 정렬 참고값이며 확률이 아닙니다.', '코인 후보를 열면 실제 캔들로 계산한 매수·매도 우세와 가격 구간을 확인할 수 있습니다.', '판단 전 움직임이 이어지는지 확인해야 합니다.', '전체 근거와 설정은 전문가모드에서 확인하세요.'],
     quick: '계속 살펴보기', radar: 'Market Radar 열기', news: '뉴스 센터 열기', demo: '데모 열기', limitations: '실제 AI, 거래, 계정, 결제 및 운영 백엔드는 연결되지 않았습니다.',
   },
 } as const

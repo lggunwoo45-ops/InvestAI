@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 
+import { CryptoDecisionPanel } from '@/components/crypto-analysis/CryptoDecisionPanel'
 import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
 import { ActionReadinessCard } from '@/components/my-analysis/ActionReadinessCard/ActionReadinessCard'
 import { AnalysisBaselinePanel } from '@/components/my-analysis/AnalysisBaselinePanel/AnalysisBaselinePanel'
@@ -252,6 +253,8 @@ export function MyAnalysisPage() {
         <div className={styles.quality}><small>{t.quality}</small><b data-quality={analysis.dataQuality}>{analysis.dataQualityLabel}</b><small>{t.qualityHelp[analysis.dataQuality]}</small></div>
       </section>
       {savedPosition && savedPosition.instrumentId === selected.id && savedPosition.quoteCurrency === selected.quoteCurrency && <PositionPlan position={savedPosition} price={currentPrice} language={language} quoteLabel={analysis.dataQualityLabel} showPosition />}
+      {analysis.assetType === 'crypto' && <CryptoDecisionPanel key={selected.id} instrument={selected} daily={technicalData} language={language} averagePrice={validAveragePrice} quantity={savedPosition?.instrumentId === selected.id ? savedPosition.quantity : undefined} expert={displayMode === 'expert'} />}
+      <section hidden={displayMode === 'simple' && analysis.assetType === 'crypto'}>
       <MyAnalysisReportSummary recommendation={recommendation} analysis={analysis} language={language} mode={displayMode} symbol={selected.displaySymbol ?? selected.symbol} name={selected.name} reviewMode={reviewMode} basisPrice={validAveragePrice} currentPrice={currentPrice} quoteCurrency={selected.quoteCurrency} disclosureReview={selected.marketId === 'korea-stock' ? dartReview : null} practicalDecision={practicalDecision ?? undefined} reviewRanges={reviewRanges} candidateReviewScore={candidateReviewScore ?? undefined} technicalAnalysis={technicalData.isLoading ? undefined : technicalAnalysis ?? undefined} aiCopilotFinalRead={aiCopilotFinalRead ?? undefined} />
       {practicalDecision && <PracticalDecisionCard result={recommendation ? { ...practicalDecision, title: recommendation.title, summary: recommendation.summary, reason: recommendation.why, nextCheck: recommendation.nextCheck } : practicalDecision} language={language} />}
       <ReviewRangePanel ranges={reviewRanges} language={language} quoteCurrency={selected.quoteCurrency} />
@@ -283,7 +286,8 @@ export function MyAnalysisPage() {
           <article><span className={styles.sectionLabel}>{t.nextChecks}</span><h3>{expertTitles.checklist ?? t.checklist}</h3><ul>{analysis.reviewChecklist.map((entry) => <li key={entry}>{entry}</li>)}</ul></article>
         </div>}
       </section>
-      <details className={styles.inputs} open>
+      </section>
+      <details className={styles.inputs} open={displayMode === 'expert' || analysis.assetType !== 'crypto'}>
         <summary>{t.optionalContext}</summary>
         <p className={styles.inputNotice}>{t.userContextNotice}</p>
         <div className={styles.inputGrid}>
@@ -292,8 +296,8 @@ export function MyAnalysisPage() {
           <label className={styles.note}><span>{t.note}</span><textarea maxLength={500} placeholder={t.notePlaceholder} value={note} onChange={(event) => setNote(event.target.value)} /></label>
         </div>
       </details>
-      <section className={styles.userContext} aria-label={t.yourInputs}><h2>{t.yourInputs}</h2><dl><div><dt>{t.intent}</dt><dd>{analysis.userContext.intent}</dd></div>{analysis.userContext.userNote && <div><dt>{t.note}</dt><dd>{analysis.userContext.userNote}</dd></div>}{analysis.userContext.averagePrice && <div><dt>{t.average}</dt><dd>{analysis.userContext.averagePrice}</dd></div>}</dl><p>{analysis.userContext.notice}</p><small>{analysis.userContext.intentNotice}</small></section>
-      <footer className={styles.pageSafety}>{analysis.disclaimer}</footer>
+      <section className={styles.userContext} hidden={displayMode === 'simple' && analysis.assetType === 'crypto'} aria-label={t.yourInputs}><h2>{t.yourInputs}</h2><dl><div><dt>{t.intent}</dt><dd>{analysis.userContext.intent}</dd></div>{analysis.userContext.userNote && <div><dt>{t.note}</dt><dd>{analysis.userContext.userNote}</dd></div>}{analysis.userContext.averagePrice && <div><dt>{t.average}</dt><dd>{analysis.userContext.averagePrice}</dd></div>}</dl><p>{analysis.userContext.notice}</p><small>{analysis.userContext.intentNotice}</small></section>
+      <footer className={styles.pageSafety} hidden={displayMode === 'simple' && analysis.assetType === 'crypto'}>{analysis.disclaimer}</footer>
     </>}
   </main>
 }

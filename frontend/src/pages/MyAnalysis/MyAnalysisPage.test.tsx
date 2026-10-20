@@ -27,6 +27,7 @@ const candidateSnapshot = (expiresAt = '2099-09-26T00:00:00Z'): CandidateSnapsho
 
 vi.mock('@/hooks/useMarketCatalog', () => ({ useMarketCatalog: (venue: MarketVenue) => ({ catalog: catalogMockState.failedVenue === venue ? null : { venue, source: venue === 'upbit-krw' ? 'live' : 'mock', fetchedAt: 0, instruments: instruments.filter((item) => item.marketType === venue) }, loading: false, error: catalogMockState.failedVenue === venue ? 'Catalog failed' : null, loadingMilliseconds: 0 }) }))
 vi.mock('@/hooks/useDartDisclosures', () => ({ useDartDisclosures: (stockCode: string | null) => stockCode ? { status: 'mapping_unavailable', sourceMode: 'disabled', message: 'Mapping unavailable.', disclosures: [], fetchedAt: null } : { status: 'unavailable', sourceMode: 'disabled', message: 'Korean stocks only.', disclosures: [], fetchedAt: null } }))
+vi.mock('@/hooks/useDominance', () => ({ useDominance: () => ({ data: null, loading: false, error: true }) }))
 vi.mock('@/hooks/useTechnicalLevelData', () => ({
   useTechnicalLevelData: (instrument: MarketInstrument | null) => ({
     candles: instrument ? Array.from({ length: 60 }, (_, index) => {
