@@ -2,6 +2,7 @@ import { ReconnectingWebSocket } from '../realtime/ReconnectingWebSocket'
 import type { MarketConnectionStatus } from '@/types/market'
 import { decodeWebSocketData } from './providerUtils'
 import { upbitRequestGate } from './upbitRequestGate'
+import { upbitRelayBase, UpbitRelayConnection } from './upbitRelay'
 
 type Message = Record<string, unknown>
 interface Listener {
@@ -10,7 +11,7 @@ interface Listener {
   status: (status: MarketConnectionStatus, attempt: number) => void
 }
 interface Session {
-  socket: ReconnectingWebSocket
+  socket: Pick<ReconnectingWebSocket, 'connect' | 'close' | 'reconnect'>
   listeners: Set<Listener>
   status: MarketConnectionStatus
   attempt: number
@@ -27,24 +28,23 @@ export function subscribeUpbitStream(market: string, listener: Listener): () => 
     const created: Session = {
       socket: null!, listeners: new Set(), status: 'connecting', attempt: 0, generation: 0, latest: new Map(),
     }
-    created.socket = new ReconnectingWebSocket({
+    const options = {
       createUrl: () => 'wss://api.upbit.com/websocket/v1',
-      beforeConnect: signal => upbitRequestGate.run(() => undefined, signal, () => Math.max(0, ...[...created.listeners].map(item => item.priority?.() ?? 0))),
+      beforeConnect: (signal: AbortSignal) => upbitRequestGate.run(() => undefined, signal, () => Math.max(0, ...[...created.listeners].map(item => item.priority?.() ?? 0))),
       idleTimeoutMs: 90_000,
-      onOpen: socket => socket.send(JSON.stringify([
+      onOpen: (socket: WebSocket) => socket.send(JSON.stringify([
         { ticket: `investai-${market}-${Date.now()}` },
         ...['ticker', 'trade', 'orderbook', ...candleTypes].map(type => ({ type, codes: [market] })),
         { format: 'DEFAULT' },
       ])),
-      onStatus: (status, attempt) => {
+      onStatus: (status: MarketConnectionStatus, attempt: number) => {
         created.status = status
         created.attempt = attempt
         if (status !== 'live') { created.generation++; created.latest.clear() }
         for (const item of created.listeners) item.status(status, attempt)
       },
-      onMessage: event => {
+      onMessage: (event: MessageEvent, receivedAt = Date.now()) => {
         const generation = created.generation
-        const receivedAt = Date.now()
         void decodeWebSocketData(event.data).then(raw => {
           if (sessions.get(market) !== created || generation !== created.generation) return
           const data = JSON.parse(raw) as Message
@@ -56,7 +56,11 @@ export function subscribeUpbitStream(market: string, listener: Listener): () => 
           for (const item of created.listeners) item.data(data, receivedAt)
         }).catch(() => { /* Malformed messages never refresh quote freshness. */ })
       },
-    })
+    }
+    const relay = upbitRelayBase()
+    created.socket = relay
+      ? new UpbitRelayConnection({ url: `${relay}/stream?market=${encodeURIComponent(market)}`, onStatus: options.onStatus, onMessage: options.onMessage })
+      : new ReconnectingWebSocket(options)
     sessions.set(market, created)
     session = created
   }

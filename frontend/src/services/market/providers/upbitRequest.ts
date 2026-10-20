@@ -1,4 +1,5 @@
 import { upbitRequestGate, type RequestPriority } from './upbitRequestGate'
+import { upbitRelayBase } from './upbitRelay'
 
 type Failure = 'rate-limit' | 'blocked' | 'timeout' | 'network' | 'server' | 'response'
 export class UpbitRequestError extends Error {
@@ -18,6 +19,19 @@ function retryDelay(value: string | null | undefined) {
 
 /** Retry transient public-data failures through the existing Origin rate limiter. */
 export async function fetchUpbitJson<T>(url: string, signal?: AbortSignal, priority?: RequestPriority): Promise<T> {
+  const relay = upbitRelayBase()
+  if (relay) {
+    const upstream = new URL(url)
+    if (upstream.origin !== 'https://api.upbit.com' || !upstream.pathname.startsWith('/v1/')) throw new UpbitRequestError('response')
+    const response = await fetch(`${relay}${upstream.pathname.slice(3)}${upstream.search}`, {
+      signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(12_000)]) : AbortSignal.timeout(12_000),
+      credentials: 'omit', headers: { Accept: 'application/json' },
+    })
+    // Quotas, coalescing and Retry-After belong to the server. Do not silently
+    // fall back to browser requests and reintroduce the Origin queue on failure.
+    if (!response.ok) throw new UpbitRequestError(response.status === 429 ? 'rate-limit' : 'server', response.status)
+    return response.json() as Promise<T>
+  }
   for (let attempt = 0; ; attempt++) {
     try {
       return await upbitRequestGate.run(async () => {

@@ -13,6 +13,7 @@ import type { ChartTimeframe, RealtimeMarketState } from '@/types/marketDetail'
 import { getRememberedInstrument, rememberInstrument } from './instrumentRegistry'
 import { SharedRequests } from './sharedRequests'
 import { ChartHistoryCache } from './chartHistoryCache'
+import { upbitRelayBase } from './providers/upbitRelay'
 
 export interface MarketOverviewService {
   getMarketOverview(): Promise<readonly MarketSectionData[]>
@@ -225,7 +226,9 @@ export class MarketDataService implements MarketOverviewService {
       released = true
       owned.listeners.delete(listener)
       if (owned.listeners.size) return
-      if (instrument.marketId !== 'upbit' || mode !== 'live' || owned.state?.connection.status !== 'live') {
+      // Relay reconnection is cheap. Release unused SSE feeds immediately so
+      // retained pages cannot occupy the browser's HTTP connection slots.
+      if (instrument.marketId !== 'upbit' || mode !== 'live' || owned.state?.connection.status !== 'live' || upbitRelayBase()) {
         this.closeStream(key, owned)
         return
       }
