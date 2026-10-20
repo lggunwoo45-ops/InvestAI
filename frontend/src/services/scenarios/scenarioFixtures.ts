@@ -20,3 +20,14 @@ export function scenarioSeries(price = 115, trend = 1, now = scenarioTestNow): A
       return { timestamp: end - (80 - i) * 3_600_000, open: close, close, high: close + 3, low: close - 3, volume: 100 }
     }) }
 }
+
+export function entryReviewFixture() {
+  const scenario: Scenario = { ...scenarioFixture(), entry: [111, 114], stop: 105 }
+  const series = scenarioSeries(113.2)
+  series.candles = series.candles.map((c, i) => {
+    const close = 100 + i * 0.15 + (i % 2 === 0 ? 1 : -1)
+    return i === 79 ? { ...c, open: 111.5, close: 113.1, low: 110.9, high: 114, volume: 150 }
+      : { ...c, open: close, close, high: close + 1.5, low: close - 1.5 }
+  })
+  return { scenario, series }
+}

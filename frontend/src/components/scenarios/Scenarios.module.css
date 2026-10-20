@@ -11,6 +11,17 @@
 .card .status { color:var(--color-accent); font-size:16px; }
 .card[data-state="stop"] { border-left:3px solid var(--color-danger); }
 .card[data-state="stop"] .status,.warning { color:var(--color-danger); }
+.card[data-state="entry"] .status { color:var(--color-text); }
+.card[data-review="ready"] { border-left:3px solid var(--color-accent); }
+.card[data-review="ready"] .status { color:var(--color-accent); }
+.card[data-review="caution"] { border-left:3px solid var(--color-danger); }
+.card[data-review="caution"] .status { color:var(--color-danger); }
+.entryReview { display:grid; gap:8px; }
+.checklist { list-style:none; padding:0; display:grid; gap:6px; }
+.checklist li { display:flex; align-items:center; flex-wrap:wrap; gap:8px; padding:8px 10px; border-radius:7px; background:var(--color-surface-raised); font-size:12px; }
+.checklist li > span { flex:1; min-width:130px; }
+.checklist strong { color:var(--color-text-muted); font-size:11px; }
+.checklist [data-passed="true"] strong { color:var(--color-accent); }
 .criteria { display:grid; grid-template-columns:2fr 1fr 1fr; gap:14px; margin:0; padding:14px; background:var(--color-surface-raised); border-radius:10px; }
 .criteria dt { color:var(--color-text-muted); font-size:11px; margin-bottom:7px; }
 .criteria dd { font-size:14px; margin:0; overflow-wrap:anywhere; }

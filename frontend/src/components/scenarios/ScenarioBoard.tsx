@@ -8,6 +8,7 @@ import { writeScenarios, type Scenario } from '@/services/scenarios/scenarioStor
 import { readPortfolio } from '@/services/portfolio/portfolioStorage'
 import { portfolioNumber } from '@/utils/formatPortfolio'
 import { ScenarioForm } from './ScenarioForm'
+import { EntryReviewEvidence } from './EntryReviewEvidence'
 import { scenarioCopy } from './scenarioCopy'
 import styles from './Scenarios.module.css'
 
@@ -29,7 +30,7 @@ export function ScenarioBoard({ compact = false }: { compact?: boolean }) {
   const priority = (s: Scenario) => {
     const o = observations[s.id]
     return s.enabled && running && o?.revision === s.revision && clock - o.at <= 15_000
-      ? o.state === 'stop' ? 0 : o.weakened ? 1 : o.state === 'target' ? 2 : o.state === 'entry' ? 3 : 4 : 5
+      ? o.state === 'stop' ? 0 : o.weakened || o.entryReview.status === 'caution' ? 1 : o.state === 'target' ? 2 : o.entryReview.status === 'ready' ? 3 : o.state === 'entry' ? 4 : 5 : 6
   }
   const scenarios = compact ? [...store.scenarios].sort((a, b) => priority(a) - priority(b)).slice(0, 3) : store.scenarios
   const positions = readPortfolio().positions
@@ -41,13 +42,15 @@ export function ScenarioBoard({ compact = false }: { compact?: boolean }) {
     <div className={styles.list}>{scenarios.map(s => {
       const raw = observations[s.id]
       const o = running && raw?.revision === s.revision && clock - raw.at <= 15_000 ? raw : undefined
-      const status = !s.enabled ? t.paused : marketDataMode !== 'live' ? t.mock : !running ? t.inactive : t.state[o?.state ?? 'unavailable']
+      const entryStatus = o?.entryReview.status === 'waiting' && o.entryReview.checks.rebound === false ? t.reboundWaiting : t.entryState[o?.entryReview.status ?? 'unavailable']
+      const status = !s.enabled ? t.paused : marketDataMode !== 'live' ? t.mock : !running ? t.inactive : o?.state === 'entry' ? entryStatus : t.state[o?.state ?? 'unavailable']
       const holding = positions.find(p => p.id === s.positionId && p.instrumentId === s.instrument.id && p.quoteCurrency === s.instrument.quoteCurrency && p.quantity > 0)
       const analysisUrl = `/my-analysis?${new URLSearchParams({ instrumentId: s.instrument.id, ...(holding ? { positionId: holding.id } : {}) })}`
       const events = store.events.filter(e => e.scenarioId === s.id).slice(-5).reverse()
-      return <article key={s.id} className={styles.card} aria-label={`${s.instrument.symbol} ${t.title}`} data-state={s.enabled ? o?.state : undefined}>
+      return <article key={s.id} className={styles.card} aria-label={`${s.instrument.symbol} ${t.title}`} data-state={s.enabled ? o?.state : undefined} data-review={s.enabled ? o?.entryReview.status : undefined}>
         <header><div><small>{s.instrument.marketId === 'upbit' ? 'UPBIT' : 'BINANCE SPOT'} · {s.instrument.quoteCurrency}</small><h3>{s.instrument.symbol}</h3></div><Link to={analysisUrl}>{t.analysis} →</Link></header>
         <strong className={styles.status}>{status}</strong>
+        {s.enabled && o?.state === 'entry' && <EntryReviewEvidence review={o.entryReview} frame={s.baseline.frame} language={language} />}
         {s.enabled && o?.issue && <p className={styles.caption}>{t.issue[o.issue]}</p>}
         {s.enabled && o?.weakened && <p className={styles.warning}>{t.frame[s.baseline.frame]} · {t.weak}</p>}
         {s.enabled && o?.price != null && <p>{t.price}: <b>{portfolioNumber(o.price)} {s.instrument.quoteCurrency}</b><small> · {t.checked} {new Date(o.at).toLocaleTimeString(language)}</small></p>}

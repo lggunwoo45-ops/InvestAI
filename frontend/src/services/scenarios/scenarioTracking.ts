@@ -1,5 +1,6 @@
 import { readFrame, type AnalysisSeries } from '@/services/cryptoAnalysis/cryptoDecisionEngine'
 import { eventKinds, type Scenario, type ScenarioEventKind } from './scenarioStorage'
+import { reviewScenarioEntry, type ScenarioEntryReview } from './scenarioEntryReview'
 
 export interface ScenarioObservation {
   revision: string
@@ -8,6 +9,7 @@ export interface ScenarioObservation {
   state: 'waiting' | 'entry' | 'target' | 'stop' | 'unavailable'
   weakened: boolean | null
   issue: 'connection' | 'stale' | 'trades' | null
+  entryReview: ScenarioEntryReview
 }
 
 export function observeScenario(s: Scenario, series: AnalysisSeries, now: number): ScenarioObservation {
@@ -24,14 +26,19 @@ export function observeScenario(s: Scenario, series: AnalysisSeries, now: number
   // Compare only a newer completed reference candle, never an unfinished bar or a different timeframe.
   const weakened = !fresh || frame.issue ? null : s.baseline.frameDirection === 'buy' && frame.asOf! > s.baseline.frameAsOf && frame.direction !== 'buy'
   const issue = price !== null ? null : series.dataQuality !== 'live' || series.connectionStatus !== 'live' ? 'connection' : !trade ? 'trades' : 'stale'
-  return { revision: s.revision, at: now, price, state, weakened, issue }
+  return { revision: s.revision, at: now, price, state, weakened, issue, entryReview: reviewScenarioEntry(s, frame, price) }
 }
 
 /** First connection and recovery establish a baseline; missed intervals never fabricate crossings. */
 export function scenarioTransitions(previous: ScenarioObservation | null, current: ScenarioObservation): ScenarioEventKind[] {
   if (!previous || previous.revision !== current.revision || previous.price === null || current.price === null
     || current.at < previous.at || current.at - previous.at > 15_000) return []
-  return eventKinds.filter(kind => kind === 'weakened'
-    ? previous.weakened === false && current.weakened === true
-    : current.state === kind && previous.state !== kind)
+  const before = previous.entryReview.status, after = current.entryReview.status
+  return eventKinds.filter(kind => {
+    if (kind === 'weakened') return previous.weakened === false && current.weakened === true
+    if (kind === 'ready' || kind === 'caution') return before !== 'unavailable' && after === kind && before !== kind
+    if (kind === 'ready-lost') return before === 'ready' && (after === 'waiting' || (after === 'outside' && current.state === 'waiting'))
+    if (kind === 'entry') return current.state === 'entry' && previous.state !== 'entry' && after !== 'ready' && after !== 'caution'
+    return current.state === kind && previous.state !== kind
+  })
 }

@@ -47,6 +47,13 @@ export function ScenarioMonitorProvider({ children }: PropsWithChildren) {
       else delete next[id]
       return next
     })
+    // Retract a no-longer-supported ready alert permanently; reconnecting must
+    // not bring an old ready notification back without a new observed change.
+    if (observation?.entryReview.status !== 'ready') setNotice(value => {
+      if (!value) return value
+      const remaining = value.events.filter(e => e.scenarioId !== id || e.kind !== 'ready')
+      return remaining.length === value.events.length ? value : remaining.length ? { ...value, events: remaining } : null
+    })
     if (!events.length) return
     const current = readScenarios()
     const scenario = current.scenarios.find(s => s.id === id && s.enabled && s.revision === observation?.revision)
@@ -62,7 +69,8 @@ export function ScenarioMonitorProvider({ children }: PropsWithChildren) {
   }, [])
   const running = visible && marketDataMode === 'live' && !store.error
   const t = scenarioCopy[language]
-  const activeNotice = notice?.events.filter(e => store.scenarios.some(s => s.id === e.scenarioId && s.revision === e.revision && s.enabled)) ?? []
+  const activeNotice = notice?.events.filter(e => store.scenarios.some(s => s.id === e.scenarioId && s.revision === e.revision && s.enabled)
+    && (e.kind !== 'ready' || observations[e.scenarioId]?.entryReview.status === 'ready')) ?? []
   return <ScenarioMonitorContext value={{ observations, running, historyError }}>
     {children}
     {running && store.scenarios.filter(s => s.enabled).map(s => <ScenarioSensor key={`${s.id}:${s.revision}`} scenario={s} publish={publish} />)}

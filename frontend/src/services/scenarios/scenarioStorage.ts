@@ -5,7 +5,7 @@ export const SCENARIO_KEY = 'investai.scenarios.v1'
 export const SCENARIO_CHANGED = 'investai:scenarios-changed'
 export const MAX_SCENARIOS = 10
 export const MAX_ACTIVE_SCENARIOS = 3
-export const eventKinds = ['entry', 'target', 'stop', 'weakened'] as const
+export const eventKinds = ['entry', 'target', 'stop', 'weakened', 'ready', 'caution', 'ready-lost'] as const
 export type ScenarioEventKind = typeof eventKinds[number]
 export interface Scenario {
   id: string

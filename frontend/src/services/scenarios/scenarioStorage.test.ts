@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { PORTFOLIO_KEY } from '@/services/portfolio/portfolioStorage'
-import { readScenarios, SCENARIO_KEY, validScenario, validScenarioData, writeScenarios } from './scenarioStorage'
+import { eventKinds, readScenarios, SCENARIO_KEY, validScenario, validScenarioData, writeScenarios } from './scenarioStorage'
 import { scenarioFixture } from './scenarioFixtures'
 
 describe('scenario storage isolation and preservation', () => {
@@ -13,6 +13,14 @@ describe('scenario storage isolation and preservation', () => {
     expect(readScenarios().scenarios[0]).toEqual(scenarioFixture())
     expect(localStorage.getItem(PORTFOLIO_KEY)).toBe('original portfolio')
     expect(localStorage.getItem('watchlist')).toBe('original watchlist')
+  })
+  it('preserves both price and review events, and rejects unknown event kinds', () => {
+    const s = scenarioFixture()
+    const events = eventKinds.map((kind, i) => ({ id: String(i), scenarioId: s.id, revision: s.revision, kind, at: s.updatedAt + i, price: 105 }))
+    const data = { version: 1 as const, scenarios: [s], events }
+    writeScenarios(data, null)
+    expect(readScenarios().events).toEqual(events)
+    expect(validScenarioData({ ...data, events: [{ ...events[0], kind: 'buy-now' }] })).toBe(false)
   })
   it.each(['{', JSON.stringify({ version: 2, scenarios: [] }), JSON.stringify({ version: 1, scenarios: [{}], events: [] })])('preserves unreadable or unknown schema data: %s', raw => {
     localStorage.setItem(SCENARIO_KEY, raw)
