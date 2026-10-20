@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState, type PropsWithChildren } from 'react'
 
 import type { MarketDataMode, MarketInstrument } from '@/types/market'
 import type { ChartTimeframe, RealtimeMarketState } from '@/types/marketDetail'
-import { MarketWorkspaceContext, type MarketWorkspaceValue } from './marketWorkspaceContext'
+import { ActiveMarketStateContext, MarketWorkspaceContext, type MarketWorkspaceValue } from './marketWorkspaceContext'
 
 export function MarketWorkspaceProvider({ children }: PropsWithChildren) {
   const [selectedInstrument, setSelectedInstrument] = useState<MarketInstrument | null>(null)
@@ -18,15 +18,16 @@ export function MarketWorkspaceProvider({ children }: PropsWithChildren) {
       selectedInstrument,
       selectedTimeframe,
       marketDataMode,
-      activeMarketState,
       selectInstrument: setSelectedInstrument,
       clearInstrument,
       selectTimeframe: setSelectedTimeframe,
       setMarketDataMode,
       setActiveMarketState,
     }),
-    [activeMarketState, clearInstrument, marketDataMode, selectedInstrument, selectedTimeframe],
+    [clearInstrument, marketDataMode, selectedInstrument, selectedTimeframe],
   )
 
-  return <MarketWorkspaceContext value={value}>{children}</MarketWorkspaceContext>
+  return <MarketWorkspaceContext value={value}>
+    <ActiveMarketStateContext value={activeMarketState}>{children}</ActiveMarketStateContext>
+  </MarketWorkspaceContext>
 }

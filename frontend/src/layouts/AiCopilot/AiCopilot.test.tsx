@@ -10,6 +10,7 @@ import { AiCopilot } from './AiCopilot'
 const mocks = vi.hoisted(() => ({ workspace: vi.fn() }))
 
 vi.mock('@/hooks/useMarketWorkspace', () => ({ useMarketWorkspace: () => mocks.workspace() }))
+vi.mock('@/hooks/useActiveMarketState', () => ({ useActiveMarketState: () => mocks.workspace().activeMarketState }))
 vi.mock('@/hooks/useUiStore', () => ({ useUiStore: () => ({ toggleAiCopilot: vi.fn() }) }))
 vi.mock('@/hooks/useNewsProviderMode', () => ({ useNewsProviderMode: () => ({ mode: 'mock', result: null }) }))
 vi.mock('@/i18n/useLanguage', () => ({ useLanguage: () => ({ language: 'en', setLanguage: vi.fn() }) }))

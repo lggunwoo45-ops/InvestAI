@@ -4,7 +4,7 @@ import { MarketStatusStrip } from '@/components/MarketStatusStrip/MarketStatusSt
 import { ModeSwitcher } from '@/components/mode/ModeSwitcher/ModeSwitcher'
 import { StatusBadge } from '@/components/StatusBadge/StatusBadge'
 import { useCurrentTime } from '@/hooks/useCurrentTime'
-import { useMarketWorkspace } from '@/hooks/useMarketWorkspace'
+import { useActiveMarketState } from '@/hooks/useActiveMarketState'
 import { useUiStore } from '@/hooks/useUiStore'
 import { uiText, type Language } from '@/i18n/translations'
 import { useLanguage } from '@/i18n/useLanguage'
@@ -14,7 +14,7 @@ import styles from './Header.module.css'
 export function Header({ hideCopilotToggle = false }: { hideCopilotToggle?: boolean }) {
   const now = useCurrentTime()
   const { isAiCopilotOpen, toggleAiCopilot } = useUiStore()
-  const { activeMarketState } = useMarketWorkspace()
+  const activeMarketState = useActiveMarketState()
   const { language, setLanguage } = useLanguage()
   const text = uiText[language]
   const connectionStatus = activeMarketState?.connection.status
