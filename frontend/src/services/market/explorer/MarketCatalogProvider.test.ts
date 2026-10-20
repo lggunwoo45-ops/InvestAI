@@ -18,9 +18,14 @@ describe('Sprint 7 market catalogs', () => {
     const tickers = Array.from({ length: 350 }, (_, index) => ({
       market: `KRW-COIN${index}`, trade_price: index + 1, signed_change_rate: .01, acc_trade_price_24h: 1000 + index,
     }))
+    tickers.push(
+      { market: 'BTC-ETH', trade_price: .03, signed_change_rate: -.01, acc_trade_price_24h: 100 },
+      { market: 'USDT-BTC', trade_price: 100_000, signed_change_rate: .02, acc_trade_price_24h: 200 },
+    )
     const fetcher = vi.fn((_url: string) => Promise.resolve(response(tickers)))
     vi.stubGlobal('fetch', fetcher)
-    const catalog = await upbitCatalogProvider.load('upbit-krw')
+    const catalogs = await upbitCatalogProvider.loadAll!()
+    const catalog = catalogs.find(item => item.venue === 'upbit-krw')!
 
     expect(catalog.instruments).toHaveLength(350)
     expect(catalog.instruments[0]).toMatchObject({
@@ -29,7 +34,10 @@ describe('Sprint 7 market catalogs', () => {
     })
     expect(catalog.instruments[0].koreanName).toBeUndefined()
     expect(fetcher).toHaveBeenCalledOnce()
-    expect(fetcher.mock.calls[0]?.[0]).toContain('/v1/ticker/all?quote_currencies=KRW')
+    expect(fetcher.mock.calls[0]?.[0]).toContain('/v1/ticker/all?quote_currencies=KRW,BTC,USDT')
+    expect(catalogs.find(item => item.venue === 'upbit-btc')?.instruments).toEqual([expect.objectContaining({ id: 'upbit-btc-eth', providerSymbol: 'BTC-ETH', quoteCurrency: 'BTC', lastPrice: .03 })])
+    expect(catalogs.find(item => item.venue === 'upbit-usdt')?.instruments).toEqual([expect.objectContaining({ id: 'upbit-usdt-btc', providerSymbol: 'USDT-BTC', quoteCurrency: 'USDT', lastPrice: 100_000 })])
+    expect(new Set(catalogs.map(item => item.fetchedAt)).size).toBe(1)
   })
 
   it('separates Binance Spot and USDT perpetual futures', async () => {

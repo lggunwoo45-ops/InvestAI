@@ -11,6 +11,7 @@ import type { RealtimeMarketProvider } from '@/services/market/contracts/Realtim
 import type { MarketCatalog, MarketDataMode, MarketInstrument, MarketSectionData, MarketVenue } from '@/types/market'
 import type { ChartTimeframe, RealtimeMarketState } from '@/types/marketDetail'
 import { getRememberedInstrument, rememberInstrument } from './instrumentRegistry'
+import { SharedRequests } from './sharedRequests'
 
 export interface MarketOverviewService {
   getMarketOverview(): Promise<readonly MarketSectionData[]>
@@ -22,6 +23,16 @@ export interface MarketStreamOptions {
   mode: MarketDataMode
   onState: (state: RealtimeMarketState) => void
 }
+
+interface StreamSession {
+  listeners: Set<{ onState: MarketStreamOptions['onState'] }>
+  state: RealtimeMarketState | null
+  stop: () => void
+  idleTimer: ReturnType<typeof setTimeout> | null
+}
+
+const UPBIT_NAVIGATION_GRACE_MS = 30_000
+const MAX_IDLE_STREAMS = 3 // At most one analysis's three timeframes stay warm.
 
 const mockMarketSections: readonly MarketSectionData[] = [
   {
@@ -87,8 +98,10 @@ const catalogProviders: readonly MarketCatalogProvider[] = [stockCatalogProvider
  */
 export class MarketDataService implements MarketOverviewService {
   private readonly catalogCache = new Map<string, { value: MarketCatalog; expiresAt: number }>()
-  private readonly catalogPending = new Map<string, Promise<MarketCatalog>>()
+  private readonly catalogPending = new SharedRequests<readonly MarketCatalog[]>()
   private readonly instrumentIndex = new Map<string, MarketInstrument>()
+  private readonly streams = new Map<string, StreamSession>()
+  private readonly idleStreams = new Map<string, StreamSession>()
 
   constructor(
     private readonly providers: readonly RealtimeMarketProvider[] = liveProviders,
@@ -140,22 +153,28 @@ export class MarketDataService implements MarketOverviewService {
 
   /** The only entry point for catalog APIs; UI never addresses an exchange directly. */
   getMarketCatalog(venue: MarketVenue, mode: MarketDataMode, force = false, signal?: AbortSignal): Promise<MarketCatalog> {
+    if (signal?.aborted) return Promise.reject(new DOMException('Catalog request aborted', 'AbortError'))
     const key = `${mode}:${venue}`
     const cached = this.catalogCache.get(key)
     if (!force && cached && cached.expiresAt > Date.now()) return Promise.resolve(cached.value)
-    const pending = this.catalogPending.get(key)
-    // A caller-owned signal must not share a promise that another caller can abort.
-    if (!force && !signal && pending) return pending
     const provider = this.explorerProviders.find((candidate) => candidate.supports(venue, mode))
     if (!provider) return Promise.reject(new Error(`No catalog provider for ${venue}`))
-    const request = provider.load(venue, signal).then((catalog) => {
-      if (signal?.aborted) throw new DOMException('Catalog request aborted', 'AbortError')
-      this.catalogCache.set(key, { value: catalog, expiresAt: Date.now() + (catalog.source === 'live' ? 60_000 : 3_600_000) })
-      for (const instrument of catalog.instruments) this.instrumentIndex.set(instrument.id, instrument)
+    const requestKey = provider.loadAll ? `${mode}:all:${provider.id}` : key
+    return this.catalogPending.run(requestKey, async sharedSignal => {
+      const catalogs = provider.loadAll
+        ? await provider.loadAll(sharedSignal)
+        : [await provider.load(venue, sharedSignal)]
+      sharedSignal.throwIfAborted()
+      for (const catalog of catalogs) {
+        this.catalogCache.set(`${mode}:${catalog.venue}`, { value: catalog, expiresAt: catalog.fetchedAt + (catalog.source === 'live' ? 60_000 : 3_600_000) })
+        for (const instrument of catalog.instruments) this.instrumentIndex.set(instrument.id, instrument)
+      }
+      return catalogs
+    }, signal).then(catalogs => {
+      const catalog = catalogs.find(item => item.venue === venue)
+      if (!catalog) throw new Error(`Catalog response missing ${venue}`)
       return catalog
-    }).finally(() => { if (!signal && this.catalogPending.get(key) === request) this.catalogPending.delete(key) })
-    if (!signal) this.catalogPending.set(key, request)
-    return request
+    })
   }
 
   rememberInstrument = rememberInstrument
@@ -168,6 +187,59 @@ export class MarketDataService implements MarketOverviewService {
   }
 
   subscribe({ instrument, timeframe, mode, onState }: MarketStreamOptions): () => void {
+    const key = JSON.stringify([mode, instrument.id, instrument.marketId, instrument.providerType, instrument.providerSymbol, instrument.quoteCurrency, timeframe])
+    const listener = { onState }
+    let session = this.streams.get(key)
+    if (session) {
+      if (session.idleTimer !== null) clearTimeout(session.idleTimer)
+      session.idleTimer = null
+      this.idleStreams.delete(key)
+      session.listeners.add(listener)
+      if (session.state) onState(session.state) // Preserve original receipt/exchange times.
+    } else {
+      session = { listeners: new Set([listener]), state: null, stop: () => {}, idleTimer: null }
+      this.streams.set(key, session)
+      const owned = session
+      owned.stop = this.startSubscription({ instrument, timeframe, mode, onState: state => {
+        owned.state = state
+        // Background retention must not create recovery requests for an abandoned page.
+        if (!owned.listeners.size && state.connection.status !== 'live') {
+          this.closeStream(key, owned)
+          return
+        }
+        for (const subscriber of owned.listeners) subscriber.onState(state)
+      } })
+    }
+    const owned = session
+    let released = false
+    return () => {
+      if (released) return
+      released = true
+      owned.listeners.delete(listener)
+      if (owned.listeners.size) return
+      if (instrument.marketId !== 'upbit' || mode !== 'live' || owned.state?.connection.status !== 'live') {
+        this.closeStream(key, owned)
+        return
+      }
+      // Keep the live feed (not a frozen snapshot) briefly across route navigation.
+      owned.idleTimer = setTimeout(() => this.closeStream(key, owned), UPBIT_NAVIGATION_GRACE_MS)
+      this.idleStreams.set(key, owned)
+      while (this.idleStreams.size > MAX_IDLE_STREAMS) {
+        const [oldKey, oldSession] = this.idleStreams.entries().next().value!
+        this.closeStream(oldKey, oldSession)
+      }
+    }
+  }
+
+  private closeStream(key: string, session: StreamSession) {
+    if (this.streams.get(key) !== session) return
+    this.streams.delete(key)
+    this.idleStreams.delete(key)
+    if (session.idleTimer !== null) clearTimeout(session.idleTimer)
+    session.stop()
+  }
+
+  private startSubscription({ instrument, timeframe, mode, onState }: MarketStreamOptions): () => void {
     const liveProvider = this.providers.find((provider) => provider.supports(instrument))
     const provider = mode === 'live' && liveProvider ? liveProvider : this.mockProvider
     const effectiveMode: MarketDataMode = provider === this.mockProvider ? 'mock' : 'live'
@@ -253,7 +325,7 @@ export class MarketDataService implements MarketOverviewService {
               message: effectiveMode === 'live' ? `Snapshot unavailable. Retrying in ${Math.round(delay / 1_000)}s…` : 'Mock market data is unavailable.',
             },
           })
-          if (effectiveMode === 'live') retryTimer = setTimeout(start, delay)
+          if (!disposed && effectiveMode === 'live') retryTimer = setTimeout(start, delay)
         })
     }
 

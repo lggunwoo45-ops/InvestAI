@@ -78,15 +78,15 @@ export function AiAnalysisPage() {
   const [selectedByBucket, setSelectedByBucket] = useState<Partial<Record<MarketBucketId, string>>>({})
   const [candidateDisplayFilter, setCandidateDisplayFilter] = useState(loadCandidateDisplayFilter)
 
-  const upbitKrw = useMarketCatalog('upbit-krw', marketDataMode, 0)
-  const upbitBtc = useMarketCatalog('upbit-btc', marketDataMode, 0)
-  const upbitUsdt = useMarketCatalog('upbit-usdt', marketDataMode, 0)
-  const binanceSpot = useMarketCatalog('binance-spot', marketDataMode, 0)
-  const binanceFutures = useMarketCatalog('binance-futures', marketDataMode, 0)
-  const kospi = useMarketCatalog('kospi', marketDataMode, 0)
-  const kosdaq = useMarketCatalog('kosdaq', marketDataMode, 0)
-  const nasdaq = useMarketCatalog('nasdaq', marketDataMode, 0)
-  const nyse = useMarketCatalog('nyse', marketDataMode, 0)
+  const upbitKrw = useMarketCatalog('upbit-krw', marketDataMode, 0, bucketId === 'upbit')
+  const upbitBtc = useMarketCatalog('upbit-btc', marketDataMode, 0, bucketId === 'upbit')
+  const upbitUsdt = useMarketCatalog('upbit-usdt', marketDataMode, 0, bucketId === 'upbit')
+  const binanceSpot = useMarketCatalog('binance-spot', marketDataMode, 0, bucketId === 'binance')
+  const binanceFutures = useMarketCatalog('binance-futures', marketDataMode, 0, bucketId === 'binance')
+  const kospi = useMarketCatalog('kospi', marketDataMode, 0, bucketId === 'kospi')
+  const kosdaq = useMarketCatalog('kosdaq', marketDataMode, 0, bucketId === 'kosdaq')
+  const nasdaq = useMarketCatalog('nasdaq', marketDataMode, 0, bucketId === 'usStocks')
+  const nyse = useMarketCatalog('nyse', marketDataMode, 0, bucketId === 'usStocks')
 
   const pageCopy = language === 'ko'
     ? { eyebrow: '일일 시장 검토', title: '오늘의 관심 후보', description: '매일 08:00 기준으로 확인하는 시장별 후보입니다.', advanced: '상세 기준 보기', advancedHelp: '기존 기간 기준은 전문가 검토용입니다. 저장된 일일 후보는 새로고침 전까지 바뀌지 않습니다.' }

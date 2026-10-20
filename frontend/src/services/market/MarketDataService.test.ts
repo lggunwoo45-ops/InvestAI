@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { RealtimeMarketProvider } from '@/services/market/contracts/RealtimeMarketProvider'
 import type { ProviderStreamEvent } from '@/services/market/contracts/RealtimeMarketProvider'
@@ -19,6 +19,8 @@ const snapshot: MarketDetailSnapshot = {
   orderbook: { symbolId: instrument.id, asks: [], bids: [], spread: 0 },
   recentTrades: [],
 }
+
+afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks() })
 
 function createProvider(id: string, supports: boolean): RealtimeMarketProvider {
   return {
@@ -78,12 +80,139 @@ describe('MarketDataService', () => {
     const first = service.getMarketCatalog('upbit-krw', 'live', false, firstController.signal)
     const second = service.getMarketCatalog('upbit-krw', 'live', false, secondController.signal)
     const firstOutcome = expect(first).rejects.toMatchObject({ name: 'AbortError' })
-    expect(pending).toHaveLength(2)
+    await Promise.resolve()
+    expect(pending).toHaveLength(1)
     firstController.abort()
     pending[0].resolve(catalog) // Simulate a provider that ignores the signal.
-    pending[1].resolve(catalog)
     await firstOutcome
     await expect(second).resolves.toBe(catalog)
+  })
+
+  it('cancels abandoned shared work and rejects late results without populating the cache', async () => {
+    let resolve!: (catalog: MarketCatalog) => void
+    let sharedSignal: AbortSignal | undefined
+    const provider: MarketCatalogProvider = { id: 'controlled', supports: () => true, load: vi.fn((_venue, signal) => {
+      sharedSignal = signal
+      return new Promise<MarketCatalog>(done => { resolve = done })
+    }) }
+    const service = new MarketDataService([], createProvider('mock', true), [provider])
+    const controller = new AbortController()
+    const request = service.getMarketCatalog('upbit-krw', 'live', false, controller.signal)
+    const outcome = expect(request).rejects.toMatchObject({ name: 'AbortError' })
+    await Promise.resolve()
+    controller.abort()
+    expect(sharedSignal?.aborted).toBe(true)
+    resolve({ venue: 'upbit-krw', source: 'live', instruments: [], fetchedAt: Date.now() })
+    await outcome
+    expect(service.getRecentCatalog('upbit-krw', 'live')).toBeNull()
+  })
+
+  it('shares one batch for all Upbit quotes and refreshes all caches together on force or expiry', async () => {
+    vi.useFakeTimers()
+    const venues = ['upbit-krw', 'upbit-btc', 'upbit-usdt'] as const
+    const loadAll = vi.fn(async () => venues.map(venue => ({ venue, instruments: [], source: 'live' as const, fetchedAt: Date.now() })))
+    const provider: MarketCatalogProvider = { id: 'batch', supports: (_venue, mode) => mode === 'live', load: vi.fn(), loadAll }
+    const service = new MarketDataService([], createProvider('mock', true), [provider])
+    const catalogs = await Promise.all(venues.map(venue => service.getMarketCatalog(venue, 'live', false, new AbortController().signal)))
+    expect(loadAll).toHaveBeenCalledOnce()
+    expect(catalogs.map(catalog => catalog.venue)).toEqual(venues)
+    await service.getMarketCatalog('upbit-btc', 'live')
+    expect(loadAll).toHaveBeenCalledOnce()
+    await service.getMarketCatalog('upbit-krw', 'live', true)
+    expect(loadAll).toHaveBeenCalledTimes(2)
+    await vi.advanceTimersByTimeAsync(60_001)
+    await service.getMarketCatalog('upbit-usdt', 'live')
+    expect(loadAll).toHaveBeenCalledTimes(3)
+    expect(service.getRecentCatalog('upbit-krw', 'mock')).toBeNull()
+  })
+
+  it('shares snapshot loading and releases only after the last consumer leaves', async () => {
+    const provider = createProvider('live', true)
+    const stopProvider = vi.fn()
+    provider.subscribe = vi.fn((_instrument, _frame, initial, onEvent) => { onEvent({ snapshot: initial, status: 'live' }); return stopProvider })
+    const service = new MarketDataService([provider], createProvider('mock', true))
+    const first = vi.fn(), second = vi.fn()
+    const stopFirst = service.subscribe({ instrument, timeframe: '1m', mode: 'live', onState: first })
+    const stopSecond = service.subscribe({ instrument, timeframe: '1m', mode: 'live', onState: second })
+    await Promise.resolve()
+    expect(provider.loadSnapshot).toHaveBeenCalledOnce()
+    expect(provider.subscribe).toHaveBeenCalledOnce()
+    expect(second.mock.lastCall?.[0].connection.status).toBe('live')
+    stopFirst(); stopFirst()
+    expect(stopProvider).not.toHaveBeenCalled()
+    stopSecond()
+    expect(stopProvider).toHaveBeenCalledOnce()
+  })
+
+  it('reuses a live Upbit analysis during navigation without changing freshness timestamps, then expires it', async () => {
+    vi.useFakeTimers()
+    const upbit = { ...instrument, id: 'upbit-btc', marketId: 'upbit' as const, quoteCurrency: 'KRW' as const }
+    const provider = createProvider('upbit', true)
+    const stopProvider = vi.fn()
+    let emit!: (event: ProviderStreamEvent) => void
+    provider.subscribe = (_instrument, _frame, _snapshot, onEvent) => { emit = onEvent; return stopProvider }
+    const service = new MarketDataService([provider], createProvider('mock', true))
+    const start = (onState = vi.fn()) => service.subscribe({ instrument: upbit, timeframe: '1H', mode: 'live', onState })
+    const stop = start()
+    await Promise.resolve()
+    emit({ snapshot, status: 'live', quoteUpdatedAt: 1000, marketTime: 900 })
+    stop()
+    await vi.advanceTimersByTimeAsync(10_000)
+    emit({ snapshot, quoteUpdatedAt: 2000, marketTime: 1900 })
+    const returned = vi.fn()
+    const stopAgain = start(returned)
+    expect(returned.mock.lastCall?.[0].connection).toMatchObject({ lastUpdatedAt: 2000, marketTime: 1900 })
+    expect(provider.loadSnapshot).toHaveBeenCalledOnce()
+    expect(stopProvider).not.toHaveBeenCalled()
+    stopAgain()
+    await vi.advanceTimersByTimeAsync(30_000)
+    expect(stopProvider).toHaveBeenCalledOnce()
+    const stopNew = start()
+    expect(provider.loadSnapshot).toHaveBeenCalledTimes(2)
+    stopNew()
+  })
+
+  it('isolates venues, timeframes and modes and cancels pending loads immediately', () => {
+    const signals: AbortSignal[] = []
+    const provider = createProvider('live', true)
+    provider.loadSnapshot = vi.fn((_instrument, _frame, signal) => { signals.push(signal!); return new Promise<MarketDetailSnapshot>(() => {}) })
+    const mock = createProvider('mock', true)
+    const service = new MarketDataService([provider], mock)
+    const stops = [
+      service.subscribe({ instrument, timeframe: '1H', mode: 'live', onState: vi.fn() }),
+      service.subscribe({ instrument, timeframe: '4H', mode: 'live', onState: vi.fn() }),
+      service.subscribe({ instrument: { ...instrument, marketId: 'binance-spot' }, timeframe: '1H', mode: 'live', onState: vi.fn() }),
+      service.subscribe({ instrument, timeframe: '1H', mode: 'mock', onState: vi.fn() }),
+    ]
+    expect(provider.loadSnapshot).toHaveBeenCalledTimes(3)
+    expect(mock.loadSnapshot).toHaveBeenCalledOnce()
+    stops.forEach(stop => stop())
+    expect(signals.every(signal => signal.aborted)).toBe(true)
+  })
+
+  it('closes idle streams on connection loss and bounds retained streams to three', async () => {
+    vi.useFakeTimers()
+    const provider = createProvider('upbit', true)
+    const emitters: Array<(event: ProviderStreamEvent) => void> = []
+    const cleanups: Array<ReturnType<typeof vi.fn>> = []
+    provider.subscribe = (_instrument, _frame, initial, emit) => {
+      emitters.push(emit)
+      const cleanup = vi.fn(); cleanups.push(cleanup)
+      emit({ status: 'live', snapshot: initial })
+      return cleanup
+    }
+    const service = new MarketDataService([provider], createProvider('mock', true))
+    for (let index = 0; index < 4; index += 1) {
+      const stop = service.subscribe({ instrument: { ...instrument, marketId: 'upbit', id: `upbit-${index}` }, timeframe: '1H', mode: 'live', onState: vi.fn() })
+      await Promise.resolve()
+      stop()
+    }
+    expect(cleanups[0]).toHaveBeenCalledOnce()
+    expect(cleanups[1]).not.toHaveBeenCalled()
+    emitters[1]({ status: 'reconnecting' })
+    expect(cleanups[1]).toHaveBeenCalledOnce()
+    await vi.advanceTimersByTimeAsync(30_000)
+    expect(cleanups.every(cleanup => cleanup.mock.calls.length === 1)).toBe(true)
   })
 
   it('resolves Explorer Upbit and Binance Spot identities for dashboard and recently viewed', async () => {
