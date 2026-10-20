@@ -1,4 +1,4 @@
-import { act, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AnalysisFrame, AnalysisSeries } from '@/services/cryptoAnalysis/cryptoDecisionEngine'
 import type { MarketInstrument } from '@/types/market'
@@ -19,6 +19,28 @@ vi.mock('@/hooks/useTechnicalLevelData', () => ({ useTechnicalLevelData: (_: unk
 vi.mock('@/hooks/useDominance', () => ({ useDominance: () => ({ data: state.dominance, loading: false, error: !state.dominance }) }))
 
 describe('CryptoDecisionPanel', () => {
+  it('supports keyboard tabs and preserves a scenario draft while keeping inactive views out of navigation', () => {
+    window.localStorage.clear()
+    render(<CryptoDecisionPanel instrument={instrument} daily={candles('1D')} language="en" />)
+    const summary = screen.getByRole('tab', { name: 'Summary' })
+    expect(summary.getAttribute('aria-selected')).toBe('true')
+    expect(screen.getAllByRole('tabpanel')).toHaveLength(1)
+    expect(screen.queryByRole('region', { name: 'Key evidence' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Save this analysis as a scenario' })).toBeNull()
+    fireEvent.keyDown(summary, { key: 'ArrowRight' })
+    const evidence = screen.getByRole('tab', { name: 'Evidence' })
+    expect(document.activeElement).toBe(evidence)
+    expect(screen.getByRole('tabpanel').getAttribute('aria-labelledby')).toBe(evidence.id)
+    expect(screen.getByRole('region', { name: 'Key evidence' })).toBeTruthy()
+    fireEvent.keyDown(evidence, { key: 'End' })
+    fireEvent.click(screen.getByRole('button', { name: 'Save this analysis as a scenario' }))
+    const draft = screen.getAllByRole('spinbutton')[0] as HTMLInputElement
+    fireEvent.change(draft, { target: { value: '272' } })
+    fireEvent.keyDown(screen.getByRole('tab', { name: 'My investment' }), { key: 'Home' })
+    expect(screen.queryByRole('spinbutton')).toBeNull()
+    fireEvent.keyDown(summary, { key: 'ArrowLeft' })
+    expect((screen.getAllByRole('spinbutton')[0] as HTMLInputElement).value).toBe('272')
+  })
   beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(now); state.trend = 1; state.quality = 'live'; state.dominance = null })
   afterEach(() => vi.useRealTimers())
   it('gives a direction, price zones and holding impact even if dominance is unavailable', () => {
@@ -27,7 +49,14 @@ describe('CryptoDecisionPanel', () => {
     expect(screen.getByText('추격보다 눌림 구간 대기')).toBeTruthy()
     expect(screen.getByText('274.5 – 277.5 KRW')).toBeTruthy()
     expect(screen.getByText('270 KRW')).toBeTruthy()
-    expect(screen.getByText('가정 해제 가격에서 평가손익: -20 KRW')).toBeTruthy()
+    expect(screen.getAllByRole('tabpanel')).toHaveLength(1)
+    fireEvent.click(screen.getByRole('tab', { name: '내 투자' }))
+    expect(within(screen.getByRole('tabpanel')).getByText('가정 해제 가격에서 평가손익: -20 KRW')).toBeTruthy()
+    fireEvent.click(screen.getByRole('tab', { name: '상세 근거' }))
+    expect(screen.getByText('시간대별 지표·계산 근거').closest('details')?.open).toBe(false)
+    expect(screen.getByText('큰 체결·비트코인 도미넌스').closest('details')?.open).toBe(false)
+    fireEvent.click(screen.getByRole('tab', { name: '상세 근거' }))
+    fireEvent.click(screen.getByText('큰 체결·비트코인 도미넌스'))
     expect(screen.getByText(/도미넌스 연결 불가/)).toBeTruthy()
     expect(screen.queryByText(/판단 부족/)).toBeNull()
   })
@@ -37,6 +66,9 @@ describe('CryptoDecisionPanel', () => {
     expect(screen.getByText('매도 우세')).toBeTruthy()
     expect(screen.getByText('추가 매수보다 반등 시 축소 검토')).toBeTruthy()
     expect(screen.getByText(/지지 가격에 닿았다는 이유만으로 매수하지 않습니다/)).toBeTruthy()
+    expect(screen.getByText('반등 매도 검토 기준')).toBeTruthy()
+    fireEvent.click(screen.getByRole('tab', { name: '상세 근거' }))
+    fireEvent.click(screen.getByText('시간대별 지표·계산 근거'))
     expect(screen.getByText('매도 우세 재검토 기준')).toBeTruthy()
   })
   it('withdraws prices and direction when the previously live quote becomes stale', () => {
@@ -45,7 +77,10 @@ describe('CryptoDecisionPanel', () => {
     act(() => vi.advanceTimersByTime(100000))
     expect(screen.queryByText('Buy-side bias')).toBeNull()
     expect(screen.queryByText('Entry watch zone')).toBeNull()
-    expect(screen.getAllByText('Stale quotes')).toHaveLength(3)
+    const status = screen.getByRole('list', { name: 'Timeframes available' })
+    expect(status.textContent?.match(/Stale quotes/g)).toHaveLength(3)
+    expect(screen.getByText('Checking analysis data')).toBeTruthy()
+    expect(screen.queryByText('Wait for direction before a new entry')).toBeNull()
   })
   it('never presents mock data as a live price plan', () => {
     state.quality = 'mock'
@@ -65,6 +100,8 @@ describe('CryptoDecisionPanel', () => {
   it('labels actual local dominance observations without inventing a 24h change', () => {
     state.dominance = { point: { percent: 58, at: now, marketChange: -2 }, previous: { percent: 57.5, at: now - 3600000, marketChange: -1 } }
     render(<CryptoDecisionPanel instrument={instrument} daily={candles('1D')} language="ko" />)
+    fireEvent.click(screen.getByRole('tab', { name: '상세 근거' }))
+    fireEvent.click(screen.getByText('큰 체결·비트코인 도미넌스'))
     const context = within(screen.getByRole('article', { name: '비트코인 도미넌스' }))
     expect(context.getByText('58.00%')).toBeTruthy()
     expect(context.getByText(/이 브라우저 관측 대비: \+0.50%p/)).toBeTruthy()
@@ -77,5 +114,27 @@ describe('CryptoDecisionPanel', () => {
     expect(screen.getByText('체결 갱신 지연 · 우세 판단 보류')).toBeTruthy()
     expect(screen.getByText(/최근 수신 체결 시각:/)).toBeTruthy()
     expect(screen.queryByText('대형 체결 매수 우세')).toBeNull()
+  })
+  it('keeps expert evidence collapsed and copies the same price plan without personal inputs', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } })
+    try {
+      render(<CryptoDecisionPanel instrument={instrument} daily={candles('1D')} language="en" expert averagePrice={987.65} quantity={2} />)
+      expect(screen.getByText('Timeframe indicators and calculations').closest('details')?.open).toBe(false)
+      expect(screen.getByText('Large executions and Bitcoin dominance').closest('details')?.open).toBe(false)
+      expect(screen.queryByRole('region', { name: 'Key evidence' })).toBeNull()
+      fireEvent.click(screen.getByRole('tab', { name: 'Evidence' }))
+      expect(within(screen.getByRole('region', { name: 'Key evidence' })).getAllByRole('definition')).toHaveLength(3)
+      fireEvent.click(screen.getByRole('button', { name: 'Copy summary' }))
+      await act(async () => {})
+      const copied = writeText.mock.calls[0][0]
+      expect(copied).toContain('Buy-side bias')
+      expect(copied).toContain('Entry watch zone: 274.5 – 277.5 KRW')
+      expect(copied).toContain('Long thesis invalidation: 270 KRW')
+      expect(copied).not.toContain('987.65')
+      expect(copied).not.toContain('Your holding basis')
+      expect(copied).not.toContain('Approach review range')
+      expect(screen.getByText('Copied')).toBeTruthy()
+    } finally { vi.unstubAllGlobals() }
   })
 })
