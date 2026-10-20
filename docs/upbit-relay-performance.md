@@ -112,13 +112,14 @@ warm result measures cold performance.
 ## Production wiring still required
 
 GitHub Pages only serves the frontend. Merging this code alone will not activate
-the fast relay path on the current public site. No hosting account, paid service,
-public server, repository variable or production URL was created by this change.
+the fast relay path unless the repository variable is configured. The follow-up
+below deployed and verified an approved free-trial relay. The existing Pages site
+and its repository variable have not yet been changed.
 
 1. Deploy `backend/market-data/server.mjs` on an always-on Node 22+ service with
    outbound HTTPS/WebSocket access to Upbit. Container build from repository root:
    `docker build -f backend/market-data/Dockerfile -t investai-market .`
-   The Docker recipe is provided; a container build was not run in this environment.
+   The Docker recipe was built successfully by Railway during the trial below.
 2. Set `HOST=0.0.0.0`, the hosting service's `PORT`, and
    `UPBIT_ALLOWED_ORIGINS=https://lggunwoo45-ops.github.io`. No secret is required.
    Serve it over HTTPS. The reverse proxy must support streaming, disable SSE
@@ -196,20 +197,39 @@ Origin and method validation still apply to health.
 
 ### Concrete first hosted trial
 
-The Railway account is now connected. An isolated `InvestAI Market Relay` project
-and a staged `upbit-market-relay` service in its `trial` environment are prepared.
-The service source is pinned to tested commit
-`7c47674ac90b612a434cb82e600eec424e2e6719`; all GitHub checks passed for that code.
-The Docker path, origin, health check, one Singapore replica and disabled sleep
-are staged, not deployed. No public domain or running server exists yet.
+The user explicitly approved the Railway login, free-trial verification and trial
+deployment, while retaining separate approval for main/Pages. After the user
+completed login, the dashboard showed 30 days or $5.00 remaining. No paid upgrade
+was selected.
 
-Account-specific free-trial/credit status is not exposed by the connected tools.
-The separate dashboard login requires the user's authorization before checking
-it. Start only within a confirmed free trial; do not upgrade or add a paid plan
-without the owner's authorization. Railway's commit/deploy operation also
-requires explicit deployment confirmation. The prepared changes remain staged.
-The attempt to stage CPU/memory limits reported `Service Instance not found`;
-these limits were not applied and must be checked once an instance exists.
+`InvestAI Market Relay` / `trial` / `upbit-market-relay` is now deployed at
+`https://upbit-market-relay-trial.up.railway.app/api/upbit`, pinned to tested commit
+`7c47674ac90b612a434cb82e600eec424e2e6719`. All GitHub checks passed for that code.
+Railway built the Docker image and passed the health check. The service uses one
+Singapore replica, sleep disabled, and confirmed limits of one vCPU and
+500,000,000 bytes of memory. The first staging attempt could not set resource
+limits before an instance existed; they were successfully applied afterward.
+There are no pending staged changes, databases or volumes.
+
+Allowed origins are the existing Pages origin and `http://127.0.0.1:4183` for
+the temporary browser validation build. Remove the latter after local preview
+review. Paid plans/renewal remain outside this trial authorization.
+
+The first public HTTPS verification, including initial health/TLS/catalog work,
+completed in **2,208 ms**, all four data requests cache MISS. Catalog: 1,572 ms;
+daily history: 1,858 ms; hourly: 1,982 ms; four-hourly: 2,102 ms; first fresh ticker:
+2,206 ms. The higher latency than the loopback result is expected and measured
+rather than hidden.
+
+A production frontend build on the test PC was then configured to use this
+**remote** server. Its first selected SOL/KRW 1H history chart appeared in
+**471 ms**, followed by live quote/orderbook/trades. XRP and ETH both loaded live
+quotes and a numeric price plan with two valid timeframes; their actual hourly
+source gaps remained excluded. The browser logged no warnings/errors. An
+automated ETH timing selector did not match the rendered text, so no reliable
+ETH analysis elapsed-time number is claimed. The subsequent visible result was
+verified. These tests do not claim that the existing Pages site has changed:
+merge, repository-variable wiring and the final Pages rollout still await approval.
 
 Use these settings when preparing the isolated relay service:
 
