@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { DiscoverTable } from '@/components/discover/DiscoverTable/DiscoverTable'
+import { ScenarioBoard } from '@/components/scenarios/ScenarioBoard'
 import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
 import { MarketRadar } from '@/components/market/MarketRadar/MarketRadar'
 import { SimpleMarketSummary } from '@/components/market/SimpleMarketSummary/SimpleMarketSummary'
@@ -49,6 +50,7 @@ export function DashboardPage() {
 
   return (
     <div className={styles.page}>
+      {displayMode === 'simple' && <ScenarioBoard compact />}
       {displayMode === 'simple' && <SimpleMarketSummary snapshot={radar} language={language} />}
       <MarketRadar snapshot={radar} language={language} simpleMode={displayMode === 'simple'} onOpenInstrument={openInstrument} />
       <header className={styles.heading}>

@@ -7,6 +7,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { PositionPlan } from '@/components/portfolio/PositionPlan'
 import { TradeLedgerPanel } from '@/components/portfolio/TradeLedgerPanel'
 import { PortfolioBackupPanel } from '@/components/portfolio/PortfolioBackupPanel'
+import { ScenarioBoard } from '@/components/scenarios/ScenarioBoard'
 import { mergePortfolioBackup } from '@/services/portfolio/portfolioBackup'
 import { realizedByCurrency } from '@/services/portfolio/tradeLedger'
 import { portfolioNumber as number, portfolioPercent } from '@/utils/formatPortfolio'
@@ -95,6 +96,7 @@ export function PortfolioPage() {
     : { realized: 'Recorded realized P/L', closed: 'Closed holding', locked: 'Average and quantity are calculated from the ledger. Correct entries by undoing from the last trade.', delete: 'The trade history and realized P/L of this holding will also be removed.', notice: 'Spot holdings. Includes recorded fees; excludes taxes and FX. Different currencies are never summed. Quotes reflect the time fetched.' }
   return <main className={styles.page}>
     <header className={styles.heading}><span>MY INVESTMENTS</span><h1>{t.title}</h1><p>{pt.subtitle}</p></header>
+    <ScenarioBoard />
     <nav className={styles.actions}><strong>{t.coins}</strong><Link to="/market">{language === 'ko' ? '관심종목 · 마켓' : 'Watchlists · Market'}</Link>{store.positions.length > 0 && <button type="button" aria-expanded={formOpen || !!editing} aria-controls="portfolio-form" onClick={() => { reset(); setFormOpen(true) }}>{pt.add}</button>}<button type="button" onClick={() => setRetry(n => n + 1)}>{t.refresh}</button></nav>
     {store.error && <p role="alert">{t.storage}</p>}
     {totals.length > 0 && <section aria-label={pt.summary} className={styles.overview}>

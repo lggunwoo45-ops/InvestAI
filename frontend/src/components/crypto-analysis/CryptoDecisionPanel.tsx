@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { SaveScenario } from '@/components/scenarios/SaveScenario'
 import { useTechnicalLevelData } from '@/hooks/useTechnicalLevelData'
 import { useDominance } from '@/hooks/useDominance'
 import { buildCryptoDecision, tradeFlow, type AnalysisSeries, type SeriesIssue } from '@/services/cryptoAnalysis/cryptoDecisionEngine'
@@ -7,7 +8,7 @@ import type { Language } from '@/i18n/translations'
 import { portfolioNumber as number } from '@/utils/formatPortfolio'
 import styles from './CryptoDecisionPanel.module.css'
 
-interface Props { instrument: MarketInstrument; daily: AnalysisSeries; language: Language; averagePrice?: number | null; quantity?: number; expert?: boolean }
+interface Props { instrument: MarketInstrument; daily: AnalysisSeries; language: Language; averagePrice?: number | null; quantity?: number; expert?: boolean; positionId?: string }
 const text = {
   ko: {
     title: '지금의 방향과 가격 계획', direction: { buy: '매수 우세', neutral: '중립 · 방향 혼재', sell: '매도 우세', unavailable: '가격 흐름 확인 중' },
@@ -35,7 +36,7 @@ const text = {
   },
 } as const
 
-export function CryptoDecisionPanel({ instrument, daily, language, averagePrice, quantity, expert = false }: Props) {
+export function CryptoDecisionPanel({ instrument, daily, language, averagePrice, quantity, expert = false, positionId }: Props) {
   const hourly = useTechnicalLevelData(instrument, '1H')
   const fourHourly = useTechnicalLevelData(instrument, '4H')
   const dominance = useDominance(daily.dataQuality === 'live')
@@ -74,6 +75,7 @@ export function CryptoDecisionPanel({ instrument, daily, language, averagePrice,
       {averagePrice != null && Number.isFinite(averagePrice) && averagePrice > 0 && <div className={styles.position}><strong>{t.position}: {price(averagePrice)}</strong><span>{t.percent}: {((plan.stop / averagePrice - 1) * 100).toFixed(2)}%</span>{pnl !== null && Number.isFinite(pnl) && <span>{t.pnl}: {price(pnl)}</span>}</div>}
     </> : <p className={styles.notice}>{decision.direction === 'unavailable' ? t.noData : t.noPlan}</p>}
     <div className={styles.reason}><div><h3>{t.reason}</h3><p>{decision.frames.filter(r => !r.issue).map(r => `${t.frame[r.frame]} ${t.trend[r.direction]}`).join(' · ') || t.action.refresh}</p>{reference && !reference.issue && <p>{t.volume}: {reference.volumeRatio === null ? '—' : `${reference.volumeRatio.toFixed(2)}×`} · {t.volatility}: {price(reference.atr!)}</p>}</div><div><h3>{t.contrary}</h3><p>{decision.mixed ? t.mixed : decision.extended ? t.extended : reference?.volumeRatio !== null && reference?.volumeRatio !== undefined && reference.volumeRatio < 0.6 ? t.lowVolume : t.balanced}</p></div></div>
+    <SaveScenario instrument={instrument} decision={decision} language={language} positionId={positionId} />
     <div className={styles.context}>
       <article aria-label={t.flow}><h3>{t.flow}</h3><strong>{flow.direction === 'unavailable' && latestTrade && now - latestTrade.timestamp > 60_000 ? t.flowStale : t.flowLabels[flow.direction]}</strong>{flow.ratio !== null && <p>{t.buyShare}: {(flow.ratio * 100).toFixed(1)}%</p>}<p>{t.sample}: {flow.count} · {t.large}: {flow.largeCount}</p>{flow.threshold !== null && <small>{t.threshold}: {price(flow.threshold)}</small>}{flow.from !== null && flow.to !== null && <small>{date(flow.from)} – {date(flow.to)}</small>}<p>{t.flowNote}</p>{flow.direction === 'unavailable' && <small>{t.flowMissing}</small>}{latestTrade && <small>{t.flowLast}: {date(latestTrade.timestamp)}</small>}</article>
       <article aria-label={t.dominance}><h3>{t.dominance}</h3>{global ? <><strong>{global.point.percent.toFixed(2)}%</strong><p>{t.dominanceHelp}</p>{delta !== null && global.previous ? <><p>{t.prior}: {delta >= 0 ? '+' : ''}{delta.toFixed(2)}%p<br />{date(global.previous.at)} → {date(global.point.at)}</p><p>{delta >= 0.15 ? t.dominanceUp : delta <= -0.15 ? t.dominanceDown : t.dominanceFlat}</p></> : <p>{t.dominanceHistory}</p>}<p>{t.marketChange}: {global.point.marketChange.toFixed(2)}%</p><small>{date(global.point.at)}</small></> : <p>{dominance.loading ? t.dominanceLoading : t.dominanceError}</p>}<a href="https://coinpaprika.com/overview" target="_blank" rel="noreferrer">CoinPaprika ↗</a><small>{t.dominanceNote}</small></article>

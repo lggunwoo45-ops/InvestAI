@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 
 import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
 import { SimpleCandidateCard } from '@/components/simple/SimpleCandidateCard/SimpleCandidateCard'
+import { ScenarioBoard } from '@/components/scenarios/ScenarioBoard'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { useMarketCatalog } from '@/hooks/useMarketCatalog'
 import { useMarketWorkspace } from '@/hooks/useMarketWorkspace'
@@ -73,6 +74,7 @@ export function SimpleModePage() {
     </div>
     {displayMode === 'expert' && <aside className={styles.modeNote} role="note">{uiText[language].displayMode.simpleExpertNote}</aside>}
     <aside className={styles.safety} role="note">{t.safety}</aside>
+    <ScenarioBoard compact />
 
     <section className={styles.candidates} aria-labelledby="simple-crypto-title"><header><div><span>01</span><h2 id="simple-crypto-title">{t.cryptoTitle}</h2><p>{t.cryptoOrder}</p></div><small>{t.cryptoStatus}</small></header>{cryptoCatalog.error && <div className={styles.error} role="alert"><strong>{t.cryptoError}</strong><small>{cryptoCatalog.error}</small><div><button type="button" onClick={() => setCryptoRetry((value) => value + 1)}>{t.retry}</button>{marketDataMode === 'live' && <button type="button" onClick={() => setMarketDataMode('mock')}>{t.useMock}</button>}</div></div>}{cryptoCatalog.loading && <div className={styles.state} role="status">{t.cryptoLoading}</div>}{!cryptoCatalog.loading && !cryptoCatalog.error && simpleCrypto.length === 0 && <div className={styles.state} role="status">{t.cryptoEmpty}</div>}{!cryptoCatalog.loading && !cryptoCatalog.error && simpleCrypto.length > 0 && <div className={styles.list}>{simpleCrypto.map((candidate) => <SimpleCandidateCard key={candidate.id} candidate={candidate} language={language} onOpenMarket={handleOpenMarket} />)}</div>}</section>
 

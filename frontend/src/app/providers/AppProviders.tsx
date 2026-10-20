@@ -7,6 +7,7 @@ import { MarketWorkspaceProvider } from '@/store/MarketWorkspaceProvider'
 import { NewsProviderModeProvider } from '@/store/NewsProviderModeProvider'
 import { UiStoreProvider } from '@/store/UiStoreProvider'
 import { WatchlistProvider } from '@/store/WatchlistProvider'
+import { ScenarioMonitorProvider } from '@/store/ScenarioMonitorProvider'
 
 export function AppProviders({ children }: PropsWithChildren) {
   return (
@@ -15,7 +16,7 @@ export function AppProviders({ children }: PropsWithChildren) {
         <DisplayModeProvider>
           <UiStoreProvider>
             <WatchlistProvider>
-              <MarketWorkspaceProvider><NewsProviderModeProvider>{children}</NewsProviderModeProvider></MarketWorkspaceProvider>
+              <MarketWorkspaceProvider><NewsProviderModeProvider><ScenarioMonitorProvider>{children}</ScenarioMonitorProvider></NewsProviderModeProvider></MarketWorkspaceProvider>
             </WatchlistProvider>
           </UiStoreProvider>
         </DisplayModeProvider>
