@@ -13,10 +13,10 @@ describe('ModeSwitcher', () => {
     const expert = screen.getByRole('button', { name: /Expert Mode/ })
     expect(simple.textContent).toBe('Simple')
     expect(expert.textContent).toBe('Expert')
-    expect(expert.getAttribute('aria-pressed')).toBe('true')
-    fireEvent.click(simple)
     expect(simple.getAttribute('aria-pressed')).toBe('true')
-    expect(expert.getAttribute('aria-pressed')).toBe('false')
+    fireEvent.click(expert)
+    expect(expert.getAttribute('aria-pressed')).toBe('true')
+    expect(simple.getAttribute('aria-pressed')).toBe('false')
   })
   it('renders Korean labels without changing the segment structure', () => {
     window.localStorage.setItem('market-copilot.language', 'ko')

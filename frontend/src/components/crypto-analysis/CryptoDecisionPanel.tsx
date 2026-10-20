@@ -7,14 +7,15 @@ import type { MarketInstrument } from '@/types/market'
 import type { Language } from '@/i18n/translations'
 import { portfolioNumber as number } from '@/utils/formatPortfolio'
 import { formatAnalysisPrice } from '@/utils/formatAnalysisPrice'
+import { decisionGuide, easyDirection } from '@/services/cryptoAnalysis/decisionGuide'
 import styles from './CryptoDecisionPanel.module.css'
 
-interface Props { instrument: MarketInstrument; daily: AnalysisSeries; language: Language; averagePrice?: number | null; quantity?: number; expert?: boolean; positionId?: string; detailsContent?: ReactNode; investmentContent?: ReactNode }
+interface Props { instrument: MarketInstrument; daily: AnalysisSeries; language: Language; averagePrice?: number | null; quantity?: number; expert?: boolean; holding?: boolean; onHoldingChange?: (holding: boolean) => void; positionId?: string; detailsContent?: ReactNode; investmentContent?: ReactNode }
 const tabs = ['summary', 'details', 'investment'] as const
 type AnalysisTab = typeof tabs[number]
 const text = {
   ko: {
-    tabs: { summary: '핵심 요약', details: '상세 근거', investment: '내 투자' }, tabLabel: '코인 분석 보기', investmentHelp: '내 기준을 확인하고 이 분석을 시나리오로 저장하세요.',
+    tabs: { summary: '한눈에 보기', details: '자세히 보기', investment: '내 투자' }, tabLabel: '코인 분석 보기', investmentHelp: '내 평단가를 입력하거나, 다시 보고 싶은 가격을 저장하세요.',
     title: '지금의 방향과 가격 계획', direction: { buy: '매수 우세', neutral: '중립 · 방향 혼재', sell: '매도 우세', unavailable: '분석 데이터 확인 중' },
     target: '목표 기준가', sellTarget: '반등 매도 검토 기준', core: '핵심 근거', trendLabel: '추세', dataPending: '아직 시장 방향을 판단할 데이터가 충분하지 않습니다. 아래 연결 상태를 확인하세요.', details: '시간대별 지표·계산 근거', contextDetails: '큰 체결·비트코인 도미넌스', copy: '요약 복사', copied: '복사했습니다', copyError: '복사 기능을 사용할 수 없습니다', checked: '분석 시각', riskLabel: '주의할 점', stopHint: '기준 시간대 종가 이탈 시 재검토', noVolume: '거래량 비교 근거 확인 중', noReward: '가격 계획이 준비되면 표시합니다',
     action: { poorReward: '손익비가 낮아 더 유리한 진입 구간 대기', pullback: '추격보다 눌림 구간 대기', entry: '지지 확인 후 분할 매수 검토', reduce: '추가 매수보다 반등 시 축소 검토', wait: '방향 확인 전 신규 진입 대기', refresh: '확인된 시간대부터 살펴보세요' },
@@ -49,7 +50,7 @@ const text = {
   },
 } as const
 
-export function CryptoDecisionPanel({ instrument, daily, language, averagePrice, quantity, expert = false, positionId, detailsContent, investmentContent }: Props) {
+export function CryptoDecisionPanel({ instrument, daily, language, averagePrice, quantity, expert = false, holding: holdingInput, onHoldingChange, positionId, detailsContent, investmentContent }: Props) {
   const hourly = useTechnicalLevelData(instrument, '1H')
   const fourHourly = useTechnicalLevelData(instrument, '4H')
   const dominance = useDominance(daily.dataQuality === 'live')
@@ -63,8 +64,11 @@ export function CryptoDecisionPanel({ instrument, daily, language, averagePrice,
   // Include receipts between timer ticks without advancing to an exchange timestamp.
   const now = Math.max(clock, hourly.updatedAt ?? 0, fourHourly.updatedAt ?? 0, daily.updatedAt ?? 0)
   const t = text[language]
+  const ko = language === 'ko'
   const decision = buildCryptoDecision({ '1H': hourly, '4H': fourHourly, '1D': daily }, now)
   const { plan } = decision
+  const holding = holdingInput ?? (averagePrice != null && Number.isFinite(averagePrice) && averagePrice > 0)
+  const guide = decisionGuide(decision, language, holding)
   const reference = decision.frames.find(r => r.frame === plan?.frame) ?? decision.frames.find(r => !r.issue)
   const marketNow = seriesMarketTime(daily, now)
   const flow = tradeFlow(daily.dataQuality === 'live' && daily.connectionStatus === 'live' ? daily.recentTrades ?? [] : [], marketNow)
@@ -81,38 +85,59 @@ export function CryptoDecisionPanel({ instrument, daily, language, averagePrice,
   const volumeSummary = reference?.volumeRatio != null ? `${t.frame[reference.frame]} · ${reference.volumeRatio.toFixed(2)}×` : t.noVolume
   const caution = decision.direction === 'sell' ? t.bearish : decision.extended ? t.extended : decision.mixed ? t.mixed : reference?.volumeRatio != null && reference.volumeRatio < 0.6 ? t.lowVolume : t.balanced
   const copySummary = async () => {
-    const lines = [instrument.symbol, `${t.checked}: ${date(now)}`, t.direction[decision.direction],
-      decision.direction === 'unavailable' ? t.dataPending : t.action[decision.action],
+    const lines = [instrument.symbol, `${t.checked}: ${date(now)}`, easyDirection[language][decision.direction],
+      guide.title, guide.reason, guide.next,
       ...(plan ? [`${t.entry}: ${range(plan.entry)}`, `${decision.direction === 'sell' ? t.sellTarget : t.target}: ${price(plan.target)}`, `${t.stop}: ${price(plan.stop)} (${t.frame[plan.frame]})`, `${t.rr}: ${plan.rewardRisk.toFixed(2)} : 1`] : []),
       `${t.trendLabel}: ${trendSummary || decision.frames.map(r => `${t.frame[r.frame]} ${r.issue ? issue(r.issue) : t.trend[r.direction]}`).join(' · ')}`,
       `${t.volume}: ${volumeSummary}`, ...(decision.direction !== 'unavailable' ? [`${t.riskLabel}: ${caution}`] : []), t.note]
     try { await navigator.clipboard.writeText(lines.join('\n')); setCopyState('copied') } catch { setCopyState('error') }
   }
   return <section className={styles.panel} aria-label={t.title} data-bias={decision.direction}>
-    <header className={styles.heading}><div><span>CRYPTO ANALYSIS</span><h2>{t.title}</h2></div><div className={styles.tools}><small>{t.coverage} {decision.coverage}/3</small><button type="button" onClick={copySummary}>{t.copy}</button><small role="status">{copyState === 'copied' ? t.copied : copyState === 'error' ? t.copyError : ''}</small></div></header>
+    <header className={styles.heading}><h2>{ko ? '지금 무엇을 보면 될까요?' : 'What should I look at now?'}</h2><div className={styles.tools}><button type="button" onClick={copySummary}>{t.copy}</button><small role="status">{copyState === 'copied' ? t.copied : copyState === 'error' ? t.copyError : ''}</small></div></header>
     <div className={styles.tabs} role="tablist" aria-label={t.tabLabel}>{tabs.map((value, index) => <button type="button" role="tab" key={value} id={`${tabId}-${value}`} aria-controls={`${tabId}-${value}-panel`} aria-selected={tab === value} tabIndex={tab === value ? 0 : -1} ref={node => { tabButtons.current[index] = node }} onClick={() => setTab(value)} onKeyDown={event => {
       const next = event.key === 'ArrowRight' ? (index + 1) % tabs.length : event.key === 'ArrowLeft' ? (index + tabs.length - 1) % tabs.length : event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : null
       if (next === null) return
       event.preventDefault(); setTab(tabs[next]); tabButtons.current[next]?.focus()
     }}>{t.tabs[value]}</button>)}</div>
     <div className={styles.tabPanel} role="tabpanel" id={`${tabId}-summary-panel`} aria-labelledby={`${tabId}-summary`} hidden={tab !== 'summary'} tabIndex={0}>
-    <div className={styles.verdict}><strong>{t.direction[decision.direction]}</strong><p>{decision.direction === 'unavailable' ? t.dataPending : t.action[decision.action]}</p>{decision.price !== null && <span>{t.live} · {price(decision.price)}</span>}</div>
-    {daily.dataQuality === 'mock' && <p>{t.demo}</p>}
+    {onHoldingChange && <div className={styles.purpose} role="group" aria-label={ko ? '어떤 상황인가요?' : 'Your situation'}>
+      <button type="button" aria-pressed={!holding} onClick={() => onHoldingChange(false)}>{ko ? '새로 살까 해요' : 'Considering a buy'}</button>
+      <button type="button" aria-pressed={holding} onClick={() => onHoldingChange(true)}>{ko ? '이미 갖고 있어요' : 'Already holding'}</button>
+    </div>}
+    <div className={styles.verdict}>
+      <span className={styles.direction}>{easyDirection[language][decision.direction]}</span>
+      <h3>{guide.title}</h3>
+      <p>{guide.reason}</p>
+    </div>
+    {holding && <div className={styles.holdingSummary}>
+      {averagePrice != null && Number.isFinite(averagePrice) && averagePrice > 0
+        ? <span>{ko ? '내 평단가' : 'My average price'} <strong>{price(averagePrice)}</strong>{decision.price !== null && <> · {ko ? '현재 가격 기준' : 'At current price'} <strong>{((decision.price / averagePrice - 1) * 100).toFixed(2)}%</strong></>}</span>
+        : <span>{ko ? '평단가를 입력하면 내 손익도 함께 볼 수 있어요.' : 'Add your average price to see your return.'}</span>}
+      <button type="button" onClick={() => setTab('investment')}>{ko ? '내 평단가 입력·수정' : 'Edit my average price'} →</button>
+    </div>}
     {plan ? <>
       <div className={styles.prices}>
-        <article><span>{t.entry}</span><strong>{range(plan.entry)}</strong>{plan.supportBasis === 'range' && <small>{t.provisional}</small>}</article>
-        <article><span>{decision.direction === 'sell' ? t.sellTarget : t.target}</span><strong>{price(plan.target)}</strong><small>{plan.targetBasis === 'observed' ? t.observed : t.atrTarget}</small></article>
-        <article className={styles.risk}><span>{t.stop}</span><strong>{price(plan.stop)}</strong><small>{t.frame[plan.frame]} · {t.stopHint}</small></article>
+        <article><span>{ko ? decision.direction === 'sell' ? '오르다가 막힐 수 있는 가격' : '다시 살펴볼 가격 구간' : decision.direction === 'sell' ? 'Where a rebound may stall' : 'Price area to watch'}</span>
+          <strong>{range(decision.direction === 'sell' ? plan.resistance : plan.entry)}</strong>
+          <small>{ko ? decision.direction === 'sell' ? '이 구간을 넘어 오르는지 확인해요.' : '이 구간에 와도 바로 사기보다 하락이 멈추는지 봐요.' : decision.direction === 'sell' ? 'Watch whether the price moves above this area.' : 'Check that the decline stops here; touching the area is not enough.'}</small>
+        </article>
+        <article className={styles.risk}><span>{ko ? decision.direction === 'sell' && !holding ? '하락 판단을 다시 볼 가격' : '더 내려가면 주의할 가격' : decision.direction === 'sell' && !holding ? 'Price that challenges the downward view' : 'Price to watch on a further drop'}</span>
+          <strong>{price(decision.direction === 'sell' && !holding ? plan.sellInvalidation : plan.stop)}</strong>
+          <small>{ko ? `${t.frame[plan.frame]} 단위의 마감 가격이 이 ${decision.direction === 'sell' && !holding ? '위' : '아래'}면 다시 판단해요.` : `Reassess if a ${t.frame[plan.frame]} candle closes ${decision.direction === 'sell' && !holding ? 'above' : 'below'} this price.`}</small>
+        </article>
       </div>
-      {plan.rewardRisk < 1.5 && <p className={styles.notice}>{t.lowReward}</p>}
-    </> : decision.direction !== 'unavailable' && <p className={styles.notice}>{t.noPlan}</p>}
+      <p className={styles.nextCheck}><strong>{ko ? '다음에 확인할 것' : 'What to check next'}</strong>{guide.next}</p>
+    </> : <p className={styles.nextCheck}>{guide.next}</p>}
+    <button className={styles.evidenceLink} type="button" onClick={() => setTab('details')}>{ko ? `3개 시간 흐름 중 ${decision.coverage}개 확인 · 이유 자세히 보기` : `${decision.coverage} of 3 timeframes checked · View the evidence`} →</button>
+    </div>
+    <div className={styles.tabPanel} role="tabpanel" id={`${tabId}-details-panel`} aria-labelledby={`${tabId}-details`} hidden={tab !== 'details'} tabIndex={0}>
+    {daily.dataQuality === 'mock' && <p>{t.demo}</p>}
     {decision.coverage < 3 && <ul className={styles.dataIssues} aria-label={t.coverage}>{decision.frames.map(r => <li key={r.frame}>{t.frame[r.frame]} · {r.issue ? issue(r.issue) : t.trend[r.direction]}</li>)}</ul>}
     {decision.frames.some(r => r.issue === 'loading') && instrument.marketId === 'upbit' && <p className={styles.notice} role="status">{t.connectingHelp}</p>}
     {decision.frames.some(r => r.issue === 'disconnected' || r.issue === 'stale') && <p className={styles.notice} role="status">{t.reconnectHelp}</p>}
     {decision.frames.some(r => r.issue === 'gaps') && <p className={styles.notice}>{t.gapHelp}</p>}
     {decision.direction !== 'unavailable' && <p className={styles.caution}><strong>{t.riskLabel}</strong> · {caution}</p>}
-    </div>
-    <div className={styles.tabPanel} role="tabpanel" id={`${tabId}-details-panel`} aria-labelledby={`${tabId}-details`} hidden={tab !== 'details'} tabIndex={0}>
+    {plan && <div className={styles.referencePrices}><p>{t.entry}: {range(plan.entry)}</p><p>{decision.direction === 'sell' ? t.sellTarget : t.target}: {price(plan.target)} · {plan.targetBasis === 'observed' ? t.observed : t.atrTarget}</p><p>{t.stop}: {price(plan.stop)}</p>{plan.supportBasis === 'range' && <p>{t.provisional}</p>}{plan.rewardRisk < 1.5 && <p>{t.lowReward}</p>}</div>}
       <section className={styles.evidence} aria-label={t.core}><h3>{t.core}</h3><dl>
         <div><dt>{t.trendLabel}</dt><dd>{trendSummary || t.dataPending}</dd></div>
         <div><dt>{t.volume}</dt><dd>{volumeSummary}</dd></div>
@@ -132,6 +157,7 @@ export function CryptoDecisionPanel({ instrument, daily, language, averagePrice,
     <small>{language === 'ko' ? '대형 체결: 표본 금액 상위 25%이면서 중앙값의 1.5배 이상, 3건 이상일 때 금액 비중으로 우세 표시.' : 'Large trades: top quartile and at least 1.5× median notional; bias requires at least three large executions.'}</small>
     </details>
     {detailsContent}
+    <p>{t.note}</p>
     </div>
     <div className={styles.tabPanel} role="tabpanel" id={`${tabId}-investment-panel`} aria-labelledby={`${tabId}-investment`} hidden={tab !== 'investment'} tabIndex={0}>
       <p>{t.investmentHelp}</p>
@@ -139,6 +165,6 @@ export function CryptoDecisionPanel({ instrument, daily, language, averagePrice,
       <SaveScenario instrument={instrument} decision={decision} language={language} positionId={positionId} />
       {investmentContent}
     </div>
-    <footer>{t.note}{instrument.marketId === 'binance-futures' && <p>{t.futures}</p>}</footer>
+    <footer>{ko ? '가격 기록으로 계산한 참고 정보예요. 수익을 보장하지 않으며 거래 비용은 포함하지 않아요.' : 'A reference calculated from price history. Returns are not guaranteed; trading costs are excluded.'}{instrument.marketId === 'binance-futures' && <p>{t.futures}</p>}</footer>
   </section>
 }

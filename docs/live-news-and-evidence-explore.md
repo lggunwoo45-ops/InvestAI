@@ -23,6 +23,29 @@ and refuse stale, missing, mock or wrong-instrument evidence. Answers retain the
 answer timestamp, remain only in memory, and reset on instrument/mode/language
 change. No questions, holdings or notes are sent to an AI provider.
 
+## Readability and focused screens
+
+- First-time visitors start in Simple view. Existing saved Simple/Expert choices
+  are preserved; this does not change PC development or provider configuration.
+- Crypto analysis leads with an everyday-language action, one explanation and
+  two reference price areas. A buyer and a holder receive different guidance.
+  Entering a positive average price selects holding context, without writing or
+  modifying a saved portfolio position.
+- Missing, stale and example data are explicitly distinguished from a market
+  waiting signal. Entry guidance remains conditional; touching a price area is
+  not treated as a confirmed purchase trigger. The calculation engine, price
+  precision, timeframe rules and expiry thresholds are unchanged.
+- Full target/stop levels, indicators, volume, execution samples and dominance
+  remain in Evidence. Investment inputs and scenario saving remain in My
+  investment. The redundant global Copilot sidebar is suppressed on My Analysis,
+  with its stored preference restored on other routes.
+- Live search shows four matching coins initially, with a Show more button.
+  Optional filters and detailed price evidence are collapsed, and active filters
+  remain indicated when collapsed. All scanned results still participate in
+  filtering; pagination creates no additional market-data requests.
+- Korean evidence questions use the same plain-language action summary.
+  This is a presentation change, not a new prediction model or free-form AI.
+
 ## Data and resource boundaries
 
 - Official feeds: [CoinDesk](https://www.coindesk.com/arc/outboundfeeds/rss)

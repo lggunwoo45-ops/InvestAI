@@ -67,7 +67,14 @@ describe('Market Copilot application shell', () => {
   it('focuses AI Explore on candidates without changing the saved Copilot preference', async () => {
     render(<App />)
     fireEvent.click(screen.getByRole('link', { name: 'AI Explore' }))
-    expect(await screen.findByRole('heading', { level: 1, name: 'AI Explore' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { level: 1, name: 'Find coins to review' })).toBeTruthy()
+    expect(screen.queryByRole('complementary', { name: 'AI Copilot' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Toggle AI Copilot' })).toBeNull()
+    fireEvent.click(screen.getByRole('link', { name: 'Home' }))
+    expect(await screen.findByRole('complementary', { name: 'AI Copilot' })).toBeTruthy()
+
+    openRoute('/my-analysis')
+    expect(await screen.findByRole('heading', { name: 'My Instrument Analysis' })).toBeTruthy()
     expect(screen.queryByRole('complementary', { name: 'AI Copilot' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Toggle AI Copilot' })).toBeNull()
     fireEvent.click(screen.getByRole('link', { name: 'Home' }))
@@ -75,7 +82,7 @@ describe('Market Copilot application shell', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Close AI Copilot' }))
     fireEvent.click(screen.getByRole('link', { name: 'AI Explore' }))
-    expect(await screen.findByRole('heading', { level: 1, name: 'AI Explore' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { level: 1, name: 'Find coins to review' })).toBeTruthy()
     fireEvent.click(screen.getByRole('link', { name: 'Home' }))
     expect(screen.queryByRole('complementary', { name: 'AI Copilot' })).toBeNull()
     expect(screen.getByRole('button', { name: 'Toggle AI Copilot' }).getAttribute('aria-pressed')).toBe('false')
@@ -261,6 +268,7 @@ describe('Market Copilot application shell', () => {
   })
 
   it('provides persisted multi-watchlist dashboard controls', async () => {
+    window.localStorage.setItem('market-copilot.displayMode.v1', 'expert')
     window.history.pushState({}, '', '/dashboard')
     render(<App />)
 

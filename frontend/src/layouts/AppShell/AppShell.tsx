@@ -14,13 +14,15 @@ export function AppShell() {
   const { displayMode } = useDisplayMode()
   const { pathname } = useLocation()
   const isExplore = pathname.replace(/\/$/, '') === '/ai-analysis'
-  const showCopilot = isAiCopilotOpen && !isExplore
+  // Analysis has its own contextual question panel; avoid two competing explanations.
+  const focusedAnalysis = isExplore || pathname.replace(/\/$/, '') === '/my-analysis'
+  const showCopilot = isAiCopilotOpen && !focusedAnalysis
 
   return (
     <div className={classNames(styles.shell, !isSidebarPinned && styles.sidebarUnpinned)} data-display-mode={displayMode} data-explore={isExplore || undefined}>
       <Sidebar />
       <div className={styles.workspace}>
-        <Header hideCopilotToggle={isExplore} />
+        <Header hideCopilotToggle={focusedAnalysis} />
         <div className={classNames(styles.body, !showCopilot && styles.aiCopilotClosed)}>
           <main className={styles.main}>
             <BetaRouteBanner />

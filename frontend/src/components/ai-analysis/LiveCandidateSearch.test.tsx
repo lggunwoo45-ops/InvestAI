@@ -43,3 +43,24 @@ it('cancels pending work on stop, data mode changes and navigation', async () =>
   view.unmount()
   expect(signal?.aborted).toBe(true)
 })
+
+it('shows four results first and keeps filtering all results behind the optional controls', async () => {
+  const coins = Array.from({ length: 6 }, (_, index) => ({ ...coin, id: `coin-${index}`, name: `Coin ${index}`, symbol: `C${index}/KRW`, volume24h: 1000 - index }))
+  mocks.catalog.mockResolvedValue({ source: 'live', fetchedAt: Date.now(), instruments: coins })
+  mocks.scan.mockImplementation(async (_pool, { onResult }) => coins.forEach((instrument, index) => onResult({
+    instrument, analyzedAt: Date.now(), expiresAt: Date.now() + 90000, timedOut: false,
+    decision: { direction: 'buy', action: 'pullback', coverage: 2, extended: index < 4, plan: null, frames: [] },
+  }, index + 1, 6)))
+  renderWithProviders(<LiveCandidateSearch />)
+  expect(screen.getByText('More filters').closest('details')?.open).toBe(false)
+  fireEvent.click(screen.getByRole('button', { name: 'Scan live data' }))
+  expect(await screen.findAllByRole('link', { name: /Open current analysis/ })).toHaveLength(4)
+  fireEvent.click(screen.getByRole('button', { name: 'Show more coins (2 remaining)' }))
+  expect(screen.getAllByRole('link', { name: /Open current analysis/ })).toHaveLength(6)
+  fireEvent.click(screen.getByText('More filters'))
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Exclude extended moves' }))
+  expect(screen.getAllByRole('link', { name: /Open current analysis/ })).toHaveLength(2)
+  fireEvent.click(screen.getByText('More filters'))
+  expect(screen.getByText('· active')).toBeTruthy()
+  expect(mocks.catalog).toHaveBeenCalledTimes(1)
+})
