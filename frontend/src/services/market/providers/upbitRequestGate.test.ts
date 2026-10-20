@@ -2,6 +2,33 @@ import { afterEach, expect, it, vi } from 'vitest'
 import { UpbitRequestGate } from './upbitRequestGate'
 
 afterEach(() => vi.useRealTimers())
+it('moves the selected chart ahead of queued background work without shortening cooldown', async () => {
+  vi.useFakeTimers()
+  const gate = new UpbitRequestGate(), order: string[] = []
+  await gate.run(() => order.push('catalog'))
+  const background = gate.run(() => order.push('background'), undefined, () => 0)
+  await vi.advanceTimersByTimeAsync(1000)
+  const selected = gate.run(() => order.push('selected'), undefined, () => 20)
+  await vi.advanceTimersByTimeAsync(9499)
+  expect(order).toEqual(['catalog'])
+  await vi.advanceTimersByTimeAsync(1); await selected
+  expect(order).toEqual(['catalog', 'selected'])
+  await vi.advanceTimersByTimeAsync(10_500); await background
+  expect(order).toEqual(['catalog', 'selected', 'background'])
+})
+it('promotes a shared pending request when a foreground subscriber joins and keeps FIFO ties', async () => {
+  vi.useFakeTimers()
+  const gate = new UpbitRequestGate(), order: string[] = []
+  await gate.run(() => {})
+  let priority = 0
+  const first = gate.run(() => order.push('other'), undefined, () => 10)
+  const shared = gate.run(() => order.push('shared'), undefined, () => priority)
+  priority = 20
+  await vi.advanceTimersByTimeAsync(10_500); await shared
+  expect(order).toEqual(['shared'])
+  await vi.advanceTimersByTimeAsync(10_500); await first
+  expect(order).toEqual(['shared', 'other'])
+})
 it('paces catalog, candles and websocket handshakes through one boundary', async () => {
   vi.useFakeTimers()
   const gate = new UpbitRequestGate(); const starts: number[] = []

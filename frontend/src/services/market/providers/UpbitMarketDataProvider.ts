@@ -68,11 +68,11 @@ export const upbitMarketDataProvider: RealtimeMarketProvider = {
   id: 'Upbit Korea',
   supports: (instrument) => instrument.marketId === 'upbit',
 
-  async loadSnapshot(instrument, timeframe, signal) {
+  async loadSnapshot(instrument, timeframe, signal, priority) {
     const market = instrument.providerSymbol ?? upbitMarketCode(instrument.symbol)
     // Only historical candles need REST. Initial ticker/orderbook/trades arrive
     // through the public stream instead of four competing browser REST calls.
-    const candleRows = await fetchJson<readonly UpbitCandle[]>(`${restBaseUrl}/candles/${candlePath[timeframe]}?market=${encodeURIComponent(market)}&count=120`, signal)
+    const candleRows = await fetchJson<readonly UpbitCandle[]>(`${restBaseUrl}/candles/${candlePath[timeframe]}?market=${encodeURIComponent(market)}&count=120`, signal, priority)
     const candles: readonly Candle[] = candleRows.map((row) => ({
       timestamp: row.candle_date_time_utc ? Date.parse(`${row.candle_date_time_utc}Z`) : Math.floor(row.timestamp / timeframeMilliseconds[timeframe]) * timeframeMilliseconds[timeframe],
       open: row.opening_price,
@@ -90,7 +90,7 @@ export const upbitMarketDataProvider: RealtimeMarketProvider = {
     }
   },
 
-  subscribe(instrument, timeframe, initialSnapshot, onEvent) {
+  subscribe(instrument, timeframe, initialSnapshot, onEvent, priority) {
     const market = instrument.providerSymbol ?? upbitMarketCode(instrument.symbol)
     let snapshot: MarketDetailSnapshot = initialSnapshot
     let connected = false
@@ -104,7 +104,7 @@ export const upbitMarketDataProvider: RealtimeMarketProvider = {
       const controller = new AbortController()
       refreshController = controller
       recovering = true
-      void upbitMarketDataProvider.loadSnapshot(instrument, timeframe, controller.signal).then(value => {
+      void upbitMarketDataProvider.loadSnapshot(instrument, timeframe, controller.signal, priority).then(value => {
         if (!active || controller.signal.aborted) return
         snapshot = value
         lastPriceAt = 0
@@ -118,6 +118,7 @@ export const upbitMarketDataProvider: RealtimeMarketProvider = {
       })
     }
     const stop = subscribeUpbitStream(market, {
+      priority,
       status: (status, reconnectAttempt) => {
         if (status === 'live') {
           if (connected) refresh()

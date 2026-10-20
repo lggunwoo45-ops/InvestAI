@@ -26,6 +26,24 @@ function pendingCatalogRequests() {
 afterEach(() => vi.restoreAllMocks())
 
 describe('useMarketCatalog cancellation', () => {
+  it('defers an inactive market, aborts on leaving it, and requests fresh data when returning', async () => {
+    const requests = pendingCatalogRequests()
+    const { result, rerender } = renderHook(({ enabled }) => useMarketCatalog('upbit-krw', 'live', 0, enabled), { initialProps: { enabled: false } })
+    expect(requests).toHaveLength(0)
+    expect(result.current).toMatchObject({ catalog: null, loading: false })
+    rerender({ enabled: true })
+    expect(requests).toHaveLength(1)
+    await act(async () => requests[0].resolve(catalog('upbit-krw')))
+    expect(result.current.catalog).not.toBeNull()
+    rerender({ enabled: false })
+    expect(requests[0].signal?.aborted).toBe(true)
+    expect(result.current.catalog).toBeNull()
+    rerender({ enabled: true })
+    expect(requests).toHaveLength(2)
+    expect(result.current).toMatchObject({ catalog: null, loading: true })
+    await act(async () => requests[1].reject(new Error('Refresh failed')))
+    expect(result.current).toMatchObject({ catalog: null, loading: false, error: 'Refresh failed' })
+  })
   it('aborts an in-flight catalog request on cleanup', () => {
     const requests = pendingCatalogRequests()
     const { unmount } = renderHook(() => useMarketCatalog('upbit-krw', 'live', 0))

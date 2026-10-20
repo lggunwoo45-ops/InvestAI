@@ -5,4 +5,6 @@ export interface MarketCatalogProvider {
   readonly id: string
   supports(venue: MarketVenue, mode: MarketDataMode): boolean
   load(venue: MarketVenue, signal?: AbortSignal): Promise<MarketCatalog>
+  /** Optional single request covering all venues supported by this provider. */
+  loadAll?(signal?: AbortSignal): Promise<readonly MarketCatalog[]>
 }

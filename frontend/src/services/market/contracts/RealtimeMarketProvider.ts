@@ -14,11 +14,12 @@ export interface ProviderStreamEvent {
 export interface RealtimeMarketProvider {
   readonly id: string
   supports(instrument: MarketInstrument): boolean
-  loadSnapshot(instrument: MarketInstrument, timeframe: ChartTimeframe, signal?: AbortSignal): Promise<MarketDetailSnapshot>
+  loadSnapshot(instrument: MarketInstrument, timeframe: ChartTimeframe, signal?: AbortSignal, priority?: () => number): Promise<MarketDetailSnapshot>
   subscribe(
     instrument: MarketInstrument,
     timeframe: ChartTimeframe,
     initialSnapshot: MarketDetailSnapshot,
     onEvent: (event: ProviderStreamEvent) => void,
+    priority?: () => number,
   ): () => void
 }

@@ -28,6 +28,7 @@ interface CandlestickChartProps {
   instrument: MarketInstrument
   timeframe: ChartTimeframe
   mode: MarketDataMode
+  preview?: boolean
   technicalAnalysis: TechnicalLevelAnalysis
   technicalLoading?: boolean
 }
@@ -79,13 +80,14 @@ function chartPricePrecision(price: number, quoteCurrency: string) {
   return 2
 }
 
-export const CandlestickChart = memo(function CandlestickChart({ candles, instrument, timeframe, mode, technicalAnalysis, technicalLoading = false }: CandlestickChartProps) {
+export const CandlestickChart = memo(function CandlestickChart({ candles, instrument, timeframe, mode, preview = false, technicalAnalysis, technicalLoading = false }: CandlestickChartProps) {
   const { language } = useLanguage()
   const containerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
   const candleSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null)
   const volumeSeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null)
   const dataKeyRef = useRef<string | null>(null)
+  const previousCandlesRef = useRef<readonly Candle[]>([])
   const activePriceLinesRef = useRef<Map<string, IPriceLine>>(new Map())
   const initialPriceRef = useRef(instrument.lastPrice)
   const [analysisMode, setAnalysisMode] = useState(false)
@@ -180,7 +182,13 @@ export const CandlestickChart = memo(function CandlestickChart({ candles, instru
       color: candle.close >= candle.open ? chartColor('--color-positive-soft', '#e5f5ee') : chartColor('--color-danger-soft', '#fff0f2'),
     }))
     const dataKey = `${instrument.id}:${timeframe}`
-    if (dataKeyRef.current !== dataKey) {
+    const previous = previousCandlesRef.current
+    // REST refreshes can correct older bars; update(last) would leave cached history on screen.
+    const incremental = previous.length > 0 && (candles.length === previous.length || candles.length === previous.length + 1)
+      && previous.slice(0, -1).every((candle, index) => candle === candles[index])
+      && (candles.length === previous.length || previous.at(-1) === candles[previous.length - 1])
+    previousCandlesRef.current = candles
+    if (dataKeyRef.current !== dataKey || !incremental) {
       candleSeriesRef.current?.setData(candleData)
       volumeSeriesRef.current?.setData(volumeData)
       if (candleData.length > 0) chartRef.current?.timeScale().fitContent()
@@ -219,8 +227,8 @@ export const CandlestickChart = memo(function CandlestickChart({ candles, instru
         <span>L {priceLabel.format(latest?.low ?? 0)}</span><span>C {priceLabel.format(latest?.close ?? 0)}</span>
       </div>
       <div className={styles.chartViewport}>
-        <div ref={containerRef} className={styles.canvas} role="img" aria-label={`${instrument.symbol} ${timeframe} TradingView candlestick chart in ${mode} mode`} />
-        <div className={styles.watermark}>TRADINGVIEW LIGHTWEIGHT CHARTS · {mode.toUpperCase()}</div>
+        <div ref={containerRef} className={styles.canvas} role="img" aria-label={`${instrument.symbol} ${timeframe} TradingView candlestick chart in ${preview ? 'cached preview' : mode} mode`} />
+        <div className={styles.watermark}>TRADINGVIEW LIGHTWEIGHT CHARTS · {preview ? 'CACHED PREVIEW' : mode.toUpperCase()}</div>
       </div>
       <ChartAnalysisControls
         language={language}

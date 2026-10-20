@@ -1,5 +1,6 @@
 import type { MarketInstrument } from '@/types/market'
 import { fetchUpbitJson } from './upbitRequest'
+import type { RequestPriority } from './upbitRequestGate'
 import type { Candle, ChartTimeframe, MarketDetailSnapshot, OrderbookLevel, RecentTrade } from '@/types/marketDetail'
 
 export const timeframeMilliseconds: Record<ChartTimeframe, number> = {
@@ -70,8 +71,8 @@ export function createTradeCandle(snapshot: MarketDetailSnapshot, trade: RecentT
   return { timestamp, open, high: Math.max(open, trade.price), low: Math.min(open, trade.price), close: trade.price, volume: trade.amount }
 }
 
-export async function fetchJson<T>(url: string, signal?: AbortSignal): Promise<T> {
-  if (url.startsWith('https://api.upbit.com/v1/')) return fetchUpbitJson<T>(url, signal)
+export async function fetchJson<T>(url: string, signal?: AbortSignal, priority?: RequestPriority): Promise<T> {
+  if (url.startsWith('https://api.upbit.com/v1/')) return fetchUpbitJson<T>(url, signal, priority)
   const response = await fetch(url, { signal, headers: { Accept: 'application/json' } })
   if (!response.ok) throw new Error(`Market request failed with ${response.status}`)
   return response.json() as Promise<T>

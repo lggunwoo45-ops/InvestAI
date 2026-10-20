@@ -48,6 +48,20 @@ const candles: readonly Candle[] = Array.from({ length: 60 }, (_, index) => {
 const technicalAnalysis = buildTechnicalLevelAnalysis({ instrument, candles, language: 'en', dataQuality: 'mock' })
 
 describe('CandlestickChart chart overlays', () => {
+  it('replaces all cached bars when refreshed history corrects an older candle', () => {
+    chartMock.candleSeries.setData.mockClear()
+    chartMock.candleSeries.update.mockClear()
+    const { rerender } = render(<LanguageProvider><CandlestickChart candles={candles} instrument={instrument} timeframe="1H" mode="live" preview technicalAnalysis={technicalAnalysis} /></LanguageProvider>)
+    expect(screen.getByRole('img', { name: /cached preview/ })).toBeTruthy()
+    const refreshed = candles.map((candle, index) => index === 0 ? { ...candle, close: 101 } : { ...candle })
+    rerender(<LanguageProvider><CandlestickChart candles={refreshed} instrument={instrument} timeframe="1H" mode="live" technicalAnalysis={technicalAnalysis} /></LanguageProvider>)
+    expect(chartMock.candleSeries.setData).toHaveBeenCalledTimes(2)
+    expect(chartMock.candleSeries.setData.mock.lastCall?.[0][0].close).toBe(101)
+    const tick = [...refreshed.slice(0, -1), { ...refreshed.at(-1)!, close: 101 }]
+    rerender(<LanguageProvider><CandlestickChart candles={tick} instrument={instrument} timeframe="1H" mode="live" technicalAnalysis={technicalAnalysis} /></LanguageProvider>)
+    expect(chartMock.candleSeries.setData).toHaveBeenCalledTimes(2)
+    expect(chartMock.candleSeries.update).toHaveBeenCalledOnce()
+  })
   beforeEach(() => {
     localStorage.clear()
     chartMock.createChart.mockClear()

@@ -1,5 +1,5 @@
 import { fetchJson, finiteNumber } from '@/services/market/providers/providerUtils'
-import type { MarketCatalog, MarketInstrument } from '@/types/market'
+import type { MarketCatalog, MarketInstrument, MarketVenue } from '@/types/market'
 import type { MarketCatalogProvider } from './MarketCatalogProvider'
 
 interface UpbitTicker {
@@ -19,14 +19,21 @@ export const upbitCatalogProvider: MarketCatalogProvider = {
     const quote = venue.slice('upbit-'.length).toUpperCase()
     if (!quotes.some((item) => item === quote)) throw new Error('Unsupported Upbit quote market')
 
-    // Browser-originated Upbit quotation requests are rate-limited to one request
-    // per 10 seconds. Build the catalog from the all-tickers endpoint alone so a
-    // static web deployment does not issue concurrent REST requests on startup.
-    const tickers = await fetchJson<readonly UpbitTicker[]>(
-      `https://api.upbit.com/v1/ticker/all?quote_currencies=${encodeURIComponent(quote)}`,
-      signal,
-    )
-    if (!Array.isArray(tickers)) throw new Error('Invalid Upbit catalog response')
+    return (await loadAll(signal)).find(catalog => catalog.venue === venue)!
+  },
+  loadAll,
+}
+
+async function loadAll(signal?: AbortSignal): Promise<readonly MarketCatalog[]> {
+  // Upbit supports comma-separated quotes. One paced request supplies all three
+  // catalogs; MarketDataService shares the pending request and caches each venue.
+  const tickers = await fetchJson<readonly UpbitTicker[]>(
+    'https://api.upbit.com/v1/ticker/all?quote_currencies=KRW,BTC,USDT', signal,
+  )
+  if (!Array.isArray(tickers)) throw new Error('Invalid Upbit catalog response')
+  const fetchedAt = Date.now()
+  return quotes.map(quote => {
+    const venue: MarketVenue = `upbit-${quote.toLowerCase()}` as MarketVenue
 
     const instruments: MarketInstrument[] = tickers
       .filter((ticker) => typeof ticker.market === 'string' && ticker.market.startsWith(`${quote}-`))
@@ -49,6 +56,6 @@ export const upbitCatalogProvider: MarketCatalogProvider = {
         }
       })
 
-    return { venue, instruments, source: 'live', fetchedAt: Date.now() }
-  },
+    return { venue, instruments, source: 'live', fetchedAt }
+  })
 }
