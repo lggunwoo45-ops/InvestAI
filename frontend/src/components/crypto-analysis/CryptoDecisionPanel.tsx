@@ -8,14 +8,14 @@ import type { Language } from '@/i18n/translations'
 import { portfolioNumber as number } from '@/utils/formatPortfolio'
 import { formatAnalysisPrice } from '@/utils/formatAnalysisPrice'
 import { decisionGuide, easyDirection } from '@/services/cryptoAnalysis/decisionGuide'
+import type { AnalysisTab } from '@/services/myAnalysis/analysisSession'
 import styles from './CryptoDecisionPanel.module.css'
 
-interface Props { instrument: MarketInstrument; daily: AnalysisSeries; language: Language; averagePrice?: number | null; quantity?: number; expert?: boolean; holding?: boolean; onHoldingChange?: (holding: boolean) => void; positionId?: string; detailsContent?: ReactNode; investmentContent?: ReactNode }
+interface Props { instrument: MarketInstrument; daily: AnalysisSeries; language: Language; averagePrice?: number | null; quantity?: number; expert?: boolean; holding?: boolean; onHoldingChange?: (holding: boolean) => void; positionId?: string; detailsContent?: ReactNode; investmentContent?: ReactNode; activeTab?: AnalysisTab; onTabChange?: (tab: AnalysisTab) => void }
 const tabs = ['summary', 'details', 'investment'] as const
-type AnalysisTab = typeof tabs[number]
 const text = {
   ko: {
-    tabs: { summary: '한눈에 보기', details: '자세히 보기', investment: '내 투자' }, tabLabel: '코인 분석 보기', investmentHelp: '내 평단가를 입력하거나, 다시 보고 싶은 가격을 저장하세요.',
+    tabs: { summary: '한눈에 보기', details: '자세히 보기', investment: '내 평단가·가격 기준' }, tabLabel: '코인 분석 보기', investmentHelp: '이 종목의 평단가를 입력하거나 관심 가격을 저장하세요. 보유 코인 전체는 왼쪽 ‘내 투자’에서 관리해요.',
     title: '지금의 방향과 가격 계획', direction: { buy: '매수 우세', neutral: '중립 · 방향 혼재', sell: '매도 우세', unavailable: '분석 데이터 확인 중' },
     target: '목표 기준가', sellTarget: '반등 매도 검토 기준', core: '핵심 근거', trendLabel: '추세', dataPending: '아직 시장 방향을 판단할 데이터가 충분하지 않습니다. 아래 연결 상태를 확인하세요.', details: '시간대별 지표·계산 근거', contextDetails: '큰 체결·비트코인 도미넌스', copy: '요약 복사', copied: '복사했습니다', copyError: '복사 기능을 사용할 수 없습니다', checked: '분석 시각', riskLabel: '주의할 점', stopHint: '기준 시간대 종가 이탈 시 재검토', noVolume: '거래량 비교 근거 확인 중', noReward: '가격 계획이 준비되면 표시합니다',
     action: { poorReward: '손익비가 낮아 더 유리한 진입 구간 대기', pullback: '추격보다 눌림 구간 대기', entry: '지지 확인 후 분할 매수 검토', reduce: '추가 매수보다 반등 시 축소 검토', wait: '방향 확인 전 신규 진입 대기', refresh: '확인된 시간대부터 살펴보세요' },
@@ -26,13 +26,13 @@ const text = {
     gapHelp: '누락 구간은 임의로 채우지 않습니다. 정상 시간대가 2개 이상이면 해당 근거로 분석을 제공합니다.', gapRange: '원본 데이터가 없는 구간',
     live: '실제 시세', coverage: '시간대 확인', reason: '왜 이렇게 보나요?', contrary: '반대 근거도 확인하세요', mixed: '시간대별 방향이 달라 큰 흐름과 단기 움직임이 충돌합니다.', extended: 'RSI 과열 또는 이동평균 대비 이격이 커 추격 매수에 불리합니다.', lowVolume: '최근 완료 봉의 거래량이 평소보다 적어 추세 확인이 약합니다.', balanced: '추세가 유지돼도 지지 이탈이나 거래량 감소가 나타나면 다시 판단해야 합니다.',
     entry: '매수 관심 구간', resistance: '반등 매도 검토 · 저항 구간', stop: '매수 가정 해제 기준', sellInvalidation: '매도 우세 재검토 기준', rr: '관심 구간 중간값 기준 손익비', atrTarget: '관측 저항 없음 · ATR 2배 확장 기준', observed: '완료 봉의 관측 저항 기준', provisional: '피벗 지지 미확인 · 최근 저가를 임시 기준으로 사용', lowReward: '손익비가 1.5 미만입니다. 더 유리한 진입 가격이나 새로운 저항 구조를 기다리세요.', futures: '선물 종목의 가격 흐름입니다. 레버리지·펀딩비·청산 가격은 이 계획에 반영되지 않습니다.', condition: '관심 구간에서 지지를 확인한 뒤 검토합니다. 기준 시간대 종가가 아래 가격을 이탈하면 매수 가정을 다시 검토하세요.', bearish: '하락 추세 중 지지 가격에 닿았다는 이유만으로 매수하지 않습니다. 반등 저항과 추세 회복을 먼저 확인하세요.', invalidation: '기준 시간대 종가가 위 가격을 회복하면 매도 우세 해석을 다시 검토합니다.', noData: '시간대별 연결 상태를 확인하고 있습니다. 실제 시세와 완료 봉이 확보되는 대로 방향과 가격 계획을 표시합니다.', noPlan: '현재가 아래의 지지와 유효한 변동 폭이 확인되면 가격 구간을 표시합니다. 지금은 표시된 추세를 기준으로 대기하세요.',
-    volume: '평소 대비 거래량', volatility: '평균 변동 폭 (ATR)', position: '내 보유 기준', pnl: '가정 해제 가격에서 평가손익', percent: '평단가 대비',
+    volume: '평소 대비 거래량', volatility: '평균 변동 폭 (ATR)', position: '내 평단가', pnl: '주의 가격에서 예상 손익', percent: '주의 가격에서 예상 수익률',
     flow: '큰 체결은 어느 쪽인가요?', flowLast: '최근 수신 체결 시각', flowStale: '체결 갱신 지연 · 우세 판단 보류', flowMissing: '5분 이내 유효 체결 10건과 대형 체결 3건이 필요합니다.', flowLabels: { buy: '대형 체결 매수 우세', sell: '대형 체결 매도 우세', neutral: '대형 체결 매수·매도 균형', unavailable: '대형 체결 표본 축적 중' }, buyShare: '대형 체결 금액 중 매수 비중', sample: '관측 표본', large: '대형 체결', threshold: '이번 표본의 대형 기준', flowNote: '선택 거래소 최근 최대 20건 중 상대적으로 큰 체결입니다. 전체 5분 거래나 고래 지갑의 매집·분산을 뜻하지 않습니다.',
     dominance: '비트코인 도미넌스', dominanceHelp: '전체 암호자산 시가총액에서 BTC가 차지하는 비중', dominanceLoading: '시장 전체 데이터 조회 중', dominanceError: '도미넌스 연결 불가 · 가격 분석은 계속 제공됩니다.', dominanceHistory: '이 브라우저의 비교 기록 축적 중 · 30분 이후부터 변화 비교', dominanceUp: 'BTC 비중 상승: 알트코인의 상대 약세 가능성을 함께 확인하세요.', dominanceDown: 'BTC 비중 하락: 알트코인으로 강세가 확산되는지 확인하세요.', dominanceFlat: '관측 기간의 BTC 비중 변화는 작습니다.', dominanceNote: '비중 상승이 BTC 가격 상승이나 실제 자금 유입을 의미하지는 않습니다. 단독 매수·매도 신호로 사용하지 않습니다.', marketChange: '전체 시가총액 24시간 변화', prior: '이 브라우저 관측 대비',
     detail: '계산 근거와 데이터 시점', close: '마지막 완료 봉', rule: '완료 봉의 20·50 이동평균 정렬을 1시간:4시간:일봉 = 1:2:3으로 합산합니다. 2개 이상 시간대와 방향 비중 50% 이상에서 우세를 표시합니다. RSI 14·ATR 14는 Wilder 방식이며, 거래량은 직전 20개 완료 봉 평균과 비교합니다.', note: '규칙 기반 가격 분석입니다. 우세는 수익 확률이 아니며 주문을 실행하지 않습니다. 가격 계획과 손익비는 수수료·세금·슬리피지 제외입니다.', demo: '모의 시세에서는 실제 매수·매도 우세와 가격 계획을 표시하지 않습니다.',
   },
   en: {
-    tabs: { summary: 'Summary', details: 'Evidence', investment: 'My investment' }, tabLabel: 'Crypto analysis views', investmentHelp: 'Review your own criteria and save this analysis as a scenario.',
+    tabs: { summary: 'Summary', details: 'Evidence', investment: 'My price criteria' }, tabLabel: 'Crypto analysis views', investmentHelp: 'Review your own criteria and save this analysis as a scenario.',
     title: 'Direction and price plan', direction: { buy: 'Buy-side bias', neutral: 'Neutral · mixed', sell: 'Sell-side bias', unavailable: 'Checking analysis data' },
     target: 'Target reference', sellTarget: 'Rebound sell-review reference', core: 'Key evidence', trendLabel: 'Trend', dataPending: 'There is not enough data to assess market direction yet. Check the connection status below.', details: 'Timeframe indicators and calculations', contextDetails: 'Large executions and Bitcoin dominance', copy: 'Copy summary', copied: 'Copied', copyError: 'Copy is unavailable', checked: 'Analysis time', riskLabel: 'Watch for', stopHint: 'Reassess on a reference-timeframe close below', noVolume: 'Checking volume evidence', noReward: 'Available when the price plan is ready',
     action: { poorReward: 'Wait for a better reward/risk entry', pullback: 'Wait for a pullback before chasing', entry: 'Consider staged entry after support holds', reduce: 'Review reducing on rebounds before adding', wait: 'Wait for direction before a new entry', refresh: 'Review the timeframes already available' },
@@ -50,13 +50,15 @@ const text = {
   },
 } as const
 
-export function CryptoDecisionPanel({ instrument, daily, language, averagePrice, quantity, expert = false, holding: holdingInput, onHoldingChange, positionId, detailsContent, investmentContent }: Props) {
+export function CryptoDecisionPanel({ instrument, daily, language, averagePrice, quantity, expert = false, holding: holdingInput, onHoldingChange, positionId, detailsContent, investmentContent, activeTab, onTabChange }: Props) {
   const hourly = useTechnicalLevelData(instrument, '1H')
   const fourHourly = useTechnicalLevelData(instrument, '4H')
   const dominance = useDominance(daily.dataQuality === 'live')
   const [clock, setClock] = useState(Date.now)
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle')
-  const [tab, setTab] = useState<AnalysisTab>('summary')
+  const [localTab, setLocalTab] = useState<AnalysisTab>('summary')
+  const tab = activeTab ?? localTab
+  const setTab = (next: AnalysisTab) => { setLocalTab(next); onTabChange?.(next) }
   const tabId = useId()
   const tabButtons = useRef<(HTMLButtonElement | null)[]>([])
   useEffect(() => { const timer = setInterval(() => setClock(Date.now()), 10_000); return () => clearInterval(timer) }, [])
@@ -109,6 +111,7 @@ export function CryptoDecisionPanel({ instrument, daily, language, averagePrice,
       <h3>{guide.title}</h3>
       <p>{guide.reason}</p>
     </div>
+    {holding && !positionId && <p className={styles.notice}>{ko ? '보유 상황에 맞춘 설명이에요. 실제 보유 기록은 ‘내 투자’에서 저장해주세요.' : 'This changes the explanation only. Save the actual holding in My Investments.'}</p>}
     {holding && <div className={styles.holdingSummary}>
       {averagePrice != null && Number.isFinite(averagePrice) && averagePrice > 0
         ? <span>{ko ? '내 평단가' : 'My average price'} <strong>{price(averagePrice)}</strong>{decision.price !== null && <> · {ko ? '현재 가격 기준' : 'At current price'} <strong>{((decision.price / averagePrice - 1) * 100).toFixed(2)}%</strong></>}</span>
@@ -161,7 +164,7 @@ export function CryptoDecisionPanel({ instrument, daily, language, averagePrice,
     </div>
     <div className={styles.tabPanel} role="tabpanel" id={`${tabId}-investment-panel`} aria-labelledby={`${tabId}-investment`} hidden={tab !== 'investment'} tabIndex={0}>
       <p>{t.investmentHelp}</p>
-      {plan && averagePrice != null && Number.isFinite(averagePrice) && averagePrice > 0 && <div className={styles.position}><strong>{t.position}: {price(averagePrice)}</strong><span>{t.percent}: {((plan.stop / averagePrice - 1) * 100).toFixed(2)}%</span>{pnl !== null && Number.isFinite(pnl) && <span>{t.pnl}: {price(pnl)}</span>}</div>}
+      {plan && averagePrice != null && Number.isFinite(averagePrice) && averagePrice > 0 && <div className={styles.position}><strong>{t.position}: {price(averagePrice)}</strong><span>{ko ? '더 내려가면 주의할 가격' : 'Price to watch on a further drop'}: {price(plan.stop)}</span><span>{t.percent}: {((plan.stop / averagePrice - 1) * 100).toFixed(2)}%</span>{pnl !== null && Number.isFinite(pnl) && <span>{t.pnl}: {price(pnl)}</span>}</div>}
       <SaveScenario instrument={instrument} decision={decision} language={language} positionId={positionId} />
       {investmentContent}
     </div>

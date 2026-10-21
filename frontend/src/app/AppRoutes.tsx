@@ -24,7 +24,7 @@ export function AppRoutes() {
     <Suspense fallback={<RouteLoadingFallback />}>
       <Routes>
         <Route element={<AppShell />}>
-          <Route index element={<Navigate to="/market" replace />} />
+          <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="market" element={<MarketPage />} />
           <Route path="briefing" element={<MarketBriefingPage />} />
           <Route path="markets" element={<Navigate to="/market" replace />} />

@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { Link, MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { AppRoutes } from '@/app/AppRoutes'
@@ -42,19 +42,42 @@ vi.mock('@/hooks/useTechnicalLevelData', () => ({
 }))
 
 describe('MyAnalysisPage', () => {
+  it('restores the selected asset, tab and draft after leaving through the menu, while explicit links take priority', async () => {
+    render(<AppProviders><MemoryRouter initialEntries={['/my-analysis?instrumentId=upbit-btc']}>
+      <nav><Link to="/away">Leave</Link><Link to="/my-analysis">Return to analysis</Link><Link to="/my-analysis?instrumentId=binance-spot-btcusdt">Another asset</Link></nav>
+      <Routes><Route path="/my-analysis" element={<MyAnalysisPage />} /><Route path="/away" element={<p>Another page</p>} /></Routes>
+    </MemoryRouter></AppProviders>)
+    await screen.findByRole('heading', { name: 'BTC/KRW' })
+    fireEvent.click(screen.getByRole('tab', { name: 'My price criteria' }))
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Average price (optional)' }), { target: { value: '85' } })
+    fireEvent.change(screen.getByRole('textbox', { name: 'My note (optional)' }), { target: { value: 'My draft stays here' } })
+    fireEvent.click(screen.getByRole('link', { name: 'Leave' }))
+    expect(await screen.findByText('Another page')).toBeTruthy()
+    fireEvent.click(screen.getByRole('link', { name: 'Return to analysis' }))
+    expect(await screen.findByRole('heading', { name: 'BTC/KRW' })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'My price criteria' }).getAttribute('aria-selected')).toBe('true')
+    expect((screen.getByRole('spinbutton', { name: 'Average price (optional)' }) as HTMLInputElement).value).toBe('85')
+    expect((screen.getByRole('textbox', { name: 'My note (optional)' }) as HTMLTextAreaElement).value).toBe('My draft stays here')
+    expect(readPortfolio().positions).toHaveLength(0)
+    fireEvent.click(screen.getByRole('link', { name: 'Another asset' }))
+    expect(await screen.findByRole('heading', { name: 'BTCUSDT' })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'Summary' }).getAttribute('aria-selected')).toBe('true')
+    expect(screen.getByRole('button', { name: 'Considering a buy' }).getAttribute('aria-pressed')).toBe('true')
+  })
+
   it('keeps personal inputs across tabs and resets the view when selecting a different coin', async () => {
     render(<AppProviders><MemoryRouter initialEntries={['/my-analysis?instrumentId=upbit-btc']}><AppRoutes /></MemoryRouter></AppProviders>)
     await screen.findByRole('heading', { name: 'BTC/KRW' })
     expect(screen.getByText('Change or search instrument').closest('details')?.open).toBe(false)
     expect(screen.queryByRole('textbox', { name: 'My note (optional)' })).toBeNull()
-    fireEvent.click(screen.getByRole('tab', { name: 'My investment' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'My price criteria' }))
     fireEvent.change(screen.getByRole('textbox', { name: 'My note (optional)' }), { target: { value: 'Keep my draft' } })
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Average price (optional)' }), { target: { value: '90' } })
     fireEvent.click(screen.getByRole('tab', { name: 'Summary' }))
     expect(screen.getByRole('button', { name: 'Already holding' }).getAttribute('aria-pressed')).toBe('true')
     expect(readPortfolio().positions).toHaveLength(0)
     expect(screen.queryByRole('spinbutton')).toBeNull()
-    fireEvent.click(screen.getByRole('tab', { name: 'My investment' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'My price criteria' }))
     expect((screen.getByRole('textbox', { name: 'My note (optional)' }) as HTMLTextAreaElement).value).toBe('Keep my draft')
     expect((screen.getByRole('spinbutton', { name: 'Average price (optional)' }) as HTMLInputElement).value).toBe('90')
     fireEvent.click(screen.getByText('Change or search instrument'))
@@ -63,14 +86,14 @@ describe('MyAnalysisPage', () => {
     expect(screen.getByRole('tab', { name: 'Summary' }).getAttribute('aria-selected')).toBe('true')
     expect(screen.getByRole('button', { name: 'Considering a buy' }).getAttribute('aria-pressed')).toBe('true')
     expect(screen.getByText('Change or search instrument').closest('details')?.open).toBe(false)
-    fireEvent.click(screen.getByRole('tab', { name: 'My investment' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'My price criteria' }))
     expect((screen.getByRole('spinbutton', { name: 'Average price (optional)' }) as HTMLInputElement).value).toBe('')
   })
   it('applies saved average price and clears it when selecting another asset', async () => {
     writePortfolio([{ id: 'p1', exchange: 'upbit', venue: 'upbit-krw', instrumentId: 'upbit-btc', symbol: 'BTC/KRW', quoteCurrency: 'KRW', averagePrice: 80, quantity: 2, targetPrice: 120, stopPrice: 70 }], null)
     render(<AppProviders><MemoryRouter initialEntries={['/my-analysis?instrumentId=upbit-btc&positionId=p1']}><AppRoutes /></MemoryRouter></AppProviders>)
-    await screen.findByRole('heading', { level: 1, name: 'My Instrument Analysis' })
-    fireEvent.click(screen.getByRole('tab', { name: 'My investment' }))
+    await screen.findByRole('heading', { level: 1, name: 'Instrument Analysis' })
+    fireEvent.click(screen.getByRole('tab', { name: 'My price criteria' }))
     expect((screen.getByRole('spinbutton', { name: 'Average price (optional)' }) as HTMLInputElement).value).toBe('80')
     expect(screen.getByText(/Saved average price applied/)).toBeTruthy()
     const plan = screen.getByRole('region', { name: 'My investment criteria' })
@@ -88,7 +111,7 @@ describe('MyAnalysisPage', () => {
     const saved = writePortfolio([{ id: 'p1', exchange: 'upbit', venue: 'upbit-krw', instrumentId: 'upbit-btc', symbol: 'BTC/KRW', quoteCurrency: 'KRW', averagePrice: 80, quantity: 2, targetPrice: 120 }], null)
     render(<AppProviders><MemoryRouter initialEntries={['/my-analysis?instrumentId=upbit-btc&positionId=p1']}><AppRoutes /></MemoryRouter></AppProviders>)
     await screen.findByRole('heading', { name: 'BTC/KRW' })
-    fireEvent.click(screen.getByRole('tab', { name: 'My investment' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'My price criteria' }))
     expect(screen.getByRole('region', { name: 'My investment criteria' })).toBeTruthy()
     writePortfolio([], saved.raw)
     fireEvent(window, new StorageEvent('storage', { key: PORTFOLIO_KEY }))
@@ -115,11 +138,11 @@ describe('MyAnalysisPage', () => {
   })
   afterEach(() => vi.useRealTimers())
 
-  beforeEach(() => { window.localStorage.clear(); catalogMockState.failedVenue = null; technicalMockState.isLoading = false })
+  beforeEach(() => { window.localStorage.clear(); window.sessionStorage.clear(); catalogMockState.failedVenue = null; technicalMockState.isLoading = false })
 
   it('starts empty, selects an instrument, and switches the global detail level', async () => {
     render(<AppProviders><MemoryRouter initialEntries={['/my-analysis']}><AppRoutes /></MemoryRouter></AppProviders>)
-    expect(await screen.findByRole('heading', { name: 'My Instrument Analysis' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Instrument Analysis' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Start by selecting a coin or stock.' })).toBeTruthy()
     expect(screen.getByText('Search an asset')).toBeTruthy()
     expect(screen.getByText('Choose review intent')).toBeTruthy()
@@ -216,7 +239,7 @@ describe('MyAnalysisPage', () => {
     expect(screen.getByRole('region', { name: 'Direction and price plan' })).toBeTruthy()
     expect(screen.queryByRole('region', { name: 'Review summary' })).toBeNull()
     expect(screen.queryByRole('region', { name: 'Disclosure review' })).toBeNull()
-    fireEvent.click(screen.getByRole('tab', { name: 'My investment' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'My price criteria' }))
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Average price (optional)' }), { target: { value: '90' } })
     fireEvent.change(screen.getByRole('combobox', { name: 'Language' }), { target: { value: 'ko' } })
     expect(screen.getByRole('link', { name: '종목 분석' })).toBeTruthy()
@@ -272,7 +295,7 @@ describe('MyAnalysisPage', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Evidence' }))
     fireEvent.click(screen.getByText('Baseline records and further references'))
     expect(screen.getByRole('region', { name: 'Analysis baseline locked' }).textContent).toContain('90 KRW')
-    fireEvent.click(screen.getByRole('tab', { name: 'My investment' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'My price criteria' }))
     expect((screen.getByRole('textbox', { name: 'My note (optional)' }) as HTMLTextAreaElement).value).toBe('')
     expect((screen.getByRole('spinbutton', { name: 'Average price (optional)' }) as HTMLInputElement).value).toBe('')
   })

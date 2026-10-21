@@ -49,7 +49,7 @@ describe('My Coins workflow', () => {
     expect(screen.getByText('50 KRW')).toBeTruthy()
     expect(within(screen.getByRole('article')).getByText('25%')).toBeTruthy()
     expect(screen.getAllByText(/Mock quote/).length).toBeGreaterThan(0)
-    expect(screen.getByRole('link', { name: 'My Instrument Analysis' }).getAttribute('href')).toContain(`positionId=${id}`)
+    expect(screen.getByRole('link', { name: 'Analyze this holding →' }).getAttribute('href')).toContain(`positionId=${id}`)
     view.unmount(); show()
     fireEvent.click(screen.getByRole('button', { name: 'Edit' }))
     fireEvent.change(screen.getByLabelText('Quantity'), { target: { value: '3' } })
@@ -77,6 +77,7 @@ describe('My Coins workflow', () => {
   })
   it('records buys and sells, previews the result, keeps a closed holding and undoes the last trade', () => {
     show(); add()
+    if (!screen.getByText('Manage trades and price targets').closest('details')?.open) fireEvent.click(screen.getByText('Manage trades and price targets'))
     fireEvent.click(screen.getByRole('button', { name: 'Add trade' }))
     fireEvent.change(screen.getByLabelText('Execution price (KRW)'), { target: { value: '200' } })
     fireEvent.change(screen.getByLabelText('Trade quantity'), { target: { value: '2' } })
@@ -87,6 +88,7 @@ describe('My Coins workflow', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Edit' }))
     expect((screen.getByLabelText('Average price') as HTMLInputElement).readOnly).toBe(true)
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+    if (!screen.getByText('Manage trades and price targets').closest('details')?.open) fireEvent.click(screen.getByText('Manage trades and price targets'))
     fireEvent.click(screen.getByRole('button', { name: 'Add trade' }))
     fireEvent.change(screen.getByLabelText('Trade side'), { target: { value: 'sell' } })
     fireEvent.change(screen.getByLabelText('Execution price (KRW)'), { target: { value: '180' } })
@@ -100,7 +102,7 @@ describe('My Coins workflow', () => {
     expect(calculateLedger(closed.ledger).realized).toBe(120)
     expect(screen.getByText('Closed holding')).toBeTruthy()
     expect(screen.queryByRole('region', { name: 'Investment overview KRW' })).toBeNull()
-    expect(screen.queryByRole('link', { name: 'My Instrument Analysis' })).toBeNull()
+    expect(screen.queryByRole('link', { name: 'Analyze this holding →' })).toBeNull()
     fireEvent.click(screen.getByText(/View trade history/))
     fireEvent.click(screen.getByRole('button', { name: 'Undo last trade' }))
     expect(readPortfolio().positions[0].quantity).toBe(0)
@@ -110,6 +112,7 @@ describe('My Coins workflow', () => {
   })
   it('previews a backup before additive restore and prevents duplicate restoration', async () => {
     show(); add()
+    fireEvent.click(screen.getByText('Backup and storage'))
     const existing = readPortfolio()
     const extra = { ...existing.positions[0], id: 'restored', symbol: 'Restored BTC' }
     const text = createPortfolioBackup({ positions: [extra], raw: null, error: null })
@@ -126,6 +129,7 @@ describe('My Coins workflow', () => {
   })
   it('rejects conflicting backups without changing stored holdings', async () => {
     show(); add()
+    fireEvent.click(screen.getByText('Backup and storage'))
     const existing = readPortfolio()
     const text = createPortfolioBackup({ ...existing, positions: [{ ...existing.positions[0], quantity: 9 }] })
     const file = new File([text], 'conflict.json')
@@ -137,6 +141,7 @@ describe('My Coins workflow', () => {
   })
   it('cancels a pending import if another tab changes the portfolio', async () => {
     show(); add()
+    fireEvent.click(screen.getByText('Backup and storage'))
     const existing = readPortfolio()
     let finish: (text: string) => void = () => undefined
     const file = new File(['pending'], 'backup.json')

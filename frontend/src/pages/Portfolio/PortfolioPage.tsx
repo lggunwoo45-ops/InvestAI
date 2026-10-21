@@ -7,6 +7,9 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { PositionPlan } from '@/components/portfolio/PositionPlan'
 import { TradeLedgerPanel } from '@/components/portfolio/TradeLedgerPanel'
 import { PortfolioBackupPanel } from '@/components/portfolio/PortfolioBackupPanel'
+import { HoldingAnalysis } from '@/components/portfolio/HoldingAnalysis'
+import { useHoldingAnalysis } from '@/hooks/useHoldingAnalysis'
+import { currentHoldingResult } from '@/services/portfolio/holdingAnalysis'
 import { ScenarioBoard } from '@/components/scenarios/ScenarioBoard'
 import { mergePortfolioBackup } from '@/services/portfolio/portfolioBackup'
 import { realizedByCurrency } from '@/services/portfolio/tradeLedger'
@@ -20,7 +23,7 @@ const copy = {
   en: { title: 'My Investments', coins: 'My Coins', help: 'Saved separately from watchlists in this browser. Clearing browser data removes positions; no device sync.', venue: 'Exchange · market', asset: 'Instrument · quote currency', average: 'Average price', quantity: 'Quantity', save: 'Save', edit: 'Edit', remove: 'Delete', confirm: 'Delete this position?', cancel: 'Cancel', analyze: 'My Instrument Analysis', empty: 'No saved coins.', select: 'Select instrument', loading: 'Loading quotes', unavailable: 'Quote unavailable', mock: 'Mock quote', live: 'Fetched quote', value: 'Market value', profit: 'Unrealized P/L', rate: 'Return', refresh: 'Refresh quotes', error: 'Change failed. Enter valid positive values. Check storage availability or changes in another tab.', storage: 'Stored data could not be read. Changes are blocked and existing data is preserved.', reload: 'Reload stored data', saved: 'Saved.', deleted: 'Deleted.', notice: 'Spot holdings only. Excludes fees, taxes and FX. Different currencies are never summed. Quotes reflect the time fetched.', search: 'Search instruments', cost: 'Cost' },
 }
 const planCopy = {
-  ko: { summary: '내 투자 요약', add: '코인 추가', edit: '보유 기록 수정', target: '목표가 (선택)', stop: '손절 기준가 (선택)', help: '기준가는 종목의 기준통화로 입력하세요. 비워두면 설정하지 않습니다. 둘 다 입력하면 손절 기준가는 목표가보다 낮아야 합니다.', error: '목표가와 손절 기준가는 유효한 양수여야 하며, 손절 기준가는 목표가보다 낮아야 합니다.', coverage: '시세 확인', incomplete: '시세가 없는 기록이 있어 전체 평가손익을 표시하지 않습니다.', range: '계산 범위를 초과해 합계를 표시할 수 없습니다.', records: '보유 기록', quote: '현재가', subtitle: '내 코인의 손익과 다음 확인 기준을 한곳에서.', plan: '투자 기준 (선택)' },
+  ko: { summary: '내 투자 요약', add: '코인 추가', edit: '보유 기록 수정', target: '목표가 (선택)', stop: '손절 기준가 (선택)', help: '기준가는 종목의 기준통화로 입력하세요. 비워두면 설정하지 않습니다. 둘 다 입력하면 손절 기준가는 목표가보다 낮아야 합니다.', error: '목표가와 손절 기준가는 유효한 양수여야 하며, 손절 기준가는 목표가보다 낮아야 합니다.', coverage: '시세 확인', incomplete: '시세가 없는 기록이 있어 전체 평가손익을 표시하지 않습니다.', range: '계산 범위를 초과해 합계를 표시할 수 없습니다.', records: '보유 기록', quote: '현재가', subtitle: '저장한 코인 전체의 손익과 지금 확인할 내용을 한곳에서 보세요.', plan: '투자 기준 (선택)' },
   en: { summary: 'Investment overview', add: 'Add coin', edit: 'Edit position', target: 'Target price (optional)', stop: 'Stop reference price (optional)', help: 'Use the instrument’s quote currency. Leave blank to omit. When both are set, the stop reference must be below the target.', error: 'Target and stop must be valid positive prices, with the stop below the target.', coverage: 'Quotes available', incomplete: 'Some quotes are missing. Total valuation is withheld.', range: 'Totals exceed the supported numeric range.', records: 'Positions', quote: 'Current price', subtitle: 'Your holdings, returns and next review criteria in one place.', plan: 'Investment criteria (optional)' },
 }
 
@@ -31,9 +34,19 @@ export function PortfolioPage() {
   useDocumentTitle(t.title)
   const { marketDataMode } = useMarketWorkspace()
   const [store, setStore] = useState(readPortfolio)
+  const review = useHoldingAnalysis(store.positions, marketDataMode === 'live')
+  const activeCount = store.positions.filter(p => p.quantity > 0).length
+  const [visibleCount, setVisibleCount] = useState(6)
   const [revision, setRevision] = useState(0)
   const [venue, setVenue] = useState<CoinVenue>('upbit-krw')
   const [retry, setRetry] = useState(0)
+  useEffect(() => {
+    if (!activeCount || marketDataMode !== 'live') return
+    const refresh = () => { if (document.visibilityState === 'visible') setRetry(n => n + 1) }
+    const timer = setInterval(refresh, 60_000)
+    document.addEventListener('visibilitychange', refresh)
+    return () => { clearInterval(timer); document.removeEventListener('visibilitychange', refresh) }
+  }, [activeCount, marketDataMode])
   const upbit = useMarketCatalog('upbit-krw', marketDataMode, retry)
   const btc = useMarketCatalog('upbit-btc', marketDataMode, retry)
   const usdt = useMarketCatalog('upbit-usdt', marketDataMode, retry)
@@ -87,7 +100,10 @@ export function PortfolioPage() {
   const entries = store.positions.map(position => {
     const state = catalogs[position.venue]
     const instrument = state.catalog?.instruments.find(i => i.id === position.instrumentId && i.quoteCurrency === position.quoteCurrency)
-    return { position, state, price: state.loading || state.error ? null : instrument?.lastPrice ?? null }
+    const analyzed = currentHoldingResult(review.reviews[position.id], review.now)
+    const fetchedAt = state.catalog?.fetchedAt
+    const fresh = state.catalog?.source === marketDataMode && (marketDataMode === 'mock' || (fetchedAt !== undefined && Number.isFinite(fetchedAt) && review.now - fetchedAt <= 90_000 && fetchedAt <= review.now + 5000))
+    return { position, state, quotedAt: analyzed?.analyzedAt ?? fetchedAt, price: analyzed?.decision.price ?? (state.loading || state.error || !fresh ? null : instrument?.lastPrice ?? null) }
   })
   const totals = summarizePortfolio(entries.filter(entry => entry.position.quantity > 0))
   const realized = realizedByCurrency(store.positions)
@@ -96,7 +112,6 @@ export function PortfolioPage() {
     : { realized: 'Recorded realized P/L', closed: 'Closed holding', locked: 'Average and quantity are calculated from the ledger. Correct entries by undoing from the last trade.', delete: 'The trade history and realized P/L of this holding will also be removed.', notice: 'Spot holdings. Includes recorded fees; excludes taxes and FX. Different currencies are never summed. Quotes reflect the time fetched.' }
   return <main className={styles.page}>
     <header className={styles.heading}><span>MY INVESTMENTS</span><h1>{t.title}</h1><p>{pt.subtitle}</p></header>
-    <ScenarioBoard />
     <nav className={styles.actions}><strong>{t.coins}</strong><Link to="/market">{language === 'ko' ? '관심종목 · 마켓' : 'Watchlists · Market'}</Link>{store.positions.length > 0 && <button type="button" aria-expanded={formOpen || !!editing} aria-controls="portfolio-form" onClick={() => { reset(); setFormOpen(true) }}>{pt.add}</button>}<button type="button" onClick={() => setRetry(n => n + 1)}>{t.refresh}</button></nav>
     {store.error && <p role="alert">{t.storage}</p>}
     {totals.length > 0 && <section aria-label={pt.summary} className={styles.overview}>
@@ -129,19 +144,31 @@ export function PortfolioPage() {
     {message && <p role="status" className={styles.message}>{message}</p>}
     <p className={styles.notice}>{ledgerText.notice}</p>
     {!store.error && store.positions.length === 0 && <p>{t.empty}</p>}
-    <div className={styles.positions}>{entries.map(({ position: p, state, price }) => {
+    {activeCount > 0 && <section className={styles.reviewHeading} aria-label={language === 'ko' ? '보유 코인 전체 분석' : 'Analyze all holdings'}>
+      <div><h2>{language === 'ko' ? '내 코인, 지금 어떤가요?' : 'How are my holdings doing?'}</h2><p>{language === 'ko' ? `보유 중인 ${activeCount}개 기록의 흐름과 주의할 가격을 확인하세요.` : `Review the trends and risk levels of ${activeCount} open holdings.`}</p></div>
+      {review.status === 'running' ? <button type="button" onClick={review.stop}>{language === 'ko' ? '분석 중지' : 'Stop analysis'}</button> : <button type="button" disabled={marketDataMode !== 'live'} onClick={() => { void review.start() }}>{language === 'ko' ? '보유 코인 전체 분석' : 'Analyze all holdings'}</button>}
+      <p role="status">{marketDataMode !== 'live' ? (language === 'ko' ? '예시 모드에서는 실제 보유 분석을 제공하지 않아요.' : 'Live holding analysis is unavailable in demo mode.') : review.status !== 'idle' ? `${language === 'ko' ? review.status === 'running' ? '분석 중' : review.status === 'stopped' ? '중지됨' : review.status === 'error' ? '분석 연결 실패 · 다시 시도해주세요' : '분석 완료' : review.status} · ${Object.keys(review.reviews).length}/${activeCount}` : (language === 'ko' ? '버튼을 누를 때 분석해요. 결과가 먼저 나온 코인부터 볼 수 있어요.' : 'Analysis starts when you ask. Results appear as each holding finishes.')}</p>
+      <details><summary>{language === 'ko' ? '분석 범위와 시점' : 'Scope and freshness'}</summary><p>{language === 'ko' ? '저장한 현물 보유 종목 전체를 두 종목씩 확인해요. 같은 종목의 여러 보유 기록은 분석을 공유해요. 시세 수신 후 90초가 지나면 분석을 다시 요청해야 해요. 자료가 부족한 종목도 목록에 남기며, 화면을 나가면 진행 중인 분석은 중지돼요.' : 'All saved spot holdings are checked, two assets at a time. Duplicate lots share market analysis. Results expire 90 seconds after quote receipt. Missing-data holdings remain visible. Leaving this page stops the run.'}</p></details>
+    </section>}
+    <div className={styles.positions}>{entries.slice(0, visibleCount).map(({ position: p, state, price, quotedAt }) => {
       const result = valuation(p, price)
-      const quoteLabel = state.loading ? t.loading : !result ? t.unavailable : state.catalog?.source === 'mock' ? t.mock : t.live
+      const quoteLabel = state.loading ? t.loading : !result ? (state.catalog ? language === 'ko' ? '시세 새로고침이 필요해요' : 'Refresh quotes to update' : t.unavailable) : state.catalog?.source === 'mock' ? t.mock : t.live
       return <article key={p.id} aria-label={`${p.symbol} · ${p.venue}`}>
         <h2>{p.symbol}</h2><p>{p.exchange} · {p.venue} · {p.quoteCurrency}</p>
-        <p>{p.quantity === 0 ? ledgerText.closed : quoteLabel}{result && state.catalog && ` · ${new Date(state.catalog.fetchedAt).toLocaleString()}`}</p>
+        <p>{p.quantity === 0 ? ledgerText.closed : quoteLabel}{result && quotedAt !== undefined && ` · ${new Date(quotedAt).toLocaleString()}`}</p>
         <dl className={styles.positionMetrics}><div><dt>{t.average}</dt><dd>{number(p.averagePrice)} {p.quoteCurrency}</dd></div><div><dt>{t.quantity}</dt><dd>{number(p.quantity)}</dd></div><div><dt>{t.cost}</dt><dd>{number(p.averagePrice * p.quantity)} {p.quoteCurrency}</dd></div><div><dt>{t.value}</dt><dd>{result ? `${number(result.value)} ${p.quoteCurrency}` : '—'}</dd></div><div data-direction={result && result.profit !== 0 ? result.profit > 0 ? 'positive' : 'negative' : undefined}><dt>{t.profit}</dt><dd>{result ? `${number(result.profit)} ${p.quoteCurrency}` : '—'}</dd></div><div><dt>{t.rate}</dt><dd>{result ? portfolioPercent(result.percent) : '—'}</dd></div></dl>
+        {p.quantity > 0 && <HoldingAnalysis position={p} review={review.reviews[p.id]} now={review.now} running={review.status === 'running'} language={language} />}
+        <details className={styles.recordDetails}><summary>{language === 'ko' ? '거래 내역·목표가 관리' : 'Manage trades and price targets'}</summary>
         <TradeLedgerPanel key={`${p.id}:${revision}`} position={p} language={language} disabled={!!store.error} onSave={next => { const saved = commit(store.positions.map(item => item.id === p.id ? next : item), t.saved); if (saved) reset(); return saved }} />
         {p.quantity > 0 && <PositionPlan position={p} price={price} language={language} quoteLabel={quoteLabel} />}
-        <div className={styles.actions}>{p.quantity > 0 && <Link to={`/my-analysis?${new URLSearchParams({ instrumentId: p.instrumentId, positionId: p.id })}`}>{t.analyze}</Link>}<button onClick={() => { setEditing(p); setVenue(p.venue); setAverage(String(p.averagePrice)); setQuantity(String(p.quantity)); setTarget(p.targetPrice === undefined ? '' : String(p.targetPrice)); setStop(p.stopPrice === undefined ? '' : String(p.stopPrice)); setMessage(''); formRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' }) }}>{t.edit}</button><button onClick={() => setDeleting(p.id)}>{t.remove}</button></div>
+        </details>
+        <div className={styles.actions}><button onClick={() => { setEditing(p); setVenue(p.venue); setAverage(String(p.averagePrice)); setQuantity(String(p.quantity)); setTarget(p.targetPrice === undefined ? '' : String(p.targetPrice)); setStop(p.stopPrice === undefined ? '' : String(p.stopPrice)); setMessage(''); formRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' }) }}>{t.edit}</button><button onClick={() => setDeleting(p.id)}>{t.remove}</button></div>
         {deleting === p.id && <div role="group" aria-label={t.confirm}><p>{t.confirm}</p>{p.ledger && <p>{ledgerText.delete}</p>}<button onClick={() => { if (commit(store.positions.filter(item => item.id !== p.id), t.deleted)) { setDeleting(null); if (editing?.id === p.id) reset() } }}>{t.remove}</button><button onClick={() => setDeleting(null)}>{t.cancel}</button></div>}
       </article>
     })}</div>
+    {entries.length > visibleCount && <button type="button" onClick={() => setVisibleCount(n => n + 6)}>{language === 'ko' ? `보유 기록 더 보기 (${entries.length - visibleCount}개 남음)` : `More holdings (${entries.length - visibleCount} remaining)`}</button>}
+    <details className={styles.management}><summary>{language === 'ko' ? '저장한 가격 기준·변화 확인' : 'Saved price plans and changes'}</summary><ScenarioBoard /></details>
+    <details className={styles.management}><summary>{language === 'ko' ? '백업과 저장 안내' : 'Backup and storage'}</summary>
     <PortfolioBackupPanel key={revision} store={store} language={language} onRestore={(incoming, expectedRaw) => {
       try {
         if (store.raw !== expectedRaw) return false
@@ -151,6 +178,6 @@ export function PortfolioPage() {
         return saved
       } catch { return false }
     }} />
-    <footer className={styles.storage}><p>{t.help}</p><button type="button" onClick={() => { setStore(readPortfolio()); setRevision(n => n + 1); reset(); setDeleting(null); setMessage('') }}>{t.reload}</button></footer>
+    <footer className={styles.storage}><p>{t.help}</p><button type="button" onClick={() => { setStore(readPortfolio()); setRevision(n => n + 1); reset(); setDeleting(null); setMessage('') }}>{t.reload}</button></footer></details>
   </main>
 }
