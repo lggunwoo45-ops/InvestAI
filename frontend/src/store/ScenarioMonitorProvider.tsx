@@ -1,3 +1,4 @@
+import { notifyScenario } from '@/services/scenarios/browserNotifications'
 import { useCallback, useEffect, useEffectEvent, useRef, useState, type PropsWithChildren } from 'react'
 import { useScenarios } from '@/hooks/useScenarios'
 import { useTechnicalLevelData } from '@/hooks/useTechnicalLevelData'
@@ -65,8 +66,9 @@ export function ScenarioMonitorProvider({ children }: PropsWithChildren) {
       writeScenarios({ version: 1, scenarios: current.scenarios, events: [...current.events, ...fresh].slice(-60) }, current.raw)
       setHistoryError(false)
       setNotice({ symbol: scenario.instrument.symbol, events: fresh })
+      notifyScenario(scenario.instrument.symbol, fresh.map(e => `${scenarioCopy[language].event[e.kind]} · ${new Date(e.at).toLocaleTimeString(language)}`), `investai-${scenario.id}-${fresh[0].id}`)
     } catch { setHistoryError(true) }
-  }, [])
+  }, [language])
   const running = visible && marketDataMode === 'live' && !store.error
   const t = scenarioCopy[language]
   const activeNotice = notice?.events.filter(e => store.scenarios.some(s => s.id === e.scenarioId && s.revision === e.revision && s.enabled)

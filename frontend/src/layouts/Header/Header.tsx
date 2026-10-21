@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'
 import { GlobalSearch } from '@/components/GlobalSearch/GlobalSearch'
 import { Icon } from '@/components/Icon/Icon'
 import { MarketStatusStrip } from '@/components/MarketStatusStrip/MarketStatusStrip'
@@ -12,6 +13,7 @@ import { formatDate, formatTime } from '@/utils/formatDateTime'
 import styles from './Header.module.css'
 
 export function Header({ hideCopilotToggle = false }: { hideCopilotToggle?: boolean }) {
+  const navigate = useNavigate()
   const now = useCurrentTime()
   const { isAiCopilotOpen, toggleAiCopilot } = useUiStore()
   const { activeMarketState } = useMarketWorkspace()
@@ -49,7 +51,7 @@ export function Header({ hideCopilotToggle = false }: { hideCopilotToggle?: bool
         {!hideCopilotToggle && <button className={styles.iconButton} type="button" onClick={toggleAiCopilot} aria-pressed={isAiCopilotOpen} aria-label="Toggle AI Copilot">
           <Icon name="panel" size={18} />
         </button>}
-        <button className={styles.userMenu} type="button" aria-label="Open user menu">
+        <button className={styles.userMenu} type="button" aria-label="Open user menu" onClick={() => navigate('/settings')}>
           <span className={styles.avatar}>IA</span>
           <span className={styles.userText}><strong>{text.operator}</strong><small>{text.workspaceOwner}</small></span>
           <Icon name="chevronDown" size={14} />

@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 
 import { CryptoDecisionPanel } from '@/components/crypto-analysis/CryptoDecisionPanel'
 import { LiveCandidateSearch } from '@/components/ai-analysis/LiveCandidateSearch'
 import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
-import { AiUsagePlans } from '@/components/ai/AiUsagePlans/AiUsagePlans'
 import { AiAnalysisTerminalLayout } from '@/components/ai-analysis/AiAnalysisTerminalLayout'
 import { CandidateInspectorPanel } from '@/components/ai-analysis/CandidateInspectorPanel'
 import { CandidateTerminalList } from '@/components/ai-analysis/CandidateTerminalList'
@@ -66,6 +65,7 @@ function savedSnapshotFilterInput(item: CandidateSnapshotItem, horizon: WatchCan
 
 export function AiAnalysisPage() {
   const { hash } = useLocation()
+  if (hash === '#ai-usage-plans-title') return <Navigate to="/settings" replace />
   return <ExploreView key={hash} initialView={hash ? 'daily' : 'live'} />
 }
 
@@ -84,7 +84,6 @@ function ExploreView({ initialView }: { initialView: 'live' | 'daily' }) {
 
 function DailyCandidatePage() {
   const navigate = useNavigate()
-  const { hash } = useLocation()
   const { language } = useLanguage()
   const { displayMode } = useDisplayMode()
   const { marketDataMode } = useMarketWorkspace()
@@ -108,8 +107,8 @@ function DailyCandidatePage() {
   const nyse = useMarketCatalog('nyse', marketDataMode, 0, bucketId === 'usStocks')
 
   const pageCopy = language === 'ko'
-    ? { eyebrow: '일일 시장 검토', title: '오늘의 관심 후보', description: '매일 08:00 기준으로 확인하는 시장별 후보입니다.', advanced: '상세 기준 보기', advancedHelp: '기존 기간 기준은 전문가 검토용입니다. 저장된 일일 후보는 새로고침 전까지 바뀌지 않습니다.' }
-    : { eyebrow: 'DAILY MARKET REVIEW', title: 'Today’s interest candidates', description: 'Daily market candidates reviewed around the 08:00 basis.', advanced: 'Advanced criteria', advancedHelp: 'The existing horizon criteria are for expert review. A saved daily list does not change until refreshed.' }
+    ? { eyebrow: '일일 시장 검토', title: '오늘의 관심 후보', description: '이 화면을 연 시점에 저장하는 시장별 후보입니다. 오전 8시 이후 첫 조회로 만들며, 자동 예약 실행은 아닙니다.', advanced: '상세 기준 보기', advancedHelp: '기존 기간 기준은 전문가 검토용입니다. 저장된 일일 후보는 새로고침 전까지 바뀌지 않습니다.' }
+    : { eyebrow: 'DAILY MARKET REVIEW', title: 'Today’s interest candidates', description: 'Saved when this view is first opened after 08:00 KST. This is an on-demand record, not a scheduled job.', advanced: 'Advanced criteria', advancedHelp: 'The existing horizon criteria are for expert review. A saved daily list does not change until refreshed.' }
   useDocumentTitle(language === 'ko' ? '종목 찾기' : 'Find Assets')
 
   const catalogs = useMemo(() => ({
@@ -243,10 +242,6 @@ function DailyCandidatePage() {
     <details className={styles.additional}>
       <summary><span>{language === 'ko' ? '현재 시세로 다른 후보 살펴보기' : 'Explore more with current data'}</span><small>{language === 'ko' ? '저장된 일일 후보와 별도로 확인합니다' : 'Separate from the saved daily list'}</small></summary>
       <EvidenceCandidatePanel items={evidenceRecommendations} language={language} onSelect={(instrumentId) => navigate(`/my-analysis?instrumentId=${encodeURIComponent(instrumentId)}`)} />
-    </details>
-    <details className={styles.additional} open={hash === '#ai-usage-plans-title' || undefined}>
-      <summary>{language === 'ko' ? 'AI 사용량 및 플랜 안내' : 'AI usage and plan information'}</summary>
-      <AiUsagePlans language={language} />
     </details>
   </div>
 }

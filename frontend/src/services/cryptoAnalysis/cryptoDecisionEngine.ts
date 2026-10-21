@@ -1,3 +1,4 @@
+import type { DecisionContext } from './marketContext'
 import type { Candle, RecentTrade } from '@/types/marketDetail'
 import type { AnalysisDataQuality } from '@/types/myAnalysis'
 
@@ -128,6 +129,7 @@ function pricePlan(read: FrameRead, price: number): PricePlan | null {
 }
 
 export interface CryptoDecision {
+  context?: DecisionContext
   direction: Direction | 'unavailable'
   frames: readonly FrameRead[]
   price: number | null

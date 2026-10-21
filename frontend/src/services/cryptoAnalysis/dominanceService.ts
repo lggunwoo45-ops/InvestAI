@@ -44,3 +44,8 @@ export function loadDominance(): Promise<DominanceRead> {
   })().finally(() => { pending = null })
   return pending
 }
+
+/** Cached only: analysis never waits on this optional provider. */
+export function peekDominance(now = Date.now()): DominanceRead | null {
+  return cached && cached.until > now && now - cached.value.point.at <= 3_600_000 ? cached.value : null
+}

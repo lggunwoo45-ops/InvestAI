@@ -1,8 +1,9 @@
+import { withMarketContext, contextExplanation } from '@/services/cryptoAnalysis/marketContext'
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { SaveScenario } from '@/components/scenarios/SaveScenario'
 import { useTechnicalLevelData } from '@/hooks/useTechnicalLevelData'
 import { useDominance } from '@/hooks/useDominance'
-import { buildCryptoDecision, seriesMarketTime, tradeFlow, type AnalysisSeries, type SeriesIssue } from '@/services/cryptoAnalysis/cryptoDecisionEngine'
+import { buildCryptoDecision, type AnalysisSeries, type SeriesIssue } from '@/services/cryptoAnalysis/cryptoDecisionEngine'
 import type { MarketInstrument } from '@/types/market'
 import type { Language } from '@/i18n/translations'
 import { portfolioNumber as number } from '@/utils/formatPortfolio'
@@ -67,14 +68,13 @@ export function CryptoDecisionPanel({ instrument, daily, language, averagePrice,
   const now = Math.max(clock, hourly.updatedAt ?? 0, fourHourly.updatedAt ?? 0, daily.updatedAt ?? 0)
   const t = text[language]
   const ko = language === 'ko'
-  const decision = buildCryptoDecision({ '1H': hourly, '4H': fourHourly, '1D': daily }, now)
+  const series = { '1H': hourly, '4H': fourHourly, '1D': daily }
+  const decision = withMarketContext(buildCryptoDecision(series, now), series, instrument, dominance.data, now)
   const { plan } = decision
   const holding = holdingInput ?? (averagePrice != null && Number.isFinite(averagePrice) && averagePrice > 0)
   const guide = decisionGuide(decision, language, holding)
   const reference = decision.frames.find(r => r.frame === plan?.frame) ?? decision.frames.find(r => !r.issue)
-  const marketNow = seriesMarketTime(daily, now)
-  const flow = tradeFlow(daily.dataQuality === 'live' && daily.connectionStatus === 'live' ? daily.recentTrades ?? [] : [], marketNow)
-  const latestTrade = daily.recentTrades?.find(trade => Number.isFinite(trade.timestamp) && trade.timestamp > 0)
+  const flow = decision.context!.flowSample
   const global = dominance.data && now - dominance.data.point.at <= 3_600_000 ? dominance.data : null
   const delta = global?.previous ? global.point.percent - global.previous.percent : null
   const priceNumber = (n: number) => formatAnalysisPrice(n, language)
@@ -85,7 +85,7 @@ export function CryptoDecisionPanel({ instrument, daily, language, averagePrice,
   const pnl = plan && averagePrice && averagePrice > 0 && quantity && quantity > 0 ? (plan.stop - averagePrice) * quantity : null
   const trendSummary = decision.frames.filter(r => !r.issue).map(r => `${t.frame[r.frame]} ${t.trend[r.direction]}`).join(' · ')
   const volumeSummary = reference?.volumeRatio != null ? `${t.frame[reference.frame]} · ${reference.volumeRatio.toFixed(2)}×` : t.noVolume
-  const caution = decision.direction === 'sell' ? t.bearish : decision.extended ? t.extended : decision.mixed ? t.mixed : reference?.volumeRatio != null && reference.volumeRatio < 0.6 ? t.lowVolume : t.balanced
+  const caution = contextExplanation(decision.context, ko) || (decision.direction === 'sell' ? t.bearish : decision.extended ? t.extended : decision.mixed ? t.mixed : reference?.volumeRatio != null && reference.volumeRatio < 0.6 ? t.lowVolume : t.balanced)
   const copySummary = async () => {
     const lines = [instrument.symbol, `${t.checked}: ${date(now)}`, easyDirection[language][decision.direction],
       guide.title, guide.reason, guide.next,
@@ -154,7 +154,7 @@ export function CryptoDecisionPanel({ instrument, daily, language, averagePrice,
     </details>
     <details className={styles.disclosure}><summary>{t.contextDetails}</summary>
     <div className={styles.context}>
-      <article aria-label={t.flow}><h3>{t.flow}</h3><strong>{flow.direction === 'unavailable' && latestTrade && marketNow - latestTrade.timestamp > 60_000 ? t.flowStale : t.flowLabels[flow.direction]}</strong>{flow.ratio !== null && <p>{t.buyShare}: {(flow.ratio * 100).toFixed(1)}%</p>}<p>{t.sample}: {flow.count} · {t.large}: {flow.largeCount}</p>{flow.threshold !== null && <small>{t.threshold}: {price(flow.threshold)}</small>}{flow.from !== null && flow.to !== null && <small>{date(flow.from)} – {date(flow.to)}</small>}<p>{t.flowNote}</p>{flow.direction === 'unavailable' && <small>{t.flowMissing}</small>}{latestTrade && <small>{t.flowLast}: {date(latestTrade.timestamp)}</small>}</article>
+      <article aria-label={t.flow}><h3>{t.flow}</h3><strong>{flow.direction === 'unavailable' && decision.context!.flowStale ? t.flowStale : t.flowLabels[flow.direction]}</strong>{flow.ratio !== null && <p>{t.buyShare}: {(flow.ratio * 100).toFixed(1)}%</p>}<p>{t.sample}: {flow.count} · {t.large}: {flow.largeCount}</p>{flow.threshold !== null && <small>{t.threshold}: {price(flow.threshold)}</small>}{flow.from !== null && flow.to !== null && <small>{date(flow.from)} – {date(flow.to)}</small>}<p>{t.flowNote}</p>{flow.direction === 'unavailable' && <small>{t.flowMissing}</small>}{decision.context!.flowLastAt !== null && <small>{t.flowLast}: {date(decision.context!.flowLastAt)}</small>}</article>
       <article aria-label={t.dominance}><h3>{t.dominance}</h3>{global ? <><strong>{global.point.percent.toFixed(2)}%</strong><p>{t.dominanceHelp}</p>{delta !== null && global.previous ? <><p>{t.prior}: {delta >= 0 ? '+' : ''}{delta.toFixed(2)}%p<br />{date(global.previous.at)} → {date(global.point.at)}</p><p>{delta >= 0.15 ? t.dominanceUp : delta <= -0.15 ? t.dominanceDown : t.dominanceFlat}</p></> : <p>{t.dominanceHistory}</p>}<p>{t.marketChange}: {global.point.marketChange.toFixed(2)}%</p><small>{date(global.point.at)}</small></> : <p>{dominance.loading ? t.dominanceLoading : t.dominanceError}</p>}<a href="https://coinpaprika.com/overview" target="_blank" rel="noreferrer">CoinPaprika ↗</a><small>{t.dominanceNote}</small></article>
     </div>
     <small>{language === 'ko' ? '대형 체결: 표본 금액 상위 25%이면서 중앙값의 1.5배 이상, 3건 이상일 때 금액 비중으로 우세 표시.' : 'Large trades: top quartile and at least 1.5× median notional; bias requires at least three large executions.'}</small>
