@@ -35,7 +35,7 @@ export function Sidebar() {
   const { isSidebarPinned, toggleSidebarPin } = useUiStore()
   const { language } = useLanguage()
   const text = uiText[language]
-  const coreLabels = language === 'ko' ? { dashboard: '홈', analyze: '종목 분석', portfolio: '내 투자', ai: 'AI 탐색' } : { dashboard: 'Home', analyze: 'Instrument Analysis', portfolio: 'My Investments', ai: 'AI Explore' }
+  const coreLabels = language === 'ko' ? { dashboard: '홈', analyze: '종목 분석', portfolio: '내 투자', ai: '종목 찾기' } : { dashboard: 'Home', analyze: 'Instrument Analysis', portfolio: 'My Investments', ai: 'Find Assets' }
   const isNarrow = useNarrowSidebar()
   const [isHovered, setIsHovered] = useState(false)
   const [hasFocus, setHasFocus] = useState(false)

@@ -15,7 +15,7 @@ export function AppShell() {
   const { pathname } = useLocation()
   const isExplore = pathname.replace(/\/$/, '') === '/ai-analysis'
   // Analysis has its own contextual question panel; avoid two competing explanations.
-  const focusedAnalysis = isExplore || pathname.replace(/\/$/, '') === '/my-analysis'
+  const focusedAnalysis = isExplore || ['/my-analysis', '/dashboard', '/portfolio'].includes(pathname.replace(/\/$/, ''))
   const showCopilot = isAiCopilotOpen && !focusedAnalysis
 
   return (

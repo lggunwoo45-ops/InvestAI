@@ -26,6 +26,7 @@ describe('WatchlistManager drag safety', () => {
 
   it('does not reorder after a cancelled internal drag or an external drop', async () => {
     render(<App />)
+    fireEvent.click(await screen.findByText('My watchlists'))
     const watchlist = await screen.findByRole('region', { name: 'Watchlist 2.0' })
     const firstRow = within(watchlist).getByText('BTC/KRW').closest('[draggable="true"]')
     const secondRow = within(watchlist).getByText('ETH/KRW').closest('[draggable="true"]')
@@ -51,7 +52,7 @@ describe('WatchlistManager drag safety', () => {
       watchlists: [{ id: 'crypto', name: 'Crypto', instrumentIds: ['upbit-btc', 'removed-symbol'], isDefault: true }],
     }))
     render(<App />)
-
+    fireEvent.click(await screen.findByText('My watchlists'))
     const watchlist = await screen.findByRole('region', { name: 'Watchlist 2.0' })
     expect(within(watchlist).getByText('Unavailable')).toBeTruthy()
     fireEvent.click(within(watchlist).getByRole('button', { name: 'Remove removed-symbol' }))
@@ -66,6 +67,7 @@ describe('WatchlistManager drag safety', () => {
       watchlists: [{ id: 'crypto', name: 'Crypto', instrumentIds: ['binance-spot-sprint72rowusdt', 'upbit-sprint72row'], isDefault: true }],
     }))
     render(<App />)
+    fireEvent.click(await screen.findByText('My watchlists'))
     const watchlist = await screen.findByRole('region', { name: 'Watchlist 2.0' })
     expect(await within(watchlist).findByText('ROWUSDT')).toBeTruthy()
     expect(within(watchlist).getByText('ROW/KRW')).toBeTruthy()
