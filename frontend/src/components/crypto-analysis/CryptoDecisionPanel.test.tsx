@@ -4,7 +4,7 @@ import type { AnalysisFrame, AnalysisSeries } from '@/services/cryptoAnalysis/cr
 import type { MarketInstrument } from '@/types/market'
 import { CryptoDecisionPanel } from './CryptoDecisionPanel'
 
-const state = vi.hoisted(() => ({ trend: 1, quality: 'live' as 'live' | 'mock', dominance: null as null | { point: { percent: number; at: number; marketChange: number }; previous: { percent: number; at: number; marketChange: number } | null } }))
+const state = vi.hoisted(() => ({ overrides: {} as Partial<Record<AnalysisFrame, AnalysisSeries>>, trend: 1, quality: 'live' as 'live' | 'mock', dominance: null as null | { point: { percent: number; at: number; marketChange: number }; previous: { percent: number; at: number; marketChange: number } | null } }))
 const now = Date.parse('2026-10-20T12:00:00Z')
 const instrument: MarketInstrument = { id: 'upbit-btc', marketId: 'upbit', symbol: 'BTC/KRW', name: 'Bitcoin', quoteCurrency: 'KRW', lastPrice: 279, change24hPercent: 1, volume24h: 1000 }
 function candles(frame: AnalysisFrame): AnalysisSeries {
@@ -15,7 +15,7 @@ function candles(frame: AnalysisFrame): AnalysisSeries {
     return { timestamp: end - (80 - i) * interval, open: close, close, low: close - 3, high: close + 3, volume: 100 }
   }) }
 }
-vi.mock('@/hooks/useTechnicalLevelData', () => ({ useTechnicalLevelData: (_: unknown, frame: AnalysisFrame) => candles(frame) }))
+vi.mock('@/hooks/useTechnicalLevelData', () => ({ useTechnicalLevelData: (_: unknown, frame: AnalysisFrame) => state.overrides[frame] ?? candles(frame) }))
 vi.mock('@/hooks/useDominance', () => ({ useDominance: () => ({ data: state.dominance, loading: false, error: !state.dominance }) }))
 
 describe('CryptoDecisionPanel', () => {
@@ -60,7 +60,7 @@ describe('CryptoDecisionPanel', () => {
     fireEvent.keyDown(summary, { key: 'ArrowLeft' })
     expect((screen.getAllByRole('spinbutton')[0] as HTMLInputElement).value).toBe('272')
   })
-  beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(now); state.trend = 1; state.quality = 'live'; state.dominance = null })
+  beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(now); state.trend = 1; state.quality = 'live'; state.dominance = null; state.overrides = {} })
   afterEach(() => vi.useRealTimers())
   it('gives a direction, price zones and holding impact even if dominance is unavailable', () => {
     render(<CryptoDecisionPanel instrument={instrument} daily={candles('1D')} language="ko" averagePrice={280} quantity={2} />)
@@ -100,8 +100,85 @@ describe('CryptoDecisionPanel', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Evidence' }))
     const status = screen.getByRole('list', { name: 'Timeframes available' })
     expect(status.textContent?.match(/Stale quotes/g)).toHaveLength(3)
-    expect(screen.getByText('Analysis data is unavailable')).toBeTruthy()
+    expect(screen.getByText('Preparing analysis')).toBeTruthy()
     expect(screen.queryByText('Wait for direction before a new entry')).toBeNull()
+  })
+
+  it('shows actual readiness while holding, distinguishes history from quotes, and keeps partial results', () => {
+    const waiting: AnalysisSeries = { candles: [], currentPrice: null, dataQuality: 'unavailable', connectionStatus: 'connecting', updatedAt: null }
+    state.overrides = { '1H': waiting, '4H': waiting }
+    const props = { instrument, language: 'ko' as const, holding: true, onHoldingChange: vi.fn(), averagePrice: 280 }
+    const { rerender } = render(<CryptoDecisionPanel {...props} daily={waiting} />)
+    expect(screen.getByRole('button', { name: '이미 갖고 있어요' }).getAttribute('aria-pressed')).toBe('true')
+    const percent = () => screen.getByRole('progressbar', { name: '분석 자료 준비율' }).getAttribute('value')
+    expect(percent()).toBe('0')
+    expect(screen.getByText('분석 준비 중')).toBeTruthy()
+    expect(screen.queryByText('분석 자료를 불러오고 있어요')).toBeNull()
+    const withHistory = { ...candles('1H'), connectionStatus: 'connecting' }
+    state.overrides['1H'] = withHistory
+    rerender(<CryptoDecisionPanel {...props} daily={waiting} />)
+    expect(screen.getByText('실시간 시세 연결 중')).toBeTruthy()
+    expect(percent()).toBe('0')
+    delete state.overrides['1H']
+    rerender(<CryptoDecisionPanel {...props} daily={waiting} />)
+    expect(percent()).toBe('33')
+    expect(screen.queryByText('상승 쪽이 강해요')).toBeNull()
+    delete state.overrides['4H']
+    rerender(<CryptoDecisionPanel {...props} daily={waiting} />)
+    expect(percent()).toBe('67')
+    expect(screen.getByText('상승 쪽이 강해요')).toBeTruthy()
+    expect(screen.getByText('분석 가능 · 나머지 자료 확인 중')).toBeTruthy()
+    rerender(<CryptoDecisionPanel {...props} daily={candles('1D')} />)
+    expect(percent()).toBe('100')
+    expect(screen.getByText('분석 준비 완료')).toBeTruthy()
+    expect(screen.queryByText(/초 경과/)).toBeNull()
+  })
+
+  it('does not invent progress with time and exposes slow and delayed states until recovery', () => {
+    const waiting: AnalysisSeries = { candles: [], currentPrice: null, dataQuality: 'unavailable', connectionStatus: 'connecting', updatedAt: null }
+    state.overrides = { '1H': waiting, '4H': waiting }
+    const { rerender, unmount } = render(<CryptoDecisionPanel instrument={instrument} daily={waiting} language="ko" />)
+    act(() => vi.advanceTimersByTime(15_000))
+    expect(screen.getByText('분석 준비가 늦어지고 있어요')).toBeTruthy()
+    expect(screen.getByText('15초 경과')).toBeTruthy()
+    act(() => vi.advanceTimersByTime(30_000))
+    expect(screen.getByText('시세 응답이 지연되고 있어요')).toBeTruthy()
+    expect(screen.getByRole('button', { name: '페이지 새로고침' })).toBeTruthy()
+    expect(screen.getByRole('progressbar').getAttribute('value')).toBe('0')
+    state.overrides = {}
+    rerender(<CryptoDecisionPanel instrument={instrument} daily={candles('1D')} language="ko" />)
+    expect(screen.getByText('분석 준비 완료')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: '페이지 새로고침' })).toBeNull()
+    unmount()
+    expect(vi.getTimerCount()).toBe(0)
+  })
+
+  it('reports insufficient history as a settled data problem, not ongoing analysis or 100%', () => {
+    state.overrides = { '1H': { ...candles('1H'), candles: [] }, '4H': { ...candles('4H'), candles: [] } }
+    render(<CryptoDecisionPanel instrument={instrument} daily={{ ...candles('1D'), candles: [] }} language="ko" />)
+    expect(screen.getByText('지금은 분석할 자료가 부족해요')).toBeTruthy()
+    expect(screen.getAllByText('가격 기록 부족')).toHaveLength(3)
+    expect(screen.queryByText(/초 경과/)).toBeNull()
+    act(() => vi.advanceTimersByTime(45_000))
+    expect(screen.queryByText('시세 응답이 지연되고 있어요')).toBeNull()
+    expect(screen.getByRole('progressbar').getAttribute('value')).toBe('0')
+    fireEvent.click(screen.getByRole('button', { name: '연결·자료 상태 자세히 보기' }))
+    expect(screen.getByRole('tab', { name: '자세히 보기' }).getAttribute('aria-selected')).toBe('true')
+  })
+
+  it('clears the previous instrument wait time and never claims mock readiness', () => {
+    const waiting: AnalysisSeries = { candles: [], currentPrice: null, dataQuality: 'unavailable', connectionStatus: 'reconnecting', updatedAt: null }
+    state.overrides = { '1H': waiting, '4H': waiting }
+    const { rerender } = render(<CryptoDecisionPanel instrument={instrument} daily={waiting} language="en" />)
+    act(() => vi.advanceTimersByTime(45_000))
+    expect(screen.getByText('Market data is delayed')).toBeTruthy()
+    rerender(<CryptoDecisionPanel instrument={{ ...instrument, id: 'upbit-eth', symbol: 'ETH/KRW' }} daily={waiting} language="en" />)
+    expect(screen.getByText('0s elapsed')).toBeTruthy()
+    expect(screen.queryByText('Market data is delayed')).toBeNull()
+    state.quality = 'mock'; state.overrides = {}
+    rerender(<CryptoDecisionPanel instrument={instrument} daily={candles('1D')} language="en" />)
+    expect(screen.queryByRole('progressbar')).toBeNull()
+    expect(screen.getByText('You are viewing example data')).toBeTruthy()
   })
   it('never presents mock data as a live price plan', () => {
     state.quality = 'mock'

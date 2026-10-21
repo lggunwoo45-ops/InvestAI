@@ -254,7 +254,9 @@ describe('MyAnalysisPage', () => {
     technicalMockState.isLoading = true
     render(<AppProviders><MemoryRouter initialEntries={['/my-analysis?instrumentId=upbit-btc']}><AppRoutes /></MemoryRouter></AppProviders>)
     expect(await screen.findByRole('heading', { name: 'BTC/KRW' })).toBeTruthy()
-    expect(screen.getByText('Analysis data is unavailable')).toBeTruthy()
+    expect(screen.getByText('Preparing analysis')).toBeTruthy()
+    expect(screen.getByRole('progressbar', { name: 'Analysis data readiness' }).getAttribute('value')).toBe('0')
+    expect(screen.getByText(/This is a data issue/)).toBeTruthy()
     expect(screen.queryByText('Wait for direction before a new entry')).toBeNull()
     expect(screen.queryByRole('region', { name: 'Review summary' })).toBeNull()
     fireEvent.click(screen.getByRole('tab', { name: 'Evidence' }))
