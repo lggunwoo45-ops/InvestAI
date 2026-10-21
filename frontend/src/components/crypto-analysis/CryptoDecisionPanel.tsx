@@ -11,6 +11,7 @@ import { formatAnalysisPrice } from '@/utils/formatAnalysisPrice'
 import { decisionGuide, easyDirection } from '@/services/cryptoAnalysis/decisionGuide'
 import type { AnalysisTab } from '@/services/myAnalysis/analysisSession'
 import styles from './CryptoDecisionPanel.module.css'
+import { AnalysisPreparation } from './AnalysisPreparation'
 
 interface Props { instrument: MarketInstrument; daily: AnalysisSeries; language: Language; averagePrice?: number | null; quantity?: number; expert?: boolean; holding?: boolean; onHoldingChange?: (holding: boolean) => void; positionId?: string; detailsContent?: ReactNode; investmentContent?: ReactNode; activeTab?: AnalysisTab; onTabChange?: (tab: AnalysisTab) => void }
 const tabs = ['summary', 'details', 'investment'] as const
@@ -106,11 +107,12 @@ export function CryptoDecisionPanel({ instrument, daily, language, averagePrice,
       <button type="button" aria-pressed={!holding} onClick={() => onHoldingChange(false)}>{ko ? '새로 살까 해요' : 'Considering a buy'}</button>
       <button type="button" aria-pressed={holding} onClick={() => onHoldingChange(true)}>{ko ? '이미 갖고 있어요' : 'Already holding'}</button>
     </div>}
-    <div className={styles.verdict}>
+    <AnalysisPreparation key={`${instrument.id}:${daily.dataQuality === 'mock'}`} decision={decision} series={series} language={language} onDetails={() => setTab('details')} />
+    {decision.direction !== 'unavailable' && <div className={styles.verdict}>
       <span className={styles.direction}>{easyDirection[language][decision.direction]}</span>
       <h3>{guide.title}</h3>
       <p>{guide.reason}</p>
-    </div>
+    </div>}
     {holding && !positionId && <p className={styles.notice}>{ko ? '보유 상황에 맞춘 설명이에요. 실제 보유 기록은 ‘내 투자’에서 저장해주세요.' : 'This changes the explanation only. Save the actual holding in My Investments.'}</p>}
     {holding && <div className={styles.holdingSummary}>
       {averagePrice != null && Number.isFinite(averagePrice) && averagePrice > 0
@@ -130,7 +132,7 @@ export function CryptoDecisionPanel({ instrument, daily, language, averagePrice,
         </article>
       </div>
       <p className={styles.nextCheck}><strong>{ko ? '다음에 확인할 것' : 'What to check next'}</strong>{guide.next}</p>
-    </> : <p className={styles.nextCheck}>{guide.next}</p>}
+    </> : decision.direction !== 'unavailable' ? <p className={styles.nextCheck}>{guide.next}</p> : null}
     <button className={styles.evidenceLink} type="button" onClick={() => setTab('details')}>{ko ? `3개 시간 흐름 중 ${decision.coverage}개 확인 · 이유 자세히 보기` : `${decision.coverage} of 3 timeframes checked · View the evidence`} →</button>
     </div>
     <div className={styles.tabPanel} role="tabpanel" id={`${tabId}-details-panel`} aria-labelledby={`${tabId}-details`} hidden={tab !== 'details'} tabIndex={0}>
