@@ -1,3 +1,5 @@
+import { loadDominance, peekDominance } from './dominanceService'
+import { withMarketContext } from './marketContext'
 import { marketDataService, type MarketStreamOptions } from '@/services/market/marketDataService'
 import type { MarketInstrument, MarketVenue } from '@/types/market'
 import type { RealtimeMarketState } from '@/types/marketDetail'
@@ -53,13 +55,14 @@ function asSeries(state: RealtimeMarketState): AnalysisSeries {
     candles: state.snapshot?.candles ?? [], currentPrice: state.snapshot?.instrument.lastPrice ?? null,
     dataQuality: state.snapshot ? state.connection.effectiveMode === 'live' ? 'live' : 'mock' : 'unavailable',
     connectionStatus: state.connection.status, updatedAt: state.connection.lastUpdatedAt,
-    marketTime: state.connection.marketTime,
+    marketTime: state.connection.marketTime, recentTrades: state.snapshot?.recentTrades ?? [],
   }
 }
 
 export function inspectInstrument(instrument: MarketInstrument, signal: AbortSignal, {
   subscribe = marketDataService.subscribe.bind(marketDataService), now = Date.now, timeoutMs = 18_000,
 }: { subscribe?: Subscribe; now?: () => number; timeoutMs?: number } = {}): Promise<ScanResult | null> {
+  if (!signal.aborted) void loadDominance().catch(() => {})
   return new Promise(resolve => {
     const series = { '1H': empty(), '4H': empty(), '1D': empty() }
     const stops: (() => void)[] = []
@@ -70,9 +73,9 @@ export function inspectInstrument(instrument: MarketInstrument, signal: AbortSig
       done = true
       cleanup()
       const at = now()
-      const decision = buildCryptoDecision(series, at)
+      const decision = withMarketContext(buildCryptoDecision(series, at), series, instrument, peekDominance(at), at)
       const receipts = decision.frames.filter(frame => !frame.issue).map(frame => series[frame.frame].updatedAt ?? 0)
-      const expiresAt = Math.min(at + SCAN_VALID_MS, ...receipts.map(receipt => receipt + SCAN_VALID_MS))
+      const expiresAt = Math.min(at + SCAN_VALID_MS, decision.context?.validUntil ?? Infinity, ...receipts.map(receipt => receipt + SCAN_VALID_MS))
       resolve(cancelled ? null : { instrument, decision, analyzedAt: at, expiresAt, timedOut })
     }
     const abort = () => finish(false, true)

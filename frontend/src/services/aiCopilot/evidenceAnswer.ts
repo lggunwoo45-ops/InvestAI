@@ -1,3 +1,4 @@
+import { contextExplanation } from '@/services/cryptoAnalysis/marketContext'
 import type { Language } from '@/i18n/translations'
 import type { ScanResult } from '@/services/cryptoAnalysis/liveCandidateScan'
 import { newsForInstrument } from '@/services/news/newsSelectors'
@@ -36,11 +37,12 @@ export function evidenceAnswer(kind: EvidenceQuestion, instrument: MarketInstrum
   const zone = (values: readonly number[]) => values.map(money).join(' – ')
   const direction = ko ? easyDirection.ko : { buy: 'Buy-side strength', sell: 'Sell-side strength', neutral: 'Neutral' }
   const guide = decisionGuide(decision, language)
-  const summary = ko ? `${instrument.displaySymbol ?? instrument.symbol}: ${easyDirection.ko[decision.direction]}\n${guide.title}\n${guide.reason}` : `${instrument.displaySymbol ?? instrument.symbol}: ${direction[decision.direction as keyof typeof direction]} (${decision.coverage}/3)\n${decision.frames.filter(frame => !frame.issue).map(frame => `${frame.frame}: ${direction[frame.direction]}`).join(' · ')}`
-  if (kind === 'prices') return plan ? (ko ? `${plan.frame} 완료 봉 기준\n다시 살펴볼 가격: ${zone(plan.entry)}\n오르다가 막힐 수 있는 가격: ${zone(plan.resistance)}\n더 내려가면 주의할 가격: ${money(plan.stop)}\n살펴볼 구간의 중간 가격에서 상승 여지 / 하락 위험 비율: ${plan.rewardRisk.toFixed(2)}\n${decision.direction === 'sell' ? '하락 쪽이 강해요. 이 가격에 닿았다는 이유만으로 사기보다 하락이 멈추는지 먼저 봐야 해요.' : '이 구간에 왔다고 바로 사라는 뜻은 아니에요. 가격이 더 떨어지지 않고 거래가 늘어나는지 함께 봐야 해요.'}`
+  const summary = ko ? `${instrument.displaySymbol ?? instrument.symbol}: ${easyDirection.ko[decision.direction]}\n${guide.title}\n${guide.reason}` : `${instrument.displaySymbol ?? instrument.symbol}: ${direction[decision.direction as keyof typeof direction]} (${decision.coverage}/3)\n${guide.title}\n${guide.reason}\n${decision.frames.filter(frame => !frame.issue).map(frame => `${frame.frame}: ${direction[frame.direction]}`).join(' · ')}`
+  if (kind === 'prices') return plan ? `${contextExplanation(decision.context, ko)}\n` + (ko ? `${plan.frame} 완료 봉 기준\n다시 살펴볼 가격: ${zone(plan.entry)}\n오르다가 막힐 수 있는 가격: ${zone(plan.resistance)}\n더 내려가면 주의할 가격: ${money(plan.stop)}\n살펴볼 구간의 중간 가격에서 상승 여지 / 하락 위험 비율: ${plan.rewardRisk.toFixed(2)}\n${decision.direction === 'sell' ? '하락 쪽이 강해요. 이 가격에 닿았다는 이유만으로 사기보다 하락이 멈추는지 먼저 봐야 해요.' : '이 구간에 왔다고 바로 사라는 뜻은 아니에요. 가격이 더 떨어지지 않고 거래가 늘어나는지 함께 봐야 해요.'}`
     : `${plan.frame} closed-bar basis\nBuy watch zone: ${zone(plan.entry)}\nRebound resistance: ${zone(plan.resistance)}\nLong thesis invalidation: ${money(plan.stop)}\nMidpoint reward/risk: ${plan.rewardRisk.toFixed(2)}\nA zone touch alone is not an entry signal; verify support and participation.`)
     : ko ? '방향은 계산됐지만 가격 구간을 정할 지지·저항 구조가 부족합니다. 임의 목표가는 만들지 않습니다.' : 'Direction is available, but support/resistance is insufficient for a price plan.'
   const risks = [
+    contextExplanation(decision.context, ko),
     decision.mixed ? (ko ? '짧게 볼 때와 길게 볼 때 가격 방향이 달라요.' : 'Timeframes disagree.') : '',
     decision.extended ? (ko ? '가격이 빠르게 올라 지금 따라 사는 것은 주의해야 해요.' : 'Extended RSI or moving-average distance makes chasing risky.') : '',
     plan && plan.rewardRisk < 1.5 ? (ko ? '계산한 상승 여지가 하락 위험의 1.5배보다 작아요.' : 'Reward/risk is below 1.5.') : '',

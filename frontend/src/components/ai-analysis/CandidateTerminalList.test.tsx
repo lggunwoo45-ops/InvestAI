@@ -104,7 +104,7 @@ describe('CandidateTerminalList', () => {
     const select = vi.fn()
     render(<CandidateTerminalList {...baseProps} snapshot={snapshot(items.map((entry) => entry.item))} items={items} selectedInstrumentId="upbit-asset-2" onSelect={select} />)
 
-    const panel = screen.getByRole('region', { name: 'Today’s 08:00 snapshot record' })
+    const panel = screen.getByRole('region', { name: 'Today’s saved candidate record' })
     const rows = within(panel).getAllByRole('listitem')
     expect(rows).toHaveLength(3)
     expect(rows.map((row) => within(row).getByRole('button', { name: /^Select / }).getAttribute('aria-label'))).toEqual([

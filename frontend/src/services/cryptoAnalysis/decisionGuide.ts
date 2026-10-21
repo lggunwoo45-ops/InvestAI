@@ -1,7 +1,8 @@
+import { contextExplanation } from './marketContext'
 import type { Language } from '@/i18n/translations'
 import type { CryptoDecision } from './cryptoDecisionEngine'
 
-/** Presentation only: keep the engine's direction, freshness and price rules unchanged. */
+/** Shared explanation for the technical decision and any fresh opposing context. */
 export function decisionGuide(decision: CryptoDecision, language: Language, holding = false) {
   const ko = language === 'ko'
   const { direction, action, plan } = decision
@@ -15,6 +16,12 @@ export function decisionGuide(decision: CryptoDecision, language: Language, hold
         : 'There is not enough verified price history. This is a data issue, not a signal to wait, buy or sell.',
       next: ko ? '아래 ‘자세히 보기’에서 연결 상태를 확인해주세요.' : 'Open the details to check the data connection.',
     }
+  }
+  const contextReason = contextExplanation(decision.context, ko)
+  if (direction === 'buy' && contextReason) return {
+    title: ko ? '추가 매수 전에 반대 근거를 먼저 확인하세요' : 'Review opposing evidence before adding',
+    reason: contextReason,
+    next: ko ? '가격 흐름은 상승 쪽이지만, 매도 체결과 시장 비중을 함께 확인한 뒤 표시된 가격 구간을 살펴보세요.' : 'Price trends lean upward. Recheck selling pressure and market share before reviewing the price zone.',
   }
   const title = direction === 'sell'
     ? ko ? holding ? '추가 매수보다 보유 위험을 먼저 살펴보세요' : '새로 사기보다 하락이 멈추는지 기다려보세요'

@@ -1,3 +1,4 @@
+import * as localAi from '@/services/ai/localAiClient'
 import { fireEvent, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
@@ -53,7 +54,8 @@ describe('AiCopilot selected-instrument evidence wiring', () => {
     expect(first.getAttribute('data-final-read')).toBe('approachReviewPossible')
     fireEvent.click(within(first).getByRole('button', { name: 'Show evidence details' }))
     expect(first.textContent).toContain('Instrument: AAA/KRW')
-    expect(within(screen.getByRole('complementary', { name: 'AI Copilot' })).getByText(/Constructive continuation remains possible/)).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Open live trends and price criteria →' }).getAttribute('href')).toBe('/my-analysis?instrumentId=AAA')
+    expect(screen.queryByText(/Constructive continuation remains possible/)).toBeNull()
 
     fireEvent.click(screen.getByRole('button', { name: 'Add to watchlist AAA/KRW · AI Copilot' }))
     expect(screen.getByText('In watchlist')).toBeTruthy()
@@ -69,4 +71,20 @@ describe('AiCopilot selected-instrument evidence wiring', () => {
     expect(second.textContent).toContain('Instrument: BBB/KRW')
     expect(second.textContent).not.toContain('Instrument: AAA/KRW')
   })
+})
+
+it('clears prepared AI evidence and paid consent when the selected instrument changes', async () => {
+  const gateway = vi.spyOn(localAi, 'localAiCall').mockResolvedValue({ reservedUsd: .01, inputTokenCeiling: 100, outputTokenCeiling: 512 })
+  mocks.workspace.mockReturnValue(workspace(instrument('FIRST', 1), candles('up')))
+  const view = renderWithProviders(<AiCopilot />)
+  fireEvent.click(screen.getByRole('button', { name: 'Prepare evidence and cost limit' }))
+  fireEvent.click(await screen.findByRole('checkbox', { name: /I consent to sending/ }))
+  expect((screen.getByRole('button', { name: 'Request one AI explanation' }) as HTMLButtonElement).disabled).toBe(false)
+  mocks.workspace.mockReturnValue(workspace(instrument('SECOND', 1), candles('up')))
+  view.rerender(<AiCopilot />)
+  expect(screen.queryByRole('button', { name: 'Request one AI explanation' })).toBeNull()
+  expect(screen.queryByText('Review frozen evidence')).toBeNull()
+  expect(gateway).toHaveBeenCalledTimes(1)
+  expect(gateway.mock.calls[0][0]).toBe('estimate')
+  gateway.mockRestore()
 })

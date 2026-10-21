@@ -1,3 +1,4 @@
+vi.mock('./dominanceService', () => ({ loadDominance: () => Promise.resolve(null), peekDominance: () => null }))
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { MarketInstrument } from '@/types/market'
 import type { MarketStreamOptions } from '@/services/market/marketDataService'

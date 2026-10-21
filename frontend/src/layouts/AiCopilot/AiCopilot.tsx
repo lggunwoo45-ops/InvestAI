@@ -5,8 +5,8 @@ import { EvidenceAssistant } from '@/components/ai-copilot/EvidenceAssistant'
 import { EmptyState } from '@/components/EmptyState/EmptyState'
 import { Icon } from '@/components/Icon/Icon'
 import { AiCopilotFinalReadCard } from '@/components/ai-copilot/AiCopilotFinalReadCard/AiCopilotFinalReadCard'
-import { AiAnalysisFoundation } from '@/components/ai/AiAnalysisFoundation/AiAnalysisFoundation'
-import { AiForecastPanel } from '@/components/ai/AiForecastPanel/AiForecastPanel'
+import { LocalAiAnalysis } from '@/components/ai/LocalAiAnalysis/LocalAiAnalysis'
+import { Link } from 'react-router-dom'
 import { InstrumentRelatedNews } from '@/components/news/InstrumentRelatedNews/InstrumentRelatedNews'
 import { useMarketWorkspace } from '@/hooks/useMarketWorkspace'
 import { useNewsProviderMode } from '@/hooks/useNewsProviderMode'
@@ -14,9 +14,7 @@ import { useUiStore } from '@/hooks/useUiStore'
 import { uiText } from '@/i18n/translations'
 import { useLanguage } from '@/i18n/useLanguage'
 import { buildAiAnalysisContext } from '@/services/ai/aiAnalysisContextBuilder'
-import { createMockAiAnalysis } from '@/services/ai/mockAiAnalysisEngine'
-import { safelyCreateMockScenarioAnalysis } from '@/services/ai/mockScenarioService'
-import { applyFinalReadToScenarioAnalysis, buildAiCopilotFinalRead, buildAiCopilotFinalReadEvidence } from '@/services/aiCopilot/aiCopilotFinalRead'
+import { buildAiCopilotFinalRead, buildAiCopilotFinalReadEvidence } from '@/services/aiCopilot/aiCopilotFinalRead'
 import { buildCandidateReviewScore } from '@/services/candidateScore/candidateReviewScore'
 import { buildMyInstrumentAnalysis } from '@/services/myAnalysis/myAnalysisEngine'
 import { buildPracticalDecision } from '@/services/practicalDecision/practicalDecisionModel'
@@ -38,17 +36,15 @@ export function AiCopilot() {
   const isStock = displayedInstrument?.marketId === 'korea-stock' || displayedInstrument?.marketId === 'us-stock'
   const scenarioTimeframe: AiScenarioTimeframe = selectedTimeframe === '1D' ? 'long'
     : selectedTimeframe === '4H' ? 'medium' : 'short'
-  const baseScenarioAnalysis = useMemo(() => displayedInstrument ? safelyCreateMockScenarioAnalysis(displayedInstrument, language, scenarioTimeframe) : null, [displayedInstrument, language, scenarioTimeframe])
   const analysisContext = useMemo(() => buildAiAnalysisContext({
     instrument: displayedInstrument ?? null,
-    scenario: baseScenarioAnalysis,
+    scenario: null,
     newsProviderMode,
     newsResult,
     marketDataMode,
     connectionStatus: activeMarketState?.connection.status,
     language,
-  }), [activeMarketState?.connection.status, baseScenarioAnalysis, displayedInstrument, language, marketDataMode, newsProviderMode, newsResult])
-  const foundationResult = useMemo(() => analysisContext.status === 'ready' ? createMockAiAnalysis(analysisContext.input, language) : null, [analysisContext, language])
+  }), [activeMarketState?.connection.status, displayedInstrument, language, marketDataMode, newsProviderMode, newsResult])
   const finalReadContext = useMemo(() => {
     if (!displayedInstrument) return null
     const matchingSnapshot = activeMarketState?.snapshot?.instrument.id === displayedInstrument.id ? activeMarketState.snapshot : null
@@ -97,9 +93,7 @@ export function AiCopilot() {
     return { result: buildAiCopilotFinalRead({ language, evidence, practicalDecision, reviewScore }), evidence }
   }, [activeMarketState, displayedInstrument, language, marketDataMode, newsResult, scenarioTimeframe])
   const finalRead = finalReadContext?.result ?? null
-  const scenarioAnalysis = useMemo(() => baseScenarioAnalysis && finalRead
-    ? applyFinalReadToScenarioAnalysis(baseScenarioAnalysis, finalRead, language)
-    : baseScenarioAnalysis, [baseScenarioAnalysis, finalRead, language])
+
 
   return (
     <aside className={`${styles.copilot} ${isStock ? styles.stockContext : ''}`} aria-label="AI Copilot">
@@ -134,9 +128,9 @@ export function AiCopilot() {
               marketState={activeMarketState} />
             {finalRead && <AiCopilotFinalReadCard result={finalRead} language={language} />}
 
-            <AiForecastPanel instrument={displayedInstrument!} timeframe={scenarioTimeframe} displayTimeframe={selectedTimeframe} analysis={scenarioAnalysis} />
+            <Link to={`/my-analysis?instrumentId=${encodeURIComponent(displayedInstrument!.id)}`}>{language === 'ko' ? '실제 가격 흐름·관심 구간 확인 →' : 'Open live trends and price criteria →'}</Link>
 
-            {analysisContext.status === 'ready' && foundationResult && <AiAnalysisFoundation input={analysisContext.input} result={foundationResult} language={language} />}
+            {analysisContext.status === 'ready' && <LocalAiAnalysis key={`${displayedInstrument!.id}:${language}:${marketDataMode}`} input={analysisContext.input} language={language} />}
 
             <InstrumentRelatedNews instrument={displayedInstrument!} />
 
