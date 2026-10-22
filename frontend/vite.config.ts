@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { createLocalAiGateway } from './tools/local-ai/gateway.mjs'
 import { createMarketHandler } from '../backend/market-data/server.mjs'
+import { createStockHandler } from '../backend/stocks/server.mjs'
 
 export default defineConfig({
   base: './',
@@ -14,6 +15,10 @@ export default defineConfig({
     name: 'local-public-market-data',
     configureServer(server) { const handler = createMarketHandler({ local: true }); server.middlewares.use(handler); server.httpServer?.on('close', handler.close) },
     configurePreviewServer(server) { const handler = createMarketHandler({ local: true }); server.middlewares.use(handler); server.httpServer?.on('close', handler.close) },
+  }, {
+    name: 'local-domestic-stocks',
+    configureServer(server) { server.middlewares.use(createStockHandler({ local: true })) },
+    configurePreviewServer(server) { server.middlewares.use(createStockHandler({ local: true })) },
   }],
   resolve: {
     alias: {

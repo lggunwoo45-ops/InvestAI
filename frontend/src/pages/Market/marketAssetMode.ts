@@ -107,8 +107,7 @@ export function venueForPersistedInstrumentId(instrumentId: string): MarketVenue
 export function isSelectableMarketInstrument(instrument: MarketInstrument): boolean {
   return instrument.id.length > 0
     && instrument.symbol.length > 0
-    && Number.isFinite(instrument.lastPrice)
-    && instrument.lastPrice > 0
+    && (instrument.providerType === 'kis-krx' || (Number.isFinite(instrument.lastPrice) && instrument.lastPrice > 0))
 }
 
 export function selectDefaultInstrument(mode: MarketAssetMode, instruments: readonly MarketInstrument[]): MarketInstrument | undefined {

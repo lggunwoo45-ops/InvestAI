@@ -5,6 +5,7 @@ import { upbitMarketDataProvider } from '@/services/market/providers/UpbitMarket
 import { binanceCatalogProvider } from '@/services/market/explorer/BinanceCatalogProvider'
 import { mockCryptoCatalogProvider } from '@/services/market/explorer/MockCryptoCatalogProvider'
 import { stockCatalogProvider } from '@/services/market/explorer/StockCatalogProvider'
+import { domesticStockDirectoryProvider } from '@/services/stocks/stockDirectory'
 import { upbitCatalogProvider } from '@/services/market/explorer/UpbitCatalogProvider'
 import type { MarketCatalogProvider } from '@/services/market/explorer/MarketCatalogProvider'
 import type { RealtimeMarketProvider } from '@/services/market/contracts/RealtimeMarketProvider'
@@ -94,7 +95,7 @@ const mockMarketSections: readonly MarketSectionData[] = [
 ]
 
 const liveProviders: readonly RealtimeMarketProvider[] = [upbitMarketDataProvider, binanceSpotMarketDataProvider, binanceMarketDataProvider]
-const catalogProviders: readonly MarketCatalogProvider[] = [stockCatalogProvider, mockCryptoCatalogProvider, upbitCatalogProvider, binanceCatalogProvider]
+const catalogProviders: readonly MarketCatalogProvider[] = [domesticStockDirectoryProvider, stockCatalogProvider, mockCryptoCatalogProvider, upbitCatalogProvider, binanceCatalogProvider]
 
 /**
  * Single market-data facade. UI code never selects an exchange adapter or owns a
@@ -251,6 +252,10 @@ export class MarketDataService implements MarketOverviewService {
   }
 
   private startSubscription({ instrument, timeframe, mode, onState }: MarketStreamOptions, priority: () => number): () => void {
+    if (mode === 'live' && instrument.providerType === 'kis-krx') {
+      onState({ snapshot: null, connection: { requestedMode: mode, effectiveMode: mode, status: 'unsupported', provider: 'KIS', reconnectAttempt: 0, lastUpdatedAt: null, message: 'Domestic stocks use the read-only daily stock workspace. No simulated stream is substituted.' } })
+      return () => {}
+    }
     const liveProvider = this.providers.find((provider) => provider.supports(instrument))
     const provider = mode === 'live' && liveProvider ? liveProvider : this.mockProvider
     const effectiveMode: MarketDataMode = provider === this.mockProvider ? 'mock' : 'live'

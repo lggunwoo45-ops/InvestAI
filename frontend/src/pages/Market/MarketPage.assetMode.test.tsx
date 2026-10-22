@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { App } from '@/app/App'
@@ -68,13 +68,28 @@ describe('Market asset separation', () => {
     window.localStorage.setItem(MARKET_ASSET_MODE_STORAGE_KEY, 'korea')
     window.localStorage.setItem(LAST_MARKET_INSTRUMENT_STORAGE_KEY, JSON.stringify({ schemaVersion: 1, instrumentIds: { korea: 'krx-000660' } }))
     const first = render(<App />)
-    expect(await screen.findByRole('img', { name: /000660 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
+    expect(await screen.findByRole('region', { name: 'Domestic stock overview' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: /SK Hynix/i })).toBeTruthy()
     first.unmount()
 
     window.localStorage.setItem(LAST_MARKET_INSTRUMENT_STORAGE_KEY, JSON.stringify({ schemaVersion: 1, instrumentIds: { korea: 'krx-missing' } }))
     render(<App />)
-    expect(await screen.findByRole('img', { name: /005930 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: /Samsung Electronics/i })).toBeTruthy()
     await waitFor(() => expect(window.localStorage.getItem(LAST_MARKET_INSTRUMENT_STORAGE_KEY)).toContain('krx-005930'))
+  })
+
+  it('restores a live domestic identity without fabricating a mock chart and can switch to explicit demo', async () => {
+    window.localStorage.setItem(MARKET_ASSET_MODE_STORAGE_KEY, 'korea')
+    window.localStorage.setItem(LAST_MARKET_INSTRUMENT_STORAGE_KEY, JSON.stringify({ schemaVersion: 1, instrumentIds: { korea: 'krx-000660' } }))
+    render(<App />)
+    expect(await screen.findByRole('region', { name: 'Domestic stock overview' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: /SK Hynix/i })).toBeTruthy()
+    expect(screen.queryByRole('img', { name: /TradingView candlestick chart/ })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'MOCK' }))
+    expect(await screen.findByRole('img', { name: /000660 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
+    fireEvent.click(within(screen.getByRole('region', { name: 'Market Explorer' })).getByRole('button', { name: 'LIVE' }))
+    expect(await screen.findByRole('region', { name: 'Domestic stock overview' })).toBeTruthy()
+    expect(screen.queryByRole('img', { name: /TradingView candlestick chart/ })).toBeNull()
   })
 
   it('renders the separated asset modes and beta boundary copy in Korean', async () => {

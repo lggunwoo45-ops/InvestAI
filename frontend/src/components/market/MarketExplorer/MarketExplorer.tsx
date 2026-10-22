@@ -123,7 +123,7 @@ export function MarketExplorer({
     <section className={`${styles.explorer} ${isCrypto ? styles.crypto : styles.stock} ${compact ? styles.compact : ''}`} data-workspace={isCrypto ? 'crypto' : 'stock'} aria-label={text.title}>
       <header className={styles.header}>
         <strong>{text.layout.instrumentList}</strong>
-        <div className={styles.count}><DataModeControl value={mode} onChange={onModeChange} /><span aria-live="polite" aria-atomic="true" aria-label={`${instruments.length.toLocaleString()} ${text.results}`}>{instruments.length.toLocaleString()} {text.results}</span><span className={source === 'live' ? styles.live : styles.mock} title={!isCrypto ? text.mockDisclosure : undefined}>{showingCached ? (language === 'ko' ? '이전 조회 목록' : 'Previous catalog') : source === 'live' ? text.realPublicApi : text.mockData}</span></div>
+        <div className={styles.count}><DataModeControl value={mode} onChange={onModeChange} /><span aria-live="polite" aria-atomic="true" aria-label={`${instruments.length.toLocaleString()} ${text.results}`}>{instruments.length.toLocaleString()} {text.results}</span><span className={source === 'live' ? styles.live : styles.mock} title={source === 'mock' && !isCrypto ? text.mockDisclosure : undefined}>{showingCached ? (language === 'ko' ? '이전 조회 목록' : 'Previous catalog') : source === 'directory' ? (language === 'ko' ? '종목 목록 · 선택 후 시세 조회' : 'Directory · select for quotes') : source === 'live' ? text.realPublicApi : text.mockData}</span></div>
       </header>
 
       <div className={styles.navigation} data-market-navigation="hierarchical">

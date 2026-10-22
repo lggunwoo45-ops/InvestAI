@@ -4,7 +4,7 @@ export type QuoteCurrency = string
 
 export type MarketGroup = 'crypto' | 'korea' | 'us'
 export type MarketVenue = 'upbit-krw' | 'upbit-btc' | 'upbit-usdt' | 'binance-spot' | 'binance-futures' | 'kospi' | 'kosdaq' | 'nasdaq' | 'nyse'
-export type MarketProviderType = 'upbit' | 'binance-spot' | 'binance-futures' | 'mock-krx' | 'mock-us'
+export type MarketProviderType = 'upbit' | 'binance-spot' | 'binance-futures' | 'mock-krx' | 'mock-us' | 'kis-krx'
 
 export type MarketDataMode = 'live' | 'mock'
 
@@ -38,7 +38,7 @@ export interface MarketInstrument {
 export interface MarketCatalog {
   venue: MarketVenue
   instruments: readonly MarketInstrument[]
-  source: 'live' | 'mock'
+  source: 'live' | 'mock' | 'directory'
   fetchedAt: number
 }
 

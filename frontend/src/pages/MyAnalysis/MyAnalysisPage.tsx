@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { StockWorkspace } from '@/components/stocks/StockWorkspace'
 import { Link, Navigate, useSearchParams } from 'react-router-dom'
 import { analysisContextKey, readAnalysisSession, saveAnalysisSession, type AnalysisTab } from '@/services/myAnalysis/analysisSession'
 
@@ -148,13 +149,14 @@ function AnalysisWorkspace() {
     states.forEach((state) => state.catalog?.instruments.forEach((instrument) => unique.set(instrument.id, instrument)))
     return [...unique.values()]
   }, [states])
-  const sourceById = useMemo(() => new Map(states.flatMap((state) => state.catalog?.instruments.map((instrument) => [instrument.id, state.catalog?.source ?? null] as const) ?? [])), [states])
+  const sourceById = useMemo(() => new Map(states.flatMap((state) => state.catalog?.instruments.map((instrument) => [instrument.id, state.catalog?.source === 'directory' ? null : state.catalog?.source ?? null] as const) ?? [])), [states])
   const loading = states.some((state) => state.loading)
   const catalogErrors = states.filter((state) => state.error !== null)
   const loadedCatalogCount = states.filter((state) => state.catalog !== null).length
   const selected = instruments.find((instrument) => instrument.id === selectedId) ?? null
-  const technicalData = useTechnicalLevelData(selected)
-  const dartResult = useDartDisclosures(selected?.marketId === 'korea-stock' ? selected.symbol : null)
+  const domesticLive = selected?.marketId === 'korea-stock' && ((marketDataMode === 'live' && selected.providerType === 'kis-krx') || params.has('stockPositionId') || params.get('stockLive') === 'true')
+  const technicalData = useTechnicalLevelData(domesticLive ? null : selected)
+  const dartResult = useDartDisclosures(selected?.marketId === 'korea-stock' && !domesticLive ? selected.symbol : null)
   const dartReview = useMemo(() => buildDartDisclosureReview(dartResult, language), [dartResult, language])
   const normalized = query.trim().toLocaleLowerCase()
   const matchingResults = useMemo(() => normalized.length < 1 ? [] : instruments.filter((instrument) => {
@@ -301,8 +303,9 @@ function AnalysisWorkspace() {
       <div className={styles.mode} aria-label={t.analyze}><span>{displayMode === 'simple' ? t.simple : t.expert}</span><button type="button" onClick={() => setDisplayMode(displayMode === 'simple' ? 'expert' : 'simple')}>{displayMode === 'simple' ? t.switchExpert : t.switchSimple}</button></div>
     </header>}
 
-    {isCrypto ? <details key={selected?.id} className={styles.searchDisclosure}><summary>{language === 'ko' ? '종목 변경·검색' : 'Change or search instrument'}</summary>{searchPanel}</details> : searchPanel}
-    {selected && analysis && <>
+    {isCrypto || domesticLive ? <details key={selected?.id} className={styles.searchDisclosure}><summary>{language === 'ko' ? '종목 변경·검색' : 'Change or search instrument'}</summary>{searchPanel}</details> : searchPanel}
+    {selected && domesticLive && <StockWorkspace key={`${selected.id}:${params.get('stockPositionId') ?? ''}`} instrument={selected} positionId={params.get('stockPositionId') ?? undefined} expert={displayMode === 'expert'} />}
+    {selected && analysis && !domesticLive && <>
       {!isCrypto && sourceNotices}
       <section className={styles.instrumentHeader} aria-label={t.selected}>
         <div><span>{selected.marketType?.toUpperCase() ?? selected.marketId}</span>{isCrypto ? <h1>{selected.displaySymbol ?? selected.symbol}</h1> : <h2>{selected.displaySymbol ?? selected.symbol}</h2>}<p>{instrumentNames(selected).join(' · ')}</p><div className={styles.instrumentMeta}><b>{selectedGroup ? t.groups[selectedGroup] : t.assetTypes[analysis.assetType]}</b><small>{t.assetTypes[analysis.assetType]}</small></div></div>

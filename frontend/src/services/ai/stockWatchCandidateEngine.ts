@@ -47,7 +47,7 @@ export function buildStockWatchCandidates(input: StockWatchCandidateInput): read
   const horizon = input.horizon ?? 'short'
   const profile = getCandidateHorizonProfile(horizon, input.language)
   const wantedMarket = input.region === 'korea' ? 'korea-stock' : 'us-stock'
-  const pool = input.instruments.filter((instrument) => instrument.marketId === wantedMarket)
+  const pool = input.instruments.filter((instrument) => instrument.marketId === wantedMarket && instrument.providerType !== 'kis-krx')
   if (!pool.length) return []
   const orderedVolume = [...pool].filter((item) => finite(item.volume24h)).sort((a, b) => b.volume24h - a.volume24h)
   const volumeRanks = new Map(orderedVolume.map((instrument, index) => [instrument.id, index]))
