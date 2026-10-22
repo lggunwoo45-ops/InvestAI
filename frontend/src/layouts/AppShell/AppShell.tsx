@@ -6,6 +6,7 @@ import { useUiStore } from '@/hooks/useUiStore'
 import { classNames } from '@/utils/classNames'
 import { AiCopilot } from '../AiCopilot/AiCopilot'
 import { Header } from '../Header/Header'
+import { SimpleHeader } from '../Header/SimpleHeader'
 import { Sidebar } from '../Sidebar/Sidebar'
 import styles from './AppShell.module.css'
 
@@ -20,9 +21,9 @@ export function AppShell() {
 
   return (
     <div className={classNames(styles.shell, !isSidebarPinned && styles.sidebarUnpinned)} data-display-mode={displayMode} data-explore={isExplore || undefined}>
-      <Sidebar />
+      {displayMode === 'expert' && <Sidebar />}
       <div className={styles.workspace}>
-        <Header hideCopilotToggle={focusedAnalysis} />
+        {displayMode === 'simple' ? <SimpleHeader hideCopilotToggle={focusedAnalysis} /> : <Header hideCopilotToggle={focusedAnalysis} />}
         <div className={classNames(styles.body, !showCopilot && styles.aiCopilotClosed)}>
           <main className={styles.main}>
             <BetaRouteBanner />

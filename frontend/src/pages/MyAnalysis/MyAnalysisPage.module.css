@@ -40,4 +40,13 @@
 .page[data-asset="crypto"] .quote { text-align:right; }
 .page[data-asset="crypto"] .quote strong { font-size:18px; }
 .page[data-asset="crypto"] .quality { grid-column:1/-1; display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; padding:8px 0 0; border-left:0; border-top:1px solid var(--color-border); font-size:11px; }
+.page[data-display-mode="simple"] { max-width:1180px; margin-inline:auto; padding:28px; }
+.page[data-display-mode="simple"][data-asset="crypto"] { gap:20px; }
+.page[data-display-mode="simple"][data-asset="crypto"] .instrumentHeader { padding:0; border:0; background:transparent; gap:8px 20px; }
+.page[data-display-mode="simple"][data-asset="crypto"] .instrumentHeader h2 { font-family:inherit; font-weight:650; font-size:24px; line-height:1.4; }
+.page[data-display-mode="simple"][data-asset="crypto"] .quote strong { font-family:inherit; font-weight:650; font-size:24px; line-height:1.4; }
+.page[data-display-mode="simple"][data-asset="crypto"] .quality { border:0; padding-top:4px; }
+.page[data-display-mode="simple"][data-asset="crypto"] .quality:has(b[data-quality="live"]) > small { display:none; }
+.instrumentHeader h1 { font-family:inherit; font-weight:650; font-size:24px; line-height:1.4; margin:3px 0; }
+@media(max-width:600px) { .page[data-display-mode="simple"] { padding:16px; } .page[data-display-mode="simple"][data-asset="crypto"] .quote strong { font-size:18px; } }
 @media(max-width:700px) { .page[data-asset="crypto"] .header { display:flex; flex-wrap:wrap; } .page[data-asset="crypto"] .mode > span { display:none; } }

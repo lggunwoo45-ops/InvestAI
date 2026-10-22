@@ -41,6 +41,22 @@ describe('Market Copilot application shell', () => {
     expect(screen.queryByRole('complementary', { name: 'AI Copilot' })).toBeNull()
   })
 
+  it('keeps four simple navigation links and opens search and secondary pages through More', async () => {
+    window.history.pushState({}, '', '/dashboard')
+    render(<App />)
+    await screen.findByRole('heading', { name:'Home' })
+    expect(screen.queryByRole('complementary', { name:'Application sidebar' })).toBeNull()
+    expect(within(screen.getByRole('navigation', { name:'Primary navigation' })).getAllByRole('link')).toHaveLength(4)
+    fireEvent.keyDown(window, { key:'k', ctrlKey:true })
+    expect(document.activeElement).toBe(screen.getByRole('searchbox', { name:'Global search' }))
+    fireEvent.keyDown(document.activeElement!, { key:'Escape' })
+    expect(screen.getByText('More').closest('details')?.open).toBe(false)
+    fireEvent.click(screen.getByText('More', { selector:'summary' }))
+    fireEvent.click(screen.getByRole('link', { name:'Settings' }))
+    expect(await screen.findByRole('heading', { name:'Settings and connections' })).toBeTruthy()
+    expect(screen.getByText('More').closest('details')?.open).toBe(false)
+  })
+
   it('keeps the AI Copilot close and reopen controls reachable', async () => {
     render(<App />)
 
@@ -593,6 +609,7 @@ describe('Market Copilot application shell', () => {
   })
 
   it('clears the Header market status after leaving Market', async () => {
+    window.localStorage.setItem('market-copilot.displayMode.v1', 'expert')
     render(<App />)
     fireEvent.click(screen.getByRole('button', { name: 'MOCK' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Open BTC/KRW' }))

@@ -17,3 +17,7 @@
 @media (min-width: 2200px) { .wrapper { width: 550px; } }
 
 .label select { max-width: 100%; margin-left: 8px; padding: 6px; color: var(--color-text); background: var(--color-surface); border: 1px solid var(--color-border); }
+.wrapper[data-compact="true"] { width:100%; }
+.wrapper[data-compact="true"] .results { position:relative; top:8px; width:100%; max-height:300px; }
+.wrapper[data-compact="true"] .search input { min-width:0; }
+.wrapper[data-compact="true"] .results strong { white-space:normal; }

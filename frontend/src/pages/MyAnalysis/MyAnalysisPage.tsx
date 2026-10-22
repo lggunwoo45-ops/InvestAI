@@ -295,23 +295,22 @@ function AnalysisWorkspace() {
       {selectedId && !selected && !loading && <p className={styles.warning} role="alert">{t.unavailable}</p>}
     </section>
 
-  return <main className={styles.page} data-asset={isCrypto ? 'crypto' : 'stock'}>
-    <header className={styles.header}>
+  return <main className={styles.page} data-asset={isCrypto ? 'crypto' : 'stock'} data-display-mode={displayMode}>
+    {!isCrypto && <header className={styles.header}>
       <div><span>{t.eyebrow}</span><h1>{t.title}</h1><p>{t.description}</p></div>
       <div className={styles.mode} aria-label={t.analyze}><span>{displayMode === 'simple' ? t.simple : t.expert}</span><button type="button" onClick={() => setDisplayMode(displayMode === 'simple' ? 'expert' : 'simple')}>{displayMode === 'simple' ? t.switchExpert : t.switchSimple}</button></div>
-    </header>
+    </header>}
 
     {isCrypto ? <details key={selected?.id} className={styles.searchDisclosure}><summary>{language === 'ko' ? '종목 변경·검색' : 'Change or search instrument'}</summary>{searchPanel}</details> : searchPanel}
     {selected && analysis && <>
       {!isCrypto && sourceNotices}
       <section className={styles.instrumentHeader} aria-label={t.selected}>
-        <div><span>{selected.marketType?.toUpperCase() ?? selected.marketId}</span><h2>{selected.displaySymbol ?? selected.symbol}</h2><p>{instrumentNames(selected).join(' · ')}</p><div className={styles.instrumentMeta}><b>{selectedGroup ? t.groups[selectedGroup] : t.assetTypes[analysis.assetType]}</b><small>{t.assetTypes[analysis.assetType]}</small></div></div>
+        <div><span>{selected.marketType?.toUpperCase() ?? selected.marketId}</span>{isCrypto ? <h1>{selected.displaySymbol ?? selected.symbol}</h1> : <h2>{selected.displaySymbol ?? selected.symbol}</h2>}<p>{instrumentNames(selected).join(' · ')}</p><div className={styles.instrumentMeta}><b>{selectedGroup ? t.groups[selectedGroup] : t.assetTypes[analysis.assetType]}</b><small>{t.assetTypes[analysis.assetType]}</small></div></div>
         <div className={styles.quote}><small>{t.availableData}</small><strong>{Number.isFinite(selected.lastPrice) ? formatMarketPrice(selected) : t.qualities.unavailable}</strong>{Number.isFinite(selected.change24hPercent) && <span data-direction={selected.change24hPercent >= 0 ? 'positive' : 'negative'}>{formatMarketChange(selected.change24hPercent)}</span>}</div>
         <div className={styles.quality}><small>{t.quality}</small><b data-quality={analysis.dataQuality}>{analysis.dataQualityLabel}</b><small>{t.qualityHelp[analysis.dataQuality]}</small></div>
       </section>
 
-      {analysis.assetType === 'crypto' && <CryptoDecisionPanel key={selected.id} instrument={selected} activeTab={analysisTab} onTabChange={setAnalysisTab} daily={technicalData} language={language} averagePrice={validAveragePrice} quantity={savedPosition?.instrumentId === selected.id ? savedPosition.quantity : undefined} positionId={savedPosition?.instrumentId === selected.id ? savedPosition.id : undefined} detailsContent={cryptoReferences} investmentContent={<>{positionNotice}{positionPlan}{personalContext}<Link to="/portfolio">{language === 'ko' ? '내 코인·저장한 시나리오 관리 →' : 'Manage my coins and saved scenarios →'}</Link></>} holding={intent === 'holding'} onHoldingChange={value => { setIntent(value ? 'holding' : 'watching'); setReviewMode(value ? 'position' : 'interest') }} expert={displayMode === 'expert'} />}
-      {analysis.assetType === 'crypto' && <details key={`questions-${selected.id}`} className={styles.referenceDetails}><summary>{language === 'ko' ? '이 분석에 질문하기' : 'Ask about this analysis'}</summary><EvidenceAssistant instrument={selected} live={marketDataMode === 'live'} /></details>}
+      {analysis.assetType === 'crypto' && <CryptoDecisionPanel key={selected.id} instrument={selected} activeTab={analysisTab} onTabChange={setAnalysisTab} daily={technicalData} language={language} averagePrice={validAveragePrice} quantity={savedPosition?.instrumentId === selected.id ? savedPosition.quantity : undefined} positionId={savedPosition?.instrumentId === selected.id ? savedPosition.id : undefined} detailsContent={<>{cryptoReferences}<details key={`questions-${selected.id}`} className={styles.referenceDetails}><summary>{language === 'ko' ? '이 분석에 질문하기' : 'Ask about this analysis'}</summary><EvidenceAssistant instrument={selected} live={marketDataMode === 'live'} /></details></>} investmentContent={<>{positionNotice}{positionPlan}{personalContext}<Link to="/portfolio">{language === 'ko' ? '내 코인·저장한 시나리오 관리 →' : 'Manage my coins and saved scenarios →'}</Link></>} holding={intent === 'holding'} onHoldingChange={value => { setIntent(value ? 'holding' : 'watching'); setReviewMode(value ? 'position' : 'interest') }} expert={displayMode === 'expert'} onExpert={() => setDisplayMode('expert')} />}
       {analysis.assetType !== 'crypto' && <>{positionNotice}{positionPlan}</>}
       {analysis.assetType !== 'crypto' && <section>
       <MyAnalysisReportSummary recommendation={recommendation} analysis={analysis} language={language} mode={displayMode} symbol={selected.displaySymbol ?? selected.symbol} name={selected.name} reviewMode={reviewMode} basisPrice={validAveragePrice} currentPrice={currentPrice} quoteCurrency={selected.quoteCurrency} disclosureReview={selected.marketId === 'korea-stock' ? dartReview : null} practicalDecision={practicalDecision ?? undefined} reviewRanges={reviewRanges} candidateReviewScore={candidateReviewScore ?? undefined} technicalAnalysis={technicalData.isLoading ? undefined : technicalAnalysis ?? undefined} aiCopilotFinalRead={aiCopilotFinalRead ?? undefined} />

@@ -19,6 +19,35 @@ vi.mock('@/hooks/useTechnicalLevelData', () => ({ useTechnicalLevelData: (_: unk
 vi.mock('@/hooks/useDominance', () => ({ useDominance: () => ({ data: state.dominance, loading: false, error: !state.dominance }) }))
 
 describe('CryptoDecisionPanel', () => {
+  it('shows the same conclusion and price plan when switching to the expert chart workspace', () => {
+    const props = { instrument, daily: candles('1D'), language: 'en' as const }
+    const { rerender } = render(<CryptoDecisionPanel {...props} />)
+    const summary = screen.getByRole('tabpanel')
+    expect(within(summary).getByText('274.5 – 277.5 KRW')).toBeTruthy()
+    expect(screen.queryByRole('region', { name: 'Expert analysis workspace' })).toBeNull()
+    expect(screen.getByRole('heading', { name: 'Wait for a lower price before adding' })).toBeTruthy()
+    rerender(<CryptoDecisionPanel {...props} expert />)
+    expect(within(screen.getByRole('tabpanel')).getByText('274.5 – 277.5 KRW')).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Wait for a lower price before adding' })).toBeTruthy()
+    expect(screen.getByRole('region', { name: 'Expert analysis workspace' })).toBeTruthy()
+    expect(screen.getByRole('img', { name: /Verified closes/ })).toBeTruthy()
+    act(() => vi.advanceTimersByTime(100000))
+    expect(screen.queryByRole('img', { name: /Verified closes/ })).toBeNull()
+    expect(screen.getByText('The chart appears when valid price history is ready.')).toBeTruthy()
+  })
+  it('opens expert mode on request and calculates holding P/L only with a fresh quote and quantity', () => {
+    const onExpert = vi.fn()
+    const props = { instrument, daily: candles('1D'), language:'en' as const, holding:true, averagePrice:280, quantity:2, onExpert }
+    const { rerender } = render(<CryptoDecisionPanel {...props} />)
+    expect(within(screen.getByRole('tabpanel')).getByText('-2 KRW')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name:'View chart and calculations →' }))
+    expect(onExpert).toHaveBeenCalledOnce()
+    rerender(<CryptoDecisionPanel {...props} quantity={undefined} />)
+    expect(within(screen.getByRole('tabpanel')).queryByText('-2 KRW')).toBeNull()
+    rerender(<CryptoDecisionPanel {...props} />)
+    act(() => vi.advanceTimersByTime(100000))
+    expect(within(screen.getByRole('tabpanel')).queryByText('-2 KRW')).toBeNull()
+  })
   it('keeps the excluded timeframe visible alongside a valid two-frame analysis', () => {
     const daily = candles('1D')
     render(<CryptoDecisionPanel instrument={instrument} daily={{ ...daily, candles: daily.candles.filter((_, i) => i !== 65) }} language="ko" />)
@@ -84,7 +113,7 @@ describe('CryptoDecisionPanel', () => {
     render(<CryptoDecisionPanel instrument={instrument} daily={candles('1D')} language="ko" />)
     expect(screen.getByText('하락 쪽이 강해요')).toBeTruthy()
     expect(screen.getByText('새로 사기보다 하락이 멈추는지 기다려보세요')).toBeTruthy()
-    expect(screen.getByText(/지지 가격에 닿았다는 이유만으로 매수하지 않습니다/)).toBeTruthy()
+    expect(within(screen.getByRole('tabpanel')).getByText(/지지 가격에 닿았다는 이유만으로 매수하지 않습니다/)).toBeTruthy()
     expect(screen.getByText(/반등 매도 검토 기준:/)).toBeTruthy()
     fireEvent.click(screen.getByRole('tab', { name: '자세히 보기' }))
     fireEvent.click(screen.getByText('시간대별 지표·계산 근거'))
