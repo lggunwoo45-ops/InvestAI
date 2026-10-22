@@ -5,7 +5,7 @@ export type AnalysisTab = 'summary' | 'details' | 'investment'
 export interface AnalysisSession { query: string; intent: AnalysisIntent; note: string; averagePrice: string; tab: AnalysisTab; positionBasis: string }
 export function analysisContextKey(query: string) {
   const p = new URLSearchParams(query)
-  return ['instrumentId', 'positionId', 'snapshotId', 'snapshotItemId', 'bucketId'].map(k => p.get(k) ?? '').join('\u001f')
+  return ['instrumentId', 'positionId', 'stockPositionId', 'stockLive', 'snapshotId', 'snapshotItemId', 'bucketId'].map(k => p.get(k) ?? '').join('\u001f')
 }
 export function readAnalysisSession(): AnalysisSession | null {
   try {

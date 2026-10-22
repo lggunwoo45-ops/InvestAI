@@ -5,6 +5,7 @@ import { createRest } from './rest.mjs'
 import { createStreams } from './stream.mjs'
 import { MarketError } from './gate.mjs'
 import { createNewsHandler } from '../news/news.mjs'
+import { createStockHandler } from '../stocks/server.mjs'
 
 export function createMarketHandler({ origins = [], local = false, rest = createRest(), streams = createStreams() } = {}) {
   const allowed = new Set(origins), clients = new Map()
@@ -69,7 +70,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const origins = (process.env.UPBIT_ALLOWED_ORIGINS ?? '').split(',').filter(Boolean)
   const handler = createMarketHandler({ origins })
   const news = createNewsHandler({ origins })
-  const server = createServer((req, res) => handler(req, res, () => news(req, res)))
+  const stocks = createStockHandler({ origins })
+  const server = createServer((req, res) => handler(req, res, () => news(req, res, () => stocks(req, res))))
   server.headersTimeout = 10_000; server.requestTimeout = 15_000; server.maxConnections = 256
   server.listen(Number(process.env.PORT ?? 8790), process.env.HOST ?? '127.0.0.1', () => console.log('InvestAI public market data server ready'))
   for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => { handler.close(); server.closeAllConnections(); server.close() })

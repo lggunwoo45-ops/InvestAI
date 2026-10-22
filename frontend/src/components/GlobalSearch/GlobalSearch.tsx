@@ -11,7 +11,7 @@ import { useLanguage } from '@/i18n/useLanguage'
 import type { MarketVenue } from '@/types/market'
 import styles from './GlobalSearch.module.css'
 
-const venues: [MarketVenue, string][] = [['upbit-krw', 'Upbit KRW'], ['upbit-btc', 'Upbit BTC'], ['upbit-usdt', 'Upbit USDT'], ['binance-spot', 'Binance Spot'], ['binance-futures', 'Binance Futures'], ['kospi', 'KOSPI · Demo'], ['kosdaq', 'KOSDAQ · Demo'], ['nasdaq', 'NASDAQ · Demo'], ['nyse', 'NYSE · Demo']]
+const venues: [MarketVenue, string][] = [['upbit-krw', 'Upbit KRW'], ['upbit-btc', 'Upbit BTC'], ['upbit-usdt', 'Upbit USDT'], ['binance-spot', 'Binance Spot'], ['binance-futures', 'Binance Futures'], ['kospi', 'KOSPI'], ['kosdaq', 'KOSDAQ'], ['nasdaq', 'NASDAQ · Demo'], ['nyse', 'NYSE · Demo']]
 export function GlobalSearch({ compact = false }: { compact?: boolean }) {
   const navigate = useNavigate()
   const { selectInstrument, marketDataMode } = useMarketWorkspace()
@@ -42,7 +42,7 @@ export function GlobalSearch({ compact = false }: { compact?: boolean }) {
     <label className={styles.search}><Icon name="search" size={17} /><input ref={inputRef} type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder={text.globalSearch} aria-label="Global search" /><kbd>Ctrl K</kbd></label>
     {!!normalized && <div className={styles.results}>
       <label className={styles.label}>{ko ? '찾을 거래소·마켓' : 'Search venue'} <select aria-label="Global search venue" value={venue} onChange={event => { setVenue(event.target.value as MarketVenue); setRetry(0) }}>{venues.map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select></label>
-      <div className={styles.label}>{text.searchMarkets} · {catalog?.source === 'mock' ? (ko ? '예시 목록' : 'Demo catalog') : (ko ? '실제 거래소 목록' : 'Exchange catalog')}</div>
+      <div className={styles.label}>{text.searchMarkets} · {catalog?.source === 'directory' ? (ko ? '종목 목록 · 선택 후 시세 조회' : 'Directory · select to fetch quotes') : catalog?.source === 'mock' ? (ko ? '예시 목록' : 'Demo catalog') : (ko ? '실제 거래소 목록' : 'Exchange catalog')}</div>
       {(!ready || loading) && <p role="status">{ko ? '거래소 목록에서 찾고 있어요…' : 'Searching the exchange catalog…'}</p>}
       {error && <div role="alert"><p>{ko ? '목록을 불러오지 못했어요. 잠시 후 다시 시도해주세요.' : 'Catalog unavailable. Please retry.'}</p><button type="button" onClick={() => setRetry(value => value + 1)}>{ko ? '다시 불러오기' : 'Retry'}</button></div>}
       {assets.map(asset => <button key={asset.id} type="button" aria-label={`Open ${asset.symbol} from global search`} onClick={() => { trackRecentlyViewed(asset.id); selectInstrument(asset); navigate('/market'); setQuery('') }}><span><strong>{asset.symbol}</strong><small>{asset.koreanName ?? asset.name}</small></span><em>{asset.marketId}</em></button>)}

@@ -101,6 +101,8 @@ describe('Market Copilot application shell', () => {
   it('sends a selected symbol to the AI Copilot', async () => {
     render(<App />)
 
+    fireEvent.click(await screen.findByRole('button', { name: 'MOCK' }))
+
     fireEvent.click(await screen.findByRole('tab', { name: 'Korea Stocks' }))
     const stockHeading = await screen.findByRole('region', { name: 'Market Explorer' })
     expect(stockHeading.closest('section')?.getAttribute('data-workspace')).toBe('stock')

@@ -198,7 +198,7 @@ function DailyCandidatePage() {
   const evidenceRecommendations = useMemo(() => activeInstruments.map((instrument) => {
     const source = activeCatalogs.find((catalog) => catalog?.instruments.some((entry) => entry.id === instrument.id))
     const hasTechnical = selectedInstrument?.id === instrument.id
-    const dataQuality = source?.source === 'mock' || (hasTechnical && technicalLevelData.dataQuality === 'mock') ? 'mock' : hasTechnical && !technicalLevelData.isLoading && technicalLevelData.dataQuality !== 'live' ? 'limited' : source?.source ?? 'unavailable'
+    const dataQuality = source?.source === 'directory' ? 'unavailable' : source?.source === 'mock' || (hasTechnical && technicalLevelData.dataQuality === 'mock') ? 'mock' : hasTechnical && !technicalLevelData.isLoading && technicalLevelData.dataQuality !== 'live' ? 'limited' : source?.source ?? 'unavailable'
     return buildEvidenceCandidateRecommendation({ instrument, language, dataQuality, reviewScore: candidateSourceQualityInputs.get(instrument.id)?.reviewScore, btcAnchorContext: recommendationAnchorContext(bitcoinAnchor), ...(hasTechnical ? { candles: technicalLevelData.candles, technicalAnalysis } : {}), updatedAt: source ? new Date(source.fetchedAt).toISOString() : null })
   }), [activeCatalogs, activeInstruments, bitcoinAnchor, candidateSourceQualityInputs, language, selectedInstrument, technicalAnalysis, technicalLevelData.candles, technicalLevelData.dataQuality, technicalLevelData.isLoading])
   const heldCount = candidateQualityStatus.heldForReview.length

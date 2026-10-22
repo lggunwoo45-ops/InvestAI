@@ -2,6 +2,7 @@ import { itemFromInstrument } from '@/services/watchlist/watchlistStorage'
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 import { MarketDetailWorkspace } from '@/components/market-detail/MarketDetailWorkspace/MarketDetailWorkspace'
+import { StockWorkspace } from '@/components/stocks/StockWorkspace'
 import { MarketAssetSwitcher } from '@/components/market/MarketAssetSwitcher/MarketAssetSwitcher'
 import { MarketExplorer } from '@/components/market/MarketExplorer/MarketExplorer'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
@@ -87,7 +88,11 @@ export function MarketPage() {
   const [instrumentListCollapsed, setInstrumentListCollapsed] = useState(initialMarketListCollapsed)
   // The explorer's browsing venue is independent of the active chart instrument.
   const catalogState = useMarketCatalog(venue, marketDataMode, retry)
-  const detailState = useMarketDetailData(selectedInstrument, selectedTimeframe)
+  const domesticLive = marketDataMode === 'live' && selectedInstrument?.marketId === 'korea-stock'
+  const domesticDemoInstrument = marketDataMode === 'mock' && selectedInstrument?.providerType === 'kis-krx'
+    ? catalogState.catalog?.source === 'mock' ? catalogState.catalog.instruments.find(row => row.id === selectedInstrument.id) ?? null : null
+    : selectedInstrument
+  const detailState = useMarketDetailData(domesticLive ? null : domesticDemoInstrument, selectedTimeframe)
   const selectedSnapshot = detailState.state?.snapshot ?? null
 
   const openInstrument = useCallback((instrument: MarketInstrument) => {
@@ -244,6 +249,8 @@ export function MarketPage() {
   </div>
 
   if (!selectedInstrument) return <main className={styles.page}>{workspaceHeader}{explorer}</main>
+
+  if (domesticLive) return <main className={styles.page}>{workspaceHeader}<div className={`${styles.pendingWorkspace} ${listIsCollapsed ? styles.pendingWorkspaceCollapsed : ''}`}>{explorer}<StockWorkspace key={selectedInstrument.id} instrument={selectedInstrument} /></div></main>
 
   const preview = detailState.preview
   const snapshot = selectedSnapshot ?? preview?.snapshot

@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
+import { StockHoldings } from '@/components/stocks/StockHoldings'
+import stockStyles from '@/components/stocks/Stocks.module.css'
 import { useMarketCatalog } from '@/hooks/useMarketCatalog'
 import { useMarketWorkspace } from '@/hooks/useMarketWorkspace'
 import { useLanguage } from '@/i18n/useLanguage'
@@ -28,6 +30,13 @@ const planCopy = {
 }
 
 export function PortfolioPage() {
+  const { language } = useLanguage()
+  const [params, setParams] = useSearchParams()
+  const stocks = params.get('asset') === 'stocks'
+  return <><nav className={stockStyles.tabs} aria-label={language === 'ko' ? '내 투자 자산' : 'Investment assets'}><button type="button" aria-pressed={!stocks} onClick={() => setParams({})}>{language === 'ko' ? '내 코인' : 'My Coins'}</button><button type="button" aria-pressed={stocks} onClick={() => setParams({ asset: 'stocks' })}>{language === 'ko' ? '내 주식' : 'My Stocks'}</button></nav>{stocks ? <StockHoldings /> : <CoinPortfolioPage />}</>
+}
+
+function CoinPortfolioPage() {
   const { language } = useLanguage()
   const t = copy[language]
   const pt = planCopy[language]
