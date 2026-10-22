@@ -14,6 +14,7 @@ import { getRememberedInstrument, rememberInstrument } from './instrumentRegistr
 import { SharedRequests } from './sharedRequests'
 import { ChartHistoryCache } from './chartHistoryCache'
 import { upbitRelayBase } from './providers/upbitRelay'
+import { UpbitRequestError } from './providers/upbitRequest'
 
 export interface MarketOverviewService {
   getMarketOverview(): Promise<readonly MarketSectionData[]>
@@ -324,10 +325,11 @@ export class MarketDataService implements MarketOverviewService {
             })
           }, priority)
         })
-        .catch(() => {
+        .catch((error: unknown) => {
           if (disposed) return
           retryAttempt += 1
-          const delay = Math.min(1_000 * (2 ** (retryAttempt - 1)), 30_000)
+          const retryAfter = error instanceof UpbitRequestError ? error.retryAfter * 1000 : 0
+          const delay = Math.max(retryAfter, Math.min(1_000 * (2 ** (retryAttempt - 1)), 30_000))
           emit({
             ...currentState,
             connection: {

@@ -1,4 +1,6 @@
 import { createHash } from 'node:crypto'
+import { createUsageGuard } from '../market-data/usage.mjs'
+import { MarketError } from '../market-data/gate.mjs'
 
 export const sources = Object.freeze([
   { id: 'coindesk', label: 'CoinDesk', url: 'https://www.coindesk.com/arc/outboundfeeds/rss', host: 'coindesk.com', market: 'crypto', category: 'crypto' },
@@ -133,8 +135,9 @@ export function createNewsService({ fetchImpl = fetch, now = Date.now, feeds = s
   }
 }
 
-export function createNewsHandler({ origins = [], service = createNewsService(), now = Date.now } = {}) {
-  const allowed = new Set(origins), clients = new Map()
+export function createNewsHandler({ origins = [], service = createNewsService(), now = Date.now, trustRailwayProxy = false,
+  usage = createUsageGuard({ now, trustRailwayProxy, requestLimit: 60 }) } = {}) {
+  const allowed = new Set(origins)
   return async (req, res, next = () => { res.writeHead(404); res.end() }) => {
     if (!req.url?.startsWith('/api/news/')) return next()
     const headers = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', Vary: 'Origin' }
@@ -142,17 +145,17 @@ export function createNewsHandler({ origins = [], service = createNewsService(),
     const origin = req.headers.origin
     if (origin && !allowed.has(origin)) return send(403, { error: 'origin_rejected' })
     if (origin) headers['Access-Control-Allow-Origin'] = origin
+    headers['Access-Control-Expose-Headers'] = 'Retry-After'
     if (req.method !== 'GET') { headers.Allow = 'GET'; return send(405, { error: 'read_only' }) }
     if (req.url === '/api/news/health') return send(200, { service: 'investai-news', version: 1 })
     if (req.url !== '/api/news/headlines') return send(404, { error: 'not_found' })
-    for (const [ip, client] of clients) if (now() - client.at >= 60_000) clients.delete(ip)
-    const ip = req.socket.remoteAddress
-    if (!clients.has(ip)) {
-      if (clients.size >= 1024) return send(503, { error: 'busy' })
-      clients.set(ip, { at: now(), requests: 0 })
-    }
-    if (++clients.get(ip).requests > 60) { headers['Retry-After'] = '60'; return send(429, { error: 'client_limit' }) }
-    try { const result = await service(); send(result.status === 'unavailable' ? 503 : 200, result) }
-    catch { send(503, { error: 'news_unavailable' }) }
+    let release
+    try {
+      release = usage(req)('rest')
+      const result = await service(); send(result.status === 'unavailable' ? 503 : 200, result)
+    } catch (error) {
+      if (error instanceof MarketError && error.retryAfter) headers['Retry-After'] = String(error.retryAfter)
+      send(error instanceof MarketError ? error.status : 503, { error: error instanceof MarketError ? error.message : 'news_unavailable' })
+    } finally { release?.() }
   }
 }

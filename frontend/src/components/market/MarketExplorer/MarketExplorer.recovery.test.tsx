@@ -15,7 +15,7 @@ describe('Market catalog recovery display', () => {
     render(<MarketExplorer {...options} />)
     expect(screen.getByText('이전 조회 목록')).toBeTruthy()
     expect(screen.getByText(/가격은 현재 시세가 아닙니다/)).toBeTruthy()
-    expect(screen.getByRole('alert').textContent).toContain('업비트 요청 제한')
+    expect(screen.getByRole('alert').textContent).toContain('시세 요청이 몰려 잠시 쉬고 있어요')
     expect(screen.queryByText('공개 API')).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: '열기 BTC/KRW' }))
     expect(options.onSelect).toHaveBeenCalledWith(previous.instruments[0])

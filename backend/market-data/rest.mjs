@@ -1,4 +1,5 @@
 import { Gate, MarketError } from './gate.mjs'
+import { createUpstreamBudget } from './usage.mjs'
 
 export const validMarket = value => /^(KRW|BTC|USDT)-[A-Z0-9]{1,20}$/.test(value ?? '')
 export function parseRequest(path) {
@@ -32,7 +33,7 @@ async function readJson(response) {
   } finally { await reader.cancel().catch(() => {}) }
 }
 
-export function createRest({ fetchImpl = fetch, interval = 125, ttl = 2000 } = {}) {
+export function createRest({ fetchImpl = fetch, interval = 125, ttl = 2000, consumeBudget = createUpstreamBudget() } = {}) {
   const gates = { ticker: new Gate(interval), candle: new Gate(interval) }
   const cache = new Map(), pending = new Map()
   let blockedUntil = 0
@@ -51,6 +52,7 @@ export function createRest({ fetchImpl = fetch, interval = 125, ttl = 2000 } = {
       entry.promise = gates[request.group].run(async () => {
         const started = performance.now()
         if (Date.now() < blockedUntil) throw new MarketError(503, 'upstream_cooldown', Math.ceil((blockedUntil - Date.now()) / 1000))
+        consumeBudget()
         const response = await fetchImpl(`https://api.upbit.com/v1${request.path}`, {
           headers: { Accept: 'application/json' }, redirect: 'error',
           signal: AbortSignal.any([controller.signal, AbortSignal.timeout(8000)]),

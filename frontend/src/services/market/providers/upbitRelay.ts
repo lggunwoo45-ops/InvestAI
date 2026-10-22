@@ -66,6 +66,14 @@ export class UpbitRelayConnection {
       } catch { /* Provider validation also checks market, quote and candle timestamps. */ }
     })
     source.addEventListener('error', () => { if (this.source === source) this.reconnect() })
+    source.addEventListener('cooldown', event => {
+      if (this.source !== source) return
+      try {
+        const { retryAfter } = JSON.parse((event as MessageEvent).data)
+        if (!Number.isFinite(retryAfter) || retryAfter <= 0 || retryAfter > 3600) return
+        this.reconnect(retryAfter * 1000)
+      } catch { /* Invalid cooldown cannot suppress connection attempts. */ }
+    })
   }
   private watch(ms: number) { if (this.watchdog) clearTimeout(this.watchdog); this.watchdog = setTimeout(() => this.reconnect(), ms) }
   close() {
@@ -73,12 +81,12 @@ export class UpbitRelayConnection {
     if (this.timer) clearTimeout(this.timer)
     if (this.watchdog) clearTimeout(this.watchdog)
   }
-  reconnect() {
+  reconnect(minimumDelay = 0) {
     if (this.closed) return
     this.source?.close(); this.source = null
     if (this.watchdog) clearTimeout(this.watchdog)
     if (this.timer) clearTimeout(this.timer)
     this.attempt++; this.options.onStatus('reconnecting', this.attempt)
-    this.timer = setTimeout(() => this.connect(), Math.min(1000 * 2 ** (this.attempt - 1), 30_000))
+    this.timer = setTimeout(() => this.connect(), Math.max(minimumDelay, Math.min(1000 * 2 ** (this.attempt - 1), 30_000)))
   }
 }
