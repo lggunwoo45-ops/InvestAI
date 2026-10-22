@@ -7,6 +7,7 @@ import type { MarketCatalog, MarketInstrument } from '@/types/market'
 import type { MarketDetailSnapshot, RealtimeMarketState } from '@/types/marketDetail'
 import { MarketDataService } from './marketDataService'
 import { rememberInstrument } from './instrumentRegistry'
+import { UpbitRequestError } from './providers/upbitRequest'
 
 const instrument: MarketInstrument = {
   id: 'binance-btc', marketId: 'binance-futures', symbol: 'BTCUSDT', name: 'Bitcoin Perpetual', quoteCurrency: 'USDT', lastPrice: 100_000, change24hPercent: 1, volume24h: 1_000,
@@ -35,6 +36,22 @@ function createProvider(id: string, supports: boolean): RealtimeMarketProvider {
 }
 
 describe('MarketDataService', () => {
+  it('waits for the relay cooldown before loading again and cancels recovery when leaving', async () => {
+    vi.useFakeTimers()
+    const provider = createProvider('live', true)
+    provider.loadSnapshot = vi.fn().mockRejectedValue(new UpbitRequestError('rate-limit', 429, 60))
+    const service = new MarketDataService([provider], createProvider('mock', true))
+    const states: RealtimeMarketState[] = []
+    const stop = service.subscribe({ instrument, timeframe: '1m', mode: 'live', onState: state => states.push(state) })
+    await vi.advanceTimersByTimeAsync(59_999)
+    expect(provider.loadSnapshot).toHaveBeenCalledOnce()
+    expect(states.at(-1)?.connection.message).toContain('60s')
+    await vi.advanceTimersByTimeAsync(1)
+    expect(provider.loadSnapshot).toHaveBeenCalledTimes(2)
+    stop(); await vi.advanceTimersByTimeAsync(60_000)
+    expect(provider.loadSnapshot).toHaveBeenCalledTimes(2)
+  })
+
   it('retains the quote receipt and exchange clock across book-only updates', async () => {
     const provider = createProvider('live', true)
     let emit: (event: ProviderStreamEvent) => void = () => {}

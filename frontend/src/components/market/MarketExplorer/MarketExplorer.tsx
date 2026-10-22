@@ -64,8 +64,8 @@ export function MarketExplorer({
   const blocked = /418|blocked/.test(error ?? '')
   const errorHelp = venue.startsWith('upbit-')
     ? language === 'ko'
-      ? blocked ? '업비트가 요청을 일시 차단했습니다. 잠시 후 다시 시도해 주세요.' : rateLimited ? '업비트 요청 제한으로 목록을 받지 못했습니다. 잠시 후 다시 시도해 주세요.' : '업비트 응답이 지연되거나 연결되지 않습니다. 연결을 확인하고 다시 시도해 주세요.'
-      : blocked ? 'Upbit temporarily blocked requests. Wait before retrying.' : rateLimited ? 'Upbit rate-limited this request. Wait before retrying.' : 'Upbit is delayed or unreachable. Check the connection and retry.'
+      ? blocked ? '업비트가 요청을 일시 차단했습니다. 잠시 후 다시 시도해 주세요.' : rateLimited ? '시세 요청이 몰려 잠시 쉬고 있어요. 잠시 후 다시 확인해 주세요.' : '업비트 응답이 지연되거나 연결되지 않습니다. 연결을 확인하고 다시 시도해 주세요.'
+      : blocked ? 'Upbit temporarily blocked requests. Wait before retrying.' : rateLimited ? 'Market requests are temporarily limited. Please wait before checking again.' : 'Upbit is delayed or unreachable. Check the connection and retry.'
     : text.sourceUnavailable
   const { watchlistItems, getWatchlistItem, activeReview, removeFromWatchlist } = useWatchlists()
   const [localReviewOnly, setLocalReviewOnly] = useState(false)
