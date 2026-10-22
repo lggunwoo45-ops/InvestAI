@@ -8,6 +8,7 @@ interface Props {
   series: Record<AnalysisFrame, AnalysisSeries>
   language: Language
   onDetails: () => void
+  compactReady?: boolean
 }
 
 // Mount for each waiting episode; stop the clock on completion or navigation.
@@ -22,7 +23,7 @@ function PreparationWait({ children }: { children: (elapsed: number) => ReactNod
 }
 
 /** Counts usable timeframes, not elapsed time, download bytes, or prediction confidence. */
-export function AnalysisPreparation({ decision, series, language, onDetails }: Props) {
+export function AnalysisPreparation({ decision, series, language, onDetails, compactReady = false }: Props) {
   const ko = language === 'ko'
   const rows = decision.frames.map(frame => {
     const data = series[frame.frame]
@@ -59,7 +60,7 @@ export function AnalysisPreparation({ decision, series, language, onDetails }: P
       : (ko ? available ? '일부 자료로 분석했어요' : '지금은 분석할 자료가 부족해요' : available ? 'Analysis uses partial data' : 'Analysis data is unavailable')
     const frameNames = ko ? { '1H': '1시간', '4H': '4시간', '1D': '하루' } : { '1H': '1 hour', '4H': '4 hours', '1D': 'Daily' }
 
-    return <section className={styles.preparation} data-state={complete ? 'ready' : mock ? 'mock' : delayed || !pending ? 'limited' : 'loading'} aria-label={ko ? '분석 준비 상태' : 'Analysis preparation'}>
+    return <section className={styles.preparation} data-compact={complete && compactReady || undefined} data-state={complete ? 'ready' : mock ? 'mock' : delayed || !pending ? 'limited' : 'loading'} aria-label={ko ? '분석 준비 상태' : 'Analysis preparation'}>
       <div className={styles.heading}>
         <strong role="status">{pending && !delayed && <span className={styles.spinner} aria-hidden="true" />}{title}</strong>
         {!mock && <b>{percent}%</b>}

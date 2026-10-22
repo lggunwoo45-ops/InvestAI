@@ -3,6 +3,7 @@ import { Link, MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { AppRoutes } from '@/app/AppRoutes'
+import { ModeSwitcher } from '@/components/mode/ModeSwitcher/ModeSwitcher'
 import { AppProviders } from '@/app/providers/AppProviders'
 import { saveCandidateSnapshotRecord } from '@/services/candidateSnapshot/candidateSnapshotStorage'
 import { getDailyBasisTime, getLocalDateLabel } from '@/services/candidateSnapshot/dailyBasisTime'
@@ -42,6 +43,22 @@ vi.mock('@/hooks/useTechnicalLevelData', () => ({
 }))
 
 describe('MyAnalysisPage', () => {
+  it('preserves the asset, personal inputs and selected tab across global simple and expert mode changes', async () => {
+    render(<AppProviders><MemoryRouter initialEntries={['/my-analysis?instrumentId=upbit-btc']}><AppRoutes /></MemoryRouter></AppProviders>)
+    await screen.findByRole('heading', { name:'BTC/KRW' })
+    fireEvent.click(screen.getByRole('tab', { name:'My price criteria' }))
+    fireEvent.change(screen.getByRole('spinbutton', { name:'Average price (optional)' }), { target:{ value:'85' } })
+    fireEvent.change(screen.getByRole('textbox', { name:'My note (optional)' }), { target:{ value:'Keep this context' } })
+    fireEvent.click(screen.getByRole('button', { name:/Expert Mode/ }))
+    expect(screen.getByRole('complementary', { name:'Application sidebar' })).toBeTruthy()
+    expect(screen.getByRole('tab', { name:'My price criteria' }).getAttribute('aria-selected')).toBe('true')
+    expect((screen.getByRole('spinbutton', { name:'Average price (optional)' }) as HTMLInputElement).value).toBe('85')
+    fireEvent.click(screen.getByRole('button', { name:/Simple Mode/ }))
+    expect(screen.queryByRole('complementary', { name:'Application sidebar' })).toBeNull()
+    expect(screen.getByRole('heading', { name:'BTC/KRW' })).toBeTruthy()
+    expect((screen.getByRole('textbox', { name:'My note (optional)' }) as HTMLTextAreaElement).value).toBe('Keep this context')
+    expect(readPortfolio().positions).toHaveLength(0)
+  })
   it('restores the selected asset, tab and draft after leaving through the menu, while explicit links take priority', async () => {
     render(<AppProviders><MemoryRouter initialEntries={['/my-analysis?instrumentId=upbit-btc']}>
       <nav><Link to="/away">Leave</Link><Link to="/my-analysis">Return to analysis</Link><Link to="/my-analysis?instrumentId=binance-spot-btcusdt">Another asset</Link></nav>
@@ -92,7 +109,7 @@ describe('MyAnalysisPage', () => {
   it('applies saved average price and clears it when selecting another asset', async () => {
     writePortfolio([{ id: 'p1', exchange: 'upbit', venue: 'upbit-krw', instrumentId: 'upbit-btc', symbol: 'BTC/KRW', quoteCurrency: 'KRW', averagePrice: 80, quantity: 2, targetPrice: 120, stopPrice: 70 }], null)
     render(<AppProviders><MemoryRouter initialEntries={['/my-analysis?instrumentId=upbit-btc&positionId=p1']}><AppRoutes /></MemoryRouter></AppProviders>)
-    await screen.findByRole('heading', { level: 1, name: 'Instrument Analysis' })
+    await screen.findByRole('heading', { level: 1, name: 'BTC/KRW' })
     fireEvent.click(screen.getByRole('tab', { name: 'My price criteria' }))
     expect((screen.getByRole('spinbutton', { name: 'Average price (optional)' }) as HTMLInputElement).value).toBe('80')
     expect(screen.getByText(/Saved average price applied/)).toBeTruthy()
@@ -120,7 +137,7 @@ describe('MyAnalysisPage', () => {
   })
   it('uses one crypto conclusion and removes competing current-state cards in expert view', () => {
     window.localStorage.setItem('market-copilot.displayMode.v1', 'expert')
-    renderWithProviders(<MyAnalysisPage />)
+    renderWithProviders(<><ModeSwitcher /><MyAnalysisPage /></>)
     fireEvent.change(screen.getByRole('searchbox', { name: 'Search instrument' }), { target: { value: 'Bitcoin' } })
     fireEvent.click(screen.getByRole('button', { name: /BTC\/KRW/ }))
     expect(screen.getAllByRole('region', { name: 'Direction and price plan' })).toHaveLength(1)
@@ -132,7 +149,7 @@ describe('MyAnalysisPage', () => {
     expect(screen.getByRole('region', { name: 'Analysis baseline locked' })).toBeTruthy()
     fireEvent.click(screen.getByText('Daily chart structure (reference)'))
     expect(screen.getByRole('region', { name: 'Chart structure analysis' })).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'Switch to Simple view' }))
+    fireEvent.click(screen.getByRole('button', { name: /Simple Mode/ }))
     expect(screen.getAllByRole('region', { name: 'Direction and price plan' })).toHaveLength(1)
     expect(screen.queryByRole('region', { name: 'Current action status' })).toBeNull()
   })
