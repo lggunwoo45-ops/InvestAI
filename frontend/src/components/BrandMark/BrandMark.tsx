@@ -6,13 +6,13 @@ interface BrandMarkProps {
 
 export function BrandMark({ compact = false }: BrandMarkProps) {
   return (
-    <div className={styles.brand} aria-label="Market Copilot">
+    <div className={styles.brand} aria-label="InvestAI">
       <span className={styles.mark} aria-hidden="true">
         <span />
         <span />
         <span />
       </span>
-      {!compact && <span className={styles.name}>Market Copilot</span>}
+      {!compact && <span className={styles.name}>InvestAI</span>}
     </div>
   )
 }

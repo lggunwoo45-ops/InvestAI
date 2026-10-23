@@ -29,3 +29,6 @@
 @media (max-width: 1550px) { .stock .identity h1 { font-size: 18px; } }
 @media (min-width: 2200px) { .detail { grid-template-rows: 110px 62px 40px minmax(0, 1fr); } .identity h1,.quote strong { font-size: 26px; } .stats dd { font-size: 13px; } }
 @media (min-width: 2200px) { .stock .identity h1 { font-size: 26px; } }
+.signalEntry { margin: 16px; border: 1px solid var(--color-border); border-radius: 12px; padding: 20px; display: flex; align-items: center; gap: 20px; background: linear-gradient(115deg, #eef3ff, #fff); }
+.signalEntry > div { flex: 1; }.signalEntry span { font-size: 9px; letter-spacing: .14em; color: var(--color-accent); font-weight: 700; }.signalEntry h3 { margin: 8px 0; font-size: 16px; }.signalEntry p { margin: 0; font-size: 11px; color: var(--color-text-muted); line-height: 1.8; }.signalEntry a { border-radius: 7px; padding: 11px 14px; text-decoration: none; background: var(--color-accent); color: white; font-size: 12px; white-space: nowrap; }
+@media (max-width: 620px) { .signalEntry { flex-direction: column; align-items: start; margin: 12px; padding: 16px; } }

@@ -3,6 +3,7 @@ import { Link, Navigate, useSearchParams } from 'react-router-dom'
 import { analysisContextKey, readAnalysisSession, saveAnalysisSession, type AnalysisTab } from '@/services/myAnalysis/analysisSession'
 
 import { CryptoDecisionPanel } from '@/components/crypto-analysis/CryptoDecisionPanel'
+import { researchAssets } from '@/services/research/researchModel'
 import { EvidenceAssistant } from '@/components/ai-copilot/EvidenceAssistant'
 import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
 import { ActionReadinessCard } from '@/components/my-analysis/ActionReadinessCard/ActionReadinessCard'
@@ -233,6 +234,7 @@ function AnalysisWorkspace() {
   }
 
   const isCrypto = analysis?.assetType === 'crypto'
+  const researchAsset = selected && researchAssets.find(a => selected.symbol === `${a}/KRW` || selected.symbol === `${a}USDT` || selected.symbol === `${a}/USDT`)
   const sourceNotices = <>{openedFromMarket && <p className={styles.marketContext} role="status">{t.openedFromMarket}</p>}
       {openedFromSnapshot && <p className={styles.marketContext} role="status" data-snapshot-state={snapshotExpired ? 'expired' : 'active'}>{openedFromDailySnapshot ? (previousDailySnapshot ? t.dailySnapshotPrevious : t.dailySnapshotOpened) : snapshotExpired ? t.snapshotExpired : t.snapshotOpened}</p>}
       {openedFromDailySnapshot && isCrypto && <p className={styles.marketContext}>{t.bitcoinContext}</p>}
@@ -309,7 +311,7 @@ function AnalysisWorkspace() {
         <div className={styles.quote}><small>{t.availableData}</small><strong>{Number.isFinite(selected.lastPrice) ? formatMarketPrice(selected) : t.qualities.unavailable}</strong>{Number.isFinite(selected.change24hPercent) && <span data-direction={selected.change24hPercent >= 0 ? 'positive' : 'negative'}>{formatMarketChange(selected.change24hPercent)}</span>}</div>
         <div className={styles.quality}><small>{t.quality}</small><b data-quality={analysis.dataQuality}>{analysis.dataQualityLabel}</b><small>{t.qualityHelp[analysis.dataQuality]}</small></div>
       </section>
-
+      {isCrypto && researchAsset && <nav className={styles.researchJourney} aria-label="분석 이어가기"><div><span>RESEARCH JOURNEY</span><b>{language === 'ko' ? '지금 본 흐름을 더 살펴보세요' : 'Take this analysis further'}</b><small>{language === 'ko' ? '신호 비교는 Binance USDT 선물 자료를 사용합니다.' : 'Signal comparisons use Binance USDT perpetual data.'}</small></div><Link to={`/research?asset=${researchAsset}&mode=setups`}>{language === 'ko' ? '① 신호·과거 사례 비교' : '① Explore signals'}</Link><Link to={`/research?asset=${researchAsset}&mode=alerts`}>{language === 'ko' ? '② 내 조건·이후 결과' : '② Monitor and review'}</Link></nav>}
       {analysis.assetType === 'crypto' && <CryptoDecisionPanel key={selected.id} instrument={selected} activeTab={analysisTab} onTabChange={setAnalysisTab} daily={technicalData} language={language} averagePrice={validAveragePrice} quantity={savedPosition?.instrumentId === selected.id ? savedPosition.quantity : undefined} positionId={savedPosition?.instrumentId === selected.id ? savedPosition.id : undefined} detailsContent={<>{cryptoReferences}<details key={`questions-${selected.id}`} className={styles.referenceDetails}><summary>{language === 'ko' ? '이 분석에 질문하기' : 'Ask about this analysis'}</summary><EvidenceAssistant instrument={selected} live={marketDataMode === 'live'} /></details></>} investmentContent={<>{positionNotice}{positionPlan}{personalContext}<Link to="/portfolio">{language === 'ko' ? '내 코인·저장한 시나리오 관리 →' : 'Manage my coins and saved scenarios →'}</Link></>} holding={intent === 'holding'} onHoldingChange={value => { setIntent(value ? 'holding' : 'watching'); setReviewMode(value ? 'position' : 'interest') }} expert={displayMode === 'expert'} onExpert={() => setDisplayMode('expert')} />}
       {analysis.assetType !== 'crypto' && <>{positionNotice}{positionPlan}</>}
       {analysis.assetType !== 'crypto' && <section>

@@ -7,9 +7,44 @@ import { createServer } from 'node:http'
 import { createMonitorHandler } from './server.mjs'
 import { openStore } from './store.mjs'
 import { telegramChannel } from './notifications.mjs'
+import { defaultExplorerConfig } from '../research/signals.mjs'
 
 const at = 1_800_000_000_000
 const config = () => ({ requestId: 'one', instrument: { venue: 'binance-futures', asset: 'BTC', quote: 'USDT' }, source: { kind: 'review', id: 'review-1', revision: 'r1', at, price: 100, note: 'private note', signals: [] }, side: 'long', entry: [99, 101], target: 110, stop: 90, horizonHours: 1, costPercent: 0.2, notify: false })
+test('signal registrations persist, stay idempotent and cannot bypass origin/channel checks', async t => {
+  const dir = await directory(t)
+  const signal = { requestId: 'signal-integration-1', asset: 'BTC', name: '거래량 확인', notify: false, purpose: 'opportunity', config: { ...defaultExplorerConfig, window: 1, signals: ['volume-long'] } }
+  let rows = Array.from({ length: 80 }, (_, i) => ({ timestamp: at + i * 3600000, open: 100, high: 101, low: 99, close: 100, volume: 10 }))
+  const options = { directory: dir, clock: () => at + 82 * 3600000, channel: { configured: false }, historyReader: async () => ({ asset: 'BTC', timeframe: '1h', asOf: rows.at(-1).timestamp + 3600001, candles: rows }) }
+  let app = await serve(options)
+  try {
+    assert.equal((await app.post('/signals', signal, { origin: 'https://evil.example' })).status, 403)
+    assert.equal((await app.post('/signals', { ...signal, notify: true })).status, 400)
+    assert.equal((await app.post('/signals', signal)).status, 200); await app.post('/signals', signal)
+    assert.equal((await app.get()).signals.length, 1)
+    assert.equal((await app.post('/signals', { ...signal, name: '다른 이름' })).status, 400)
+    await app.handler.tickSignals()
+    rows = [...rows, { timestamp: at + 80 * 3600000, open: 100, high: 101, low: 100, close: 101, volume: 40 }]
+    await app.handler.tickSignals(); const before = (await app.get()).signals[0]
+    assert.equal(before.events.length, 1)
+    await app.close(); app = await serve(options)
+    await app.handler.tickSignals(); const after = (await app.get()).signals[0]
+    assert.equal(after.events.length, 1); assert.equal(after.hash, before.hash)
+    await app.post('/signals/stop', { id: before.id }); assert.equal((await app.get()).signals[0].events[0].outcome, 'cancelled')
+  } finally { await app.close() }
+})
+
+test('slow signal history cannot block the independent price monitor cycle', async t => {
+  const dir = await directory(t); let release
+  const app = await serve({ directory: dir, channel: { configured: false }, clock: () => at, quoteReader: async () => ({ price: 100, at, receivedAt: at }), historyReader: () => new Promise(resolve => { release = resolve }) })
+  try {
+    await app.post('/rules', config())
+    await app.post('/signals', { requestId: 'slow-signals-1', asset: 'BTC', name: '신호 확인', notify: false, config: defaultExplorerConfig })
+    const pending = app.handler.tickSignals(); await new Promise(resolve => setTimeout(resolve, 10))
+    await app.handler.tick(); assert.equal((await app.get()).rules[0].last.price, 100)
+    release({ asset: 'BTC', timeframe: '1h', candles: [], asOf: at }); await pending
+  } finally { await app.close() }
+})
 async function directory(t) {
   const prefix = join(tmpdir(), 'investai-monitor-test-'), dir = await mkdtemp(prefix)
   t.after(async () => { assert.ok(resolve(dir).startsWith(resolve(prefix))); await rm(dir, { recursive: true, force: true }) })

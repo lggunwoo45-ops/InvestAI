@@ -1,6 +1,7 @@
 import { createServer } from 'node:http'
 import { fileURLToPath } from 'node:url'
 import { resolve } from 'node:path'
+import { createHistoryReader, intervals } from './history.mjs'
 
 export const researchAssets = ['BTC', 'ETH', 'SOL', 'XRP', 'DOGE', 'BNB', 'ADA', 'AVAX', 'LINK', 'LTC', 'TRX', 'DOT', 'NEAR', 'APT', 'ARB', 'OP', 'SUI', 'BCH', 'ATOM', 'UNI', 'AAVE', 'INJ', 'TIA']
 
@@ -73,7 +74,7 @@ export function createResearchClient({ fetchImpl = fetch, now = Date.now } = {})
   }
 }
 
-export function createResearchHandler({ local = false, origins = [], client = createResearchClient(), now = Date.now } = {}) {
+export function createResearchHandler({ local = false, origins = [], client = createResearchClient(), now = Date.now, historyReader = createHistoryReader() } = {}) {
   const allowed = new Set(origins)
   let at = now(), requests = 0, active = 0
   return async (req, res, next = () => { res.writeHead(404); res.end() }) => {
@@ -87,16 +88,18 @@ export function createResearchHandler({ local = false, origins = [], client = cr
     if (origin) headers['Access-Control-Allow-Origin'] = origin
     const url = new URL(req.url, 'http://research.local')
     const wallet = url.pathname === '/api/research/wallet'
+    const history = url.pathname === '/api/research/history'
     if (req.method === 'OPTIONS' && wallet && origin) { headers['Access-Control-Allow-Methods'] = 'POST'; headers['Access-Control-Allow-Headers'] = 'Content-Type'; return send(200, {}) }
     if (req.method !== 'GET' && !(wallet && req.method === 'POST')) return send(405, { error: 'read_only' })
     if (url.pathname === '/api/research/health') return send(200, { service: 'investai-research', version: 1 })
     const asset = url.searchParams.get('asset')
-    if (!wallet && url.pathname !== '/api/research/snapshot') return send(404, { error: 'not_found' })
-    if (wallet ? req.method !== 'POST' || url.searchParams.size !== 0 : url.searchParams.size !== 1 || !researchAssets.includes(asset)) return send(400, { error: 'invalid_query' })
+    if (!wallet && !history && url.pathname !== '/api/research/snapshot') return send(404, { error: 'not_found' })
+    if (history ? url.searchParams.size !== 3 || !researchAssets.includes(asset) || !Object.hasOwn(intervals, url.searchParams.get('timeframe')) || !['1000', '3000', '5000'].includes(url.searchParams.get('count')) : wallet ? req.method !== 'POST' || url.searchParams.size !== 0 : url.searchParams.size !== 1 || !researchAssets.includes(asset)) return send(400, { error: 'invalid_query' })
     if (now() - at >= 60_000) { at = now(); requests = 0 }
     if (++requests > 30 || active >= 3) { headers['Retry-After'] = '60'; return send(429, { error: 'research_busy' }) }
     active++
     try {
+      if (history) return send(200, await historyReader(asset, url.searchParams.get('timeframe'), Number(url.searchParams.get('count'))))
       if (wallet) {
         if (!req.headers['content-type']?.startsWith('application/json')) return send(400, { error: 'invalid_body' })
         let body = ''

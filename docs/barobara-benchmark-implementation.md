@@ -8,6 +8,39 @@ Implementation follow-up: [local continual scenario monitoring](local-scenario-m
 
 ## Entry points
 
+### Signal Studio update — 2026-10-23
+
+The `/research?mode=setups` workflow now uses an independently written Signal Studio, with original Korean descriptions and layouts. The initial five-condition implementation described later in this report is superseded **for this route**. Legacy review snapshots keep their original condition definitions so saved evidence is not reinterpreted.
+
+Implemented locally:
+
+- Thirty directional conditions (15 families), nine timeframes, 1/3/6/12-bar conjunction windows, historical EMA/volume filters, target/horizon/direction/cost controls, and 1,000/3,000/5,000-bar retrieval.
+- Wilder RSI, EMA/MACD, Bollinger, squeeze expansion, volume, stochastic, prior-range breakout, engulfing/wicks, Williams %R, CCI and consecutive closes. Exact definitions are in the UI and shared `backend/research/signals.mjs`; matching a feature family does not assert that Barobara uses the same formulas.
+- Ten-minute bars aggregate complete, aligned pairs of five-minute Binance USDⓈ-M bars. Indicators reset after gaps and require 60 warm-up bars. No current market statistics are applied retrospectively.
+- A question-led Simple view with line chart and plain explanations; an Expert view with candles/EMA, searchable conditions and expanded controls. Both use the same calculations and preserve input across display changes.
+- Actual sample rows, both-touch ambiguity, non-overlapping horizons, timeout results, cost-adjusted mean and Wilson interval. These are exploratory observations, not independently validated returns. Start/end coverage is visible.
+- Up to 24 saved browser presets, explicit reload/delete, shareable configuration links without personal names/notes, and entry points from the primary instrument-analysis and market-chart screens.
+- Persistent local condition monitoring, separately scheduled from the existing price monitor. A new condition transition records the original configuration, completed signal candle and subsequent price-bar outcome. Manual holding direction can restrict a watch to opposite signals. Restart, deduplication, stale history and gap behavior are tested. Telegram remains opt-in and requires the existing server channel configuration; live delivery has not been tested.
+
+### Remaining feature inventory
+
+| Feature family | Current delivery | Remaining work / dependency |
+| --- | --- | --- |
+| Signal exploration | 30 conditions, 9 timeframes, windows, saved configurations and actual samples | Full-history/ETF-era datasets; funding/OI/taker/liquidation history alignment; independent strategy validation |
+| Condition monitoring | Single-owner PC monitor, market condition and manually specified opposite-direction watches | Authenticated cloud operation and per-user storage/channel delivery |
+| Signal outcome ledger | Original rule hash and local future-bar observations; all outcomes retained | Public sharing with redaction and server-authenticated archival |
+| Strategy catalog | User-selected conditions and illustrative starting questions | Independently validated strategies, market-wide opportunity feed and verified frequency figures |
+| Position risk | Existing manual long/short isolated calculations | Stored derivative portfolios, actual exchange tiers, new-position briefings and continuously evaluated liquidation/loss warnings |
+| Exchange account connections | Hyperliquid public-address lookup remains available | Lighter, read-only CEX connections, encrypted per-user credential storage, permission checks and revocation |
+| Market context | Existing funding, OI, ratio, dominance and sentiment sources | Annual heat history, liquidation aggregation, automated ETF data and economic calendar |
+| Cost/premium comparisons | Existing funding/fee budget and Upbit/Binance comparison | Additional domestic exchanges, bank FX, withdrawal/network availability and both-direction transfer comparison |
+| Review and asset integration | Existing reviews/portfolio retained; direct analysis-to-signal-to-monitor navigation | Unified spot/derivative identity and separately licensed stock/commodity histories |
+| Accounts and subscriptions | Not implemented | Product scope confirmation, identity/storage/payment provider configuration |
+
+This is a substantial local functional update, **not complete feature parity or a public production deployment**. No reference-site wording, branding, observed performance numbers, account data or subscription configuration was copied.
+
+Validation for this update: full frontend suite 982 tests and backend suite 83 tests passed; TypeScript and production build passed. The only lint warnings are three pre-existing warnings. Browser verification used actual BTC 1h/10m histories. The new monitoring HTTP tests used isolated temporary storage and a test notification adapter, leaving the user's existing monitor ledger unchanged.
+
 - `/research` from Home, the expert resource menu, or Simple Mode → More.
 - Modes use `?asset=BTC&mode=overview|indicators|position|costs|premium|setups|journal|alerts|guide`.
 - Existing chart/news/watchlist workspaces remain in place. Research can add a real Upbit instrument to the existing watchlist; its USDT futures review observations are separate from the existing KRW chart snapshots.

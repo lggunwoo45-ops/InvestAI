@@ -4,6 +4,8 @@ import { active, createRule, cancelRule, fingerprint, normalizeRule, observe } f
 import { openStore } from './store.mjs'
 import { createQuoteReader } from './quotes.mjs'
 import { telegramChannel } from './notifications.mjs'
+import { createHistoryReader } from '../research/history.mjs'
+import { createSignalWatch, normalizeSignalWatch, observeSignalWatch, signalFingerprint, stopSignalWatch } from './signalWatch.mjs'
 
 const defaultDirectory = fileURLToPath(new URL('../../.local-data/monitor/', import.meta.url))
 const loopback = value => ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(value)
@@ -24,8 +26,9 @@ async function body(req) {
 }
 const respond = (res, status, data) => { res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' }); res.end(JSON.stringify(data)) }
 
-export function createMonitorHandler({ directory = defaultDirectory, quoteReader = createQuoteReader(), channel = telegramChannel(), clock = Date.now, intervalMs = 15_000, autoStart = true } = {}) {
+export function createMonitorHandler({ directory = defaultDirectory, quoteReader = createQuoteReader(), historyReader = createHistoryReader(), channel = telegramChannel(), clock = Date.now, intervalMs = 15_000, autoStart = true } = {}) {
   let store, state, fatal = null, stopped = false, timer, deliveryTimer, busy = false, deliveryBusy = false, lastCycleAt = null
+  let signalTimer, signalBusy = false
   let queue = Promise.resolve()
   const ready = openStore(directory).then(value => { store = value; state = value.data }).catch(e => { fatal = e.message })
   const serial = fn => { const result = queue.then(fn); queue = result.catch(() => {}); return result }
@@ -52,6 +55,15 @@ export function createMonitorHandler({ directory = defaultDirectory, quoteReader
         await mutate(next => { const e = next.rules.find(r => r.id === ruleId).events.find(e => e.id === eventId); e.delivery.status = 'sent' })
       } catch { /* Keep uncertain: connection failure does not prove non-delivery. */ }
     }
+    for (const [ruleId, eventId] of (state.signals ?? []).flatMap(r => r.events.filter(e => e.delivery.status === 'pending').map(e => [r.id, e.id])).slice(0, 3)) {
+      if (stopped || fatal) break
+      const payload = await mutate(next => {
+        const rule = next.signals.find(r => r.id === ruleId), event = rule.events.find(e => e.id === eventId)
+        event.delivery.status = 'uncertain'; event.delivery.attempts++
+        return { rule: { config: { instrument: { venue: 'binance-futures', symbol: `${rule.config.asset}USDT`, quote: 'USDT' }, side: rule.config.config.side } }, event: { ...event, kind: 'signal' } }
+      })
+      try { await channel.send(payload.rule, payload.event); await mutate(next => { next.signals.find(r => r.id === ruleId).events.find(e => e.id === eventId).delivery.status = 'sent' }) } catch { /* Uncertain delivery is retained; no automatic duplicate. */ }
+    }
   }
   async function tick() {
     if (busy || stopped) return
@@ -71,12 +83,32 @@ export function createMonitorHandler({ directory = defaultDirectory, quoteReader
       if (!stopped && !fatal) lastCycleAt = clock()
     } catch (e) { fatal ??= e.message } finally { busy = false }
   }
+  async function tickSignals() {
+    if (signalBusy || stopped) return
+    signalBusy = true
+    try {
+      await ready; if (fatal || stopped) return
+      const signalGroups = new Map((state.signals ?? []).filter(r => r.active).map(r => [`${r.config.asset}:${r.config.config.timeframe}:${r.config.config.bars}`, r.config]))
+      for (const [key, config] of signalGroups) {
+        if (stopped || fatal) break
+        let history, issue
+        try { history = await historyReader(config.asset, config.config.timeframe, config.config.bars) } catch { issue = '신호 자료를 가져오지 못해 판정을 보류합니다.' }
+        if (stopped) break
+        await mutate(next => {
+          for (const rule of (next.signals ?? []).filter(r => r.active && `${r.config.asset}:${r.config.config.timeframe}:${r.config.config.bars}` === key)) {
+            if (issue) rule.issue = issue
+            else observeSignalWatch(rule, history, clock())
+          }
+        })
+      }
+    } catch (e) { fatal ??= e.message } finally { signalBusy = false }
+  }
   async function dispatch() {
     if (deliveryBusy || stopped) return
     deliveryBusy = true
     try { await ready; if (!fatal && !stopped) await deliver() } catch (e) { fatal ??= e.message } finally { deliveryBusy = false }
   }
-  const status = () => ({ version: 1, running: !fatal && !stopped, error: fatal, now: clock(), lastCycleAt, intervalMs, channelConfigured: channel.configured, rules: state?.rules ?? [] })
+  const status = () => ({ version: 1, running: !fatal && !stopped, error: fatal, now: clock(), lastCycleAt, intervalMs, channelConfigured: channel.configured, rules: state?.rules ?? [], signals: state?.signals ?? [] })
   const handler = async (req, res, next) => {
     const path = (req.url ?? '').split('?')[0]
     if (!path.startsWith('/api/monitor')) { next?.(); return }
@@ -96,6 +128,18 @@ export function createMonitorHandler({ directory = defaultDirectory, quoteReader
           if (next.rules.length >= 200 || next.rules.filter(active).length >= 10) throw new Error('동시 감시는 10개, 보관 기록은 200개까지 지원합니다.')
           next.rules.push(createRule(normalized, clock()))
         })
+      } else if (path === '/api/monitor/signals') {
+        const config = normalizeSignalWatch(input)
+        await mutate(next => {
+          next.signals ??= []
+          const previous = next.signals.find(r => r.config.requestId === config.requestId)
+          if (previous) { if (previous.hash !== signalFingerprint(config)) throw new Error('이미 사용한 등록 식별자입니다.'); return }
+          if (config.notify && !channel.configured) throw new Error('외부 알림 채널이 설정되지 않았습니다.')
+          if (next.signals.length >= 40 || next.signals.filter(r => r.active).length >= 6) throw new Error('신호 감시는 동시 6개, 보관 40개까지 지원합니다.')
+          next.signals.push(createSignalWatch(config, clock()))
+        })
+      } else if (path === '/api/monitor/signals/stop') {
+        await mutate(next => { const rule = (next.signals ?? []).find(r => r.id === input.id); if (!rule) throw new Error('신호 감시를 찾을 수 없습니다.'); stopSignalWatch(rule, clock()) })
       } else if (path === '/api/monitor/cancel') {
         await mutate(next => { const rule = next.rules.find(r => r.id === input.id); if (!rule) throw new Error('감시 기록을 찾을 수 없습니다.'); cancelRule(rule, clock()) })
       } else { respond(res, 404, { error: '없는 경로입니다.' }); return }
@@ -103,14 +147,16 @@ export function createMonitorHandler({ directory = defaultDirectory, quoteReader
     } catch (e) { respond(res, fatal ? 503 : 400, { error: e instanceof SyntaxError ? '요청을 읽을 수 없습니다.' : e.message }) }
   }
   handler.tick = tick
+  handler.tickSignals = tickSignals
   handler.dispatch = dispatch
   handler.ready = ready
   handler.close = async () => {
-    stopped = true; clearInterval(timer); clearInterval(deliveryTimer); await ready
-    while (busy || deliveryBusy) await new Promise(resolve => setTimeout(resolve, 25))
+    stopped = true; clearInterval(timer); clearInterval(deliveryTimer); clearInterval(signalTimer); await ready
+    while (busy || deliveryBusy || signalBusy) await new Promise(resolve => setTimeout(resolve, 25))
     await queue; await store?.close()
   }
   if (autoStart) {
+    signalTimer = setInterval(tickSignals, 30000); signalTimer.unref(); void tickSignals()
     timer = setInterval(tick, intervalMs); timer.unref(); void tick()
     deliveryTimer = setInterval(dispatch, 5000); deliveryTimer.unref(); void dispatch()
   }

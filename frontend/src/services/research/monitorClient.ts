@@ -1,3 +1,7 @@
+import type { ExplorerConfig } from './signalExplorer'
+export interface SignalWatchConfig { requestId: string; name: string; asset: string; notify: boolean; config: ExplorerConfig; purpose: 'opportunity' | 'opposition'; holdingSide: 'long' | 'short' | null }
+export interface SignalWatchEvent { id: string; at: number; observedAt: number; price: number; signals: string[]; outcome: 'pending' | 'entered' | 'up' | 'down' | 'timeout' | 'ambiguous' | 'unresolved' | 'cancelled'; entry: number | null; entryAt: number | null; exit: number | null; exitAt: number | null; net: number | null; delivery: { status: 'off' | 'pending' | 'sent' | 'uncertain'; attempts: number } }
+export interface SignalWatch { id: string; config: SignalWatchConfig & { version: string }; hash: string; createdAt: number; active: boolean; lastAt: number | null; matched: boolean; checkedAt: number | null; issue: string | null; events: SignalWatchEvent[] }
 export interface MonitorConfig {
   requestId: string
   instrument: { venue: 'upbit' | 'binance-spot' | 'binance-futures'; asset: string; quote: string; symbol?: string }
@@ -12,7 +16,7 @@ export interface MonitorRule {
   last: MonitorQuote | null; entered: MonitorQuote | null; result: { kind: Outcome; at: number; price: number | null; sourceAt: number | null; grossPercent: number | null; netPercent: number | null } | null
   events: MonitorEvent[]; issue: string | null; gaps: number
 }
-export interface MonitorState { version: 1; running: boolean; error: string | null; now: number; lastCycleAt: number | null; intervalMs: number; channelConfigured: boolean; rules: MonitorRule[] }
+export interface MonitorState { version: 1; running: boolean; error: string | null; now: number; lastCycleAt: number | null; intervalMs: number; channelConfigured: boolean; rules: MonitorRule[]; signals?: SignalWatch[] }
 async function request(path: string, data?: unknown): Promise<MonitorState> {
   if (!['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname)) throw new Error('이 배포에서는 개인 감시 서버가 연결되지 않았습니다. PC용 InvestAI에서 이용할 수 있습니다.')
   const response = await fetch(`/api/monitor${path}`, { method: data === undefined ? 'GET' : 'POST', signal: AbortSignal.timeout(10_000), headers: data === undefined ? undefined : { 'content-type': 'application/json', 'x-investai-monitor': '1' }, body: data === undefined ? undefined : JSON.stringify(data) })
@@ -25,3 +29,5 @@ async function request(path: string, data?: unknown): Promise<MonitorState> {
 export const readMonitor = () => request('')
 export const registerMonitor = (config: MonitorConfig) => request('/rules', config)
 export const cancelMonitor = (id: string) => request('/cancel', { id })
+export const registerSignalWatch = (config: SignalWatchConfig) => request('/signals', config)
+export const stopSignalWatch = (id: string) => request('/signals/stop', { id })
