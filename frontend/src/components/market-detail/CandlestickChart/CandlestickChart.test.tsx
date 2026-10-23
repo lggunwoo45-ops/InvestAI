@@ -13,16 +13,17 @@ const chartMock = vi.hoisted(() => {
   const removePriceLine = vi.fn()
   const candleSeries = { setData: vi.fn(), update: vi.fn(), createPriceLine, removePriceLine, priceScale: vi.fn(() => ({ applyOptions: vi.fn() })) }
   const volumeSeries = { setData: vi.fn(), update: vi.fn(), priceScale: vi.fn(() => ({ applyOptions: vi.fn() })) }
+  const fitContent = vi.fn()
   const createChart = vi.fn(() => {
     let seriesIndex = 0
     return {
       addSeries: vi.fn(() => seriesIndex++ === 0 ? candleSeries : volumeSeries),
       applyOptions: vi.fn(),
-      timeScale: vi.fn(() => ({ fitContent: vi.fn() })),
+      timeScale: vi.fn(() => ({ fitContent })),
       remove: vi.fn(),
     }
   })
-  return { createChart, createPriceLine, removePriceLine, candleSeries, volumeSeries }
+  return { createChart, createPriceLine, removePriceLine, candleSeries, volumeSeries, fitContent }
 })
 
 vi.mock('lightweight-charts', () => ({
@@ -48,6 +49,49 @@ const candles: readonly Candle[] = Array.from({ length: 60 }, (_, index) => {
 const technicalAnalysis = buildTechnicalLevelAnalysis({ instrument, candles, language: 'en', dataQuality: 'mock' })
 
 describe('CandlestickChart chart overlays', () => {
+  it('fits the first history and new timeframe but keeps the viewport through appended and rolling bars', () => {
+    chartMock.fitContent.mockClear()
+    const props = { instrument, timeframe: '1H' as const, mode: 'live' as const, technicalAnalysis }
+    const { rerender } = render(<LanguageProvider><CandlestickChart {...props} candles={[]} /></LanguageProvider>)
+    expect(chartMock.fitContent).not.toHaveBeenCalled()
+    rerender(<LanguageProvider><CandlestickChart {...props} candles={candles} /></LanguageProvider>)
+    expect(chartMock.fitContent).toHaveBeenCalledOnce()
+    chartMock.candleSeries.setData.mockClear()
+    chartMock.candleSeries.update.mockClear()
+    const next = { ...candles.at(-1)!, timestamp: candles.at(-1)!.timestamp + 3_600_000 }
+    const appended = [...candles, next]
+    rerender(<LanguageProvider><CandlestickChart {...props} candles={appended} /></LanguageProvider>)
+    expect(chartMock.candleSeries.update).toHaveBeenCalledOnce()
+    expect(chartMock.candleSeries.setData).not.toHaveBeenCalled()
+    const rolling = [...appended.slice(1), { ...next, timestamp: next.timestamp + 3_600_000 }]
+    rerender(<LanguageProvider><CandlestickChart {...props} candles={rolling} /></LanguageProvider>)
+    expect(chartMock.candleSeries.setData).toHaveBeenCalledOnce()
+    expect(chartMock.candleSeries.setData.mock.lastCall?.[0]).toHaveLength(rolling.length)
+    expect(chartMock.fitContent).toHaveBeenCalledOnce()
+    rerender(<LanguageProvider><CandlestickChart {...props} candles={candles} timeframe="4H" /></LanguageProvider>)
+    expect(chartMock.fitContent).toHaveBeenCalledTimes(2)
+  })
+  it('updates a live candle without reading styles for every history bar or resetting the viewport', () => {
+    const { rerender } = render(<LanguageProvider><CandlestickChart candles={candles} instrument={instrument} timeframe="1H" mode="live" technicalAnalysis={technicalAnalysis} /></LanguageProvider>)
+    chartMock.candleSeries.setData.mockClear()
+    chartMock.candleSeries.update.mockClear()
+    chartMock.fitContent.mockClear()
+    const styles = vi.spyOn(window, 'getComputedStyle')
+    try {
+      const tick = [...candles.slice(0, -1), { ...candles.at(-1)!, close: 101, volume: 1500 }]
+      rerender(<LanguageProvider><CandlestickChart candles={tick} instrument={instrument} timeframe="1H" mode="live" technicalAnalysis={technicalAnalysis} /></LanguageProvider>)
+      expect(styles.mock.calls.length).toBeLessThanOrEqual(2)
+      expect(chartMock.candleSeries.setData).not.toHaveBeenCalled()
+      expect(chartMock.candleSeries.update).toHaveBeenLastCalledWith(expect.objectContaining({ close: 101 }))
+      expect(chartMock.volumeSeries.update).toHaveBeenLastCalledWith(expect.objectContaining({ value: 1500 }))
+      expect(chartMock.fitContent).not.toHaveBeenCalled()
+      // A REST correction still replaces old bars, while preserving the user's zoom.
+      const corrected = tick.map((candle, index) => index === 0 ? { ...candle, close: 102 } : candle)
+      rerender(<LanguageProvider><CandlestickChart candles={corrected} instrument={instrument} timeframe="1H" mode="live" technicalAnalysis={technicalAnalysis} /></LanguageProvider>)
+      expect(chartMock.candleSeries.setData.mock.lastCall?.[0][0].close).toBe(102)
+      expect(chartMock.fitContent).not.toHaveBeenCalled()
+    } finally { styles.mockRestore() }
+  })
   it('replaces all cached bars when refreshed history corrects an older candle', () => {
     chartMock.candleSeries.setData.mockClear()
     chartMock.candleSeries.update.mockClear()

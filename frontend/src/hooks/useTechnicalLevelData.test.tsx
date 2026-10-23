@@ -49,6 +49,43 @@ describe('useTechnicalLevelData', () => {
     expect(subscribe).not.toHaveBeenCalled()
   })
 
+  it('skips 100 orderbook-only updates but immediately publishes prices, trades, freshness and disconnects', () => {
+    let emit!: (state: RealtimeMarketState) => void
+    vi.spyOn(marketDataService, 'subscribe').mockImplementation(options => { emit = options.onState; return vi.fn() })
+    let renders = 0
+    const { result } = renderHook(() => { renders++; return useTechnicalLevelData(instrument) })
+    let state: RealtimeMarketState = {
+      snapshot: { instrument, timeframe: '1D', candles: [], recentTrades: [], orderbook: { symbolId: instrument.id, asks: [], bids: [], spread: 0 } },
+      connection: { requestedMode: 'live', effectiveMode: 'live', status: 'live', provider: 'test', reconnectAttempt: 0, lastUpdatedAt: 1000, marketTime: 2000, message: 'Live' },
+    }
+    act(() => emit(state))
+    const initial = result.current
+    const initialRenders = renders
+    for (let i = 0; i < 100; i++) {
+      state = { ...state, snapshot: { ...state.snapshot!, orderbook: { ...state.snapshot!.orderbook, spread: i } } }
+      act(() => emit(state))
+    }
+    expect(renders - initialRenders).toBe(0)
+    expect(result.current).toBe(initial)
+    state = { ...state, snapshot: { ...state.snapshot!, instrument: { ...instrument, lastPrice: 105 } } }
+    act(() => emit(state))
+    expect(result.current.currentPrice).toBe(105)
+    const trades = [{ id: 'new', price: 105, amount: 2, side: 'buy' as const, timestamp: 2001 }]
+    state = { ...state, snapshot: { ...state.snapshot!, recentTrades: trades } }
+    act(() => emit(state))
+    expect(result.current.recentTrades).toBe(trades)
+    state = { ...state, connection: { ...state.connection, lastUpdatedAt: 1001, marketTime: 2001 } }
+    act(() => emit(state))
+    expect(result.current).toMatchObject({ updatedAt: 1001, marketTime: 2001 })
+    const candles = [{ timestamp: 1, open: 100, high: 106, low: 99, close: 105, volume: 50 }]
+    state = { ...state, snapshot: { ...state.snapshot!, candles } }
+    act(() => emit(state))
+    expect(result.current.candles).toBe(candles)
+    state = { ...state, connection: { ...state.connection, status: 'reconnecting' } }
+    act(() => emit(state))
+    expect(result.current.connectionStatus).toBe('reconnecting')
+  })
+
   it('does not restart the daily subscription for quote-only instrument updates', () => {
     const unsubscribe = vi.fn()
     const subscribe = vi.spyOn(marketDataService, 'subscribe').mockReturnValue(unsubscribe)

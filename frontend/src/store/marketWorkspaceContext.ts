@@ -7,7 +7,6 @@ export interface MarketWorkspaceValue {
   selectedInstrument: MarketInstrument | null
   selectedTimeframe: ChartTimeframe
   marketDataMode: MarketDataMode
-  activeMarketState: RealtimeMarketState | null
   selectInstrument: (instrument: MarketInstrument) => void
   clearInstrument: () => void
   selectTimeframe: (timeframe: ChartTimeframe) => void
@@ -16,3 +15,6 @@ export interface MarketWorkspaceValue {
 }
 
 export const MarketWorkspaceContext = createContext<MarketWorkspaceValue | null>(null)
+
+// Price ticks should only invalidate consumers that actually display the feed.
+export const ActiveMarketStateContext = createContext<RealtimeMarketState | null | undefined>(undefined)
