@@ -1,3 +1,4 @@
 test-failure-full.log
 test-failure-summary.txt
 *.log
+.local-data/

@@ -45,7 +45,7 @@ export function SimpleHeader({ hideCopilotToggle }: { hideCopilotToggle: boolean
         <div className={styles.menu}>
           <GlobalSearch compact />
           <nav aria-label={ko ? '시장·자료·설정' : 'Markets, resources and settings'}>
-            {[...secondaryNavigation, ...utilityNavigation].map(item => <NavLink key={item.path} to={item.path}>{uiText[language].navigation[item.icon]}</NavLink>)}
+            {[...secondaryNavigation, ...utilityNavigation].map(item => <NavLink key={item.path} to={item.path}>{item.path === '/research' ? (ko ? '시장·기록' : 'Market & Reviews') : uiText[language].navigation[item.icon]}</NavLink>)}
           </nav>
           <label>{ko ? '언어' : 'Language'}<select aria-label="Language" value={language} onChange={event => setLanguage(event.target.value as Language)}><option value="ko">한국어</option><option value="en">English</option></select></label>
         </div>

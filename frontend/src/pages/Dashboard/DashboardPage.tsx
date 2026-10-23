@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
 import { Link } from 'react-router-dom'
 import { PortfolioSummaryCard } from '@/components/dashboard/PortfolioSummaryCard'
 import { AnalysisWarmup } from '@/components/market/AnalysisWarmup'
@@ -29,6 +30,7 @@ function SavedWatchlists() {
 }
 
 export function DashboardPage() {
+  const simple = useDisplayMode().displayMode === 'simple'
   const { language } = useLanguage()
   const ko = language === 'ko'
   useDocumentTitle(ko ? '홈' : 'Home')
@@ -50,6 +52,7 @@ export function DashboardPage() {
       <Link to="/my-analysis"><span>01</span><strong>{ko ? '종목 분석' : 'Instrument Analysis'}</strong><p>{ko ? '한 종목의 흐름과 확인할 가격' : 'One asset’s trend and price levels'}</p></Link>
       <Link to="/portfolio"><span>02</span><strong>{ko ? '내 투자' : 'My Investments'}</strong><p>{ko ? '내가 가진 코인 전체의 손익과 분석' : 'Returns and analysis for all my holdings'}</p></Link>
       <Link to="/ai-analysis"><span>03</span><strong>{ko ? '종목 찾기' : 'Find Assets'}</strong><p>{ko ? '새로 살펴볼 코인 후보 찾기' : 'Find new coins to review'}</p></Link>
+      <Link to="/research"><span>04</span><strong>{simple ? (ko ? '시장·기록' : 'Market & Reviews') : (ko ? '시장·리스크 연구실' : 'Market & Risk Lab')}</strong><p>{simple ? (ko ? '시장 요약·검토 기록·조건 알림' : 'Market summary, saved reviews and alerts') : (ko ? '시장 지표·거래비용·검토 변화 확인' : 'Market context, trading costs and review changes')}</p></Link>
     </nav>
     <details className={styles.section}><summary>{ko ? '저장한 가격 기준에 변화가 있나요?' : 'Changes to my saved price plans'}</summary><ScenarioBoard compact /></details>
     <details className={styles.section} onToggle={event => setWatchlistsOpen(event.currentTarget.open)}><summary>{ko ? '내 관심종목' : 'My watchlists'}</summary>{watchlistsOpen && <SavedWatchlists />}</details>

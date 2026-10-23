@@ -16,6 +16,7 @@ const SettingsPage = lazy(() => import('@/pages/Settings/SettingsPage').then((mo
 const SimpleModePage = lazy(() => import('@/pages/SimpleMode/SimpleModePage').then((module) => ({ default: module.SimpleModePage })))
 const StrategiesPage = lazy(() => import('@/pages/Strategies/StrategiesPage').then((module) => ({ default: module.StrategiesPage })))
 const TradingPage = lazy(() => import('@/pages/Trading/TradingPage').then((module) => ({ default: module.TradingPage })))
+const ResearchPage = lazy(() => import('@/pages/Research/ResearchPage').then((module) => ({ default: module.ResearchPage })))
 
 export function AppRoutes() {
   return (
@@ -24,6 +25,7 @@ export function AppRoutes() {
         <Route element={<AppShell />}>
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="market" element={<MarketPage />} />
+          <Route path="research" element={<ResearchPage />} />
           <Route path="briefing" element={<Navigate to="/news" replace />} />
           <Route path="markets" element={<Navigate to="/market" replace />} />
           <Route path="dashboard" element={<DashboardPage />} />

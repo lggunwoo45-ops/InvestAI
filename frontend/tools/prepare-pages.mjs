@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url'
 export async function preparePages(directory) {
   const html = await readFile(join(directory, 'index.html'), 'utf8')
   if (!html.includes('/InvestAI/assets/')) throw new Error('Build with --base=/InvestAI/ before packaging Pages')
-  for (const route of ['market', 'dashboard', 'briefing', 'markets', 'simple', 'discover', 'demo', 'portfolio', 'trading', 'ai-analysis', 'my-analysis', 'strategies', 'news', 'settings']) {
+  for (const route of ['market', 'research', 'dashboard', 'briefing', 'markets', 'simple', 'discover', 'demo', 'portfolio', 'trading', 'ai-analysis', 'my-analysis', 'strategies', 'news', 'settings']) {
     await mkdir(join(directory, route), { recursive: true })
     await writeFile(join(directory, route, 'index.html'), html)
   }

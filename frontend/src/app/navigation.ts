@@ -8,6 +8,7 @@ export const primaryNavigation: readonly NavigationItem[] = [
 ]
 
 export const secondaryNavigation: readonly NavigationItem[] = [
+  { label: 'Market & Risk Lab', path: '/research', icon: 'strategies' },
   { label: 'Market', path: '/market', icon: 'markets' },
   { label: 'News', path: '/news', icon: 'news' },
   { label: 'Demo', path: '/demo', icon: 'demo' },

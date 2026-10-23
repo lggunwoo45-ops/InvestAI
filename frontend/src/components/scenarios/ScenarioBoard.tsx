@@ -59,6 +59,7 @@ export function ScenarioBoard({ compact = false }: { compact?: boolean }) {
           <small>{t.reference}: {new Date(s.baseline.at).toLocaleString(language)} · {t.bias[s.baseline.direction]} · {t.frame[s.baseline.frame]}</small>
           {s.enabled && o?.weakened === null && <p className={styles.caption}>{t.weakMissing}</p>}
           <div className={styles.actions}>
+            <Link to={`/research?mode=alerts&scenario=${encodeURIComponent(s.id)}`}>{language === 'ko' ? '서버 감시로 연결' : 'Connect to server monitor'}</Link>
             <button type="button" disabled={store.error} onClick={() => { try { commit(store.scenarios.map(item => item.id === s.id ? { ...item, enabled: !item.enabled } : item)) } catch { setError(true) } }}>{s.enabled ? t.pause : t.resume}</button>
             <button type="button" disabled={store.error} onClick={() => { setEditing({ value: s, raw: store.raw }); setDeleting(null) }}>{t.edit}</button>
             <button type="button" disabled={store.error} onClick={() => { setDeleting({ id: s.id, raw: store.raw }); setEditing(null) }}>{t.remove}</button>
