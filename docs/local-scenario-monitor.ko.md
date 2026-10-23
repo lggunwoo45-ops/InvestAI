@@ -94,3 +94,7 @@ API는 루프백 접속, 로컬 Host, 동일 Origin, JSON과 전용 요청 헤�
 - 실제 공개 Binance 마크가격으로 기능 확인용 기록 1건을 등록하고 브라우저 탭을 닫았다. 브라우저 없이 진입 관측과 기간 종료가 저장됐고 다시 열었을 때 원래 근거와 관측 결과를 확인했다. 외부 발송은 꺼져 있었고 거래 주문은 없었다. 해당 기록은 테스트임을 표시한 메모와 함께 종료 상태로 보관한다.
 
 참조: [Upbit 현재가](https://docs.upbit.com/kr/reference/list-tickers), [Binance 시장 데이터](https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data), [Telegram sendMessage](https://core.telegram.org/bots/api#sendmessage).
+
+## 공개 포지션 연결 추가
+
+Hyperliquid 기본 무기한·Lighter 계정 번호 연결, 30초 갱신, 위험 기준 관측, 실제 포지션에 연결한 반대 신호 감시를 추가했다. 기존 가격/신호 기록은 유지한다. 연결별 범위·저장·삭제·시간 처리와 검증 결과는 [공개 포지션 감시](public-position-monitor.ko.md)를 참조한다. 유료 구독·결제는 사용자 요청에 따라 후속 범위다.

@@ -22,6 +22,10 @@ Implemented locally:
 - Up to 24 saved browser presets, explicit reload/delete, shareable configuration links without personal names/notes, and entry points from the primary instrument-analysis and market-chart screens.
 - Persistent local condition monitoring, separately scheduled from the existing price monitor. A new condition transition records the original configuration, completed signal candle and subsequent price-bar outcome. Manual holding direction can restrict a watch to opposite signals. Restart, deduplication, stale history and gap behavior are tested. Telegram remains opt-in and requires the existing server channel configuration; live delivery has not been tested.
 
+### Public position connections — 2026-10-23
+
+User scope: prioritize analysis, integrations and alerts; defer paid subscriptions/payments. Added persistent, read-only Hyperliquid basic-perpetual and Lighter account-index connections with polling, original risk observations, pause/removal/export, and position-bound opposite signals. Simple cards and an Expert table share the same source data. This remains a single-owner PC implementation, with no verified live Telegram delivery or private CEX integration. See [public position monitor](public-position-monitor.ko.md) for precise coverage, source documentation and verification.
+
 ### Remaining feature inventory
 
 | Feature family | Current delivery | Remaining work / dependency |
@@ -30,12 +34,12 @@ Implemented locally:
 | Condition monitoring | Single-owner PC monitor, market condition and manually specified opposite-direction watches | Authenticated cloud operation and per-user storage/channel delivery |
 | Signal outcome ledger | Original rule hash and local future-bar observations; all outcomes retained | Public sharing with redaction and server-authenticated archival |
 | Strategy catalog | User-selected conditions and illustrative starting questions | Independently validated strategies, market-wide opportunity feed and verified frequency figures |
-| Position risk | Existing manual long/short isolated calculations | Stored derivative portfolios, actual exchange tiers, new-position briefings and continuously evaluated liquidation/loss warnings |
-| Exchange account connections | Hyperliquid public-address lookup remains available | Lighter, read-only CEX connections, encrypted per-user credential storage, permission checks and revocation |
+| Position risk | Manual calculator plus persisted public perpetual positions, first/new/changed observations and repeated liquidation-distance/loss/HL-leverage checks | Private CEX positions, exchange-wide margin modes and complete fill/realized-PnL history |
+| Exchange account connections | Hyperliquid basic-perpetual address and Lighter explicit account index with local persistence/polling/removal; existing one-off lookup retained | Read-only CEX connections, encrypted per-user credential storage, permission checks and revocation |
 | Market context | Existing funding, OI, ratio, dominance and sentiment sources | Annual heat history, liquidation aggregation, automated ETF data and economic calendar |
 | Cost/premium comparisons | Existing funding/fee budget and Upbit/Binance comparison | Additional domestic exchanges, bank FX, withdrawal/network availability and both-direction transfer comparison |
 | Review and asset integration | Existing reviews/portfolio retained; direct analysis-to-signal-to-monitor navigation | Unified spot/derivative identity and separately licensed stock/commodity histories |
-| Accounts and subscriptions | Not implemented | Product scope confirmation, identity/storage/payment provider configuration |
+| Accounts and subscriptions | Payments explicitly deferred by user; public-position monitor is local/single-owner | Authenticated per-user storage and notification settings; billing is a later scope |
 
 This is a substantial local functional update, **not complete feature parity or a public production deployment**. No reference-site wording, branding, observed performance numbers, account data or subscription configuration was copied.
 

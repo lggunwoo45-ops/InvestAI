@@ -15,6 +15,7 @@ import { FeeBudget } from './FeeBudget'
 import { FundingComparison } from './FundingComparison'
 import { PremiumTable } from './PremiumTable'
 import { PublicWallet } from './PublicWallet'
+import { PositionConnections } from './PositionConnections'
 import { ResearchNews } from './ResearchNews'
 import { MarketStructure } from './MarketStructure'
 import { MonitorWorkspace } from './MonitorWorkspace'
@@ -73,7 +74,7 @@ function Position({ mark, funding, interval }: { mark: number | null; funding: n
       <Metric title="진입·현재가 청산 수수료" value={`${format(result.fees, 4)} USDT`} /><Metric title="보유 기간 펀딩 비용" value={`${format(result.funding, 4)} USDT`} detail="음수는 수취 · 미래 펀딩 고정 가정" /><Metric title="비용 반영 손익" value={`${format(result.net)} USDT`} />
     </div><p>예상 청산가는 유지증거금 구간·공제액·추가 증거금·청산 수수료를 반영하지 않는 근사값입니다. 실제 거래소 청산가와 다를 수 있습니다. 교차 증거금과 역선물에는 사용할 수 없습니다.</p></>}
   </section>
-  return <>{simple ? guided : expert}<details className={styles.panel} open={!simple}><summary>공개 지갑 주소로 포지션 확인하기</summary><PublicWallet /></details></>
+  return <><PositionConnections /><details className={styles.panel} open><summary>직접 입력해서 손익 비교하기</summary>{!mark && <p>계산에 사용할 시장 가격을 확인할 수 없습니다. 비교할 가격을 직접 입력하거나 화면 위에서 새로고침해주세요.</p>}{simple ? guided : expert}</details><details className={styles.panel}><summary>저장 없이 공개 지갑 한 번 조회하기</summary><PublicWallet /></details></>
 
 }
 
@@ -302,10 +303,10 @@ export function ResearchPage() {
   return <div className={[styles.page, simple ? styles.simplePage : styles.expertPage].join(' ')} data-research-experience={displayMode}>
     <header className={styles.workspaceHeader}><div className={styles.heading}><span>{simple ? '한 번에 하나씩, 쉽게 살펴보세요' : 'INVESTAI · RESEARCH WORKSPACE'}</span><h1>{simple ? (language === 'ko' ? '시장·기록' : 'Market & Reviews') : (language === 'ko' ? '시장·리스크 연구실' : 'Market & Risk Lab')}</h1>{!simple && <p>시장 지표와 거래 조건을 분석하고, 검토 근거를 비교합니다.</p>}</div><div className={styles.headerActions}><label>{simple ? '살펴볼 코인' : '검토 종목'}<select aria-label="검토 종목" value={asset} onChange={e => { setParams({ asset: e.target.value, mode }); setMessage('') }}>{researchAssets.map(a => <option key={a}>{a}</option>)}</select></label><button disabled={loading} onClick={() => setRevision(v => v + 1)}>{loading ? '확인 중…' : '↻ 새로고침'}</button></div></header>
     {!simple && <div className={styles.expertControls}><label className={styles.check}><input type="checkbox" checked={auto} onChange={e => setAuto(e.target.checked)} />열린 동안 1분마다 갱신</label><small>마지막 확인: {time(visible?.fetchedAt)}</small><button onClick={() => setDisplayMode('simple')}>쉬운 설명으로 보기</button></div>}
-    {error && mode !== 'setups' && <p className={styles.notice} role="alert">{simple ? '지금 시장 자료를 불러오지 못했어요. 새로고침으로 다시 확인해주세요. 저장한 기록과 직접 입력 계산은 계속 사용할 수 있어요.' : error}</p>}
-    {delayedMark && mode !== 'setups' && <p className={styles.notice} role="status">{simple ? '가격 자료가 오래되어 비교와 새 기록 저장을 잠시 멈췄어요. 새로고침 후 다시 확인해주세요.' : '마크가격 관측 시각: ' + time(rawMarkAt) + '. 갱신이 필요해 현재가 채우기와 검토 저장을 제한했습니다.'}</p>}
-    {simple && mode !== 'setups' ? <SimpleResearchNav mode={mode} onMode={setMode} /> : <nav className={styles.tabs} aria-label="시장 연구 모드">{modes.map(([key, label]) => <button key={key} aria-current={mode === key ? 'page' : undefined} onClick={() => setMode(key)}>{label}</button>)}</nav>}
-    {simple && mode !== 'setups' && <SimpleToolIntro mode={mode} onBack={() => setMode('overview')} />}
+    {error && !['setups', 'position'].includes(mode) && <p className={styles.notice} role="alert">{simple ? '지금 시장 자료를 불러오지 못했어요. 새로고침으로 다시 확인해주세요. 저장한 기록과 직접 입력 계산은 계속 사용할 수 있어요.' : error}</p>}
+    {delayedMark && !['setups', 'position'].includes(mode) && <p className={styles.notice} role="status">{simple ? '가격 자료가 오래되어 비교와 새 기록 저장을 잠시 멈췄어요. 새로고침 후 다시 확인해주세요.' : '마크가격 관측 시각: ' + time(rawMarkAt) + '. 갱신이 필요해 현재가 채우기와 검토 저장을 제한했습니다.'}</p>}
+    {simple && !['setups', 'position'].includes(mode) ? <SimpleResearchNav mode={mode} onMode={setMode} /> : <nav className={styles.tabs} aria-label="시장 연구 모드">{modes.map(([key, label]) => <button key={key} aria-current={mode === key ? 'page' : undefined} onClick={() => setMode(key)}>{label}</button>)}</nav>}
+    {simple && !['setups', 'position'].includes(mode) && <SimpleToolIntro mode={mode} onBack={() => setMode('overview')} />}
     {mode === 'overview' && simple && <SimpleMarketSummary asset={asset} price={mark} at={markAt} candles={candles} loading={loading} onMode={setMode} onWatch={openMarket} watchlisted={isWatchlisted('upbit-' + asset.toLowerCase())} canWatch={!!visible} message={message} />}
     {mode === 'overview' && !simple && <><section className={styles.panel}><div className={styles.actions}><h2>{asset} 현재 시장 컨디션</h2><button onClick={openMarket} disabled={!visible}>{isWatchlisted(`upbit-${asset.toLowerCase()}`) ? '관심종목·분석 이어가기' : '관심종목 등록'}</button><Link to="/market">차트·뉴스로 이동</Link></div><p role="status">{message}</p><div className={styles.metrics}><Metric title="선물 마크가격" value={mark ? `${format(mark, 6)} USDT` : '확인 불가'} detail={`Binance · ${time(markAt)}`} /><Metric title="다음 정산 예상 펀딩률" value={funding === null ? '확인 불가' : percent(funding * 100)} detail={`정산 예정 ${time(field(markData, 'nextFundingTime'))}`} /><Metric title="최근 실현 시간 변동성" value={percent(vol?.hourly)} detail="최근 24개 시간 수익률 기준" /></div><Chart candles={candles} /><h3>현재 관측된 조건</h3><p>{signals.map(s => signalLabels[s]).join(' · ') || '완결된 시간봉이 부족하거나 해당 조건이 없습니다.'}</p><div className={styles.actions}><button onClick={() => setMode('position')}>내 포지션 위험 계산</button><button onClick={() => setMode('journal')}>검토 저장·이전과 비교</button></div></section></>}
     <div className={styles.modeContent}>
@@ -315,7 +316,7 @@ export function ResearchPage() {
     {mode === 'premium' && <Premium key={asset} snapshot={visible} asset={asset} now={now} />}
     {mode === 'setups' && <SignalExplorer asset={asset} refresh={revision} />}
     {mode === 'journal' && <><Journal key={asset} asset={asset} snapshot={visible} candles={candles} now={now} /><details className={styles.relatedNews} open={!simple}><summary>기록에 참고할 뉴스 찾아보기</summary><ResearchNews asset={asset} /></details></>}
-    {mode === 'alerts' && <><SignalWatchPanel asset={asset} ledger /><MonitorWorkspace key={asset} asset={asset} /><details className={styles.panel}><summary>{simple ? "화면을 켜둔 동안만 가격 알림 받기" : "기존 브라우저 조건 알림"}</summary><Alerts key={asset} asset={asset} snapshot={visible} now={now} /></details></>}
+    {mode === 'alerts' && <><PositionConnections ledger /><SignalWatchPanel asset={asset} ledger /><MonitorWorkspace key={asset} asset={asset} /><details className={styles.panel}><summary>{simple ? "화면을 켜둔 동안만 가격 알림 받기" : "기존 브라우저 조건 알림"}</summary><Alerts key={asset} asset={asset} snapshot={visible} now={now} /></details></>}
     {mode === 'guide' && (simple ? <section className={styles.panel}><h2>세 단계로 이어서 확인하세요</h2><ol><li><b>시장 한눈에</b>에서 가격과 지난 검토 이후 변화를 확인합니다.</li><li><b>검토 기록</b>에 관심 이유와 다음에 확인할 내용을 저장합니다.</li><li><b>알림·결과</b>에서 저장한 가격 조건을 감시하고 관측 결과를 확인합니다.</li></ol><p>검토는 이 브라우저에 저장됩니다. 감시는 PC와 감시 프로그램이 켜져 있어야 이어지며, 관측 결과는 실제 주문이나 계좌 수익률이 아닙니다.</p><button onClick={() => setMode('journal')}>첫 검토 남기기</button><p>시장 살펴보기의 질문 카드에서 지표·비용·가격 비교와 과거 검증을 이어갈 수 있어요.</p></section> : <Guide />)}
     </div>
     <ResearchEvidence snapshot={visible} now={now} onMode={setMode} />

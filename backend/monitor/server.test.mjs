@@ -11,6 +11,51 @@ import { defaultExplorerConfig } from '../research/signals.mjs'
 
 const at = 1_800_000_000_000
 const config = () => ({ requestId: 'one', instrument: { venue: 'binance-futures', asset: 'BTC', quote: 'USDT' }, source: { kind: 'review', id: 'review-1', revision: 'r1', at, price: 100, note: 'private note', signals: [] }, side: 'long', entry: [99, 101], target: 110, stop: 90, horizonHours: 1, costPercent: 0.2, notify: false })
+const connectionConfig = () => ({ requestId: 'public-connection-1', venue: 'hyperliquid', account: `0x${'a'.repeat(40)}`, label: 'private label', notify: false, thresholds: { distance: 5, loss: 10, leverage: null } })
+const position = () => ({ key: 'BTC:long', asset: 'BTC', side: 'long', size: 1, entryPrice: 100, currentPrice: 100, liquidationPrice: 80, unrealizedPnl: 0, leverage: 5, marginType: 'cross', quote: 'USDC' })
+test('connected positions persist with risk events, enforce bound direction, and stop signals when positions close', async t => {
+  const dir = await directory(t); let now = at, positions = [position()], offline = false
+  const options = { directory: dir, clock: () => now, channel: { configured: false }, positionReader: async () => { if (offline) throw new Error('offline'); return { receivedAt: now, sourceAt: now, positions } } }
+  let app = await serve(options)
+  try {
+    assert.equal((await app.post('/connections', connectionConfig(), { origin: 'https://evil.example' })).status, 403)
+    assert.equal((await app.post('/connections', { ...connectionConfig(), notify: true })).status, 400)
+    await app.post('/connections', connectionConfig()); await app.post('/connections', connectionConfig())
+    assert.equal((await app.get()).connections.length, 1)
+    const id = (await app.get()).connections[0].id
+    const signal = { requestId: 'bound-signal-1', name: '반대 방향', asset: 'BTC', notify: false, purpose: 'opposition', holdingSide: 'long', positionRef: { connectionId: id, key: 'BTC:long' }, config: { ...defaultExplorerConfig, signals: ['ema-short'], side: 'short' } }
+    assert.equal((await app.post('/signals', signal)).status, 400)
+    await app.handler.tickPositions()
+    assert.equal((await app.post('/signals', { ...signal, holdingSide: 'short' })).status, 400)
+    assert.equal((await app.post('/signals', signal)).status, 200)
+    assert.equal((await app.post('/signals', { ...signal, requestId: 'bound-signal-2' })).status, 400)
+    now += 30000; positions = [{ ...position(), currentPrice: 82, unrealizedPnl: -18 }]; await app.handler.tickPositions()
+    assert.equal((await app.get()).connections[0].events.filter(e => e.kind === 'loss').length, 1)
+    await app.close(); app = await serve(options)
+    assert.equal((await app.get()).connections[0].events.length, 3)
+    now += 30000; offline = true; await app.handler.tickPositions()
+    let current = await app.get(); assert.equal(current.signals[0].active, true); assert.match(current.signals[0].issue, /보류/); assert.equal(current.connections[0].snapshot.positions.length, 1)
+    now += 30000; offline = false; positions = []; await app.handler.tickPositions()
+    current = await app.get(); assert.equal(current.signals[0].active, false); assert.match(current.signals[0].issue, /사라지거나/)
+    assert.equal((await app.post('/connections/remove', { id })).status, 200)
+    assert.equal((await app.get()).connections.length, 0)
+    const saved = await readFile(join(dir, 'ledger.json'), 'utf8'); assert.ok(!saved.includes(connectionConfig().account)); assert.ok(!saved.includes('private label')); assert.equal(JSON.parse(saved).signals.length, 1)
+  } finally { await app.close() }
+})
+test('disconnect during an in-flight position read cannot resurrect data; delivery is redacted and deduplicated', async t => {
+  const dir = await directory(t); let now = at, unblock, delivered = [], hold = false
+  const app = await serve({ directory: dir, clock: () => now, channel: { configured: true, send: async (r, e) => { delivered.push({ r, e }) } }, positionReader: async () => { if (hold) await new Promise(resolve => { unblock = resolve }); return { receivedAt: now, sourceAt: now, positions: [position()] } } })
+  try {
+    await app.post('/connections', { ...connectionConfig(), notify: true }); await app.handler.tickPositions()
+    await app.handler.dispatch(); await app.handler.dispatch(); assert.equal(delivered.length, 1)
+    assert.ok(!JSON.stringify(delivered).includes('private label')); assert.ok(!JSON.stringify(delivered).includes(connectionConfig().account))
+    const c = (await app.get()).connections[0]; assert.equal(c.events[0].delivery.status, 'sent')
+    hold = true; now += 30000; const pending = app.handler.tickPositions()
+    while (!unblock) await new Promise(resolve => setTimeout(resolve, 1))
+    await app.post('/connections/remove', { id: c.id }); unblock(); await pending
+    assert.deepEqual((await app.get()).connections, [])
+  } finally { unblock?.(); await app.close() }
+})
 test('signal registrations persist, stay idempotent and cannot bypass origin/channel checks', async t => {
   const dir = await directory(t)
   const signal = { requestId: 'signal-integration-1', asset: 'BTC', name: '거래량 확인', notify: false, purpose: 'opportunity', config: { ...defaultExplorerConfig, window: 1, signals: ['volume-long'] } }

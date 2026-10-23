@@ -7,7 +7,9 @@ export function normalizeSignalWatch(input) {
   const purpose = input.purpose ?? 'opportunity', holdingSide = input.holdingSide ?? null
   if (!['opportunity', 'opposition'].includes(purpose) || purpose === 'opposition' && (!['long', 'short'].includes(holdingSide) || input.config.signals.some(id => explorerSignals.find(s => s.id === id).side === holdingSide))) throw new Error('반대 신호 감시는 보유 방향과 반대 관점의 신호만 선택해주세요.')
   const c = input.config
-  return { requestId: input.requestId, name: input.name.trim(), asset: input.asset, notify: input.notify, purpose, holdingSide: purpose === 'opposition' ? holdingSide : null, version: ENGINE_VERSION, config: { timeframe: c.timeframe, signals: [...c.signals].sort(), window: c.window, horizon: c.horizon, target: c.target, cost: c.cost, side: c.side, regime: c.regime, bars: c.bars } }
+  const ref = input.positionRef
+  if (ref && (purpose !== 'opposition' || typeof ref.connectionId !== 'string' || ref.connectionId.length > 80 || ref.key !== `${input.asset}:${holdingSide}`)) throw new Error('연결 포지션과 반대 신호 조건이 일치하지 않습니다.')
+  return { requestId: input.requestId, name: input.name.trim(), asset: input.asset, notify: input.notify, purpose, holdingSide: purpose === 'opposition' ? holdingSide : null, version: ENGINE_VERSION, config: { timeframe: c.timeframe, signals: [...c.signals].sort(), window: c.window, horizon: c.horizon, target: c.target, cost: c.cost, side: c.side, regime: c.regime, bars: c.bars }, ...(ref ? { positionRef: { connectionId: ref.connectionId, key: ref.key } } : {}) }
 }
 export const signalFingerprint = config => createHash('sha256').update(JSON.stringify(config)).digest('hex')
 export function createSignalWatch(config, now) { return { id: randomUUID(), config, hash: signalFingerprint(config), createdAt: now, active: true, lastAt: null, matched: false, checkedAt: null, issue: null, events: [] } }
@@ -57,3 +59,4 @@ export function observeSignalWatch(rule, history, now) {
   }
 }
 export function stopSignalWatch(rule, now) { rule.active = false; rule.events.filter(e => ['pending', 'entered'].includes(e.outcome)).forEach(e => finish(e, 'cancelled', null, rule.config.config, now)) }
+export function suspendSignalWatch(rule, now) { rule.lastAt = null; rule.matched = false; rule.events.filter(e => ['pending', 'entered'].includes(e.outcome)).forEach(e => finish(e, 'unresolved', null, rule.config.config, now)) }

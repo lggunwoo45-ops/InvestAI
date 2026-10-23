@@ -1,5 +1,10 @@
 import type { ExplorerConfig } from './signalExplorer'
-export interface SignalWatchConfig { requestId: string; name: string; asset: string; notify: boolean; config: ExplorerConfig; purpose: 'opportunity' | 'opposition'; holdingSide: 'long' | 'short' | null }
+import type { PublicPosition, PositionThresholds, positionEventLabels } from '../../../../backend/research/positionRisk.mjs'
+export { positionRiskValues, positionBreaches, positionEventLabels, type PublicPosition, type PositionThresholds } from '../../../../backend/research/positionRisk.mjs'
+export interface PositionConnectionConfig { requestId: string; venue: 'hyperliquid' | 'lighter'; account: string; label: string; notify: boolean; thresholds: PositionThresholds }
+export interface PositionEvent { id: string; kind: keyof typeof positionEventLabels; at: number; sourceAt: number | null; position: PublicPosition | null; detail: string; delivery: { status: 'off' | 'pending' | 'sent' | 'uncertain'; attempts: number } }
+export interface PositionConnection { id: string; config: PositionConnectionConfig; createdAt: number; active: boolean; issue: string | null; snapshot: { receivedAt: number; sourceAt: number | null; positions: PublicPosition[] } | null; risk: Record<string, string[]>; events: PositionEvent[]; sequence: number }
+export interface SignalWatchConfig { requestId: string; name: string; asset: string; notify: boolean; config: ExplorerConfig; purpose: 'opportunity' | 'opposition'; holdingSide: 'long' | 'short' | null; positionRef?: { connectionId: string; key: string } }
 export interface SignalWatchEvent { id: string; at: number; observedAt: number; price: number; signals: string[]; outcome: 'pending' | 'entered' | 'up' | 'down' | 'timeout' | 'ambiguous' | 'unresolved' | 'cancelled'; entry: number | null; entryAt: number | null; exit: number | null; exitAt: number | null; net: number | null; delivery: { status: 'off' | 'pending' | 'sent' | 'uncertain'; attempts: number } }
 export interface SignalWatch { id: string; config: SignalWatchConfig & { version: string }; hash: string; createdAt: number; active: boolean; lastAt: number | null; matched: boolean; checkedAt: number | null; issue: string | null; events: SignalWatchEvent[] }
 export interface MonitorConfig {
@@ -16,7 +21,7 @@ export interface MonitorRule {
   last: MonitorQuote | null; entered: MonitorQuote | null; result: { kind: Outcome; at: number; price: number | null; sourceAt: number | null; grossPercent: number | null; netPercent: number | null } | null
   events: MonitorEvent[]; issue: string | null; gaps: number
 }
-export interface MonitorState { version: 1; running: boolean; error: string | null; now: number; lastCycleAt: number | null; intervalMs: number; channelConfigured: boolean; rules: MonitorRule[]; signals?: SignalWatch[] }
+export interface MonitorState { version: 1; running: boolean; error: string | null; now: number; lastCycleAt: number | null; intervalMs: number; channelConfigured: boolean; rules: MonitorRule[]; signals?: SignalWatch[]; connections?: PositionConnection[] }
 async function request(path: string, data?: unknown): Promise<MonitorState> {
   if (!['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname)) throw new Error('이 배포에서는 개인 감시 서버가 연결되지 않았습니다. PC용 InvestAI에서 이용할 수 있습니다.')
   const response = await fetch(`/api/monitor${path}`, { method: data === undefined ? 'GET' : 'POST', signal: AbortSignal.timeout(10_000), headers: data === undefined ? undefined : { 'content-type': 'application/json', 'x-investai-monitor': '1' }, body: data === undefined ? undefined : JSON.stringify(data) })
@@ -31,3 +36,6 @@ export const registerMonitor = (config: MonitorConfig) => request('/rules', conf
 export const cancelMonitor = (id: string) => request('/cancel', { id })
 export const registerSignalWatch = (config: SignalWatchConfig) => request('/signals', config)
 export const stopSignalWatch = (id: string) => request('/signals/stop', { id })
+export const connectPositions = (config: PositionConnectionConfig) => request('/connections', config)
+export const pausePositionConnection = (id: string, paused: boolean) => request('/connections/pause', { id, paused })
+export const removePositionConnection = (id: string) => request('/connections/remove', { id })

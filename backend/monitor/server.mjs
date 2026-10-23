@@ -5,7 +5,8 @@ import { openStore } from './store.mjs'
 import { createQuoteReader } from './quotes.mjs'
 import { telegramChannel } from './notifications.mjs'
 import { createHistoryReader } from '../research/history.mjs'
-import { createSignalWatch, normalizeSignalWatch, observeSignalWatch, signalFingerprint, stopSignalWatch } from './signalWatch.mjs'
+import { createSignalWatch, normalizeSignalWatch, observeSignalWatch, signalFingerprint, stopSignalWatch, suspendSignalWatch } from './signalWatch.mjs'
+import { createConnection, createPositionReader, normalizeConnection, observeConnection } from './positions.mjs'
 
 const defaultDirectory = fileURLToPath(new URL('../../.local-data/monitor/', import.meta.url))
 const loopback = value => ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(value)
@@ -26,9 +27,10 @@ async function body(req) {
 }
 const respond = (res, status, data) => { res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' }); res.end(JSON.stringify(data)) }
 
-export function createMonitorHandler({ directory = defaultDirectory, quoteReader = createQuoteReader(), historyReader = createHistoryReader(), channel = telegramChannel(), clock = Date.now, intervalMs = 15_000, autoStart = true } = {}) {
+export function createMonitorHandler({ directory = defaultDirectory, quoteReader = createQuoteReader(), historyReader = createHistoryReader(), positionReader = createPositionReader(), channel = telegramChannel(), clock = Date.now, intervalMs = 15_000, autoStart = true } = {}) {
   let store, state, fatal = null, stopped = false, timer, deliveryTimer, busy = false, deliveryBusy = false, lastCycleAt = null
   let signalTimer, signalBusy = false
+  let positionTimer, positionBusy = false
   let queue = Promise.resolve()
   const ready = openStore(directory).then(value => { store = value; state = value.data }).catch(e => { fatal = e.message })
   const serial = fn => { const result = queue.then(fn); queue = result.catch(() => {}); return result }
@@ -39,6 +41,19 @@ export function createMonitorHandler({ directory = defaultDirectory, quoteReader
     try { await store.save(next) } catch { fatal = '기록 저장에 실패해 감시를 중지했습니다. 저장 공간과 파일 권한을 확인하세요.'; throw new Error(fatal) }
     state = next; return result
   })
+  function bindingStatus(next, config) {
+    if (!config.positionRef) return 'ready'
+    const c = (next.connections ?? []).find(c => c.id === config.positionRef.connectionId)
+    if (!c) return 'closed'
+    if (!c.active || c.issue || !c.snapshot || clock() - c.snapshot.receivedAt > 90000) return 'unavailable'
+    return c.snapshot.positions.some(p => p.key === config.positionRef.key && p.asset === config.asset && p.side === config.holdingSide) ? 'ready' : 'closed'
+  }
+  function checkBinding(next, rule) {
+    const status = bindingStatus(next, rule.config)
+    if (status === 'closed') { stopSignalWatch(rule, clock()); rule.issue = '연결 포지션이 사라지거나 방향이 바뀌어 반대 신호 감시를 종료했습니다.' }
+    if (status === 'unavailable') { suspendSignalWatch(rule, clock()); rule.issue = '연결 포지션을 확인할 때까지 신호 판정을 보류합니다. 진행 중 관찰은 판정 불가로 남기고 재연결 후 기준을 다시 잡습니다.' }
+    return status === 'ready'
+  }
   async function deliver() {
     if (!channel.configured) return
     const ids = state.rules.flatMap(r => r.events.filter(e => e.delivery.status === 'pending' && e.delivery.nextAt <= clock()).map(e => [r.id, e.id])).slice(0, 3)
@@ -63,6 +78,17 @@ export function createMonitorHandler({ directory = defaultDirectory, quoteReader
         return { rule: { config: { instrument: { venue: 'binance-futures', symbol: `${rule.config.asset}USDT`, quote: 'USDT' }, side: rule.config.config.side } }, event: { ...event, kind: 'signal' } }
       })
       try { await channel.send(payload.rule, payload.event); await mutate(next => { next.signals.find(r => r.id === ruleId).events.find(e => e.id === eventId).delivery.status = 'sent' }) } catch { /* Uncertain delivery is retained; no automatic duplicate. */ }
+    }
+    for (const [connectionId, eventId] of (state.connections ?? []).flatMap(c => c.events.filter(e => e.delivery.status === 'pending').map(e => [c.id, e.id])).slice(0, 3)) {
+      if (stopped || fatal) break
+      const payload = await mutate(next => {
+        const c = next.connections?.find(c => c.id === connectionId), event = c?.events.find(e => e.id === eventId)
+        if (!event || event.delivery.status !== 'pending') return null
+        event.delivery.status = 'uncertain'; event.delivery.attempts++
+        return { rule: { config: { instrument: { venue: c.config.venue, symbol: event.position?.asset ?? '포지션 연결', quote: 'USDC' }, side: event.position?.side ?? '' } }, event: { id: event.id, at: event.at, kind: `position-${event.kind}`, detail: event.detail, price: event.position?.currentPrice ?? null } }
+      })
+      if (!payload) continue
+      try { await channel.send(payload.rule, payload.event); await mutate(next => { const e = next.connections?.find(c => c.id === connectionId)?.events.find(e => e.id === eventId); if (e) e.delivery.status = 'sent' }) } catch { /* Keep uncertain and never automatically resend. */ }
     }
   }
   async function tick() {
@@ -96,6 +122,7 @@ export function createMonitorHandler({ directory = defaultDirectory, quoteReader
         if (stopped) break
         await mutate(next => {
           for (const rule of (next.signals ?? []).filter(r => r.active && `${r.config.asset}:${r.config.config.timeframe}:${r.config.config.bars}` === key)) {
+            if (!checkBinding(next, rule)) continue
             if (issue) rule.issue = issue
             else observeSignalWatch(rule, history, clock())
           }
@@ -103,12 +130,31 @@ export function createMonitorHandler({ directory = defaultDirectory, quoteReader
       }
     } catch (e) { fatal ??= e.message } finally { signalBusy = false }
   }
+  async function tickPositions() {
+    if (positionBusy || stopped) return
+    positionBusy = true
+    try {
+      await ready; if (fatal || stopped) return
+      for (const c of (state.connections ?? []).filter(c => c.active)) {
+        if (stopped || fatal) break
+        let snapshot, issue
+        try { snapshot = await positionReader(c.config) } catch { issue = '거래소 자료를 확인하지 못했습니다. 이전 값은 보존하고 위험 판정을 보류합니다.' }
+        if (stopped) break
+        await mutate(next => {
+          const current = next.connections?.find(v => v.id === c.id)
+          if (!current || !current.active) return
+          observeConnection(current, snapshot, clock(), issue)
+          for (const rule of (next.signals ?? []).filter(r => r.active && r.config.positionRef?.connectionId === c.id)) checkBinding(next, rule)
+        })
+      }
+    } catch (e) { fatal ??= e.message } finally { positionBusy = false }
+  }
   async function dispatch() {
     if (deliveryBusy || stopped) return
     deliveryBusy = true
     try { await ready; if (!fatal && !stopped) await deliver() } catch (e) { fatal ??= e.message } finally { deliveryBusy = false }
   }
-  const status = () => ({ version: 1, running: !fatal && !stopped, error: fatal, now: clock(), lastCycleAt, intervalMs, channelConfigured: channel.configured, rules: state?.rules ?? [], signals: state?.signals ?? [] })
+  const status = () => ({ version: 1, running: !fatal && !stopped, error: fatal, now: clock(), lastCycleAt, intervalMs, channelConfigured: channel.configured, rules: state?.rules ?? [], signals: state?.signals ?? [], connections: state?.connections ?? [] })
   const handler = async (req, res, next) => {
     const path = (req.url ?? '').split('?')[0]
     if (!path.startsWith('/api/monitor')) { next?.(); return }
@@ -135,11 +181,40 @@ export function createMonitorHandler({ directory = defaultDirectory, quoteReader
           const previous = next.signals.find(r => r.config.requestId === config.requestId)
           if (previous) { if (previous.hash !== signalFingerprint(config)) throw new Error('이미 사용한 등록 식별자입니다.'); return }
           if (config.notify && !channel.configured) throw new Error('외부 알림 채널이 설정되지 않았습니다.')
+          if (config.positionRef && bindingStatus(next, config) !== 'ready') throw new Error('연결한 포지션의 최신 상태를 확인한 뒤 등록해주세요.')
+          if (config.positionRef && next.signals.some(r => r.active && r.config.positionRef?.connectionId === config.positionRef.connectionId && r.config.positionRef?.key === config.positionRef.key)) throw new Error('이 포지션의 반대 신호 감시가 이미 실행 중입니다.')
           if (next.signals.length >= 40 || next.signals.filter(r => r.active).length >= 6) throw new Error('신호 감시는 동시 6개, 보관 40개까지 지원합니다.')
           next.signals.push(createSignalWatch(config, clock()))
         })
       } else if (path === '/api/monitor/signals/stop') {
         await mutate(next => { const rule = (next.signals ?? []).find(r => r.id === input.id); if (!rule) throw new Error('신호 감시를 찾을 수 없습니다.'); stopSignalWatch(rule, clock()) })
+      } else if (path === '/api/monitor/connections') {
+        const config = normalizeConnection(input)
+        await mutate(next => {
+          next.connections ??= []
+          const prior = next.connections.find(c => c.config.requestId === config.requestId)
+          if (prior) { if (JSON.stringify(prior.config) !== JSON.stringify(config)) throw new Error('이미 사용한 연결 식별자입니다.'); return }
+          if (config.notify && !channel.configured) throw new Error('외부 알림 채널이 설정되지 않았습니다.')
+          if (next.connections.length >= 8 || next.connections.filter(c => c.active).length >= 4) throw new Error('공개 연결은 동시 4개, 보관 8개까지 지원합니다.')
+          if (next.connections.some(c => c.config.venue === config.venue && c.config.account === config.account)) throw new Error('이미 등록한 공개 계정입니다.')
+          next.connections.push(createConnection(config, clock()))
+        })
+        if (autoStart) void tickPositions()
+      } else if (path === '/api/monitor/connections/remove') {
+        await mutate(next => {
+          if (!next.connections?.some(c => c.id === input.id)) throw new Error('연결을 찾을 수 없습니다.')
+          next.connections = next.connections.filter(c => c.id !== input.id)
+          for (const rule of (next.signals ?? []).filter(r => r.active && r.config.positionRef?.connectionId === input.id)) { stopSignalWatch(rule, clock()); rule.issue = '공개 계정 연결을 삭제해 반대 신호 감시를 종료했습니다.' }
+        })
+      } else if (path === '/api/monitor/connections/pause') {
+        await mutate(next => {
+          const c = next.connections?.find(c => c.id === input.id)
+          if (!c || typeof input.paused !== 'boolean') throw new Error('연결을 찾을 수 없습니다.')
+          if (!input.paused && (c.events.length >= 200 || next.connections.filter(v => v.active && v.id !== c.id).length >= 4)) throw new Error('연결 보관 또는 동시 감시 한도에 도달했습니다.')
+          c.active = !input.paused; c.issue = input.paused ? '사용자가 갱신을 일시 정지했습니다.' : '다음 조회를 기다립니다.'
+          for (const rule of (next.signals ?? []).filter(r => r.active && r.config.positionRef?.connectionId === c.id)) checkBinding(next, rule)
+        })
+        if (autoStart && !input.paused) void tickPositions()
       } else if (path === '/api/monitor/cancel') {
         await mutate(next => { const rule = next.rules.find(r => r.id === input.id); if (!rule) throw new Error('감시 기록을 찾을 수 없습니다.'); cancelRule(rule, clock()) })
       } else { respond(res, 404, { error: '없는 경로입니다.' }); return }
@@ -148,14 +223,16 @@ export function createMonitorHandler({ directory = defaultDirectory, quoteReader
   }
   handler.tick = tick
   handler.tickSignals = tickSignals
+  handler.tickPositions = tickPositions
   handler.dispatch = dispatch
   handler.ready = ready
   handler.close = async () => {
-    stopped = true; clearInterval(timer); clearInterval(deliveryTimer); clearInterval(signalTimer); await ready
-    while (busy || deliveryBusy || signalBusy) await new Promise(resolve => setTimeout(resolve, 25))
+    stopped = true; clearInterval(timer); clearInterval(deliveryTimer); clearInterval(signalTimer); clearInterval(positionTimer); await ready
+    while (busy || deliveryBusy || signalBusy || positionBusy) await new Promise(resolve => setTimeout(resolve, 25))
     await queue; await store?.close()
   }
   if (autoStart) {
+    positionTimer = setInterval(tickPositions, 30000); positionTimer.unref(); void tickPositions()
     signalTimer = setInterval(tickSignals, 30000); signalTimer.unref(); void tickSignals()
     timer = setInterval(tick, intervalMs); timer.unref(); void tick()
     deliveryTimer = setInterval(dispatch, 5000); deliveryTimer.unref(); void dispatch()
