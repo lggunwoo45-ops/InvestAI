@@ -3,10 +3,20 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { createLocalAiGateway } from './tools/local-ai/gateway.mjs'
 import { createMarketHandler } from '../backend/market-data/server.mjs'
+import { createResearchHandler } from '../backend/research/server.mjs'
+import { createMonitorHandler } from '../backend/monitor/server.mjs'
 
 export default defineConfig({
   base: './',
   plugins: [react(), {
+    name: 'local-scenario-monitor',
+    configureServer(server) { const handler = createMonitorHandler(); server.middlewares.use(handler); server.httpServer?.on('close', () => { void handler.close() }) },
+    configurePreviewServer(server) { const handler = createMonitorHandler(); server.middlewares.use(handler); server.httpServer?.on('close', () => { void handler.close() }) },
+  }, {
+    name: 'local-market-research',
+    configureServer(server) { server.middlewares.use(createResearchHandler({ local: true })) },
+    configurePreviewServer(server) { server.middlewares.use(createResearchHandler({ local: true })) },
+  }, {
     name: 'local-ai-gateway',
     configureServer(server) { server.middlewares.use(createLocalAiGateway()) },
     configurePreviewServer(server) { server.middlewares.use(createLocalAiGateway()) },

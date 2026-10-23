@@ -11,7 +11,7 @@ test('direct entry pages keep absolute subpath assets and SPA fallback', async t
   const html = '<script src="/InvestAI/assets/app.js"></script>'
   await writeFile(join(dir, 'index.html'), html)
   await preparePages(dir)
-  for (const entry of ['market/index.html', 'ai-analysis/index.html', 'my-analysis/index.html', 'news/index.html', '404.html']) assert.equal(await readFile(join(dir, entry), 'utf8'), html)
+  for (const entry of ['market/index.html', 'research/index.html', 'ai-analysis/index.html', 'my-analysis/index.html', 'news/index.html', '404.html']) assert.equal(await readFile(join(dir, entry), 'utf8'), html)
   assert.equal(await readFile(join(dir, '.nojekyll'), 'utf8'), '')
 })
 test('packaging rejects relative assets that break after nested route reload', async t => {

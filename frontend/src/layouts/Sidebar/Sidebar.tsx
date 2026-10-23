@@ -135,7 +135,7 @@ export function Sidebar() {
         </div>
         {isExpanded && <span className={styles.sectionLabel}>{language === 'ko' ? '시장 · 자료' : 'Markets · Resources'}</span>}
         <div className={styles.navigationList}>
-          {secondaryNavigation.map((item) => <SidebarNavItem key={item.path} item={item} label={text.navigation[item.icon]} compact={!isExpanded} />)}
+          {secondaryNavigation.map((item) => <SidebarNavItem key={item.path} item={item} label={item.path === '/research' ? (language === 'ko' ? '시장·리스크 연구실' : 'Market & Risk Lab') : text.navigation[item.icon]} compact={!isExpanded} />)}
         </div>
       </nav>
 

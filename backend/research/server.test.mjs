@@ -1,0 +1,86 @@
+import { test } from 'node:test'
+import assert from 'node:assert/strict'
+import { createResearchClient, createResearchHandler } from './server.mjs'
+import { Readable } from 'node:stream'
+
+test('fixed endpoints, shared cache and independent failures', async () => {
+  let calls = 0, now = 10_000
+  const client = createResearchClient({ now: () => now, fetchImpl: async (url, options) => {
+    calls++; assert.equal(options.redirect, 'error')
+    assert.ok(/^https:\/\/(fapi.binance.com|api.binance.com|api.upbit.com|api.alternative.me|api.coingecko.com|api.bybit.com|www.okx.com|api.bitget.com|api.hyperliquid.xyz)\//.test(url))
+    if (url.includes('coingecko')) throw new Error('offline')
+    return { ok: true, text: async () => JSON.stringify({ fixture: true }) }
+  } })
+  const [a, b] = await Promise.all([client.snapshot('BTC'), client.snapshot('BTC')])
+  assert.equal(a.sources.global.status, 'unavailable'); assert.equal(b.sources.mark.status, 'available')
+  assert.equal(calls, 19)
+  await client.snapshot('BTC'); assert.equal(calls, 20) // Failed sources retry, good sources cached.
+  now += 61_000; await client.snapshot('BTC'); assert.equal(calls, 38)
+  await assert.rejects(() => client.snapshot('BTC&url=http://private'), /invalid_asset/)
+})
+
+test('preserves provider Date and cache Age separately from local receipt time', async () => {
+  const client = createResearchClient({ now: () => 500_000, fetchImpl: async () => ({ ok: true, headers: { get: key => key === 'date' ? new Date(200_000).toUTCString() : key === 'age' ? '30' : null }, text: async () => JSON.stringify({ time: 199_000 }) }) })
+  const result = await client.snapshot('BTC')
+  assert.equal(result.sources.mark.receivedAt, 500_000)
+  assert.equal(result.sources.mark.serverTime, 200_000)
+  assert.equal(result.sources.mark.ageMs, 30_000)
+})
+
+function request(handler, url, { method = 'GET', origin, host = 'localhost:5173', ip = '127.0.0.1' } = {}) {
+  return new Promise(resolve => {
+    const req = { url, method, headers: { host, origin }, socket: { remoteAddress: ip } }
+    const res = { destroyed: false, writableEnded: false, writeHead(status, headers) { this.status = status; this.headers = headers }, end(body) { resolve({ status: this.status, headers: this.headers, body: JSON.parse(body) }) } }
+    handler(req, res)
+  })
+}
+test('local origin, asset and query validation prevent arbitrary requests', async () => {
+  let calls = 0
+  const handler = createResearchHandler({ local: true, client: { snapshot: async asset => { calls++; return { asset } } } })
+  assert.equal((await request(handler, '/api/research/snapshot?asset=BTC', { origin: 'https://evil.example' })).status, 403)
+  assert.equal((await request(handler, '/api/research/snapshot?asset=BTC', { host: 'evil.example:5173' })).status, 403)
+  assert.equal((await request(handler, '/api/research/snapshot?asset=BTC', { method: 'POST' })).status, 405)
+  assert.equal((await request(handler, '/api/research/snapshot?asset=BTC&url=x')).status, 400)
+  assert.equal((await request(handler, '/api/research/snapshot?asset=BTC&asset=ETH')).status, 400)
+  assert.equal((await request(handler, '/api/research/snapshot?asset=UNKNOWN')).status, 400)
+  assert.equal(calls, 0)
+  assert.equal((await request(handler, '/api/research/snapshot?asset=BTC', { origin: 'http://localhost:5173' })).status, 200)
+  assert.equal(calls, 1)
+})
+test('caps public request volume without hitting providers again', async () => {
+  const handler = createResearchHandler({ client: { snapshot: async () => ({}) } })
+  for (let i = 0; i < 30; i++) assert.equal((await request(handler, '/api/research/snapshot?asset=BTC')).status, 200)
+  const limited = await request(handler, '/api/research/snapshot?asset=BTC')
+  assert.equal(limited.status, 429); assert.equal(limited.headers['Retry-After'], '60')
+})
+
+test('wallet calls public information only and excludes other account fields', async () => {
+  let calls = 0
+  const client = createResearchClient({ fetchImpl: async (url, options) => {
+    calls++; assert.equal(url, 'https://api.hyperliquid.xyz/info')
+    assert.deepEqual(JSON.parse(options.body), { type: 'clearinghouseState', user: `0x${'0'.repeat(40)}` })
+    return { ok: true, json: async () => ({ marginSummary: { ignored: true }, assetPositions: [{ position: { coin: 'BTC', szi: '1', entryPx: '100', liquidationPx: '90', unrealizedPnl: '2', positionValue: '102', leverage: { value: 2, type: 'isolated' }, ignored: 'private' } }] }) }
+  } })
+  const response = await client.wallet(`0x${'0'.repeat(40)}`)
+  assert.equal(response.positions[0].liquidationPrice, '90')
+  assert.equal(response.positions[0].ignored, undefined); assert.equal(response.marginSummary, undefined)
+  await client.wallet(`0x${'0'.repeat(40)}`); assert.equal(calls, 2)
+  await assert.rejects(() => client.wallet('https://evil.example'), /invalid_address/)
+})
+
+test('wallet body is bounded and rejects keys and malformed addresses', async () => {
+  let calls = 0
+  const handler = createResearchHandler({ client: { wallet: async () => { calls++; return { positions: [] } } } })
+  const post = body => new Promise(resolve => {
+    const req = Readable.from([body]); Object.assign(req, { url: '/api/research/wallet', method: 'POST', headers: { host: 'localhost:5173', 'content-type': 'application/json' }, socket: { remoteAddress: '127.0.0.1' } })
+    const res = { writeHead(status) { this.status = status }, end(data) { resolve({ status: this.status, body: JSON.parse(data) }) } }
+    handler(req, res)
+  })
+  assert.equal((await post('{')).status, 400)
+  assert.equal((await post(JSON.stringify({ address: 'bad' }))).status, 400)
+  assert.equal((await post(JSON.stringify({ address: `0x${'0'.repeat(40)}`, key: 'not allowed' }))).status, 400)
+  assert.equal((await post('x'.repeat(513))).status, 413)
+  assert.equal(calls, 0)
+  assert.equal((await post(JSON.stringify({ address: `0x${'0'.repeat(40)}` }))).status, 200)
+  assert.equal(calls, 1)
+})
