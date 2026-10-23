@@ -3,7 +3,7 @@ import { fireEvent, screen, waitFor } from '@testing-library/react'
 import { renderWithProviders } from '@/test/renderWithProviders'
 import * as monitor from '@/services/research/monitorClient'
 import { PositionConnections } from './PositionConnections'
-vi.mock('@/services/research/monitorClient', async original => ({ ...await original<typeof monitor>(), readMonitor: vi.fn(), connectPositions: vi.fn(), pausePositionConnection: vi.fn(), removePositionConnection: vi.fn(), registerSignalWatch: vi.fn() }))
+vi.mock('@/services/research/monitorClient', async original => ({ ...await original<typeof monitor>(), readMonitor: vi.fn(), connectPositions: vi.fn(), connectPrivatePositions: vi.fn(), setupCredentialVault: vi.fn(), unlockCredentialVault: vi.fn(), lockCredentialVault: vi.fn(), removeCredentialVault: vi.fn(), pausePositionConnection: vi.fn(), removePositionConnection: vi.fn(), registerSignalWatch: vi.fn() }))
 const fixture = (connected = false): monitor.MonitorState => ({ version: 1, running: true, error: null, now: Date.now(), lastCycleAt: Date.now(), intervalMs: 15000, channelConfigured: false, rules: [], signals: [], connections: connected ? [{ id: 'connection-1', config: { requestId: 'connection-test', venue: 'hyperliquid', account: `0x${'a'.repeat(40)}`, label: '보유 계정', notify: false, thresholds: { distance: 5, loss: 10, leverage: null } }, active: true, createdAt: Date.now(), issue: null, sequence: 0, risk: {}, events: [], snapshot: { receivedAt: Date.now(), sourceAt: Date.now(), positions: [{ key: 'BTC:long', asset: 'BTC', side: 'long', size: 1, entryPrice: 100, currentPrice: 82, liquidationPrice: 80, unrealizedPnl: -18, leverage: 5, marginType: 'cross', quote: 'USDC' }] } }] : [] })
 beforeEach(() => { localStorage.clear(); localStorage.setItem('market-copilot.language', 'ko'); vi.clearAllMocks(); vi.mocked(monitor.readMonitor).mockResolvedValue(fixture()) })
 it('shows no invented positions and registers an explicit public connection with editable thresholds', async () => {
@@ -50,4 +50,49 @@ it('keeps last values visible but refuses risk counts and bound signal registrat
   expect(screen.getByText('현재 위험 판정 대기')).toBeTruthy()
   expect((screen.getByRole('button', { name: '반대 추세 감시 시작' }) as HTMLButtonElement).disabled).toBe(true)
   expect(screen.queryByText(/기준에 도달했어요/)).toBeNull()
+})
+it('requires a vault and explicit consent, clears secret inputs after failure, and never uses browser storage for keys', async () => {
+  const opened = { ...fixture(), vault: { configured: true, unlocked: true } }
+  vi.mocked(monitor.setupCredentialVault).mockResolvedValue(opened)
+  vi.mocked(monitor.connectPrivatePositions).mockRejectedValue(new Error('읽기 권한을 확인할 수 없습니다.'))
+  renderWithProviders(<PositionConnections />)
+  await waitFor(() => expect((screen.getByRole('button', { name: '연결하고 위험 확인하기' }) as HTMLButtonElement).disabled).toBe(false))
+  fireEvent.click(screen.getByRole('button', { name: /Bybit/ }))
+  expect((screen.getByLabelText('API 키') as HTMLInputElement).disabled || !!screen.getByLabelText('API 키').closest('fieldset:disabled')).toBe(true)
+  fireEvent.change(screen.getByLabelText('보관함 비밀번호'), { target: { value: 'fixture-vault-password' } })
+  fireEvent.change(screen.getByLabelText('보관함 비밀번호 확인'), { target: { value: 'different-password' } })
+  fireEvent.click(screen.getByRole('button', { name: '암호화 보관함 만들기' }))
+  expect(monitor.setupCredentialVault).not.toHaveBeenCalled()
+  fireEvent.change(screen.getByLabelText('보관함 비밀번호 확인'), { target: { value: 'fixture-vault-password' } })
+  fireEvent.click(screen.getByRole('button', { name: '암호화 보관함 만들기' }))
+  await screen.findByText('보관함이 열려 있어요')
+  expect(monitor.connectPrivatePositions).not.toHaveBeenCalled()
+  fireEvent.change(screen.getByLabelText('API 키'), { target: { value: 'fixture_api_key_123456' } })
+  fireEvent.change(screen.getByLabelText('API 비밀 키'), { target: { value: 'fixture_api_secret_123456' } })
+  const connect = screen.getByRole('button', { name: '읽기 권한 확인하고 연결하기' }) as HTMLButtonElement
+  expect(connect.disabled).toBe(true)
+  fireEvent.click(screen.getByRole('checkbox', { name: /이 PC에 키를 암호화해 보관/ }))
+  fireEvent.click(connect)
+  await screen.findByText('읽기 권한을 확인할 수 없습니다.')
+  expect(vi.mocked(monitor.connectPrivatePositions).mock.calls[0][0]).toMatchObject({ venue: 'bybit', consent: true, credentials: { apiKey: 'fixture_api_key_123456', apiSecret: 'fixture_api_secret_123456' } })
+  expect((screen.getByLabelText('API 키') as HTMLInputElement).value).toBe('')
+  expect((screen.getByLabelText('API 비밀 키') as HTMLInputElement).value).toBe('')
+  expect(JSON.stringify(localStorage)).not.toContain('fixture_')
+  expect(JSON.stringify(sessionStorage)).not.toContain('fixture_')
+})
+it('locks private risk and signal actions, preserves USDT currency, and confirms vault deletion separately', async () => {
+  const data = fixture(true); data.vault = { configured: true, unlocked: false }; data.connections![0].config.venue = 'binance'; data.connections![0].config.account = 'key-private'; data.connections![0].snapshot!.positions[0].quote = 'USDT'
+  vi.mocked(monitor.readMonitor).mockResolvedValue(data)
+  vi.mocked(monitor.removeCredentialVault).mockResolvedValue({ ...fixture(), vault: { configured: false, unlocked: false } })
+  renderWithProviders(<PositionConnections />)
+  await screen.findByText('보유 계정')
+  expect(screen.getByText('USDT')).toBeTruthy()
+  expect(screen.getByText('현재 위험 판정 대기')).toBeTruthy()
+  expect((screen.getByRole('button', { name: '반대 추세 감시 시작' }) as HTMLButtonElement).disabled).toBe(true)
+  fireEvent.click(screen.getByRole('button', { name: /Binance 읽기/ }))
+  fireEvent.click(screen.getByRole('button', { name: '보관함 삭제' }))
+  expect(monitor.removeCredentialVault).not.toHaveBeenCalled()
+  fireEvent.click(screen.getByRole('button', { name: '보관함과 API 연결 모두 삭제' }))
+  await waitFor(() => expect(monitor.removeCredentialVault).toHaveBeenCalledTimes(1))
+  await screen.findByText('키를 보관할 공간부터 만들어요')
 })

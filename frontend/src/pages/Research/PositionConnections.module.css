@@ -23,6 +23,21 @@
 .cardTitle h3 { margin: 0; font-size: 17px; letter-spacing: -.03em; }
 .cardTitle p { font-size: 11px; }
 .providers { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.vault { display: grid; gap: 13px; padding: 20px; background: var(--color-bg); border: 1px solid var(--color-border); border-radius: 13px; min-width: 0; }
+.vaultHeader { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.vault h4, .keyIntro h4 { margin: 7px 0 0; font-size: 16px; letter-spacing: -.03em; word-break: keep-all; line-height: 1.5; }
+.vault p, .keyIntro p { font-size: 11px; word-break: keep-all; }
+.providers small { word-break: keep-all; line-height: 1.6; }
+.vaultInputs, .keyFields { display: grid; gap: 13px; min-width: 0; }
+.keyFields { border: 0; padding: 0; margin: 0; }
+.keyFields:disabled { opacity: .55; }
+.vaultInputs label, .keyFields label { display: grid; gap: 8px; font-size: 12px; }
+.vaultInputs small { font-size: 10px; color: var(--color-text-muted); line-height: 1.7; }
+.workspace .vault button { padding: 9px 12px; border-radius: 7px; font-size: 11px; border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text); }
+.vaultActions { display: flex; gap: 8px; flex-wrap: wrap; }
+.keyFields .check { display: flex; align-items: flex-start; line-height: 1.8; }
+.keyFields .check input { flex-shrink: 0; margin-top: 4px; }
+.vault .deleteConfirm { margin: 0; }
 .workspace .providers button { border: 1px solid var(--color-border); border-radius: 12px; padding: 15px; text-align: left; background: transparent; display: grid; gap: 5px; }
 .workspace .providers button[aria-pressed=true] { border-color: #4678ce; background: #eff5ff; box-shadow: inset 0 0 0 1px #4678ce; }
 .providers b { font-size: 14px; }.providers small { font-size: 10px; color: var(--color-text-muted); }

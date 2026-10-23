@@ -24,7 +24,13 @@ Implemented locally:
 
 ### Public position connections — 2026-10-23
 
-User scope: prioritize analysis, integrations and alerts; defer paid subscriptions/payments. Added persistent, read-only Hyperliquid basic-perpetual and Lighter account-index connections with polling, original risk observations, pause/removal/export, and position-bound opposite signals. Simple cards and an Expert table share the same source data. This remains a single-owner PC implementation, with no verified live Telegram delivery or private CEX integration. See [public position monitor](public-position-monitor.ko.md) for precise coverage, source documentation and verification.
+User scope: prioritize analysis, integrations and alerts; defer paid subscriptions/payments. Added persistent, read-only Hyperliquid basic-perpetual and Lighter account-index connections with polling, original risk observations, pause/removal/export, and position-bound opposite signals. Simple cards and an Expert table share the same source data. This remains a single-owner PC implementation. See [public position monitor](public-position-monitor.ko.md) for precise coverage, source documentation and verification.
+
+### Private API position connections — 2026-10-23
+
+Added Binance/Bybit USDT perpetual adapters, read-only permission validation before registration and on every poll, and a password-derived AES-GCM local credential vault. The vault starts locked after process restart. Locking aborts requests and suspends bound signal decisions; removal deletes credentials with their connections. The UI guides local vault setup/unlock, explicit key storage/query consent, read-only registration and removal, with masked inputs cleared after attempts. Public connections and existing history remain intact. No live private account or Telegram delivery has been verified. See [private position monitor](private-position-monitor.ko.md).
+
+Validation for private API connections: all 100 backend tests and 988 frontend tests passed, TypeScript and production build passed; lint retains only the same three pre-existing warnings. Fixtures and isolated temporary stores were used. No test credentials or connections were inserted into the user's monitor store.
 
 ### Remaining feature inventory
 
@@ -34,8 +40,8 @@ User scope: prioritize analysis, integrations and alerts; defer paid subscriptio
 | Condition monitoring | Single-owner PC monitor, market condition and manually specified opposite-direction watches | Authenticated cloud operation and per-user storage/channel delivery |
 | Signal outcome ledger | Original rule hash and local future-bar observations; all outcomes retained | Public sharing with redaction and server-authenticated archival |
 | Strategy catalog | User-selected conditions and illustrative starting questions | Independently validated strategies, market-wide opportunity feed and verified frequency figures |
-| Position risk | Manual calculator plus persisted public perpetual positions, first/new/changed observations and repeated liquidation-distance/loss/HL-leverage checks | Private CEX positions, exchange-wide margin modes and complete fill/realized-PnL history |
-| Exchange account connections | Hyperliquid basic-perpetual address and Lighter explicit account index with local persistence/polling/removal; existing one-off lookup retained | Read-only CEX connections, encrypted per-user credential storage, permission checks and revocation |
+| Position risk | Manual calculator plus public and Binance/Bybit USDT perpetual observations, liquidation-distance/loss/provided-leverage checks | Real-account acceptance, exchange-wide margin modes and complete fill/realized-PnL history |
+| Exchange account connections | Hyperliquid/Lighter public accounts; Binance/Bybit HMAC read-only adapters, per-poll permission checks, local encrypted vault, lock/removal | Live private-account compatibility, additional CEX/contract types, authenticated per-user cloud storage, exchange-side key revocation |
 | Market context | Existing funding, OI, ratio, dominance and sentiment sources | Annual heat history, liquidation aggregation, automated ETF data and economic calendar |
 | Cost/premium comparisons | Existing funding/fee budget and Upbit/Binance comparison | Additional domestic exchanges, bank FX, withdrawal/network availability and both-direction transfer comparison |
 | Review and asset integration | Existing reviews/portfolio retained; direct analysis-to-signal-to-monitor navigation | Unified spot/derivative identity and separately licensed stock/commodity histories |

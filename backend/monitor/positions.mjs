@@ -8,9 +8,10 @@ const assetName = value => typeof value === 'string' && /^[A-Za-z0-9._:-]{1,40}$
 const fail = () => { throw new Error('포지션 응답이 불완전해 이전 기록을 유지합니다.') }
 
 export function normalizeConnection(value) {
-  if (!value || !['hyperliquid', 'lighter'].includes(value.venue) || typeof value.account !== 'string') throw new Error('연결할 거래소와 공개 식별자를 확인해주세요.')
+  if (!value || !['hyperliquid', 'lighter', 'binance', 'bybit'].includes(value.venue) || typeof value.account !== 'string') throw new Error('연결할 거래소와 식별자를 확인해주세요.')
   const account = value.account.trim().toLowerCase()
-  if (value.venue === 'hyperliquid' ? !/^0x[0-9a-f]{40}$/.test(account) : !/^(0|[1-9][0-9]{0,14})$/.test(account) || !Number.isSafeInteger(Number(account))) throw new Error('Hyperliquid는 공개 주소, Lighter는 숫자 계정 번호를 입력해주세요.')
+  const validAccount = value.venue === 'hyperliquid' ? /^0x[0-9a-f]{40}$/.test(account) : value.venue === 'lighter' ? /^(0|[1-9][0-9]{0,14})$/.test(account) && Number.isSafeInteger(Number(account)) : /^key-[a-f0-9-]{36}$/.test(account)
+  if (!validAccount) throw new Error('계정 식별자가 올바르지 않습니다. API 계정은 키 연결 화면을 이용해주세요.')
   if (typeof value.requestId !== 'string' || !/^[a-zA-Z0-9-]{8,80}$/.test(value.requestId) || typeof value.label !== 'string' || !value.label.trim() || value.label.trim().length > 40 || typeof value.notify !== 'boolean') throw new Error('연결 이름과 등록 정보를 확인해주세요.')
   const thresholds = {}
   for (const [key, max] of [['distance', 100], ['loss', 1000], ['leverage', 200]]) {
@@ -26,6 +27,7 @@ export function createPositionReader(fetcher = fetch, clock = Date.now) {
   const cooldown = new Map()
   return async config => {
     normalizeConnection(config)
+    if (!['hyperliquid', 'lighter'].includes(config.venue)) throw new Error('공개 계정만 조회할 수 있습니다.')
     if ((cooldown.get(config.venue) ?? 0) > clock()) throw new Error('거래소 요청 제한으로 다음 조회를 기다립니다.')
     const hl = config.venue === 'hyperliquid'
     const response = await fetcher(hl ? 'https://api.hyperliquid.xyz/info' : `https://mainnet.zklighter.elliot.ai/api/v1/account?by=index&value=${encodeURIComponent(config.account)}&active_only=true`, { method: hl ? 'POST' : 'GET', redirect: 'error', signal: AbortSignal.timeout(8000), headers: { accept: 'application/json', ...(hl ? { 'content-type': 'application/json' } : {}) }, ...(hl ? { body: JSON.stringify({ type: 'clearinghouseState', user: config.account }) } : {}) })
@@ -98,7 +100,7 @@ export function observeConnection(connection, snapshot, now, issue = null) {
   connection.snapshot = snapshot
 }
 export function validPositionSnapshot(s) {
-  return !!s && positive(s.receivedAt) !== null && (s.sourceAt === null || positive(s.sourceAt) !== null) && Array.isArray(s.positions) && s.positions.length <= 200 && new Set(s.positions.map(p => p.key)).size === s.positions.length && s.positions.every(p => assetName(p.asset) && ['long', 'short'].includes(p.side) && p.key === `${p.asset}:${p.side}` && Number.isFinite(p.size) && p.size !== 0 && (p.size > 0) === (p.side === 'long') && positive(p.entryPrice) && positive(p.currentPrice) && (p.liquidationPrice === null || positive(p.liquidationPrice)) && Number.isFinite(p.unrealizedPnl) && (p.leverage === null || positive(p.leverage)) && ['cross', 'isolated', 'unknown'].includes(p.marginType) && p.quote === 'USDC')
+  return !!s && positive(s.receivedAt) !== null && (s.sourceAt === null || positive(s.sourceAt) !== null) && Array.isArray(s.positions) && s.positions.length <= 200 && new Set(s.positions.map(p => p.key)).size === s.positions.length && s.positions.every(p => assetName(p.asset) && ['long', 'short'].includes(p.side) && p.key === `${p.asset}:${p.side}` && Number.isFinite(p.size) && p.size !== 0 && (p.size > 0) === (p.side === 'long') && positive(p.entryPrice) && positive(p.currentPrice) && (p.liquidationPrice === null || positive(p.liquidationPrice)) && Number.isFinite(p.unrealizedPnl) && (p.leverage === null || positive(p.leverage)) && ['cross', 'isolated', 'unknown'].includes(p.marginType) && ['USDC', 'USDT'].includes(p.quote))
 }
 export function validConnection(c) {
   try {
