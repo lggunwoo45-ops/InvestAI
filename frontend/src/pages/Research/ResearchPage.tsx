@@ -24,6 +24,8 @@ import { SimpleMarketSummary, SimpleResearchNav, SimpleToolIntro } from './Simpl
 import { ResearchEvidence } from './ResearchEvidence'
 import { SignalExplorer } from './SignalExplorer'
 import { SignalWatchPanel } from './SignalWatchPanel'
+import { localMonitorAvailable } from '@/services/research/monitorAvailability'
+import { LocalMonitorNotice } from './LocalMonitorNotice'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 
 const format = (value: number | null | undefined, digits = 2) => value === null || value === undefined || !Number.isFinite(value) ? '확인 불가' : value.toLocaleString('ko-KR', { maximumFractionDigits: digits })
@@ -316,7 +318,7 @@ export function ResearchPage() {
     {mode === 'premium' && <Premium key={asset} snapshot={visible} asset={asset} now={now} />}
     {mode === 'setups' && <SignalExplorer asset={asset} refresh={revision} />}
     {mode === 'journal' && <><Journal key={asset} asset={asset} snapshot={visible} candles={candles} now={now} /><details className={styles.relatedNews} open={!simple}><summary>기록에 참고할 뉴스 찾아보기</summary><ResearchNews asset={asset} /></details></>}
-    {mode === 'alerts' && <><PositionConnections ledger /><SignalWatchPanel asset={asset} ledger /><MonitorWorkspace key={asset} asset={asset} /><details className={styles.panel}><summary>{simple ? "화면을 켜둔 동안만 가격 알림 받기" : "기존 브라우저 조건 알림"}</summary><Alerts key={asset} asset={asset} snapshot={visible} now={now} /></details></>}
+    {mode === 'alerts' && <>{localMonitorAvailable() ? <><PositionConnections ledger /><SignalWatchPanel asset={asset} ledger /><MonitorWorkspace key={asset} asset={asset} /></> : <LocalMonitorNotice asset={asset} />}<details className={styles.panel} open={!localMonitorAvailable()}><summary>{simple ? "화면을 켜둔 동안만 가격 알림 받기" : "브라우저 조건 알림"}</summary><Alerts key={asset} asset={asset} snapshot={visible} now={now} /></details></>}
     {mode === 'guide' && (simple ? <section className={styles.panel}><h2>세 단계로 이어서 확인하세요</h2><ol><li><b>시장 한눈에</b>에서 가격과 지난 검토 이후 변화를 확인합니다.</li><li><b>검토 기록</b>에 관심 이유와 다음에 확인할 내용을 저장합니다.</li><li><b>알림·결과</b>에서 저장한 가격 조건을 감시하고 관측 결과를 확인합니다.</li></ol><p>검토는 이 브라우저에 저장됩니다. 감시는 PC와 감시 프로그램이 켜져 있어야 이어지며, 관측 결과는 실제 주문이나 계좌 수익률이 아닙니다.</p><button onClick={() => setMode('journal')}>첫 검토 남기기</button><p>시장 살펴보기의 질문 카드에서 지표·비용·가격 비교와 과거 검증을 이어갈 수 있어요.</p></section> : <Guide />)}
     </div>
     <ResearchEvidence snapshot={visible} now={now} onMode={setMode} />

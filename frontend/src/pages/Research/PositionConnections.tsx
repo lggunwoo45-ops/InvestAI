@@ -5,6 +5,8 @@ import { researchAssets } from '@/services/research/researchModel'
 import { defaultExplorerConfig } from '@/services/research/signalExplorer'
 import { connectPositions, connectPrivatePositions, pausePositionConnection, removePositionConnection, positionBreaches, positionEventLabels, positionRiskValues, readMonitor, registerSignalWatch, type MonitorState, type PositionConnection, type PositionVenue, type PublicPosition } from '@/services/research/monitorClient'
 import { CredentialVaultPanel } from './CredentialVaultPanel'
+import { localMonitorAvailable } from '@/services/research/monitorAvailability'
+import { LocalMonitorNotice } from './LocalMonitorNotice'
 import styles from './PositionConnections.module.css'
 
 const fmt = (n: number | null, digits = 2) => n === null ? '미제공' : n.toLocaleString('ko-KR', { maximumFractionDigits: digits })
@@ -21,6 +23,10 @@ function exportConnection(c: PositionConnection) {
 }
 
 export function PositionConnections({ ledger = false }: { ledger?: boolean }) {
+  return localMonitorAvailable() ? <LocalPositionConnections ledger={ledger} /> : <LocalMonitorNotice kind="positions" />
+}
+
+function LocalPositionConnections({ ledger = false }: { ledger?: boolean }) {
   const { displayMode, setDisplayMode } = useDisplayMode(), simple = displayMode === 'simple'
   const [state, setState] = useState<MonitorState | null>(null), [error, setError] = useState(''), [message, setMessage] = useState(''), [busy, setBusy] = useState(false)
   const [venue, setVenue] = useState<PositionVenue>('hyperliquid'), [account, setAccount] = useState(''), [label, setLabel] = useState(''), [notify, setNotify] = useState(false)
