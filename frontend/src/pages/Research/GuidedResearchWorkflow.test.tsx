@@ -72,18 +72,6 @@ describe('guided research tools share real calculations and drafts', () => {
     expect((screen.getByRole('button', { name: '동시점 공개 시세로 채우기' }) as HTMLButtonElement).disabled).toBe(true)
     expect((screen.getByLabelText('BTC 국내 가격 (KRW)') as HTMLInputElement).value).toBe('')
   })
-  it('shows real non-overlapping past counts and keeps validation conditions across mode switches', async () => {
-    await open('setups')
-    change('위·아래로 확인할 가격 폭 (%)', '90'); change('이후 관찰 시간', '5')
-    expect(screen.getByRole('meter', { name: '기간 안에 둘 다 미도달' }).getAttribute('value')).toBe('9')
-    expect(screen.getByRole('meter', { name: '기간 안에 둘 다 미도달' }).getAttribute('max')).toBe('9')
-    expert()
-    expect((screen.getByLabelText('상·하단 목표 거리 (%)') as HTMLInputElement).value).toBe('90')
-    expect(screen.getByText('기간 내 미도달 9건')).toBeTruthy()
-    simple(); change('왕복 수수료·슬리피지 (%)', '')
-    expect(screen.getByRole('heading', { name: '조건과 숫자를 확인해주세요' })).toBeTruthy()
-    expect(screen.queryByRole('meter')).toBeNull()
-  })
   it('preserves nested tool drafts as well as main calculator inputs', async () => {
     await open('position')
     change('공개 지갑 주소', '0x1234')

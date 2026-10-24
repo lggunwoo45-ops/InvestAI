@@ -7,6 +7,8 @@ import { cancelMonitor, readMonitor, registerMonitor, type MonitorConfig, type M
 import { reviewSource, scenarioSource, type MonitorSource } from '@/services/research/monitorSources'
 import { signalLabels, type Signal } from '@/services/research/researchModel'
 import styles from './ResearchPage.module.css'
+import { localMonitorAvailable } from '@/services/research/monitorAvailability'
+import { LocalMonitorNotice } from './LocalMonitorNotice'
 
 const label: Record<Outcome, string> = { entry: '진입 구간 관측', target: '목표 가격 관측', stop: '손절 가격 관측', timeout: '관찰 기간 종료', expired: '진입 대기 만료', unresolved: '관측 공백·판정 불가', cancelled: '사용자 종료' }
 const delivery = { off: '외부 발송 안 함', pending: '발송 대기', sent: '발송 확인', uncertain: '발송 여부 미확인 · 자동 재발송 안 함' }
@@ -79,6 +81,10 @@ function Record({ rule, enabled, onCancel }: { rule: MonitorRule; enabled: boole
 }
 
 export function MonitorWorkspace({ asset }: { asset: string }) {
+  return localMonitorAvailable() ? <LocalMonitorWorkspace asset={asset} /> : <LocalMonitorNotice asset={asset} />
+}
+
+function LocalMonitorWorkspace({ asset }: { asset: string }) {
   const simple = useDisplayMode().displayMode === 'simple'
   const scenarios = useScenarios(), [params] = useSearchParams()
   const reviews = useMemo(() => readObservations().filter(r => r.asset === asset), [asset])

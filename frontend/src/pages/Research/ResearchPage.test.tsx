@@ -67,7 +67,7 @@ describe('market research workflows', () => {
     vi.mocked(fetchResearch).mockImplementation(async asset => response(100, asset))
     renderWithProviders(<><Link to="/research?asset=ETH&mode=position">직접 도구 링크</Link><ResearchPage /></>)
     fireEvent.click(screen.getByRole('link', { name: '직접 도구 링크' }))
-    expect(await screen.findByRole('heading', { name: '가격이 바뀌면 손익은 얼마일까요?' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: '내 포지션, 지금 무엇을 확인할까요?' })).toBeTruthy()
     expect((screen.getByLabelText('검토 종목') as HTMLSelectElement).value).toBe('ETH')
     fireEvent.change(screen.getByLabelText('시작 가격 (USDT)'), { target: { value: '123' } })
     fireEvent.change(screen.getByLabelText('비교 가격 (USDT)'), { target: { value: '130' } })

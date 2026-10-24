@@ -7,9 +7,168 @@ import { createServer } from 'node:http'
 import { createMonitorHandler } from './server.mjs'
 import { openStore } from './store.mjs'
 import { telegramChannel } from './notifications.mjs'
+import { defaultExplorerConfig } from '../research/signals.mjs'
+import { PrivatePositionError } from './privatePositions.mjs'
 
 const at = 1_800_000_000_000
 const config = () => ({ requestId: 'one', instrument: { venue: 'binance-futures', asset: 'BTC', quote: 'USDT' }, source: { kind: 'review', id: 'review-1', revision: 'r1', at, price: 100, note: 'private note', signals: [] }, side: 'long', entry: [99, 101], target: 110, stop: 90, horizonHours: 1, costPercent: 0.2, notify: false })
+const connectionConfig = () => ({ requestId: 'public-connection-1', venue: 'hyperliquid', account: `0x${'a'.repeat(40)}`, label: 'private label', notify: false, thresholds: { distance: 5, loss: 10, leverage: null } })
+const position = () => ({ key: 'BTC:long', asset: 'BTC', side: 'long', size: 1, entryPrice: 100, currentPrice: 100, liquidationPrice: 80, unrealizedPnl: 0, leverage: 5, marginType: 'cross', quote: 'USDC' })
+const password = 'fixture-vault-password-only'
+const privateConfig = () => ({ requestId: 'private-connection-1', venue: 'bybit', label: 'API 보유 계정', notify: false, thresholds: { distance: 5, loss: 10, leverage: null }, consent: true, credentials: { apiKey: 'fixture_key_123456789', apiSecret: 'fixture_secret_123456789' } })
+
+test('private account keys are encrypted atomically, never exposed in status, and restart requires unlock', async t => {
+  const dir = await directory(t); let now = at, calls = 0
+  const options = { directory: dir, clock: () => now, channel: { configured: false }, privateReader: async (venue, credentials) => { calls++; assert.equal(venue, 'bybit'); assert.deepEqual(credentials, privateConfig().credentials); return { receivedAt: now, sourceAt: null, positions: [{ ...position(), quote: 'USDT' }] } } }
+  let app = await serve(options)
+  try {
+    assert.equal((await app.post('/connections/private', privateConfig())).status, 400); assert.equal(calls, 0)
+    assert.equal((await app.post('/vault/setup', { password }, { origin: 'https://evil.example' })).status, 403)
+    assert.equal((await app.post('/vault/setup', { password })).status, 200)
+    assert.equal((await app.post('/vault/setup', { password })).status, 400)
+    assert.equal((await app.post('/connections/private', { ...privateConfig(), consent: false })).status, 400)
+    assert.equal((await app.post('/connections/private', privateConfig())).status, 200)
+    assert.equal((await app.post('/connections/private', privateConfig())).status, 200); assert.equal(calls, 1)
+    assert.equal((await app.post('/connections/private', { ...privateConfig(), requestId: 'duplicate-key-1' })).status, 400)
+    const status = await app.get(), c = status.connections[0]
+    assert.equal(c.snapshot.positions[0].quote, 'USDT')
+    assert.deepEqual(status.vault, { configured: true, unlocked: true })
+    const disk = await readFile(join(dir, 'ledger.json'), 'utf8')
+    for (const secret of [password, ...Object.values(privateConfig().credentials)]) { assert.ok(!disk.includes(secret)); assert.ok(!JSON.stringify(status).includes(secret)) }
+    assert.ok(JSON.parse(disk).vault.items[0].box.data); assert.ok(!JSON.stringify(status).includes('scrypt'))
+    const signal = { requestId: 'private-bound-signal-1', name: '반대 추세', asset: 'BTC', notify: false, purpose: 'opposition', holdingSide: 'long', positionRef: { connectionId: c.id, key: 'BTC:long' }, config: { ...defaultExplorerConfig, signals: ['ema-short'], side: 'short' } }
+    assert.equal((await app.post('/signals', signal)).status, 200)
+    await app.close(); app = await serve(options)
+    const count = calls; now += 30000; await app.handler.tickPositions()
+    assert.equal(calls, count); assert.deepEqual((await app.get()).vault, { configured: true, unlocked: false })
+    assert.match((await app.get()).signals[0].issue, /보류/)
+    assert.equal((await app.post('/vault/unlock', { password: 'wrong-password-value' })).status, 400)
+    assert.equal((await app.post('/vault/unlock', { password })).status, 200)
+    now += 30000; await app.handler.tickPositions(); assert.ok(calls > count)
+    assert.equal((await app.get()).connections[0].issue, null)
+    await app.post('/vault/lock', {})
+    assert.equal((await app.post('/connections/remove', { id: c.id })).status, 200)
+    assert.equal((await app.get()).signals[0].active, false)
+    assert.equal(JSON.parse(await readFile(join(dir, 'ledger.json'), 'utf8')).vault.items.length, 0)
+  } finally { await app.close() }
+})
+
+test('failed permission checks store no keys; locking cancels in-flight registration and polling without inventing closure', async t => {
+  const dir = await directory(t); let now = at, hold = false, deny = true, release, queriedSignal
+  const app = await serve({ directory: dir, clock: () => now, channel: { configured: false }, privateReader: async (_v, _c, signal) => {
+    queriedSignal = signal
+    if (deny) throw new PrivatePositionError('읽기 전용 확인 실패')
+    if (hold) await new Promise(resolve => { release = resolve })
+    return { receivedAt: now, sourceAt: null, positions: [{ ...position(), quote: 'USDT' }] }
+  } })
+  try {
+    await app.post('/vault/setup', { password })
+    assert.equal((await app.post('/connections/private', privateConfig())).status, 400)
+    assert.equal(JSON.parse(await readFile(join(dir, 'ledger.json'), 'utf8')).vault.items.length, 0)
+    deny = false; hold = true
+    const pending = app.post('/connections/private', privateConfig())
+    while (!release) await new Promise(resolve => setTimeout(resolve, 1))
+    await app.post('/vault/lock', {}); assert.equal(queriedSignal.aborted, true); release(); assert.equal((await pending).status, 400)
+    assert.equal((await app.get()).connections.length, 0)
+    hold = false; await app.post('/vault/unlock', { password }); await app.post('/connections/private', privateConfig())
+    hold = true; release = null; now += 30000
+    const polling = app.handler.tickPositions()
+    while (!release) await new Promise(resolve => setTimeout(resolve, 1))
+    await app.post('/vault/lock', {}); release(); await polling
+    const c = (await app.get()).connections[0]
+    assert.equal(c.snapshot.receivedAt, at); assert.match(c.issue, /잠겨/); assert.equal(c.events.some(e => e.kind === 'closed'), false)
+    await app.post('/connections', connectionConfig())
+    assert.equal((await app.post('/vault/remove', {})).status, 400)
+    assert.equal((await app.post('/vault/remove', { confirm: true })).status, 200)
+    assert.deepEqual((await app.get()).connections.map(c => c.config.venue), ['hyperliquid'])
+    assert.equal(JSON.parse(await readFile(join(dir, 'ledger.json'), 'utf8')).vault, undefined)
+  } finally { release?.(); await app.close() }
+})
+
+test('a corrupt or orphaned vault is preserved and never silently replaced', async t => {
+  const dir = await directory(t)
+  const raw = JSON.stringify({ version: 1, rules: [], vault: { version: 1, items: [null] } })
+  await writeFile(join(dir, 'ledger.json'), raw)
+  await assert.rejects(() => openStore(dir), /원본 파일을 보존/)
+  assert.equal(await readFile(join(dir, 'ledger.json'), 'utf8'), raw)
+})
+test('connected positions persist with risk events, enforce bound direction, and stop signals when positions close', async t => {
+  const dir = await directory(t); let now = at, positions = [position()], offline = false
+  const options = { directory: dir, clock: () => now, channel: { configured: false }, positionReader: async () => { if (offline) throw new Error('offline'); return { receivedAt: now, sourceAt: now, positions } } }
+  let app = await serve(options)
+  try {
+    assert.equal((await app.post('/connections', connectionConfig(), { origin: 'https://evil.example' })).status, 403)
+    assert.equal((await app.post('/connections', { ...connectionConfig(), notify: true })).status, 400)
+    await app.post('/connections', connectionConfig()); await app.post('/connections', connectionConfig())
+    assert.equal((await app.get()).connections.length, 1)
+    const id = (await app.get()).connections[0].id
+    const signal = { requestId: 'bound-signal-1', name: '반대 방향', asset: 'BTC', notify: false, purpose: 'opposition', holdingSide: 'long', positionRef: { connectionId: id, key: 'BTC:long' }, config: { ...defaultExplorerConfig, signals: ['ema-short'], side: 'short' } }
+    assert.equal((await app.post('/signals', signal)).status, 400)
+    await app.handler.tickPositions()
+    assert.equal((await app.post('/signals', { ...signal, holdingSide: 'short' })).status, 400)
+    assert.equal((await app.post('/signals', signal)).status, 200)
+    assert.equal((await app.post('/signals', { ...signal, requestId: 'bound-signal-2' })).status, 400)
+    now += 30000; positions = [{ ...position(), currentPrice: 82, unrealizedPnl: -18 }]; await app.handler.tickPositions()
+    assert.equal((await app.get()).connections[0].events.filter(e => e.kind === 'loss').length, 1)
+    await app.close(); app = await serve(options)
+    assert.equal((await app.get()).connections[0].events.length, 3)
+    now += 30000; offline = true; await app.handler.tickPositions()
+    let current = await app.get(); assert.equal(current.signals[0].active, true); assert.match(current.signals[0].issue, /보류/); assert.equal(current.connections[0].snapshot.positions.length, 1)
+    now += 30000; offline = false; positions = []; await app.handler.tickPositions()
+    current = await app.get(); assert.equal(current.signals[0].active, false); assert.match(current.signals[0].issue, /사라지거나/)
+    assert.equal((await app.post('/connections/remove', { id })).status, 200)
+    assert.equal((await app.get()).connections.length, 0)
+    const saved = await readFile(join(dir, 'ledger.json'), 'utf8'); assert.ok(!saved.includes(connectionConfig().account)); assert.ok(!saved.includes('private label')); assert.equal(JSON.parse(saved).signals.length, 1)
+  } finally { await app.close() }
+})
+test('disconnect during an in-flight position read cannot resurrect data; delivery is redacted and deduplicated', async t => {
+  const dir = await directory(t); let now = at, unblock, delivered = [], hold = false
+  const app = await serve({ directory: dir, clock: () => now, channel: { configured: true, send: async (r, e) => { delivered.push({ r, e }) } }, positionReader: async () => { if (hold) await new Promise(resolve => { unblock = resolve }); return { receivedAt: now, sourceAt: now, positions: [position()] } } })
+  try {
+    await app.post('/connections', { ...connectionConfig(), notify: true }); await app.handler.tickPositions()
+    await app.handler.dispatch(); await app.handler.dispatch(); assert.equal(delivered.length, 1)
+    assert.ok(!JSON.stringify(delivered).includes('private label')); assert.ok(!JSON.stringify(delivered).includes(connectionConfig().account))
+    const c = (await app.get()).connections[0]; assert.equal(c.events[0].delivery.status, 'sent')
+    hold = true; now += 30000; const pending = app.handler.tickPositions()
+    while (!unblock) await new Promise(resolve => setTimeout(resolve, 1))
+    await app.post('/connections/remove', { id: c.id }); unblock(); await pending
+    assert.deepEqual((await app.get()).connections, [])
+  } finally { unblock?.(); await app.close() }
+})
+test('signal registrations persist, stay idempotent and cannot bypass origin/channel checks', async t => {
+  const dir = await directory(t)
+  const signal = { requestId: 'signal-integration-1', asset: 'BTC', name: '거래량 확인', notify: false, purpose: 'opportunity', config: { ...defaultExplorerConfig, window: 1, signals: ['volume-long'] } }
+  let rows = Array.from({ length: 80 }, (_, i) => ({ timestamp: at + i * 3600000, open: 100, high: 101, low: 99, close: 100, volume: 10 }))
+  const options = { directory: dir, clock: () => at + 82 * 3600000, channel: { configured: false }, historyReader: async () => ({ asset: 'BTC', timeframe: '1h', asOf: rows.at(-1).timestamp + 3600001, candles: rows }) }
+  let app = await serve(options)
+  try {
+    assert.equal((await app.post('/signals', signal, { origin: 'https://evil.example' })).status, 403)
+    assert.equal((await app.post('/signals', { ...signal, notify: true })).status, 400)
+    assert.equal((await app.post('/signals', signal)).status, 200); await app.post('/signals', signal)
+    assert.equal((await app.get()).signals.length, 1)
+    assert.equal((await app.post('/signals', { ...signal, name: '다른 이름' })).status, 400)
+    await app.handler.tickSignals()
+    rows = [...rows, { timestamp: at + 80 * 3600000, open: 100, high: 101, low: 100, close: 101, volume: 40 }]
+    await app.handler.tickSignals(); const before = (await app.get()).signals[0]
+    assert.equal(before.events.length, 1)
+    await app.close(); app = await serve(options)
+    await app.handler.tickSignals(); const after = (await app.get()).signals[0]
+    assert.equal(after.events.length, 1); assert.equal(after.hash, before.hash)
+    await app.post('/signals/stop', { id: before.id }); assert.equal((await app.get()).signals[0].events[0].outcome, 'cancelled')
+  } finally { await app.close() }
+})
+
+test('slow signal history cannot block the independent price monitor cycle', async t => {
+  const dir = await directory(t); let release
+  const app = await serve({ directory: dir, channel: { configured: false }, clock: () => at, quoteReader: async () => ({ price: 100, at, receivedAt: at }), historyReader: () => new Promise(resolve => { release = resolve }) })
+  try {
+    await app.post('/rules', config())
+    await app.post('/signals', { requestId: 'slow-signals-1', asset: 'BTC', name: '신호 확인', notify: false, config: defaultExplorerConfig })
+    const pending = app.handler.tickSignals(); await new Promise(resolve => setTimeout(resolve, 10))
+    await app.handler.tick(); assert.equal((await app.get()).rules[0].last.price, 100)
+    release({ asset: 'BTC', timeframe: '1h', candles: [], asOf: at }); await pending
+  } finally { await app.close() }
+})
 async function directory(t) {
   const prefix = join(tmpdir(), 'investai-monitor-test-'), dir = await mkdtemp(prefix)
   t.after(async () => { assert.ok(resolve(dir).startsWith(resolve(prefix))); await rm(dir, { recursive: true, force: true }) })

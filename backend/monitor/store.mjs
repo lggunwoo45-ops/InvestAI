@@ -1,6 +1,9 @@
 import { mkdir, open, readFile, rename, unlink } from 'node:fs/promises'
 import { join } from 'node:path'
 import { fingerprint, normalizeRule } from './engine.mjs'
+import { validSignalWatch } from './signalWatch.mjs'
+import { validConnection } from './positions.mjs'
+import { validVault } from './credentialVault.mjs'
 
 const positive = n => typeof n === 'number' && Number.isFinite(n) && n > 0
 const quote = q => q === null || (q && positive(q.price) && positive(q.at) && positive(q.receivedAt))
@@ -28,6 +31,11 @@ export async function openStore(directory) {
     const raw = await readFile(file, 'utf8')
     if (raw.length > 5_000_000) throw new Error('저장 한도를 초과했습니다.')
     data = JSON.parse(raw)
+    if (data.vault !== undefined && !validVault(data.vault)) throw new Error('키 보관함 구조 오류')
+    if (data.connections !== undefined && (!Array.isArray(data.connections) || data.connections.length > 8 || new Set(data.connections.map(c => c.id)).size !== data.connections.length || !data.connections.every(validConnection))) throw new Error('포지션 연결 기록 구조 오류')
+    const privateConnections = (data.connections ?? []).filter(c => ['binance', 'bybit'].includes(c.config.venue))
+    if (privateConnections.length !== (data.vault?.items.length ?? 0) || privateConnections.some(c => !data.vault?.items.some(i => i.id === c.config.account && i.venue === c.config.venue)) || new Set(privateConnections.map(c => c.config.account)).size !== privateConnections.length) throw new Error('키 보관함 연결 불일치')
+    if (data.signals !== undefined && (!Array.isArray(data.signals) || data.signals.length > 40 || new Set(data.signals.map(r => r.id)).size !== data.signals.length || !data.signals.every(validSignalWatch))) throw new Error('신호 감시 기록 구조 오류')
     if (data.version !== 1 || !Array.isArray(data.rules) || data.rules.length > 200 || new Set(data.rules.map(r => r.id)).size !== data.rules.length || new Set(data.rules.map(r => r.config.requestId)).size !== data.rules.length) throw new Error('기록 구조 오류')
     for (const r of data.rules) {
       if (fingerprint(normalizeRule(r.config)) !== r.hash || typeof r.id !== 'string' || !['waiting', 'tracking', 'closed'].includes(r.phase) || !Array.isArray(r.events) || r.events.length > 10 || !r.events.every(validEvent) || !positive(r.createdAt) || !quote(r.last) || !quote(r.entered) || !Number.isInteger(r.gaps) || r.gaps < 0 || (r.phase === 'tracking' && !r.entered)) throw new Error('기록 검증 오류')
