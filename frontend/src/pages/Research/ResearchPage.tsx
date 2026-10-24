@@ -6,6 +6,7 @@ import { useWatchlists } from '@/hooks/useWatchlists'
 import { useMarketWorkspace } from '@/hooks/useMarketWorkspace'
 import { itemFromInstrument } from '@/services/watchlist/watchlistStorage'
 import { fetchResearch } from '@/services/research/researchClient'
+import { researchNow } from '@/services/research/researchClock'
 import { array, candleSignals, closedCandles, kimchiPremium, numeric, object, observedFundingInterval, percentile, positionRisk, providerNow, researchAssets, signalLabels, sourceData, volatilitySummary, type ResearchSnapshot, type Signal } from '@/services/research/researchModel'
 import { checkRules, readEvents, readObservations, readRules, removeRule, saveEvents, saveObservation, saveRule, type ResearchObservation } from '@/services/research/researchJournal'
 import type { Candle } from '@/types/marketDetail'
@@ -270,7 +271,7 @@ export function ResearchPage() {
   const [params, setParams] = useSearchParams()
   const requestedMode = params.get('mode'), mode: Mode = modes.some(([key]) => key === requestedMode) ? requestedMode as Mode : 'overview'
   const requestedAsset = params.get('asset'), asset = researchAssets.some(a => a === requestedAsset) ? requestedAsset! : 'BTC'
-  const [revision, setRevision] = useState(0), [now, setNow] = useState(Date.now)
+  const [revision, setRevision] = useState(0), [clientNow, setNow] = useState(Date.now)
   const requestKey = `${asset}:${revision}`
   const [request, setRequest] = useState<{ key: string; snapshot: ResearchSnapshot | null; error: string }>({ key: '', snapshot: null, error: '' })
   const loading = request.key !== requestKey
@@ -286,6 +287,7 @@ export function ResearchPage() {
     return () => controller.abort()
   }, [asset, requestKey])
   const visible = snapshot?.asset === asset ? snapshot : null
+  const now = researchNow(visible, clientNow)
   const candles = useMemo(() => closedCandles(sourceData(visible, 'candles', now), providerNow(visible, 'candles', now)), [visible, now])
   const markData = sourceData(visible, 'mark', now), markAt = field(markData, 'time')
   const markFresh = markData !== null && markAt !== null
