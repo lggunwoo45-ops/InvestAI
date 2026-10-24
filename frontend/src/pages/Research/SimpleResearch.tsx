@@ -16,17 +16,30 @@ const simpleTasks = [
 ] as const
 
 export function SimpleResearchNav({ mode, onMode }: { mode: ResearchMode; onMode: (mode: ResearchMode) => void }) {
+  const step = ['journal', 'alerts'].includes(mode) ? 'journal' : ['overview', 'guide'].includes(mode) ? 'overview' : 'check'
   return <nav className={styles.simpleNav} aria-label="시장·기록 이용 순서">{[
-    ['overview', '시장 살펴보기', '가격과 변화를 이해해요'],
-    ['journal', '내 생각 기록', '관심 이유를 남겨요'],
-    ['alerts', '알림·결과', '정한 조건을 다시 확인해요'],
-  ].map(([key, title, hint], i) => <button key={key} aria-current={mode === key ? 'page' : undefined} onClick={() => onMode(key as ResearchMode)}><span className={styles.stepNumber}>{i + 1}</span><span><b>{title}</b><small>{hint}</small></span></button>)}</nav>
+    ['overview', '시장 보기', '가격과 변화를 살펴봐요'],
+    ['check', '내 종목 확인', '궁금한 것 하나만 골라요'],
+    ['journal', '기록·알림', '생각을 남기고 다시 확인해요'],
+  ].map(([key, title, hint], i) => <button key={key} aria-label={title} aria-current={step === key ? 'page' : undefined} onClick={() => onMode(key as ResearchMode)}><span className={styles.stepNumber}>{i + 1}</span><span><b>{title}</b><small>{hint}</small></span></button>)}</nav>
+}
+
+export function SimpleCoinCheck({ asset, onMode }: { asset: string; onMode: (mode: ResearchMode) => void }) {
+  const primary = simpleTasks.filter(task => ['position', 'setups', 'premium'].includes(task.mode))
+  const secondary = simpleTasks.filter(task => ['indicators', 'costs'].includes(task.mode))
+  const card = (task: typeof simpleTasks[number]) => <button key={task.mode} className={styles.taskCard} onClick={() => onMode(task.mode)}><span className={styles.taskIcon} aria-hidden="true">{task.icon}</span><span><b>{task.title}</b><small>{task.description}</small></span><span aria-hidden="true">→</span></button>
+  return <section className={styles.coinCheck} aria-label="내 종목 확인">
+    <div className={styles.sectionHeading}><div><span className={styles.eyebrow}>{asset} · 하나씩 확인하기</span><h2>지금 궁금한 것 하나만 골라보세요</h2><p>모든 도구를 쓸 필요는 없어요. 선택한 내용부터 쉽게 안내할게요.</p></div></div>
+    <div className={styles.choiceGrid}>{primary.map(card)}</div>
+    <details className={styles.moreTools}><summary>시장 지표와 거래 비용도 궁금하다면</summary><div className={styles.taskGrid}>{secondary.map(card)}</div></details>
+    <div className={styles.journeyNext}><div><b>살펴봤다면, 생각을 한 줄 남겨보세요</b><p>다음에 다시 볼 때 지금과 무엇이 달라졌는지 비교할 수 있어요.</p></div><button className={styles.primaryAction} onClick={() => onMode('journal')}>기록·알림으로 →</button></div>
+  </section>
 }
 
 export function SimpleToolIntro({ mode, onBack }: { mode: ResearchMode; onBack: () => void }) {
   const task = simpleTasks.find(t => t.mode === mode)
   if (!task) return null
-  return <aside className={styles.toolIntro}><button onClick={onBack}>← 시장 살펴보기</button><h2>{task.title}</h2><p>{task.help}</p></aside>
+  return <aside className={styles.toolIntro}><button onClick={onBack}>← 다른 내용 확인하기</button>{!['position', 'setups'].includes(mode) && <><h2>{task.title}</h2><p>{task.help}</p></>}</aside>
 }
 
 export function SimpleMarketSummary({ asset, price, at, candles, loading, onMode, onWatch, watchlisted, canWatch, message }: {
@@ -52,12 +65,11 @@ export function SimpleMarketSummary({ asset, price, at, candles, loading, onMode
         <details><summary>이 가격은 무엇인가요?</summary><p>USDT는 이 거래소에서 가격을 표시하는 단위예요. 이 화면은 선물의 손익·청산 계산에 쓰이는 기준 가격을 보여줘요. 국내 원화 현물 가격과 다르며, 검토 기록도 같은 기준으로 저장해요. 위 흐름 설명은 완료된 시간봉을 비교한 결과예요.</p></details>
         {message && <p role="status">{message}</p>}
       </section>
-      <aside className={styles.nextAction} aria-label="다음에 할 일"><span className={styles.eyebrow}>{previous ? '지난 생각 이어보기' : '처음이라면 여기부터'}</span><h2>{previous ? '지난번과 무엇이 달라졌나요?' : '관심 있는 이유를 한 줄 남겨보세요'}</h2>
-        {previous ? <><div className={styles.reviewChange}>{change === null ? '현재 가격 확인 필요' : `${change > 0 ? '+' : ''}${number(change)}%`}<small>지난 검토 이후 기준 가격 변화</small></div><blockquote>{previous.note || '이전 검토에 메모가 없어요.'}</blockquote><small>{date(previous.at)} · {number(previous.price)} USDT</small></> : <p>“가격이 내려온 이유가 궁금해요”처럼 편하게 적어도 좋아요. 다음 방문에 지금 가격과 함께 비교할 수 있어요.</p>}
-        <button className={styles.primaryAction} onClick={() => onMode('journal')}>{previous ? '생각 이어서 기록하기' : '첫 기록 남기기'} →</button><button onClick={() => onMode('alerts')}>저장한 조건·결과 보기</button><p className={styles.caption}>가격 변화는 내 계좌 수익률이 아니에요. 기록은 두 모드에서 함께 사용해요.</p>
+      <aside className={styles.nextAction} aria-label="다음에 할 일"><span className={styles.eyebrow}>{previous ? '지난 생각 이어보기' : '다음 단계'}</span><h2>{previous ? '지난번과 무엇이 달라졌나요?' : asset + ', 무엇이 궁금하세요?'}</h2>
+        {previous ? <><div className={styles.reviewChange}>{change === null ? '현재 가격 확인 필요' : `${change > 0 ? '+' : ''}${number(change)}%`}<small>지난 검토 이후 기준 가격 변화</small></div><blockquote>{previous.note || '이전 검토에 메모가 없어요.'}</blockquote><small>{date(previous.at)} · {number(previous.price)} USDT</small></> : <p>가격이 바뀌면 내 손익은 어떨지, 과거에도 비슷한 흐름이 있었는지 하나씩 확인해보세요.</p>}
+        <button className={styles.primaryAction} onClick={() => onMode('check')}>내 종목 확인하기 →</button><button onClick={() => onMode('journal')}>{previous ? '생각 이어서 기록하기' : '첫 기록 남기기'} →</button><p className={styles.caption}>가격 변화는 내 계좌 수익률이 아니에요. 기록은 두 모드에서 함께 사용해요.</p>
       </aside>
     </div>
-    <section className={styles.taskSection} aria-label="궁금한 내용으로 살펴보기"><div className={styles.sectionHeading}><div><h2>무엇이 궁금하세요?</h2><p>필요한 내용을 고르면 설명과 계산을 이어서 볼 수 있어요.</p></div><button onClick={() => onMode('guide')}>처음 이용하는 분께 →</button></div><div className={styles.taskGrid}>{simpleTasks.map(task => <button key={task.mode} className={styles.taskCard} onClick={() => onMode(task.mode)}><span className={styles.taskIcon} aria-hidden="true">{task.icon}</span><span><b>{task.title}</b><small>{task.description}</small></span><span aria-hidden="true">→</span></button>)}</div></section>
     <div className={styles.simpleLinks}><Link to="/portfolio">내가 보유한 자산 보기 →</Link><Link to="/news">뉴스에서 배경 찾아보기 →</Link></div>
   </>
 }
