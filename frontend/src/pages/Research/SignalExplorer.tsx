@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
 import { fetchResearchHistory, type ResearchHistory } from '@/services/research/researchClient'
+import { researchNow } from '@/services/research/researchClock'
 import { defaultExplorerConfig, ENGINE_VERSION, exploreHistory, explorerSignals, matchesFrame, signalFrames, timeframes, validExplorerConfig, type ExplorerConfig, type ExplorerSignal, type ResearchTimeframe, type SignalFamily } from '@/services/research/signalExplorer'
 import { configFromQuery, createExplorerPreset, explorerLink, readExplorerPresets, removeExplorerPreset, type ExplorerPreset } from '@/services/research/explorerPresets'
 import { ExplorerChart } from './ExplorerChart'
@@ -26,7 +27,7 @@ export function SignalExplorer({ asset, refresh = 0 }: { asset: string; refresh?
   const [family, setFamily] = useState<SignalFamily | 'all'>('all'), [direction, setDirection] = useState('all'), [search, setSearch] = useState(''), [detail, setDetail] = useState(explorerSignals[0]!)
   const [initial] = useState(() => { try { return { rows: readExplorerPresets(), error: '' } } catch (e) { return { rows: [], error: e instanceof Error ? e.message : '저장소를 확인해주세요.' } } })
   const [tab, setTab] = useState<'distribution' | 'samples' | 'saved'>('distribution'), [presets, setPresets] = useState<ExplorerPreset[]>(initial.rows), [message, setMessage] = useState(initial.error), [name, setName] = useState(''), [share, setShare] = useState('')
-  const [now, setNow] = useState(Date.now), key = `${asset}:${config.timeframe}:${config.bars}:${reload}:${refresh}`
+  const [clientNow, setNow] = useState(Date.now), key = `${asset}:${config.timeframe}:${config.bars}:${reload}:${refresh}`
   useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 30000); return () => clearInterval(timer) }, [])
   useEffect(() => {
     const controller = new AbortController()
@@ -34,11 +35,12 @@ export function SignalExplorer({ asset, refresh = 0 }: { asset: string; refresh?
     return () => controller.abort()
   }, [asset, config.timeframe, config.bars, key])
   const loading = history.key !== key, data = history.key === key ? history.value : undefined, error = history.key === key ? history.error : undefined
+  const now = researchNow(data, clientNow)
   const candles = data?.candles ?? emptyCandles, frames = useMemo(() => signalFrames(candles, config.timeframe), [candles, config.timeframe])
   const result = useMemo(() => exploreHistory(candles, config, frames), [candles, config, frames])
   const matches = useMemo(() => new Set(frames.filter((_, i) => matchesFrame(frames, candles, i, config)).map(f => f.at)), [frames, candles, config])
   const last = candles.at(-1), latest = frames.at(-1), valid = validExplorerConfig(config)
-  const fresh = !!data && !!last && now - data.fetchedAt < 180000 && data.asOf - last.timestamp <= timeframes[config.timeframe] * 2
+  const fresh = !!data && !!last && now >= data.fetchedAt && now - data.fetchedAt < 180000 && data.asOf - last.timestamp <= timeframes[config.timeframe] * 2
   const currentMatch = fresh && !!last && matches.has(last.timestamp)
   const selected = explorerSignals.filter(s => config.signals.includes(s.id))
   const visible = explorerSignals.filter(s => (family === 'all' || s.family === family) && (direction === 'all' || s.side === direction) && `${s.name} ${s.rule}`.toLowerCase().includes(search.toLowerCase()))

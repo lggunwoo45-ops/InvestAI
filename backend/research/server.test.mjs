@@ -54,6 +54,18 @@ test('caps public request volume without hitting providers again', async () => {
   assert.equal(limited.status, 429); assert.equal(limited.headers['Retry-After'], '60')
 })
 
+test('exposes the response clock to the allowed website without changing cached data timestamps', async () => {
+  const origin = 'https://lggunwoo45-ops.github.io'
+  const body = { fetchedAt: 100_000 }
+  const handler = createResearchHandler({ origins: [origin], now: () => 130_000, historyReader: async () => body })
+  const result = await request(handler, '/api/research/history?asset=BTC&timeframe=1h&count=1000', { origin })
+  assert.equal(result.status, 200)
+  assert.equal(result.headers['Access-Control-Allow-Origin'], origin)
+  assert.equal(result.headers['Access-Control-Expose-Headers'], 'Date')
+  assert.equal(Date.parse(result.headers.Date), 130_000)
+  assert.deepEqual(result.body, body)
+})
+
 test('wallet calls public information only and excludes other account fields', async () => {
   let calls = 0
   const client = createResearchClient({ fetchImpl: async (url, options) => {

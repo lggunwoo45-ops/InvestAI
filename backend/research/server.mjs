@@ -80,12 +80,13 @@ export function createResearchHandler({ local = false, origins = [], client = cr
   return async (req, res, next = () => { res.writeHead(404); res.end() }) => {
     if (!req.url?.startsWith('/api/research/')) return next()
     const headers = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', Vary: 'Origin' }
-    const send = (status, body) => { if (!res.destroyed && !res.writableEnded) { res.writeHead(status, headers); res.end(JSON.stringify(body)) } }
+    const send = (status, body) => { if (!res.destroyed && !res.writableEnded) { res.writeHead(status, { ...headers, Date: new Date(now()).toUTCString() }); res.end(JSON.stringify(body)) } }
     const host = req.headers.host, origin = req.headers.origin
     const loopback = /^(localhost|127\.0\.0\.1):\d{1,5}$/.test(host ?? '') && ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(req.socket.remoteAddress)
     if (local && !loopback) return send(403, { error: 'local_only' })
     if (origin && !(local ? loopback && origin === `http://${host}` : allowed.has(origin))) return send(403, { error: 'origin_rejected' })
     if (origin) headers['Access-Control-Allow-Origin'] = origin
+    headers['Access-Control-Expose-Headers'] = 'Date'
     const url = new URL(req.url, 'http://research.local')
     const wallet = url.pathname === '/api/research/wallet'
     const history = url.pathname === '/api/research/history'
