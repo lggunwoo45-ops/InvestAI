@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useLanguage } from '@/i18n/useLanguage'
 import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
@@ -8,7 +8,7 @@ import { itemFromInstrument } from '@/services/watchlist/watchlistStorage'
 import { fetchResearch } from '@/services/research/researchClient'
 import { researchNow } from '@/services/research/researchClock'
 import { array, candleSignals, closedCandles, kimchiPremium, numeric, object, observedFundingInterval, percentile, positionRisk, providerNow, researchAssets, signalLabels, sourceData, volatilitySummary, type ResearchSnapshot, type Signal } from '@/services/research/researchModel'
-import { checkRules, readEvents, readObservations, readRules, removeRule, saveEvents, saveObservation, saveRule, type ResearchObservation } from '@/services/research/researchJournal'
+import { readJournalDraft, readObservations, saveJournalDraft, saveObservation, type ResearchObservation } from '@/services/research/researchJournal'
 import type { Candle } from '@/types/marketDetail'
 import styles from './ResearchPage.module.css'
 import { GuidedCosts, GuidedPremium } from './GuidedResearchTools'
@@ -27,6 +27,7 @@ import { SignalExplorer } from './SignalExplorer'
 import { SignalWatchPanel } from './SignalWatchPanel'
 import { localMonitorAvailable } from '@/services/research/monitorAvailability'
 import { LocalMonitorNotice } from './LocalMonitorNotice'
+import { BrowserPriceAlerts } from './BrowserPriceAlerts'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 
 const format = (value: number | null | undefined, digits = 2) => value === null || value === undefined || !Number.isFinite(value) ? '확인 불가' : value.toLocaleString('ko-KR', { maximumFractionDigits: digits })
@@ -186,7 +187,13 @@ function EtfLedger() {
 
 function Journal({ asset, snapshot, candles, now }: { asset: string; snapshot: ResearchSnapshot | null; candles: readonly Candle[]; now: number }) {
   const simple = useDisplayMode().displayMode === 'simple'
-  const [entries, setEntries] = useState(readObservations), [note, setNote] = useState(''), [message, setMessage] = useState('')
+  const [entries, setEntries] = useState(readObservations), [note, setNote] = useState(() => readJournalDraft(asset)), [message, setMessage] = useState('')
+  const [draftError, setDraftError] = useState('')
+  const updateNote = (value: string) => {
+    setNote(value)
+    try { saveJournalDraft(asset, value); setDraftError('') }
+    catch { setDraftError('임시 메모를 보관하지 못했어요. 화면을 떠나기 전에 메모를 복사해두세요.') }
+  }
   const mark = sourceData(snapshot, 'mark', now), price = field(mark, 'markPrice'), funding = field(mark, 'lastFundingRate'), interest = field(sourceData(snapshot, 'interest', now), 'openInterest'), vol = volatilitySummary(candles)
   const previous = entries.find(e => e.asset === asset), history = entries.filter(e => e.asset === asset)
   const currentSignals = candleSignals(candles, candles.length - 1)
@@ -194,13 +201,14 @@ function Journal({ asset, snapshot, candles, now }: { asset: string; snapshot: R
   const save = () => {
     if (!price) return
     const entry: ResearchObservation = { id: crypto.randomUUID(), asset, at: now, price, funding, interest, volatility: vol?.hourly ?? null, signals: currentSignals, note }
-    try { setEntries(saveObservation(entry)); setMessage('현재 기준을 저장했습니다. 이전 기록도 이력에 남습니다.'); setNote('') } catch { setMessage('브라우저 저장 공간에 기록하지 못했습니다. 저장 권한과 여유 공간을 확인해주세요.') }
+    try { setEntries(saveObservation(entry)); setMessage('현재 기준을 저장했습니다. 이전 기록도 이력에 남습니다.'); updateNote('') } catch { setMessage('브라우저 저장 공간에 기록하지 못했습니다. 저장 권한과 여유 공간을 확인해주세요.') }
   }
   if (simple) return <div className={styles.journalLayout}>
     <section className={styles.journalEditor}><span className={styles.eyebrow}>내 생각 기록</span><h2>{asset}에 관심을 가진 이유가 있나요?</h2><p>정답을 맞힐 필요는 없어요. 지금 생각과 다음에 확인할 내용을 남겨두세요.</p>
-      <div className={styles.writingPrompts} aria-label="메모 시작하기">{['관심을 가진 이유: ', '다음에 확인할 것: ', '내가 걱정하는 점: '].map(prompt => <button key={prompt} onClick={() => setNote(old => (old ? old + '\n' : '') + prompt)}>{prompt.replace(': ', '')} +</button>)}</div>
-      <label>이번 검토 메모<textarea rows={5} value={note} maxLength={1000} placeholder="예: 가격이 올랐지만 거래량도 늘었는지 내일 다시 확인하고 싶어요." onChange={e => setNote(e.target.value)} /></label>
-      <p className={styles.caption}>{price ? format(price, 6) + ' USDT와 지금 시장 지표를 함께 저장해요.' : '가격을 불러온 뒤 저장할 수 있어요. 작성 중인 메모는 모드를 바꿔도 유지돼요.'}</p>
+      <div className={styles.writingPrompts} aria-label="메모 시작하기">{['관심을 가진 이유: ', '다음에 확인할 것: ', '내가 걱정하는 점: '].map(prompt => <button key={prompt} onClick={() => updateNote(((note ? note + '\n' : '') + prompt).slice(0, 1000))}>{prompt.replace(': ', '')} +</button>)}</div>
+      <label>이번 검토 메모<textarea rows={5} value={note} maxLength={1000} placeholder="예: 가격이 올랐지만 거래량도 늘었는지 내일 다시 확인하고 싶어요." onChange={e => updateNote(e.target.value)} /></label>
+      <small>{draftError ? <span role="alert">{draftError}</span> : note ? '작성 중인 메모를 이 브라우저에 임시 보관했어요.' : '작성 중인 메모는 다른 화면을 다녀와도 이어 쓸 수 있어요.'}</small>
+      <p className={styles.caption}>{price ? format(price, 6) + ' USDT와 지금 시장 지표를 함께 저장해요.' : '가격을 불러온 뒤 검토 기록으로 저장할 수 있어요. 임시 메모는 그대로 남겨둘게요.'}</p>
       <button className={styles.primaryAction} disabled={!price} onClick={save}>현재 검토 기준 저장</button><p role="status">{message}</p>
       <small>이 브라우저에 저장돼요. 선물 기준 가격이며, 내 계좌의 매수 가격은 아니에요.</small>
     </section>
@@ -217,36 +225,12 @@ function Journal({ asset, snapshot, candles, now }: { asset: string; snapshot: R
       <Metric title="다음 정산 예상 펀딩" value={difference(funding === null ? null : funding * 100, previous.funding === null ? null : previous.funding * 100, '%')} /><Metric title="미결제약정 변화" value={difference(interest, previous.interest)} />
       <Metric title="시간 변동성 변화" value={difference(vol?.hourly ?? null, previous.volatility, '%')} />
     </div><p>이전 조건: {previous.signals.map(s => signalLabels[s as Signal] ?? s).join(' · ') || '해당 없음'}<br />현재 조건: {currentSignals.map(s => signalLabels[s]).join(' · ') || '해당 없음'}</p></details><p>이전 메모: {previous.note || '없음'}</p></>}
-    <label>이번 검토 메모<textarea rows={3} value={note} maxLength={1000} placeholder="관심 이유와 다음에 확인할 내용을 기록하세요." onChange={e => setNote(e.target.value)} /></label>
+    <label>이번 검토 메모<textarea rows={3} value={note} maxLength={1000} placeholder="관심 이유와 다음에 확인할 내용을 기록하세요." onChange={e => updateNote(e.target.value)} /></label>
+    {draftError && <p role="alert">{draftError}</p>}
     <button disabled={!price} onClick={save}>현재 검토 기준 저장</button><p role="status">{message}</p>
-    {previous && <p><Link to={`/research?asset=${asset}&mode=alerts&review=${encodeURIComponent(previous.id)}`}>최근 검토를 서버 감시로 연결 →</Link></p>}
+    {previous && <p><Link to={`/research?asset=${asset}&mode=alerts&review=${encodeURIComponent(previous.id)}`}>{localMonitorAvailable() ? '최근 검토를 서버 감시로 연결 →' : '최근 검토로 가격 조건 정하기 →'}</Link></p>}
     <details><summary>저장 이력 {history.length}건</summary><ol>{history.map(e => <li key={e.id}>{time(e.at)} · {format(e.price, 6)} USDT · {e.note || '메모 없음'} · <Link to={`/research?asset=${asset}&mode=alerts&review=${encodeURIComponent(e.id)}`}>이 검토로 감시 설정</Link></li>)}</ol></details>
     <small>가격 상승이나 펀딩 변화가 투자 품질의 개선을 뜻하지 않습니다. 관측 시각이 서로 다르므로 그 사이의 뉴스·이벤트도 별도로 확인하세요.</small>
-  </section>
-}
-
-function Alerts({ asset, snapshot, now }: { asset: string; snapshot: ResearchSnapshot | null; now: number }) {
-  const [above, setAbove] = useState(''), [below, setBelow] = useState(''), [rules, setRules] = useState(readRules), [events, setEvents] = useState(readEvents), [message, setMessage] = useState('')
-  const previous = useRef<{ asset: string; price: number; at: number } | null>(null)
-  const price = field(sourceData(snapshot, 'mark', now), 'markPrice')
-  useEffect(() => {
-    if (!price || !snapshot) return
-    const old = previous.current
-    previous.current = { asset, price, at: snapshot.fetchedAt }
-    if (!old || old.asset !== asset || old.at === snapshot.fetchedAt) return
-    const triggered = checkRules(rules, asset, old.price, price, snapshot.fetchedAt)
-    if (triggered.length) {
-      try { setEvents(saveEvents(triggered)); setMessage('설정한 가격 경계를 통과했습니다. 결과 기록을 확인하세요.') } catch { setMessage('조건은 관측했지만 결과 기록을 저장하지 못했습니다.') }
-    }
-  }, [asset, price, snapshot, rules])
-  return <section className={styles.panel}><h2>조건 알림·관측 결과</h2><p>이 모드가 열린 동안 새로 받은 가격이 설정 경계를 통과하면 화면에 알리고 기록합니다. 앱을 닫거나 다른 모드로 이동한 동안은 감시하지 않습니다. Telegram·이메일·휴대폰 푸시는 연결되지 않았습니다.</p>
-    <div className={styles.form}><NumberField label="이 가격 이상으로 통과 (USDT)" value={above} onChange={setAbove} min={0} /><NumberField label="이 가격 이하로 통과 (USDT)" value={below} onChange={setBelow} min={0} /></div>
-    <button onClick={() => {
-      const a = numeric(above), b = numeric(below)
-      if ((a === null && b === null) || (a !== null && a <= 0) || (b !== null && b <= 0) || (a !== null && b !== null && a <= b)) { setMessage('유효한 가격 경계를 입력해주세요. 상단은 하단보다 커야 합니다.'); return }
-      try { saveRule({ asset, above: a, below: b }); setRules(readRules()); setMessage('조건을 저장했습니다. 다음 가격 갱신부터 통과 여부를 확인합니다.') } catch { setMessage('조건을 저장하지 못했습니다.') }
-    }}>조건 저장</button><p role="status" aria-live="polite">{message}</p><ul>{rules.map(r => <li key={r.asset}>{r.asset} · 상단 {format(r.above, 6)} / 하단 {format(r.below, 6)} <button onClick={() => { try { removeRule(r.asset); setRules(readRules()) } catch { setMessage('삭제하지 못했습니다.') } }}>조건 삭제</button></li>)}</ul>
-    <h3>실제로 관측한 경계 통과 기록</h3>{!events.length ? <p>아직 관측 기록이 없습니다. 과거 알림이나 성과를 만들어 표시하지 않습니다.</p> : <ol>{events.map(e => <li key={e.id}>{time(e.at)} · {e.asset} · {e.kind === 'above' ? '상단' : '하단'} 통과 · {format(e.price, 6)} USDT</li>)}</ol>}
   </section>
 }
 
@@ -297,6 +281,7 @@ export function ResearchPage() {
   const fundingInterval = observedFundingInterval(visible, now)
   const signals = candleSignals(candles, candles.length - 1), vol = volatilitySummary(candles)
   const setMode = (next: Mode) => setParams({ asset, mode: next })
+  const browserAlerts = <BrowserPriceAlerts key={asset} asset={asset} snapshot={visible} now={now} loading={loading} auto={auto} onStart={() => { setAuto(true); setRevision(v => v + 1) }} onPause={() => setAuto(false)} />
   const openMarket = () => {
     const rows = array(sourceData(visible, 'korea', now)).map(object), row = rows.find(r => r.market === `KRW-${asset}`)
     const price = numeric(row?.trade_price)
@@ -312,7 +297,6 @@ export function ResearchPage() {
     {simple ? <SimpleResearchNav mode={mode} onMode={setMode} /> : <nav className={styles.tabs} aria-label="시장 연구 모드">{modes.map(([key, label]) => <button key={key} aria-current={mode === key ? 'page' : undefined} onClick={() => setMode(key)}>{label}</button>)}</nav>}
     {simple && <SimpleToolIntro mode={mode} onBack={() => setMode('check')} />}
     {simple && ['journal', 'alerts'].includes(mode) && <nav className={styles.recordNav} aria-label="기록과 가격 알림"><button aria-current={mode === 'journal' ? 'page' : undefined} onClick={() => setMode('journal')}>생각 기록</button><button aria-current={mode === 'alerts' ? 'page' : undefined} onClick={() => setMode('alerts')}>가격 알림</button></nav>}
-    {simple && mode === 'alerts' && <div className={styles.priceRefresh}><label className={styles.check}><input type="checkbox" checked={auto} onChange={e => { setAuto(e.target.checked); if (e.target.checked) setRevision(v => v + 1) }} />이 화면에서 1분마다 가격 확인</label><small>{auto ? '가격 확인 중 · 화면을 열어둔 동안 새 가격으로 조건을 비교해요.' : '가격 확인이 꺼져 있어요. 알림을 받으려면 켜두세요.'}</small></div>}
     {mode === 'check' && <SimpleCoinCheck asset={asset} onMode={setMode} />}
     {mode === 'overview' && simple && <SimpleMarketSummary asset={asset} price={mark} at={markAt} candles={candles} loading={loading} onMode={setMode} onWatch={openMarket} watchlisted={isWatchlisted('upbit-' + asset.toLowerCase())} canWatch={!!visible} message={message} />}
     {mode === 'overview' && !simple && <><section className={styles.panel}><div className={styles.actions}><h2>{asset} 현재 시장 컨디션</h2><button onClick={openMarket} disabled={!visible}>{isWatchlisted(`upbit-${asset.toLowerCase()}`) ? '관심종목·분석 이어가기' : '관심종목 등록'}</button><Link to="/market">차트·뉴스로 이동</Link></div><p role="status">{message}</p><div className={styles.metrics}><Metric title="선물 마크가격" value={mark ? `${format(mark, 6)} USDT` : '확인 불가'} detail={`Binance · ${time(markAt)}`} /><Metric title="다음 정산 예상 펀딩률" value={funding === null ? '확인 불가' : percent(funding * 100)} detail={`정산 예정 ${time(field(markData, 'nextFundingTime'))}`} /><Metric title="최근 실현 시간 변동성" value={percent(vol?.hourly)} detail="최근 24개 시간 수익률 기준" /></div><Chart candles={candles} /><h3>현재 관측된 조건</h3><p>{signals.map(s => signalLabels[s]).join(' · ') || '완결된 시간봉이 부족하거나 해당 조건이 없습니다.'}</p><div className={styles.actions}><button onClick={() => setMode('position')}>내 포지션 위험 계산</button><button onClick={() => setMode('journal')}>검토 저장·이전과 비교</button></div></section></>}
@@ -323,7 +307,7 @@ export function ResearchPage() {
     {mode === 'premium' && <Premium key={asset} snapshot={visible} asset={asset} now={now} />}
     {mode === 'setups' && <SignalExplorer asset={asset} refresh={revision} />}
     {mode === 'journal' && <><Journal key={asset} asset={asset} snapshot={visible} candles={candles} now={now} /><details className={styles.relatedNews} open={!simple}><summary>기록에 참고할 뉴스 찾아보기</summary><ResearchNews asset={asset} /></details></>}
-    {mode === 'alerts' && <>{localMonitorAvailable() ? <><PositionConnections ledger /><SignalWatchPanel asset={asset} ledger /><MonitorWorkspace key={asset} asset={asset} /></> : <LocalMonitorNotice asset={asset} />}<details className={styles.panel} open={!localMonitorAvailable()}><summary>{simple ? "화면을 켜둔 동안만 가격 알림 받기" : "브라우저 조건 알림"}</summary><Alerts key={asset} asset={asset} snapshot={visible} now={now} /></details></>}
+    {mode === 'alerts' && <>{localMonitorAvailable() ? <><PositionConnections ledger /><SignalWatchPanel asset={asset} ledger /><MonitorWorkspace key={asset} asset={asset} /></> : !simple ? <LocalMonitorNotice asset={asset} /> : null}<details className={simple && !localMonitorAvailable() ? styles.browserAlerts : styles.panel} open={!localMonitorAvailable()}><summary hidden={simple && !localMonitorAvailable()}>{simple ? "화면을 켜둔 동안만 가격 알림 받기" : "브라우저 조건 알림"}</summary>{browserAlerts}</details></>}
     {mode === 'guide' && (simple ? <section className={styles.panel}><h2>세 단계로 이어서 확인하세요</h2><ol><li><b>시장 보기</b>에서 지금 가격과 최근 변화를 살펴봐요.</li><li><b>내 종목 확인</b>에서 손익·과거 흐름·가격 비교 중 궁금한 내용을 골라요.</li><li><b>기록·알림</b>에서 생각을 남기고 다시 확인할 가격을 정해요.</li></ol><p>기록은 이 브라우저에 저장돼요. 웹 가격 알림은 해당 화면을 열고 가격 갱신을 켜둔 동안만 확인합니다.</p><button onClick={() => setMode('check')}>내 종목 확인하기</button><p>신호를 직접 조합하거나 상세 지표를 비교하려면 전문가 모드로 전환하세요. 입력한 계산 조건과 기록은 이어서 사용할 수 있어요.</p></section> : <Guide />)}
     </div>
     <ResearchEvidence snapshot={visible} now={now} onMode={setMode} />

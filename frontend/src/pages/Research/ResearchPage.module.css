@@ -204,3 +204,27 @@
 .page:has([aria-label='신호 탐색 스튜디오']) .workspaceHeader { padding-bottom: 12px; border-bottom: 1px solid var(--color-border); }
 .page:has([aria-label='신호 탐색 스튜디오']) .heading h1 { font-size: 20px; }
 .page:has([aria-label='신호 탐색 스튜디오']) .heading > span { display: none; }
+.alertWorkspace { padding-top: 16px; }
+.page details.browserAlerts { margin: 0; padding: 0; border: 0; }
+.alertHeading h2 { margin: 10px 0; font-size: clamp(22px, 3vw, 28px); letter-spacing: -.03em; }
+.alertHeading > p { margin-bottom: 24px; font-size: 14px; color: var(--color-text-muted); }
+.alertLayout { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 20px; }
+.alertEditor, .alertStatus { min-width: 0; padding: 24px; border: 1px solid var(--color-border); border-radius: 18px; background: var(--color-surface); }
+.alertPrice { display: grid; gap: 8px; }
+.alertPrice > span, .alertReview > span { font-size: 12px; color: var(--color-text-muted); }
+.alertPrice strong { font-size: 28px; letter-spacing: -.03em; overflow-wrap: anywhere; }
+.alertPrice small, .alertReview small { font-size: 11px; }
+.alertReview { margin-top: 20px; padding: 16px; border-left: 2px solid var(--color-accent); background: var(--color-surface-raised); border-radius: 0 10px 10px 0; }
+.alertReview blockquote { margin: 8px 0; font-size: 14px; line-height: 1.75; white-space: pre-wrap; overflow-wrap: anywhere; }
+.alertEditor > button { width: 100%; }.alertEditor details { font-size: 12px; }
+.alertStatus { background: color-mix(in srgb, var(--color-accent) 4%, var(--color-surface)); }
+.alertStatus h3 { margin: 0; font-size: 16px; }.alertState { font-weight: 600; font-size: 14px; }
+.alertStatus > a { font-size: 12px; }.alertStatus p { font-size: 13px; }
+.alertRules { padding: 0; list-style: none; display: grid; gap: 12px; }
+.alertRules li { display: grid; gap: 6px; padding: 14px; border: 1px solid var(--color-border); border-radius: 12px; background: var(--color-surface); font-size: 13px; }
+.alertRules button { justify-self: start; font-size: 11px; padding: 4px 8px; margin-top: 8px; }
+.alertHistory { padding-top: 20px; margin-top: 24px; border-top: 1px solid var(--color-border); }.alertHistory h3 { font-size: 16px; }
+.alertHistory > p { font-size: 13px; color: var(--color-text-muted); }
+.alertHistory ol { list-style: none; padding: 0; display: grid; gap: 12px; }.alertHistory li { padding: 18px; background: var(--color-surface-raised); border-radius: 12px; font-size: 13px; }
+.alertHistory li > div { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; }.alertHistory time { font-size: 11px; color: var(--color-text-muted); }
+@media (max-width: 800px) { .alertLayout { grid-template-columns: 1fr; }.alertEditor, .alertStatus { padding: 18px; } }
