@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
 import { Link } from 'react-router-dom'
 import { PortfolioSummaryCard } from '@/components/dashboard/PortfolioSummaryCard'
+import { ResearchResume } from '@/components/dashboard/ResearchResume'
 import { AnalysisWarmup } from '@/components/market/AnalysisWarmup'
 import { ScenarioBoard } from '@/components/scenarios/ScenarioBoard'
 import { MarketRadar } from '@/components/market/MarketRadar/MarketRadar'
@@ -46,7 +47,8 @@ export function DashboardPage() {
   const candidates = useMemo(() => buildCryptoWatchCandidates({ instruments: catalog.catalog?.instruments ?? [], newsResult, language, limit: 5 }), [catalog.catalog?.instruments, language, newsResult])
   const radar = useMemo(() => buildMarketRadar({ instruments: catalog.catalog?.instruments ?? [], watchCandidates: candidates, newsResult, language, mode: marketDataMode }), [catalog.catalog?.instruments, language, marketDataMode, newsResult, candidates])
   return <div className={styles.page}>
-    <header className={styles.heading}><h1>{ko ? '홈' : 'Home'}</h1><p>{ko ? '내 투자부터 확인하고, 궁금한 종목을 이어서 살펴보세요.' : 'Start with your investments, then explore an asset.'}</p></header>
+    <header className={styles.heading}><h1>{ko ? '홈' : 'Home'}</h1><p>{ko ? '지난 기록을 이어보고, 내 투자와 궁금한 종목을 확인하세요.' : 'Continue your saved research, check your investments, and explore an asset.'}</p></header>
+    <ResearchResume />
     <PortfolioSummaryCard />
     <nav className={styles.shortcuts} aria-label={ko ? '무엇을 확인할까요?' : 'What would you like to review?'}>
       <Link to="/my-analysis"><span>01</span><strong>{ko ? '종목 분석' : 'Instrument Analysis'}</strong><p>{ko ? '한 종목의 흐름과 확인할 가격' : 'One asset’s trend and price levels'}</p></Link>

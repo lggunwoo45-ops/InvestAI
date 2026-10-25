@@ -1,0 +1,60 @@
+import { act, fireEvent, screen, within } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { renderWithProviders } from '@/test/renderWithProviders'
+import { saveEvents, saveJournalDraft, saveObservation, saveRule } from '@/services/research/researchJournal'
+import { ResearchResume } from './ResearchResume'
+
+const at = Date.now()
+const record = (asset: string, note: string, time = at) => ({ id: asset + time, asset, at: time, price: 100, note, funding: null, interest: null, volatility: null, signals: [] })
+describe('home research continuation', () => {
+  beforeEach(() => { localStorage.clear(); localStorage.setItem('market-copilot.language', 'ko') })
+  afterEach(() => vi.restoreAllMocks())
+  it('offers a first step without manufacturing saved records or requesting prices', () => {
+    const fetch = vi.spyOn(globalThis, 'fetch')
+    renderWithProviders(<ResearchResume />)
+    expect(screen.getByRole('heading', { name: '어디서 시작할지 고민이라면' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: '첫 종목 살펴보기 →' }).getAttribute('href')).toBe('/research?asset=BTC&mode=overview')
+    expect(screen.queryByRole('article')).toBeNull()
+    expect(fetch).not.toHaveBeenCalled()
+  })
+  it('groups the latest review, draft and price rule into the correct asset links', () => {
+    saveObservation(record('BTC', '오래된 생각', at - 1000))
+    saveObservation(record('BTC', '저장한 생각'))
+    saveObservation(record('ETH', '다른 종목의 생각', at + 1000))
+    saveJournalDraft('BTC', '작성하다 멈춘 메모')
+    saveRule({ asset: 'BTC', above: 110, below: 90 })
+    const first = renderWithProviders(<ResearchResume />)
+    expect(screen.getAllByRole('article')).toHaveLength(2)
+    const btc = within(screen.getByRole('article', { name: 'BTC 이어보기' }))
+    expect(btc.getByText('작성하다 멈춘 메모')).toBeTruthy()
+    expect(screen.queryByText('오래된 생각')).toBeNull()
+    expect(btc.getByRole('link', { name: '메모 이어쓰기 →' }).getAttribute('href')).toBe('/research?asset=BTC&mode=journal')
+    expect(btc.getByRole('link', { name: '가격 조건 보기 ↗' }).getAttribute('href')).toBe('/research?asset=BTC&mode=alerts')
+    expect(btc.getByText('지난 검토 기준')).toBeTruthy()
+    expect(screen.getAllByRole('article')[0]?.getAttribute('aria-label')).toBe('BTC 이어보기')
+    first.unmount()
+    renderWithProviders(<ResearchResume />)
+    expect(screen.getByText('작성하다 멈춘 메모')).toBeTruthy()
+  })
+  it('updates after another tab saves or clears a rule, without claiming active monitoring', () => {
+    renderWithProviders(<ResearchResume />)
+    act(() => { saveRule({ asset: 'SOL', above: 200, below: null }); window.dispatchEvent(new StorageEvent('storage', { key: 'investai.research.rules.v1' })) })
+    const sol = within(screen.getByRole('article', { name: 'SOL 이어보기' }))
+    expect(sol.getByRole('link', { name: '가격 조건·기록 보기 →' }).getAttribute('href')).toBe('/research?asset=SOL&mode=alerts')
+    expect(screen.getByText(/홈에서는 가격 알림이 작동하지 않아요/)).toBeTruthy()
+    act(() => { localStorage.clear(); window.dispatchEvent(new StorageEvent('storage', { key: null })) })
+    expect(screen.queryByRole('article')).toBeNull()
+  })
+  it('keeps older observed crossings distinct from current prices and limits the initial card count', () => {
+    for (const asset of ['BTC', 'ETH', 'SOL', 'XRP']) saveObservation(record(asset, `${asset} 메모`))
+    saveEvents([{ id: 'cross', asset: 'BTC', at: at + 1000, price: 112, threshold: 110, kind: 'above' }])
+    renderWithProviders(<ResearchResume />)
+    expect(screen.getAllByRole('article')).toHaveLength(3)
+    fireEvent.click(screen.getByText('이전에 확인한 가격 통과'))
+    expect(screen.getByText(/당시 확인한 가격 112 USDT/)).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '저장한 종목 4개 모두 보기' }))
+    expect(screen.getAllByRole('article')).toHaveLength(4)
+    fireEvent.click(screen.getByRole('button', { name: '최근 종목만 보기' }))
+    expect(screen.getAllByRole('article')).toHaveLength(3)
+  })
+})
