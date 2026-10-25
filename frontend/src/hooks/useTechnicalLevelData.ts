@@ -42,6 +42,7 @@ export function useTechnicalLevelData(instrument: MarketInstrument | null, timef
     if (!subscriptionInstrument) return undefined
 
     let active = true
+    let published: TechnicalLevelDataState | null = null
     const unsubscribe = marketDataService.subscribe({
       instrument: subscriptionInstrument,
       timeframe,
@@ -56,19 +57,28 @@ export function useTechnicalLevelData(instrument: MarketInstrument | null, timef
           : latestClose !== undefined && Number.isFinite(latestClose) && latestClose > 0
             ? latestClose
             : null
-        setResolved({
-          key: requestKey,
-          value: {
-            candles: snapshot?.candles ?? [],
-            currentPrice,
-            dataQuality: snapshot ? connection.effectiveMode === 'live' ? 'live' : 'mock' : 'unavailable',
-            connectionStatus: connection.status,
-            isLoading: snapshot === null && (connection.status === 'idle' || connection.status === 'connecting'),
-            recentTrades: snapshot?.recentTrades ?? [],
-            updatedAt: connection.lastUpdatedAt,
-            marketTime: connection.marketTime,
-          },
-        })
+        const value: TechnicalLevelDataState = {
+          candles: snapshot?.candles ?? emptyState.candles,
+          currentPrice,
+          dataQuality: snapshot ? connection.effectiveMode === 'live' ? 'live' : 'mock' : 'unavailable',
+          connectionStatus: connection.status,
+          isLoading: snapshot === null && (connection.status === 'idle' || connection.status === 'connecting'),
+          recentTrades: snapshot?.recentTrades ?? emptyState.recentTrades,
+          updatedAt: connection.lastUpdatedAt,
+          marketTime: connection.marketTime,
+        }
+        // Orderbook events do not change technical analysis. Keep every price,
+        // trade, receipt time and connection transition; no timer or sampling.
+        if (published && published.candles === value.candles
+          && published.currentPrice === value.currentPrice
+          && published.dataQuality === value.dataQuality
+          && published.connectionStatus === value.connectionStatus
+          && published.isLoading === value.isLoading
+          && published.recentTrades === value.recentTrades
+          && published.updatedAt === value.updatedAt
+          && published.marketTime === value.marketTime) return
+        published = value
+        setResolved({ key: requestKey, value })
       },
     })
     return () => { active = false; unsubscribe() }

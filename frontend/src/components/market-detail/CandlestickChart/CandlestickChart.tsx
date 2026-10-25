@@ -169,36 +169,39 @@ export const CandlestickChart = memo(function CandlestickChart({ candles, instru
   }, [instrument.id, instrument.quoteCurrency, timeframe])
 
   useEffect(() => {
-    const candleData: CandlestickData<UTCTimestamp>[] = candles.map((candle) => ({
+    const toCandle = (candle: Candle): CandlestickData<UTCTimestamp> => ({
       time: Math.floor(candle.timestamp / 1_000) as UTCTimestamp,
       open: candle.open,
       high: candle.high,
       low: candle.low,
       close: candle.close,
-    }))
-    const volumeData: HistogramData<UTCTimestamp>[] = candles.map((candle) => ({
+    })
+    const upColor = chartColor('--color-positive-soft', '#e5f5ee')
+    const downColor = chartColor('--color-danger-soft', '#fff0f2')
+    const toVolume = (candle: Candle): HistogramData<UTCTimestamp> => ({
       time: Math.floor(candle.timestamp / 1_000) as UTCTimestamp,
       value: candle.volume,
-      color: candle.close >= candle.open ? chartColor('--color-positive-soft', '#e5f5ee') : chartColor('--color-danger-soft', '#fff0f2'),
-    }))
+      color: candle.close >= candle.open ? upColor : downColor,
+    })
     const dataKey = `${instrument.id}:${timeframe}`
     const previous = previousCandlesRef.current
     // REST refreshes can correct older bars; update(last) would leave cached history on screen.
     const incremental = previous.length > 0 && (candles.length === previous.length || candles.length === previous.length + 1)
-      && previous.slice(0, -1).every((candle, index) => candle === candles[index])
+      && previous.every((candle, index) => index === previous.length - 1 || candle === candles[index])
       && (candles.length === previous.length || previous.at(-1) === candles[previous.length - 1])
+      && candles.at(-1)!.timestamp >= previous.at(-1)!.timestamp
     previousCandlesRef.current = candles
     if (dataKeyRef.current !== dataKey || !incremental) {
-      candleSeriesRef.current?.setData(candleData)
-      volumeSeriesRef.current?.setData(volumeData)
-      if (candleData.length > 0) chartRef.current?.timeScale().fitContent()
+      candleSeriesRef.current?.setData(candles.map(toCandle))
+      volumeSeriesRef.current?.setData(candles.map(toVolume))
+      // A corrected history or rolling window must not reset the user's zoom.
+      if (candles.length > 0 && (dataKeyRef.current !== dataKey || !previous.length)) chartRef.current?.timeScale().fitContent()
       dataKeyRef.current = dataKey
       return
     }
-    const latestCandle = candleData.at(-1)
-    const latestVolume = volumeData.at(-1)
-    if (latestCandle) candleSeriesRef.current?.update(latestCandle)
-    if (latestVolume) volumeSeriesRef.current?.update(latestVolume)
+    const latestCandle = candles.at(-1)!
+    candleSeriesRef.current?.update(toCandle(latestCandle))
+    volumeSeriesRef.current?.update(toVolume(latestCandle))
   }, [candles, instrument.id, timeframe])
 
   useEffect(() => {

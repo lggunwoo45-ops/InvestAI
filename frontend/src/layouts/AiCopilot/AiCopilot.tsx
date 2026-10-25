@@ -9,6 +9,7 @@ import { LocalAiAnalysis } from '@/components/ai/LocalAiAnalysis/LocalAiAnalysis
 import { Link } from 'react-router-dom'
 import { InstrumentRelatedNews } from '@/components/news/InstrumentRelatedNews/InstrumentRelatedNews'
 import { useMarketWorkspace } from '@/hooks/useMarketWorkspace'
+import { useActiveMarketState } from '@/hooks/useActiveMarketState'
 import { useNewsProviderMode } from '@/hooks/useNewsProviderMode'
 import { useUiStore } from '@/hooks/useUiStore'
 import { uiText } from '@/i18n/translations'
@@ -26,7 +27,8 @@ import styles from './AiCopilot.module.css'
 
 export function AiCopilot() {
   const { toggleAiCopilot } = useUiStore()
-  const { selectedInstrument, selectedTimeframe, activeMarketState, marketDataMode } = useMarketWorkspace()
+  const { selectedInstrument, selectedTimeframe, marketDataMode } = useMarketWorkspace()
+  const activeMarketState = useActiveMarketState()
   const { mode: newsProviderMode, result: newsResult } = useNewsProviderMode()
   const { language } = useLanguage()
   const text = uiText[language].copilot
