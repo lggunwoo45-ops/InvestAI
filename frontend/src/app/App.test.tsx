@@ -36,6 +36,7 @@ describe('Market Copilot application shell', () => {
     render(<App />)
     expect(await screen.findByRole('heading', { name: 'Home' })).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Save my first coin →' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Explore your first coin →' }).getAttribute('href')).toContain('/research?asset=BTC&mode=overview')
     expect(screen.queryByRole('heading', { name: 'Trending Now' })).toBeNull()
     expect(screen.queryByRole('heading', { name: 'Market Overview' })).toBeNull()
     expect(screen.queryByRole('complementary', { name: 'AI Copilot' })).toBeNull()
