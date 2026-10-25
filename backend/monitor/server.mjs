@@ -30,7 +30,7 @@ async function body(req) {
 }
 const respond = (res, status, data) => { res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' }); res.end(JSON.stringify(data)) }
 
-export function createMonitorHandler({ directory = defaultDirectory, quoteReader = createQuoteReader(), historyReader = createHistoryReader(), positionReader = createPositionReader(), privateReader = createPrivatePositionReader(), channel = telegramChannel(), clock = Date.now, intervalMs = 15_000, autoStart = true } = {}) {
+export function createMonitorHandler({ directory = defaultDirectory, quoteReader = createQuoteReader(), historyReader = createHistoryReader(), positionReader = createPositionReader(), privateReader = createPrivatePositionReader(), channel = telegramChannel(), clock = Date.now, intervalMs = 15_000, autoStart = true, authorize = allowed, cloud = false, storeFactory = openStore } = {}) {
   let store, state, fatal = null, stopped = false, timer, deliveryTimer, busy = false, deliveryBusy = false, lastCycleAt = null
   let signalTimer, signalBusy = false
   let positionTimer, positionBusy = false
@@ -38,7 +38,7 @@ export function createMonitorHandler({ directory = defaultDirectory, quoteReader
   let vaultBusy = false, privateBusy = false
   const lockedMessage = 'API 키 보관함이 잠겨 있습니다. 보관함을 열면 비공개 포지션 조회를 재개합니다.'
   let queue = Promise.resolve()
-  const ready = openStore(directory).then(value => { store = value; state = value.data }).catch(e => { fatal = e.message })
+  const ready = Promise.resolve().then(() => storeFactory(directory)).then(value => { store = value; state = value.data }).catch(e => { fatal = e.message })
   const serial = fn => { const result = queue.then(fn); queue = result.catch(() => {}); return result }
   const mutate = fn => serial(async () => {
     await ready
@@ -180,13 +180,14 @@ export function createMonitorHandler({ directory = defaultDirectory, quoteReader
   const handler = async (req, res, next) => {
     const path = (req.url ?? '').split('?')[0]
     if (!path.startsWith('/api/monitor')) { next?.(); return }
-    if (!allowed(req)) { respond(res, 403, { error: '이 PC의 동일 주소에서만 감시 기록에 접근할 수 있습니다.' }); return }
+    if (!authorize(req)) { respond(res, 403, { error: '감시 기록에 접근할 수 없습니다.' }); return }
     await ready
     if (req.method === 'GET' && path === '/api/monitor') { respond(res, 200, status()); return }
     if (req.method !== 'POST') { respond(res, 405, { error: '지원하지 않는 요청입니다.' }); return }
     if (fatal) { respond(res, 503, { error: fatal }); return }
     try {
       const input = await body(req)
+      if (cloud && path.startsWith('/api/monitor/vault/')) { respond(res, 400, { error: '회원 계정의 키는 서버 보관함에서 관리합니다. 개별 연결에서 삭제해주세요.' }); return }
       if (path === '/api/monitor/vault/setup' || path === '/api/monitor/vault/unlock') {
         if (vaultBusy) throw new Error('보관함을 처리 중입니다. 잠시 후 다시 시도해주세요.')
         vaultBusy = true
@@ -301,6 +302,12 @@ export function createMonitorHandler({ directory = defaultDirectory, quoteReader
   handler.tickPositions = tickPositions
   handler.dispatch = dispatch
   handler.ready = ready
+  handler.prepareVault = async password => {
+    await ready
+    if (fatal) throw new Error(fatal)
+    if (state.vault) await vault.unlock(password, state.vault)
+    else await vault.setup(password, data => mutate(next => { next.vault = data }))
+  }
   handler.close = async () => {
     stopped = true; vault.lock(); clearInterval(timer); clearInterval(deliveryTimer); clearInterval(signalTimer); clearInterval(positionTimer); await ready
     while (busy || deliveryBusy || signalBusy || positionBusy || vaultBusy || privateBusy) await new Promise(resolve => setTimeout(resolve, 25))

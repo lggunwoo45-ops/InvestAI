@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { lockCredentialVault, removeCredentialVault, setupCredentialVault, unlockCredentialVault, type MonitorState, type VaultStatus } from '@/services/research/monitorClient'
 import styles from './PositionConnections.module.css'
+import { cloudSignedIn } from '@/services/cloud/cloudClient'
 
 export function CredentialVaultPanel({ vault, disabled, act }: { vault?: VaultStatus; disabled: boolean; act: (work: () => Promise<MonitorState>, success: string) => Promise<void> }) {
   const [password, setPassword] = useState(''), [repeat, setRepeat] = useState(''), [error, setError] = useState(''), [removing, setRemoving] = useState(false)
   const configured = !!vault?.configured, unlocked = !!vault?.unlocked
+  if (cloudSignedIn()) return <aside className={styles.vault}><h4>회원 전용 키 보관함</h4><p>조회 전용 키를 서버에 암호화해 보관합니다. 계정별로 분리하며, 브라우저를 닫아도 서버가 포지션을 확인합니다. 연결을 삭제하면 해당 키도 삭제합니다.</p><p role="status">{unlocked?'암호화 보관함 준비됨':'보관함을 열지 못했습니다. 서버 설정을 확인해주세요.'}</p></aside>
   const open = async () => {
     if (password.length < 12 || password.length > 256) { setError('이 앱에서 사용할 비밀번호를 12자 이상 입력해주세요.'); return }
     if (!configured && password !== repeat) { setError('입력한 비밀번호가 서로 다릅니다.'); return }

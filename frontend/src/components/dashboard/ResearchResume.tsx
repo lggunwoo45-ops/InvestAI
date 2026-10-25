@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useLanguage } from '@/i18n/useLanguage'
 import { readResearchResume } from '@/services/research/researchResume'
 import styles from './ResearchResume.module.css'
+import { cloudSignedIn } from '@/services/cloud/cloudClient'
 
 export function ResearchResume() {
   const { language } = useLanguage()
@@ -15,8 +16,9 @@ export function ResearchResume() {
     const onVisible = () => { if (document.visibilityState === 'visible') refresh() }
     window.addEventListener('storage', sync)
     window.addEventListener('focus', refresh)
+    window.addEventListener('investai-cloud-records', refresh)
     document.addEventListener('visibilitychange', onVisible)
-    return () => { window.removeEventListener('storage', sync); window.removeEventListener('focus', refresh); document.removeEventListener('visibilitychange', onVisible) }
+    return () => { window.removeEventListener('storage', sync); window.removeEventListener('focus', refresh); window.removeEventListener('investai-cloud-records', refresh); document.removeEventListener('visibilitychange', onVisible) }
   }, [])
   const number = (value: number) => value.toLocaleString(ko ? 'ko-KR' : 'en-US', { maximumFractionDigits: 6 })
   const date = (at: number) => new Date(at).toLocaleString(ko ? 'ko-KR' : 'en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
@@ -36,6 +38,6 @@ export function ResearchResume() {
           <div className={styles.actions}><Link className={styles.primary} to={`/research?asset=${item.asset}&mode=${toJournal ? 'journal' : 'alerts'}`}>{item.draft ? (ko ? '메모 이어쓰기' : 'Continue note') : item.review ? (ko ? '지난 기록과 비교하기' : 'Compare with your review') : (ko ? '가격 조건·기록 보기' : 'Open price records')} →</Link>{toJournal && item.rule && <Link className={styles.secondary} to={`/research?asset=${item.asset}&mode=alerts`}>{ko ? '가격 조건 보기' : 'View price conditions'} ↗</Link>}</div>
         </article>
       })}</div>{items.length > 3 && <button className={styles.more} onClick={() => setExpanded(value => !value)} aria-expanded={expanded}>{expanded ? (ko ? '최근 종목만 보기' : 'Show recent assets') : (ko ? `저장한 종목 ${items.length}개 모두 보기` : `Show all ${items.length} saved assets`)}</button>}</>}
-    <footer>{items.length ? (ko ? '이 브라우저에 남긴 기록이에요. 표시된 가격은 저장 당시 기준이며, 현재 가격은 종목 화면에서 확인해요. 홈에서는 가격 알림이 작동하지 않아요.' : 'Records from this browser. Prices shown are saved observations; open an asset for current prices. Price alerts do not run on Home.') : (ko ? '기록은 이 브라우저에 보관돼요. 다음 방문에는 이곳에서 이어볼 수 있어요.' : 'Notes stay in this browser, ready for your next visit.')}</footer>
+    <footer>{cloudSignedIn() ? (ko ? '회원 연구 기록입니다. 저장 당시 가격을 표시합니다. 서버 감시로 등록한 조건은 홈에서도 계속 확인합니다.' : 'Member research records. Prices are saved observations. Registered server alerts continue on Home.') : items.length ? (ko ? '이 브라우저에 남긴 기록이에요. 표시된 가격은 저장 당시 기준이며, 현재 가격은 종목 화면에서 확인해요. 홈에서는 가격 알림이 작동하지 않아요.' : 'Records from this browser. Prices shown are saved observations; open an asset for current prices. Price alerts do not run on Home.') : (ko ? '기록은 이 브라우저에 보관돼요. 다음 방문에는 이곳에서 이어볼 수 있어요.' : 'Notes stay in this browser, ready for your next visit.')}</footer>
   </section>
 }

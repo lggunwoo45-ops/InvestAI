@@ -2,6 +2,7 @@ import { BrowserRouter, HashRouter } from 'react-router-dom'
 
 import { AppRoutes } from '@/app/AppRoutes'
 import { AppProviders } from '@/app/providers/AppProviders'
+import { CloudBoundary } from '@/components/cloud/CloudBoundary'
 
 export function App() {
   const isFileProtocol = window.location.protocol === 'file:'
@@ -11,7 +12,7 @@ export function App() {
   return (
     <AppProviders>
       <Router basename={basename}>
-        <AppRoutes />
+        <CloudBoundary><AppRoutes /></CloudBoundary>
       </Router>
     </AppProviders>
   )

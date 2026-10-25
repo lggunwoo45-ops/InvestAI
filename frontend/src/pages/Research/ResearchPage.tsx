@@ -29,6 +29,9 @@ import { localMonitorAvailable } from '@/services/research/monitorAvailability'
 import { LocalMonitorNotice } from './LocalMonitorNotice'
 import { BrowserPriceAlerts } from './BrowserPriceAlerts'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
+import { cloudSignedIn } from '@/services/cloud/cloudClient'
+import { CloudPriceAlerts } from './CloudPriceAlerts'
+import { ExpertResearchNav } from './ExpertResearchNav'
 
 const format = (value: number | null | undefined, digits = 2) => value === null || value === undefined || !Number.isFinite(value) ? '확인 불가' : value.toLocaleString('ko-KR', { maximumFractionDigits: digits })
 const percent = (value: number | null | undefined) => value === null || value === undefined ? '확인 불가' : `${format(value)}%`
@@ -189,6 +192,7 @@ function Journal({ asset, snapshot, candles, now }: { asset: string; snapshot: R
   const simple = useDisplayMode().displayMode === 'simple'
   const [entries, setEntries] = useState(readObservations), [note, setNote] = useState(() => readJournalDraft(asset)), [message, setMessage] = useState('')
   const [draftError, setDraftError] = useState('')
+  useEffect(() => { const update = () => { setEntries(readObservations()); setNote(readJournalDraft(asset)) }; window.addEventListener('investai-cloud-records', update); return () => window.removeEventListener('investai-cloud-records', update) }, [asset])
   const updateNote = (value: string) => {
     setNote(value)
     try { saveJournalDraft(asset, value); setDraftError('') }
@@ -207,10 +211,10 @@ function Journal({ asset, snapshot, candles, now }: { asset: string; snapshot: R
     <section className={styles.journalEditor}><span className={styles.eyebrow}>내 생각 기록</span><h2>{asset}에 관심을 가진 이유가 있나요?</h2><p>정답을 맞힐 필요는 없어요. 지금 생각과 다음에 확인할 내용을 남겨두세요.</p>
       <div className={styles.writingPrompts} aria-label="메모 시작하기">{['관심을 가진 이유: ', '다음에 확인할 것: ', '내가 걱정하는 점: '].map(prompt => <button key={prompt} onClick={() => updateNote(((note ? note + '\n' : '') + prompt).slice(0, 1000))}>{prompt.replace(': ', '')} +</button>)}</div>
       <label>이번 검토 메모<textarea rows={5} value={note} maxLength={1000} placeholder="예: 가격이 올랐지만 거래량도 늘었는지 내일 다시 확인하고 싶어요." onChange={e => updateNote(e.target.value)} /></label>
-      <small>{draftError ? <span role="alert">{draftError}</span> : note ? '작성 중인 메모를 이 브라우저에 임시 보관했어요.' : '작성 중인 메모는 다른 화면을 다녀와도 이어 쓸 수 있어요.'}</small>
+      <small>{draftError ? <span role="alert">{draftError}</span> : note ? cloudSignedIn() ? '작성 중인 메모도 회원 계정에 동기화합니다. 위의 전송 상태를 확인하세요.' : '작성 중인 메모를 이 브라우저에 임시 보관했어요.' : '작성 중인 메모는 다른 화면을 다녀와도 이어 쓸 수 있어요.'}</small>
       <p className={styles.caption}>{price ? format(price, 6) + ' USDT와 지금 시장 지표를 함께 저장해요.' : '가격을 불러온 뒤 검토 기록으로 저장할 수 있어요. 임시 메모는 그대로 남겨둘게요.'}</p>
       <button className={styles.primaryAction} disabled={!price} onClick={save}>현재 검토 기준 저장</button><p role="status">{message}</p>
-      <small>이 브라우저에 저장돼요. 선물 기준 가격이며, 내 계좌의 매수 가격은 아니에요.</small>
+      <small>{cloudSignedIn() ? '회원 계정에 저장해 다른 기기에서도 이어볼 수 있어요.' : '이 브라우저에 저장돼요.'} 선물 기준 가격이며, 내 계좌의 매수 가격은 아니에요.</small>
     </section>
     <aside className={styles.journalHistory}><span className={styles.eyebrow}>지난 기록과 비교</span><h2>{previous ? '그때 생각, 지금은 어떤가요?' : '첫 기록이 비교의 시작이에요'}</h2>
       {previous ? <><div className={styles.journalCompare}><div><span>지난 검토 가격</span><b>{format(previous.price, 6)} USDT</b></div><div><span>지금 기준 가격</span><b>{price ? format(price, 6) + ' USDT' : '확인 필요'}</b></div><div><span>가격 변화</span><b>{price ? percent((price / previous.price - 1) * 100) : '확인 필요'}</b></div><small>{time(previous.at)} 기록과 비교 · 계좌 수익률 아님</small></div><blockquote>이전 메모: {previous.note || '없음'}</blockquote><Link to={'/research?asset=' + asset + '&mode=alerts&review=' + encodeURIComponent(previous.id)}>이 기록으로 가격 조건 정하기 →</Link></> : <p>기록을 남기면 다음 방문 때 그때의 가격과 생각을 나란히 볼 수 있어요.</p>}
@@ -218,7 +222,7 @@ function Journal({ asset, snapshot, candles, now }: { asset: string; snapshot: R
       {previous && <details><summary>함께 저장한 상세 지표</summary><p>펀딩률: {difference(funding === null ? null : funding * 100, previous.funding === null ? null : previous.funding * 100, '%')}<br />미결제약정: {difference(interest, previous.interest)}<br />시간 변동성: {difference(vol?.hourly ?? null, previous.volatility, '%')}</p></details>}
     </aside>
   </div>
-  return <section className={styles.panel}><h2>{simple ? '내 검토 기록' : '첫 검토 → 기준 저장 → 다음 방문 변화 확인'}</h2><p>저장 당시 관측값을 보존하고 같은 Binance USDT 선물 종목의 현재 자료와 비교합니다. 저장은 이 브라우저에만 남습니다.</p>
+  return <section className={styles.panel}><h2>{simple ? '내 검토 기록' : '첫 검토 → 기준 저장 → 다음 방문 변화 확인'}</h2><p>저장 당시 관측값을 보존하고 같은 Binance USDT 선물 종목의 현재 자료와 비교합니다. {cloudSignedIn() ? '회원 계정에 동기화합니다. 전송 상태는 위에서 확인하세요.' : '저장은 이 브라우저에만 남습니다.'}</p>
     {!previous ? <p>아직 저장된 기준이 없습니다. 시장 자료를 확인하고 첫 검토를 저장해주세요.</p> : <><p>이전 검토: {time(previous.at)} · 현재 확인: {time(now)}</p><div className={styles.metrics}>
       <Metric title="마크가격 변화" value={previous.price > 0 && price ? percent((price / previous.price - 1) * 100) : '확인 불가'} detail={difference(price, previous.price, 'USDT')} />
     </div><details open={!simple}><summary>당시 지표와 현재 자료 비교</summary><div className={styles.metrics}>
@@ -243,7 +247,7 @@ function Guide() {
     <dt>과거 도달 비율</dt><dd>정해진 과거 표본에서 경계를 먼저 통과한 비율입니다. 앞으로 성공할 확률이나 검증된 매매 우위가 아닙니다.</dd>
   </dl><h3>공개된 계산 범위</h3><p>자료를 받지 못하면 확인 불가로 표시합니다. 복합 과열 점수와 미래 방향 확률은 만들지 않습니다. 신호 탐색은 30개 조건과 9개 시간봉, 최근 최대 5,000개 완료 봉을 지원합니다. 선택 편향·표본 부족·펀딩 비용의 한계가 있습니다. 포지션 계산은 일정 유지증거금률의 격리 계약 가정입니다.</p>
     <h3>신호 탐색과 자료 출처</h3><p>지표 계산은 InvestAI의 관측 기준을 따릅니다. 각 신호의 설명에서 계산 조건과 한계를 확인할 수 있습니다. 저장한 조건을 감시로 연결하면 이후 새로 충족된 봉과 그 뒤의 가격 변화를 기록합니다.</p><ul><li><a href="https://developers.binance.com/en/docs/catalog" target="_blank" rel="noreferrer">Binance 공개 시장 데이터</a></li><li><a href="https://docs.upbit.com/kr" target="_blank" rel="noreferrer">Upbit 공개 시세</a></li><li><a href="https://alternative.me/crypto/fear-and-greed-index/" target="_blank" rel="noreferrer">Alternative.me 공포·탐욕</a></li><li><a href="https://www.coingecko.com/" target="_blank" rel="noreferrer">CoinGecko 시가총액</a></li></ul>
-    <p>PC용 감시는 프로그램이 실행되는 동안 브라우저와 독립적으로 동작하고 등록 근거와 관측 결과를 보관합니다. Telegram은 서버 채널 설정과 등록별 동의가 필요합니다. 회원·결제·구독 권한, 클라우드 상시 운영, 실시간 청산과 검증된 장기 성과는 아직 제공하지 않습니다. 국내·미국 주식과 원자재의 추가 시세 연결은 이 모드의 범위에 포함되지 않습니다.</p>
+    <p>PC용 감시는 프로그램이 실행되는 동안 브라우저와 독립적으로 동작하고 등록 근거와 관측 결과를 보관합니다. Telegram은 서버 채널 설정과 등록별 동의가 필요합니다. 회원 서버가 연결된 경우 계정별 저장과 상시 감시를 사용할 수 있습니다. 결제·구독 권한, 실시간 청산과 검증된 장기 성과는 아직 제공하지 않습니다. 국내·미국 주식과 원자재의 추가 시세 연결은 이 모드의 범위에 포함되지 않습니다.</p>
   </section>
 }
 
@@ -294,7 +298,7 @@ export function ResearchPage() {
     {!simple && <div className={styles.expertControls}><label className={styles.check}><input type="checkbox" checked={auto} onChange={e => setAuto(e.target.checked)} />열린 동안 1분마다 갱신</label><small>마지막 확인: {time(visible?.fetchedAt)}</small><button onClick={() => setDisplayMode('simple')}>쉬운 설명으로 보기</button></div>}
     {error && !['setups', 'position'].includes(mode) && <p className={styles.notice} role="alert">{simple ? '지금 시장 자료를 불러오지 못했어요. 새로고침으로 다시 확인해주세요. 저장한 기록과 직접 입력 계산은 계속 사용할 수 있어요.' : error}</p>}
     {delayedMark && !['setups', 'position'].includes(mode) && <p className={styles.notice} role="status">{simple ? '가격 자료가 오래되어 비교와 새 기록 저장을 잠시 멈췄어요. 새로고침 후 다시 확인해주세요.' : '마크가격 관측 시각: ' + time(rawMarkAt) + '. 갱신이 필요해 현재가 채우기와 검토 저장을 제한했습니다.'}</p>}
-    {simple ? <SimpleResearchNav mode={mode} onMode={setMode} /> : <nav className={styles.tabs} aria-label="시장 연구 모드">{modes.map(([key, label]) => <button key={key} aria-current={mode === key ? 'page' : undefined} onClick={() => setMode(key)}>{label}</button>)}</nav>}
+    {simple ? <SimpleResearchNav mode={mode} onMode={setMode} /> : <ExpertResearchNav mode={mode} onMode={setMode} />}
     {simple && <SimpleToolIntro mode={mode} onBack={() => setMode('check')} />}
     {simple && ['journal', 'alerts'].includes(mode) && <nav className={styles.recordNav} aria-label="기록과 가격 알림"><button aria-current={mode === 'journal' ? 'page' : undefined} onClick={() => setMode('journal')}>생각 기록</button><button aria-current={mode === 'alerts' ? 'page' : undefined} onClick={() => setMode('alerts')}>가격 알림</button></nav>}
     {mode === 'check' && <SimpleCoinCheck asset={asset} onMode={setMode} />}
@@ -307,8 +311,8 @@ export function ResearchPage() {
     {mode === 'premium' && <Premium key={asset} snapshot={visible} asset={asset} now={now} />}
     {mode === 'setups' && <SignalExplorer asset={asset} refresh={revision} />}
     {mode === 'journal' && <><Journal key={asset} asset={asset} snapshot={visible} candles={candles} now={now} /><details className={styles.relatedNews} open={!simple}><summary>기록에 참고할 뉴스 찾아보기</summary><ResearchNews asset={asset} /></details></>}
-    {mode === 'alerts' && <>{localMonitorAvailable() ? <><PositionConnections ledger /><SignalWatchPanel asset={asset} ledger /><MonitorWorkspace key={asset} asset={asset} /></> : !simple ? <LocalMonitorNotice asset={asset} /> : null}<details className={simple && !localMonitorAvailable() ? styles.browserAlerts : styles.panel} open={!localMonitorAvailable()}><summary hidden={simple && !localMonitorAvailable()}>{simple ? "화면을 켜둔 동안만 가격 알림 받기" : "브라우저 조건 알림"}</summary>{browserAlerts}</details></>}
-    {mode === 'guide' && (simple ? <section className={styles.panel}><h2>세 단계로 이어서 확인하세요</h2><ol><li><b>시장 보기</b>에서 지금 가격과 최근 변화를 살펴봐요.</li><li><b>내 종목 확인</b>에서 손익·과거 흐름·가격 비교 중 궁금한 내용을 골라요.</li><li><b>기록·알림</b>에서 생각을 남기고 다시 확인할 가격을 정해요.</li></ol><p>기록은 이 브라우저에 저장돼요. 웹 가격 알림은 해당 화면을 열고 가격 갱신을 켜둔 동안만 확인합니다.</p><button onClick={() => setMode('check')}>내 종목 확인하기</button><p>신호를 직접 조합하거나 상세 지표를 비교하려면 전문가 모드로 전환하세요. 입력한 계산 조건과 기록은 이어서 사용할 수 있어요.</p></section> : <Guide />)}
+    {mode === 'alerts' && <>{cloudSignedIn() && <CloudPriceAlerts key={asset} asset={asset} />}{localMonitorAvailable() ? <details className={styles.panel} open={!simple}><summary>포지션·신호·진입 조건 감시와 결과</summary><PositionConnections ledger /><SignalWatchPanel asset={asset} ledger /><MonitorWorkspace key={asset} asset={asset} /></details> : !simple ? <LocalMonitorNotice asset={asset} /> : null}<details className={simple && !localMonitorAvailable() ? styles.browserAlerts : styles.panel} open={!localMonitorAvailable()}><summary hidden={simple && !localMonitorAvailable()}>{simple ? "화면을 켜둔 동안만 가격 알림 받기" : "브라우저 조건 알림"}</summary>{browserAlerts}</details></>}
+    {mode === 'guide' && (simple ? <section className={styles.panel}><h2>세 단계로 이어서 확인하세요</h2><ol><li><b>시장 보기</b>에서 지금 가격과 최근 변화를 살펴봐요.</li><li><b>내 종목 확인</b>에서 손익·과거 흐름·가격 비교 중 궁금한 내용을 골라요.</li><li><b>기록·알림</b>에서 생각을 남기고 다시 확인할 가격을 정해요.</li></ol><p>{cloudSignedIn() ? '회원 기록은 기기 간 동기화됩니다. 서버 감시로 등록한 조건은 화면을 닫아도 확인합니다.' : '기록은 이 브라우저에 저장돼요. 브라우저 가격 알림은 해당 화면이 열려 있는 동안만 확인합니다.'}</p><button onClick={() => setMode('check')}>내 종목 확인하기</button><p>신호를 직접 조합하거나 상세 지표를 비교하려면 전문가 모드로 전환하세요. 입력한 계산 조건과 기록은 이어서 사용할 수 있어요.</p></section> : <Guide />)}
     </div>
     <ResearchEvidence snapshot={visible} now={now} onMode={setMode} />
     {simple && mode !== 'alerts' && <details className={styles.evidence}><summary>가격 새로고침 설정</summary><label className={styles.check}><input type="checkbox" checked={auto} onChange={e => setAuto(e.target.checked)} />이 화면을 켜둔 동안 1분마다 새 자료 확인</label><p>마지막 확인: {time(visible?.fetchedAt)}</p></details>}
