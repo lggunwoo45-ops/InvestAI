@@ -9,6 +9,7 @@ import { Header } from '../Header/Header'
 import { SimpleHeader } from '../Header/SimpleHeader'
 import { Sidebar } from '../Sidebar/Sidebar'
 import styles from './AppShell.module.css'
+import { MemberAccount } from '@/components/cloud/MemberAccount'
 
 export function AppShell() {
   const { isAiCopilotOpen, isSidebarPinned } = useUiStore()
@@ -27,6 +28,7 @@ export function AppShell() {
         <div className={classNames(styles.body, !showCopilot && styles.aiCopilotClosed)}>
           <main className={styles.main}>
             <BetaRouteBanner />
+            <MemberAccount />
             <Outlet />
           </main>
           {showCopilot && <AiCopilot />}

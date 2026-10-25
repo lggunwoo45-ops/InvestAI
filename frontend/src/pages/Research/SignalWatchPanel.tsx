@@ -1,3 +1,4 @@
+import { cloudSignedIn } from '@/services/cloud/cloudClient'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { explorerSignals, validExplorerConfig, type ExplorerConfig } from '@/services/research/signalExplorer'
@@ -34,7 +35,7 @@ function LocalSignalWatchPanel({ asset, config, name, ledger = false }: { asset:
   const rules = (state?.signals ?? []).filter(r => ledger || r.config.asset === asset)
   return <section className={styles.signalWatch} aria-label="신호 감시와 관측 결과">
     <h3>{ledger ? '저장한 신호, 이후에는 어떻게 됐을까요?' : '다시 나타나면 알려주세요'}</h3>
-    <p>PC와 감시 프로그램이 켜져 있는 동안 완료된 봉을 확인합니다. 같은 조건이 계속 유지될 때는 반복 기록하지 않아요.</p>
+    <p>{cloudSignedIn() ? '서버가 화면과 독립적으로 완료된 봉을 확인합니다.' : 'PC와 감시 프로그램이 켜져 있는 동안 완료된 봉을 확인합니다.'} 같은 조건이 계속 유지될 때는 반복 기록하지 않아요.</p>
     {error && <p className={styles.watchError}>{error}</p>}{state?.error && <p className={styles.watchError}>{state.error}</p>}
     {config && <><label>감시 목적<select value={purpose} onChange={e => setPurpose(e.target.value as 'opportunity' | 'opposition')}><option value="opportunity">시장 조건이 새로 나타날 때</option><option value="opposition">내 보유 방향의 반대 신호</option></select></label>{purpose === 'opposition' && <label>내가 입력한 보유 방향<select value={holdingSide} onChange={e => setHoldingSide(e.target.value as 'long' | 'short')}><option value="long">롱·매수</option><option value="short">숏</option></select></label>}<label className={styles.notify}><input type="checkbox" checked={notify} disabled={!state?.channelConfigured} onChange={e => setNotify(e.target.checked)} />Telegram으로도 받기{!state?.channelConfigured && ' · 채널 미설정'}</label><button className={styles.primary} disabled={!ready || busy || !validExplorerConfig(config)} onClick={save}>{busy ? '등록 중…' : '선택한 신호 감시 시작'}</button></>}
     {message && <p role="status">{message}</p>}

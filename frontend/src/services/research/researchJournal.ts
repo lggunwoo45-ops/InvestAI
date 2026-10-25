@@ -1,8 +1,9 @@
 import { numeric, object } from './researchModel'
+import { researchStorage } from '@/services/cloud/cloudClient'
 
 const KEY = 'investai.research.observations.v1'
 export interface ResearchObservation { id: string; asset: string; at: number; price: number; funding: number | null; interest: number | null; volatility: number | null; signals: string[]; note: string }
-export function readObservations(storage: Pick<Storage, 'getItem'> = localStorage): ResearchObservation[] {
+export function readObservations(storage: Pick<Storage, 'getItem'> = researchStorage): ResearchObservation[] {
   try {
     const value: unknown = JSON.parse(storage.getItem(KEY) ?? '[]')
     if (!Array.isArray(value)) return []
@@ -13,18 +14,18 @@ export function readObservations(storage: Pick<Storage, 'getItem'> = localStorag
     }).sort((a, b) => b.at - a.at)
   } catch { return [] }
 }
-export function saveObservation(entry: ResearchObservation, storage: Pick<Storage, 'getItem' | 'setItem'> = localStorage) {
+export function saveObservation(entry: ResearchObservation, storage: Pick<Storage, 'getItem' | 'setItem'> = researchStorage) {
   const entries = [entry, ...readObservations(storage)].slice(0, 100)
   storage.setItem(KEY, JSON.stringify(entries))
   return entries
 }
 const DRAFT_KEY = 'investai.research.draft.v1.'
 export function readJournalDraft(asset: string): string {
-  try { return (localStorage.getItem(DRAFT_KEY + asset) ?? '').slice(0, 1000) } catch { return '' }
+  try { return (researchStorage.getItem(DRAFT_KEY + asset) ?? '').slice(0, 1000) } catch { return '' }
 }
 export function saveJournalDraft(asset: string, note: string) {
-  if (note) localStorage.setItem(DRAFT_KEY + asset, note.slice(0, 1000))
-  else localStorage.removeItem(DRAFT_KEY + asset)
+  if (note) researchStorage.setItem(DRAFT_KEY + asset, note.slice(0, 1000))
+  else researchStorage.removeItem(DRAFT_KEY + asset)
 }
 export type ReviewContext = Pick<ResearchObservation, 'id' | 'at' | 'price' | 'note'>
 function readReview(value: unknown): ReviewContext | undefined {
@@ -37,15 +38,15 @@ export interface LocalEvent { id: string; asset: string; at: number; price: numb
 const RULE_KEY = 'investai.research.rules.v1', EVENT_KEY = 'investai.research.events.v1'
 export function readRules(): LocalRule[] {
   try {
-    const value: unknown = JSON.parse(localStorage.getItem(RULE_KEY) ?? '[]')
+    const value: unknown = JSON.parse(researchStorage.getItem(RULE_KEY) ?? '[]')
     return Array.isArray(value) ? value.slice(0, 30).flatMap(v => { const o = object(v); const above = numeric(o.above), below = numeric(o.below); return typeof o.asset === 'string' && /^[A-Z0-9]{2,12}$/.test(o.asset) && (above === null || above > 0) && (below === null || below > 0) && (above !== null || below !== null) && (above === null || below === null || above > below) ? [{ asset: o.asset, above, below, review: readReview(o.review) }] : [] }) : []
   } catch { return [] }
 }
-export function saveRule(rule: LocalRule) { localStorage.setItem(RULE_KEY, JSON.stringify([rule, ...readRules().filter(r => r.asset !== rule.asset)].slice(0, 30))) }
-export function removeRule(asset: string) { localStorage.setItem(RULE_KEY, JSON.stringify(readRules().filter(r => r.asset !== asset))) }
+export function saveRule(rule: LocalRule) { researchStorage.setItem(RULE_KEY, JSON.stringify([rule, ...readRules().filter(r => r.asset !== rule.asset)].slice(0, 30))) }
+export function removeRule(asset: string) { researchStorage.setItem(RULE_KEY, JSON.stringify(readRules().filter(r => r.asset !== asset))) }
 export function readEvents(): LocalEvent[] {
   try {
-    const value: unknown = JSON.parse(localStorage.getItem(EVENT_KEY) ?? '[]')
+    const value: unknown = JSON.parse(researchStorage.getItem(EVENT_KEY) ?? '[]')
     return Array.isArray(value) ? value.slice(0, 100).flatMap(v => { const o = object(v); return typeof o.id === 'string' && typeof o.asset === 'string' && typeof o.at === 'number' && Number.isFinite(o.at) && typeof o.price === 'number' && Number.isFinite(o.price) && o.price > 0 && (o.kind === 'above' || o.kind === 'below') ? [{ id: o.id, asset: o.asset, at: o.at, price: o.price, kind: o.kind, threshold: (numeric(o.threshold) ?? 0) > 0 ? numeric(o.threshold)! : undefined, review: readReview(o.review) } as LocalEvent] : [] }) : []
   } catch { return [] }
 }
@@ -59,6 +60,6 @@ export function checkRules(rules: readonly LocalRule[], asset: string, before: n
 }
 export function saveEvents(events: readonly LocalEvent[]) {
   const merged = [...new Map([...readEvents(), ...events].map(event => [event.id, event])).values()].sort((a, b) => b.at - a.at).slice(0, 100)
-  localStorage.setItem(EVENT_KEY, JSON.stringify(merged))
+  researchStorage.setItem(EVENT_KEY, JSON.stringify(merged))
   return merged
 }

@@ -76,6 +76,7 @@ describe('guided research tools share real calculations and drafts', () => {
     await open('position')
     change('공개 지갑 주소', '0x1234')
     expert(); expect((screen.getByLabelText('공개 지갑 주소') as HTMLInputElement).value).toBe('0x1234')
+    fireEvent.click(screen.getByRole('button', { name: /^시장 살펴보기/ }))
     fireEvent.click(screen.getByRole('button', { name: '시장 지표' }))
     change('ETF 확정 순유입 CSV', '2026-10-20,1000,수동 확인 자료')
     simple(); expect((screen.getByLabelText('ETF 확정 순유입 CSV') as HTMLTextAreaElement).value).toBe('2026-10-20,1000,수동 확인 자료')

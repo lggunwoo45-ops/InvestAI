@@ -1,3 +1,4 @@
+import { cloudSignedIn } from '@/services/cloud/cloudClient'
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useScenarios } from '@/hooks/useScenarios'
@@ -73,7 +74,7 @@ function Record({ rule, enabled, onCancel }: { rule: MonitorRule; enabled: boole
       {c.source.metrics && <p>당시 펀딩률 {c.source.metrics.funding === null ? '미확인' : `${number(c.source.metrics.funding * 100)}%`} · 미결제약정 {number(c.source.metrics.interest)} · 시간 변동성 {number(c.source.metrics.volatility)}%</p>}
       {c.source.positionId && <p><Link to="/portfolio">내 보유 기록</Link>에서 만든 시나리오입니다.</p>}
       <p>진입 대기 {c.horizonHours}시간, 진입 관측 후 {c.horizonHours}시간 · 대기 중 관측 공백 {rule.gaps}회</p>
-      <small>등록·점검 시각은 PC, 가격 시각은 거래소 기준이어서 차이가 날 수 있습니다.</small>
+      <small>등록·점검 시각은 감시 서버, 가격 시각은 거래소 기준이어서 차이가 날 수 있습니다.</small>
       {rule.events.length ? <ol>{rule.events.map(e => <li key={e.id}><b>{label[e.kind]}</b> · {number(e.price)} {c.instrument.quote}<br /><small>{time(e.at)} · 거래소 시각 {time(e.sourceAt)} · {delivery[e.delivery.status]}</small>{e.detail && <p>{e.detail}</p>}</li>)}</ol> : <p>아직 관측 이벤트가 없습니다. 첫 시세는 기준으로만 저장하며 이후 새 시세부터 진입을 확인합니다.</p>}
       <details><summary>기록 식별정보</summary><p className={styles.digest}>근거 식별값: {rule.hash}<br />원본 버전: {c.source.revision}</p></details>
     </details>
@@ -115,7 +116,7 @@ function LocalMonitorWorkspace({ asset }: { asset: string }) {
   const rules = [...(state?.rules ?? [])].reverse().filter(r => filter === 'all' || (filter === 'active' ? r.phase !== 'closed' : r.phase === 'closed'))
   return <section className={[styles.panel, simple ? styles.simpleMonitor : ''].join(' ')} aria-label="서버 감시와 결과 기록">
     <span className={styles.eyebrow}>{simple ? '알림·결과' : 'REVIEW → MONITOR → RESULT'}</span><h2>{simple ? '정해둔 가격, 그 뒤는 어땠을까요?' : '검토를 감시로, 감시를 결과 기록으로'}</h2>
-    <p>{simple ? '저장한 생각에 가격 조건을 붙이면, 조건에 닿았는지 이곳에서 다시 볼 수 있어요. PC와 감시 프로그램이 켜져 있어야 계속 확인할 수 있어요.' : '저장한 근거와 가격 조건을 이 PC의 감시 프로그램에 등록합니다. 브라우저를 닫아도 PC와 프로그램이 실행 중이면 감시가 이어집니다.'}</p>
+    <p>{cloudSignedIn() ? '저장한 근거와 조건을 회원 서버에 등록합니다. 화면을 닫아도 감시하며 다음 기기에서 결과를 확인할 수 있어요.' : simple ? '저장한 생각에 가격 조건을 붙이면, 조건에 닿았는지 이곳에서 다시 볼 수 있어요. PC와 감시 프로그램이 켜져 있어야 계속 확인할 수 있어요.' : '저장한 근거와 가격 조건을 이 PC의 감시 프로그램에 등록합니다. 브라우저를 닫아도 PC와 프로그램이 실행 중이면 감시가 이어집니다.'}</p>
     <div className={styles.monitorStatus}><b>{ready ? '감시 프로그램 연결됨' : error || state?.error ? '감시 연결·저장 상태 확인 필요' : '감시 프로그램 확인 중…'}</b>{!simple && <><span>최근 점검: {time(state?.lastCycleAt)}</span><span>Telegram: {state?.channelConfigured ? '설정됨 · 등록별 발송 선택' : '미설정'}</span></>}</div>
     {(error || state?.error) && <p role="alert" className={styles.notice}>{error || state?.error}</p>}
     <p>{simple ? '조건에 닿은 가격을 기록합니다. 실제 주문은 하지 않으며, 감시가 끊기면 결과를 판정하지 않습니다.' : '약 15초 주기로 공개 가격을 확인합니다. 진입 후 90초 이상 공백이 생기면 판정 불가로 종료합니다. 두 관측 사이의 가격 경로·실제 체결·목표와 손절의 최초 도달 순서는 보장하지 않습니다.'}</p>
@@ -130,6 +131,6 @@ function LocalMonitorWorkspace({ asset }: { asset: string }) {
     <p>진행 중 {state?.rules.filter(r => r.phase !== 'closed').length ?? 0}/10개 · 전체 보관 {state?.rules.length ?? 0}/200개</p>
     <div className={styles.monitorList}>{rules.map(r => <Record key={r.id} rule={r} enabled={ready} onCancel={stop} />)}</div>
     {!rules.length && <p>표시할 감시 기록이 없습니다.</p>}
-    <details><summary>감시 기준·보관·외부 알림 안내</summary><p>약 15초마다 가격을 확인합니다. 진입 후 90초 이상 관측 공백이 생기면 판정 불가로 종료합니다. 수집 사이의 가격 경로나 실제 체결, 목표·손절의 최초 도달 순서는 보장하지 않습니다.</p><p>이 PC의 파일에 등록 조건과 결과를 저장합니다. 다른 기기나 배포 사이트와 동기화되지 않습니다. 원래 조건은 덮어쓰지 않지만, 파일 자체는 사용자가 변경할 수 있어 외부 인증 원장이 아닙니다. Telegram은 서버 설정과 등록 시 발송 선택이 모두 필요하며, 발송 여부가 불확실한 메시지는 중복 방지를 위해 자동 재발송하지 않습니다.</p></details>
+    <details><summary>감시 기준·보관·외부 알림 안내</summary><p>약 15초마다 가격을 확인합니다. 진입 후 90초 이상 관측 공백이 생기면 판정 불가로 종료합니다. 수집 사이의 가격 경로나 실제 체결, 목표·손절의 최초 도달 순서는 보장하지 않습니다.</p><p>{cloudSignedIn() ? '회원 계정의 서버 저장소에 등록 조건과 결과를 보관합니다.' : '이 PC의 파일에 등록 조건과 결과를 저장합니다. 다른 기기나 배포 사이트와 동기화되지 않습니다.'} 원래 조건은 덮어쓰지 않지만, 파일 자체는 사용자가 변경할 수 있어 외부 인증 원장이 아닙니다. Telegram은 서버 설정과 등록 시 발송 선택이 모두 필요하며, 발송 여부가 불확실한 메시지는 중복 방지를 위해 자동 재발송하지 않습니다.</p></details>
   </section>
 }

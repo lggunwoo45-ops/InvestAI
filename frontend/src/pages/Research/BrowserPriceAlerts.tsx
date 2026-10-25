@@ -23,6 +23,7 @@ export function BrowserPriceAlerts({ asset, snapshot, now, auto, loading, onStar
   const [above, setAbove] = useState(() => existing?.above?.toString() ?? '')
   const [below, setBelow] = useState(() => existing?.below?.toString() ?? '')
   const [message, setMessage] = useState(''), [error, setError] = useState('')
+  useEffect(() => { const update=()=>{const restored=readRules();setRules(restored);setEvents(readEvents());const rule=restored.find(r=>r.asset===asset);setAbove(rule?.above?.toString()??'');setBelow(rule?.below?.toString()??'')};window.addEventListener('investai-cloud-records',update);return()=>window.removeEventListener('investai-cloud-records',update) },[asset])
   const previous = useRef<{ price: number; at: number } | null>(null)
   const mark = object(sourceData(snapshot, 'mark', now)), price = numeric(mark.markPrice), at = numeric(mark.time)
   const selected = readObservations().find(review => review.id === reviewId && review.asset === asset)

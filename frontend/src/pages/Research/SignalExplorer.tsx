@@ -28,6 +28,7 @@ export function SignalExplorer({ asset, refresh = 0 }: { asset: string; refresh?
   const [family, setFamily] = useState<SignalFamily | 'all'>('all'), [direction, setDirection] = useState('all'), [search, setSearch] = useState(''), [detail, setDetail] = useState(explorerSignals[0]!)
   const [initial] = useState(() => { try { return { rows: readExplorerPresets(), error: '' } } catch (e) { return { rows: [], error: e instanceof Error ? e.message : '저장소를 확인해주세요.' } } })
   const [tab, setTab] = useState<'distribution' | 'samples' | 'saved'>('distribution'), [presets, setPresets] = useState<ExplorerPreset[]>(initial.rows), [message, setMessage] = useState(initial.error), [name, setName] = useState(''), [share, setShare] = useState('')
+  useEffect(() => { const update=()=>{try {setPresets(readExplorerPresets())} catch {setMessage('저장한 조건을 읽지 못했습니다.')}};window.addEventListener('investai-cloud-records',update);return()=>window.removeEventListener('investai-cloud-records',update) }, [])
   const [clientNow, setNow] = useState(Date.now), key = `${asset}:${config.timeframe}:${config.bars}:${reload}:${refresh}`
   useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 30000); return () => clearInterval(timer) }, [])
   useEffect(() => {

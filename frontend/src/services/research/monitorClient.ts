@@ -1,5 +1,6 @@
 import type { ExplorerConfig } from './signalExplorer'
 import { localMonitorAvailable } from './monitorAvailability'
+import { cloudRequest,cloudSignedIn } from '@/services/cloud/cloudClient'
 import type { PublicPosition, PositionThresholds, positionEventLabels } from '../../../../backend/research/positionRisk.mjs'
 export { positionRiskValues, positionBreaches, positionEventLabels, type PublicPosition, type PositionThresholds } from '../../../../backend/research/positionRisk.mjs'
 export type PositionVenue = 'hyperliquid' | 'lighter' | 'binance' | 'bybit'
@@ -27,6 +28,7 @@ export interface MonitorRule {
 }
 export interface MonitorState { version: 1; running: boolean; error: string | null; now: number; lastCycleAt: number | null; intervalMs: number; channelConfigured: boolean; vault?: VaultStatus; rules: MonitorRule[]; signals?: SignalWatch[]; connections?: PositionConnection[] }
 async function request(path: string, data?: unknown, timeout = 10_000): Promise<MonitorState> {
+  if (cloudSignedIn()) return cloudRequest<MonitorState>('/monitor'+path,data)
   if (!localMonitorAvailable()) throw new Error('이 배포에서는 개인 감시 서버가 연결되지 않았습니다. PC용 InvestAI에서 이용할 수 있습니다.')
   const response = await fetch(`/api/monitor${path}`, { method: data === undefined ? 'GET' : 'POST', signal: AbortSignal.timeout(timeout), headers: data === undefined ? undefined : { 'content-type': 'application/json', 'x-investai-monitor': '1' }, body: data === undefined ? undefined : JSON.stringify(data) })
   if (!response.headers.get('content-type')?.includes('application/json')) throw new Error('감시 프로그램에 연결할 수 없습니다. PC용 InvestAI를 실행해주세요.')

@@ -1,7 +1,10 @@
 import { Link } from 'react-router-dom'
 import styles from './ResearchPage.module.css'
+import { useCloud } from '@/services/cloud/useCloud'
 
 export function LocalMonitorNotice({ kind = 'all', asset = 'BTC' }: { kind?: 'all' | 'positions' | 'signals'; asset?: string }) {
+  const cloud = useCloud()
+  if (cloud.enabled) return <section className={styles.panel}><h3>로그인하면 화면을 닫아도 감시를 이어갈 수 있어요</h3><p>위의 로그인·가입에서 계정을 연결하세요. 회원별 가격·신호·포지션 감시와 기록을 제공하며, Telegram은 본인 계정에 연결한 뒤 사용합니다.</p><p>로그인 없이도 직접 입력 계산, 공개 지갑 조회, 브라우저 기록을 사용할 수 있어요.</p></section>
   return <section className={styles.panel} aria-label="이 웹사이트에서 사용할 수 있는 기능">
     <span className={styles.eyebrow}>웹에서 이용 중</span>
     <h3>{kind === 'positions' ? '내 포지션을 직접 입력해 비교해보세요' : kind === 'signals' ? '찾은 조건을 저장하고 다시 살펴보세요' : '화면을 켜둔 동안 가격 알림을 받을 수 있어요'}</h3>
