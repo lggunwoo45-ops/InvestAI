@@ -24,6 +24,7 @@ Node 22.13 이상에서 `backend/market-data/server.mjs`를 실행한다. 기존
 | `INVESTAI_CLOUD_DIRECTORY` | 영구 볼륨 안의 절대 경로. 컨테이너의 임시 파일시스템을 사용하지 않는다. 실행 사용자에게 쓰기 권한이 있어야 한다. |
 | `INVESTAI_CLOUD_KEY` | 안전하게 생성한 32바이트 난수를 64자리 16진수로 보관. 재시작마다 새로 만들지 않으며 클라이언트 빌드에 넣지 않는다. |
 | `INVESTAI_CLOUD_SIGNUP` | 신규 가입을 받을 때만 `true`. 기존 회원 로그인은 별도로 유지한다. |
+| `RAILWAY_RUN_UID` | Railway의 `/data` 볼륨에서는 `0`. 시작 스크립트가 `/data/investai`의 소유권만 준비한 후 `node` 사용자로 전환하므로 웹 서버는 root로 실행되지 않는다. |
 | `UPBIT_ALLOWED_ORIGINS` | 기존처럼 정확한 웹 출처만 허용. Pages 예: `https://lggunwoo45-ops.github.io` |
 | `INVESTAI_TELEGRAM_BOT_TOKEN` / `INVESTAI_TELEGRAM_BOT_NAME` | 회원용 전용 봇. 다른 프로그램의 getUpdates 또는 webhook과 함께 사용하지 않는다. 둘 다 없으면 앱 감시 기록만 제공한다. |
 
@@ -31,7 +32,7 @@ Node 22.13 이상에서 `backend/market-data/server.mjs`를 실행한다. 기존
 
 ### 배포 순서
 
-1. 영구 볼륨과 암호화 키를 마련하고 백업에 포함한다. Docker 실행 사용자는 `node`이므로 볼륨의 쓰기 권한을 확인한다.
+1. `/data`에 영구 볼륨을 연결하고 `INVESTAI_CLOUD_DIRECTORY=/data/investai`로 설정한다. 암호화 키도 별도 보관한다. Railway 볼륨은 root 소유로 마운트되므로 `RAILWAY_RUN_UID=0`으로 시작 스크립트에 초기화 권한을 주며, 초기화 직후 서버는 `node` 사용자로 전환한다. 경로가 다르거나 심볼릭 링크이면 시작을 거부한다.
 2. 단일 서버 인스턴스로 배포한다. DB의 실행 임대가 중복 감시를 막으며, 비정상 종료 뒤 재시작은 기존 임대 만료를 최대 35초 기다린다. 롤링 배포에서 두 인스턴스를 장시간 겹치지 않는다.
 3. `/api/cloud/status`에서 HTTP 200, `enabled: true`를 확인한다. 저장소/키/중복 실행 오류는 HTTP 503으로 표시한다. 기존 시장 시세 health는 회원 기능의 준비 상태를 대신하지 않는다.
 4. 두 개의 독립 탭/기기에서 같은 시험 계정으로 로그인해 검토 저장·수정 충돌·로그아웃을 확인한다.
