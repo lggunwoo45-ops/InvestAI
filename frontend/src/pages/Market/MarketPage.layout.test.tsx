@@ -49,7 +49,7 @@ describe('Market instrument-list layout', () => {
     expect((screen.getByRole('searchbox', { name: 'Search instruments' }) as HTMLInputElement).value).toBe('')
   })
   beforeEach(() => {
-    window.localStorage.clear()
+    window.localStorage.clear(); window.localStorage.setItem('market-copilot.displayMode.v1', 'expert')
     window.history.pushState({}, '', '/market')
     mockNarrowViewport(false)
     vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('Network disabled in deterministic layout test'))

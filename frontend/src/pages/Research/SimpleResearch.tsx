@@ -39,7 +39,7 @@ export function SimpleCoinCheck({ asset, onMode }: { asset: string; onMode: (mod
 export function SimpleToolIntro({ mode, onBack }: { mode: ResearchMode; onBack: () => void }) {
   const task = simpleTasks.find(t => t.mode === mode)
   if (!task) return null
-  return <aside className={styles.toolIntro}><button onClick={onBack}>← 다른 내용 확인하기</button>{!['position', 'setups'].includes(mode) && <><h2>{task.title}</h2><p>{task.help}</p></>}</aside>
+  return <aside className={styles.toolIntro}><button onClick={onBack}>← 다른 내용 확인하기</button>{!['position', 'setups'].includes(mode) && <><h2>{task.title}</h2><p>{task.description}</p><details><summary>사용 방법</summary><p>{task.help}</p></details></>}</aside>
 }
 
 export function SimpleMarketSummary({ asset, price, at, candles, loading, onMode, onWatch, watchlisted, canWatch, message }: {

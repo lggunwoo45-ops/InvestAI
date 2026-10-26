@@ -7,7 +7,7 @@ import { passwordHint, validNewPassword } from '../../../../backend/cloud/passwo
 import { EmailPasswordRecovery, MemberEmail, PasswordRules, SignupEmail } from './MemberEmail'
 
 function download(name:string,value:unknown){const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
-export function MemberAccount(){
+export function MemberAccount({compact=false}:{compact?:boolean}){
   const cloud=useCloud(),[open,setOpen]=useState(()=>!!cloud.recovery),[mode,setMode]=useState<'login'|'register'|'recover'|'emailRecover'>('login')
   const [username,setUsername]=useState(''),[password,setPassword]=useState(''),[recovery,setRecovery]=useState(''),[error,setError]=useState(''),[busy,setBusy]=useState(false),[message,setMessage]=useState('')
   const [telegram,setTelegram]=useState<TelegramStatus|null>(null),[pair,setPair]=useState(''),[importing,setImporting]=useState(false)
@@ -21,8 +21,8 @@ export function MemberAccount(){
   if(!cloud.enabled)return null
   const act=async(work:()=>Promise<unknown>,success='')=>{setBusy(true);setError('');setMessage('');try{await work();setMessage(success)}catch(e){setError(e instanceof Error?e.message:'요청을 완료하지 못했습니다.')}finally{setBusy(false)}}
   const submit=(event:FormEvent)=>{event.preventDefault();if(mode==='emailRecover')return;if(mode!=='login'&&!validNewPassword(password)){setError(passwordHint);return}if(mode==='register'&&cloud.emailAvailable&&!emailTicket){setError('이메일 인증을 먼저 완료해주세요.');return}void act(async()=>{await signIn(mode,{username,password,...(mode==='recover'?{recovery}:{}),...(mode==='register'&&emailTicket?{emailTicket}:{})});setPassword('');setRecovery('');setEmailTicket('')})}
-  return <section className={styles.member} aria-label="회원 기록과 알림">
-    <div className={styles.bar}><div><b>{cloud.user?`${cloud.user.username}의 기록`:'다른 기기에서도 기록을 이어보세요'}</b><span>{cloud.user?(cloud.expired?'다시 로그인 필요':cloud.conflicts.length?'기록 충돌 확인 필요':cloud.pending?`전송 대기 ${cloud.pending}건`:cloud.syncing?'기록 동기화 중':'회원 기록 연결됨'):'계정으로 저장하고, 화면을 닫아도 가격 감시를 이어갑니다.'}</span></div><button onClick={()=>setOpen(!open)} aria-expanded={open}>{cloud.user?'계정·알림 설정':'로그인·가입'}</button></div>
+  return <section className={styles.member} aria-label="회원 기록과 알림" data-compact={compact || undefined}>
+    <div className={styles.bar}><div><b>{cloud.user?`${cloud.user.username}의 기록`:compact?'기록 저장·동기화':'다른 기기에서도 기록을 이어보세요'}</b>{(!compact||cloud.user)&&<span>{cloud.user?(cloud.expired?'다시 로그인 필요':cloud.conflicts.length?'기록 충돌 확인 필요':cloud.pending?`전송 대기 ${cloud.pending}건`:cloud.syncing?'기록 동기화 중':'회원 기록 연결됨'):'계정으로 저장하고, 화면을 닫아도 가격 감시를 이어갑니다.'}</span>}</div><button onClick={()=>setOpen(!open)} aria-expanded={open}>{cloud.user?'계정·알림 설정':'로그인·가입'}</button></div>
     {(cloud.error||error)&&<p role="alert">{error||cloud.error}</p>}
     {open&&<div className={styles.content}>
       {!cloud.user||cloud.expired?mode==='emailRecover'?<EmailPasswordRecovery onLogin={()=>{setMode('login');setError('')}} onRecoveryCode={()=>{setMode('recover');setError('')}} />:<form onSubmit={submit} className={styles.form}>

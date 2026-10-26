@@ -250,3 +250,6 @@
   .page :is(th, td) { font-size: 13px; }
   .page .chart svg { min-height: 160px; }
 }
+
+.simpleNav b { word-break: keep-all; }
+.toolIntro details { margin-top: 10px; font-size: 12px; color: var(--color-text-muted); }

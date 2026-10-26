@@ -7,6 +7,7 @@ import { useUiStore } from '@/hooks/useUiStore'
 import { useLanguage } from '@/i18n/useLanguage'
 import { uiText, type Language } from '@/i18n/translations'
 import styles from './SimpleHeader.module.css'
+import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
 
 export function SimpleHeader({ hideCopilotToggle, copilotOpen, onToggleCopilot }: { hideCopilotToggle: boolean; copilotOpen?: boolean; onToggleCopilot?: () => void }) {
   const { language, setLanguage } = useLanguage()
@@ -16,6 +17,7 @@ export function SimpleHeader({ hideCopilotToggle, copilotOpen, onToggleCopilot }
   const location = useLocation()
   const menu = useRef<HTMLDetailsElement>(null)
   const ko = language === 'ko'
+  const simple = useDisplayMode().displayMode === 'simple'
   const labels = ko ? ['홈', '종목 분석', '내 투자', '종목 찾기'] : ['Home', 'Instrument Analysis', 'My Investments', 'Find Assets']
   useEffect(() => { if (menu.current) menu.current.open = false }, [location])
   useEffect(() => {
@@ -33,7 +35,7 @@ export function SimpleHeader({ hideCopilotToggle, copilotOpen, onToggleCopilot }
   return <header className={styles.header}>
     <Link to="/dashboard" className={styles.brand} aria-label={ko ? 'InvestAI 홈' : 'InvestAI home'}>Invest<span>AI</span></Link>
     <nav className={styles.navigation} aria-label="Primary navigation">
-      {primaryNavigation.map((item, index) => <NavLink key={item.path} to={item.path}>{labels[index]}</NavLink>)}
+      {simple ? <><NavLink to="/dashboard">{ko ? '추천' : 'Discover'}</NavLink><NavLink to="/portfolio">{ko ? '내 종목' : 'Holdings'}</NavLink><Link to="/research?mode=alerts" aria-current={location.pathname.replace(/\/$/, '') === '/research' && new URLSearchParams(location.search).get('mode') === 'alerts' ? 'page' : undefined}>{ko ? '알림' : 'Alerts'}</Link></> : primaryNavigation.map((item, index) => <NavLink key={item.path} to={item.path}>{labels[index]}</NavLink>)}
     </nav>
     <div className={styles.actions}>
       <ModeSwitcher />
@@ -47,6 +49,7 @@ export function SimpleHeader({ hideCopilotToggle, copilotOpen, onToggleCopilot }
         <div className={styles.menu}>
           <GlobalSearch compact />
           <nav aria-label={ko ? '시장·자료·설정' : 'Markets, resources and settings'}>
+            {simple && <><NavLink to="/my-analysis">{ko ? '궁금한 종목 분석' : 'Analyze an asset'}</NavLink><NavLink to="/ai-analysis">{ko ? '후보 찾기·기록' : 'Candidates and records'}</NavLink><NavLink to="/trading">{ko ? '매수 금액 계산' : 'Purchase calculator'}</NavLink><NavLink to="/strategies">{ko ? '과거 전략 시험' : 'Historical test'}</NavLink></>}
             {[...secondaryNavigation, ...utilityNavigation].map(item => <NavLink key={item.path} to={item.path}>{item.path === '/research' ? (ko ? '시장·기록' : 'Market & Reviews') : uiText[language].navigation[item.icon]}</NavLink>)}
           </nav>
           {!hideCopilotToggle && <button className={styles.mobileCopilot} type="button" onClick={event => { toggleAiCopilot(); const details = event.currentTarget.closest('details'); if (details) details.open = false }} aria-pressed={isAiCopilotOpen}>{ko ? '도움말 열기·닫기' : 'Toggle assistant'}</button>}

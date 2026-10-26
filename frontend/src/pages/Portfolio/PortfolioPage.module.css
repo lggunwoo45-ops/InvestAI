@@ -65,3 +65,17 @@
 .management { padding: 10px 20px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; }
 .management > summary { font-weight: 650; }
 @media (max-width: 850px) { .positions { grid-template-columns: 1fr; } }
+
+.simple { display: grid; gap: 20px; min-width: 0; }
+.simple .positions { grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr)); gap: 18px; }
+.simple .positions > article { border-radius: 18px; padding: 22px; }
+.simple .overview { border-radius: 18px; }
+.simple .form { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 22px; border-radius: 18px; }
+.simpleHolding { display: grid; gap: 14px; margin: 16px 0; }
+.simpleHolding > div { background: var(--color-surface-raised); border-radius: 12px; padding: 16px; display: grid; gap: 5px; }
+.simpleHolding strong { font-size: 24px; letter-spacing: -.03em; }
+.simpleHolding span, .simpleHolding summary { font-size: 13px; color: var(--color-text-muted); }
+@media (max-width: 600px) { .simple .form { grid-template-columns: 1fr; padding: 16px; } .simple .positions > article { padding: 16px; } }
+
+.planDisclosure { grid-column: 1 / -1; min-width: 0; }
+.planDisclosure > summary { padding: 12px 0; cursor: pointer; }

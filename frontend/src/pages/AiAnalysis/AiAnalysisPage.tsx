@@ -1,3 +1,4 @@
+import simpleStyles from '@/components/simple/SimpleWorkspace.module.css'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 
@@ -42,6 +43,7 @@ import { getMarketBuckets, type MarketBucketId } from '@/types/marketBucket'
 import type { WatchCandidate, WatchCandidateHorizon } from '@/types/watchCandidate'
 import { loadCandidateSnapshots } from '@/utils/candidateSnapshotStorage'
 import styles from './AiAnalysisPage.module.css'
+import { SimpleWorkspace } from '@/components/simple/SimpleWorkspace'
 
 const DAILY_DEFAULT_HORIZON: WatchCandidateHorizon = 'swing'
 
@@ -71,15 +73,17 @@ export function AiAnalysisPage() {
 
 function ExploreView({ initialView }: { initialView: 'live' | 'daily' }) {
   const { language } = useLanguage()
+  const simple = useDisplayMode().displayMode === 'simple'
   const [view, setView] = useState(initialView)
   useDocumentTitle(language === 'ko' ? '종목 찾기' : 'Find Assets')
-  return <div>
+  const content = <>
     <nav className={styles.views} aria-label={language === 'ko' ? '탐색 방식' : 'Explore mode'}>
       <button type="button" aria-pressed={view === 'live'} onClick={() => setView('live')}>{language === 'ko' ? '실시간 조건 검색' : 'Live condition search'}</button>
       <button type="button" aria-pressed={view === 'daily'} onClick={() => setView('daily')}>{language === 'ko' ? '일일 후보 기록' : 'Daily candidate records'}</button>
     </nav>
     {view === 'live' ? <div className={styles.page}><LiveCandidateSearch /></div> : <DailyCandidatePage />}
-  </div>
+  </>
+  return <SimpleWorkspace enabled={simple} title={language === 'ko' ? '살펴볼 후보를 찾아볼까요?' : 'Find a few assets to review'} description={language === 'ko' ? '최신 조건을 확인하거나, 지난 후보 기록을 다시 살펴보세요.' : 'Check current criteria or revisit saved daily candidates.'}>{content}</SimpleWorkspace>
 }
 
 function DailyCandidatePage() {
@@ -230,6 +234,15 @@ function DailyCandidatePage() {
   }, [])
   const heldVisibility = candidateDisplayFilter === 'wider' ? 'expanded' : displayMode === 'expert' ? 'collapsed' : 'hidden'
 
+  if (displayMode === 'simple') return <section className={simpleStyles.tasks} aria-label={language === 'ko' ? '저장한 후보 기록' : 'Saved candidate records'}>
+    <h2>{language === 'ko' ? '그날 살펴본 후보예요' : 'Candidates from that day'}</h2>
+    <p>{language === 'ko' ? '일일 기록은 현재 매수 추천이 아닙니다. 관심 있는 종목을 눌러 최신 분석을 확인하세요.' : 'These are saved records, not current buy suggestions. Open an asset for a fresh review.'}</p>
+    <MarketBucketSelector selected={bucketId} language={language} onChange={setBucketId} />
+    <p>{activeSnapshot ? new Date(activeSnapshot.generatedAt).toLocaleString(language) : language === 'ko' ? '저장된 기록이 없어요.' : 'No saved record.'}{activeCatalogSource !== 'live' && (language === 'ko' ? ' · 실제 시세 확인 필요' : ' · live quotes unavailable')}</p>
+    <div className={simpleStyles.cards}>{terminalItems.map(({ item }) => <article className={simpleStyles.card} key={item.instrumentId}><h3>{item.symbol}</h3><p>{item.reasonText}</p><button type="button" onClick={() => openSnapshotAnalysis(item.instrumentId, displaySnapshot!.snapshotId)}>{language === 'ko' ? '현재 분석 확인' : 'Review current analysis'} →</button></article>)}</div>
+    {!terminalItems.length && <p>{language === 'ko' ? '표시할 후보 기록이 없어요. 실시간 후보 찾기에서 최신 조건을 확인할 수 있어요.' : 'No candidate records to display. Use the live scan to check current conditions.'}</p>}
+    <button type="button" disabled={basis.isBeforeTodayBasis || activeInstruments.length === 0} onClick={createSnapshot}>{language === 'ko' ? '현재 자료로 일일 기록 갱신' : 'Update daily record'}</button>
+  </section>
   return <div className={styles.page}>
     <AiAnalysisTerminalLayout
       header={<MarketTerminalHeader bucketLabel={bucketLabel} dataState={activeCatalogSource} snapshotStatus={snapshotStatus} language={language} />}

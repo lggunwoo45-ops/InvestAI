@@ -20,6 +20,7 @@ describe('working settings', () => {
     expect(catalog).not.toHaveBeenCalled(); expect(fetch).not.toHaveBeenCalled(); expect(permission).not.toHaveBeenCalled()
     fireEvent.change(screen.getByLabelText('설명 수준'), { target: { value: 'expert' } })
     fireEvent.change(screen.getByLabelText('시세 모드'), { target: { value: 'mock' } })
+    fireEvent.click(screen.getByRole('button', { name: '연결 확인' }))
     fireEvent.click(screen.getByRole('button', { name: '뉴스 다시 불러오기' }))
     expect(mock.display).toHaveBeenCalledWith('expert'); expect(mock.mode).toHaveBeenCalledWith('mock'); expect(mock.refresh).toHaveBeenCalled()
     fireEvent.click(screen.getByRole('button', { name: '업비트 연결 확인' }))
@@ -29,6 +30,7 @@ describe('working settings', () => {
   it('requires an explicit permission grant before storing notification opt-in', async () => {
     permission.mockResolvedValueOnce('denied').mockResolvedValueOnce('granted')
     render(<MemoryRouter><SettingsPage /></MemoryRouter>)
+    fireEvent.click(screen.getByRole('button', { name: '알림 허용' }))
     fireEvent.click(screen.getByRole('button', { name: '브라우저 알림 허용' }))
     expect(await screen.findByText(/브라우저에서 알림을 허용해야/)).toBeTruthy()
     expect(notificationPreference().enabled).toBe(false)
