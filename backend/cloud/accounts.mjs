@@ -4,12 +4,12 @@ import { join } from 'node:path'
 import { randomBytes, randomUUID, createHash, scrypt, timingSafeEqual } from 'node:crypto'
 import { promisify } from 'node:util'
 import { investmentRecordLimits, validInvestmentEnvelope } from './recordPolicy.mjs'
+import { passwordHint, validNewPassword } from './passwordPolicy.mjs'
 
 const derive = promisify(scrypt)
 export const digest = value => createHash('sha256').update(value).digest('hex')
 export class CloudError extends Error { constructor(status, message) { super(message); this.status = status } }
 export const fail = (status, message) => { throw new CloudError(status, message) }
-const passwordValid = value => typeof value === 'string' && value.length >= 15 && value.length <= 128
 async function hash(password, salt = randomBytes(16).toString('hex')) {
   const key = await derive(password, salt, 64, { N: 32768, r: 8, p: 1, maxmem: 64 * 1024 * 1024 })
   return `${salt}:${key.toString('hex')}`
@@ -45,7 +45,7 @@ export function openAccounts(directory, clock = Date.now) {
     if (typeof input !== 'string' || !/^[a-zA-Z0-9_-]{4,32}$/.test(input)) fail(400, '아이디는 영문·숫자·밑줄·하이픈 4~32자로 입력해주세요.')
     return input.toLowerCase()
   }
-  const password = value => { if (!passwordValid(value)) fail(400, '비밀번호는 15~128자로 입력해주세요.'); return value }
+  const password = value => { if (!validNewPassword(value)) fail(400, passwordHint); return value }
   return {
     db, close: () => db.close(), users: () => db.prepare('SELECT id,username FROM users').all(),
     register: input => limited(async () => {
@@ -59,7 +59,9 @@ export function openAccounts(directory, clock = Date.now) {
       return { ...session({ id, username: name }), recovery }
     }),
     login: input => limited(async () => {
-      const name = username(input.username), secret = password(input.password)
+      // Existing passphrases remain valid: creation rules must never lock out old members.
+      const name = username(input.username), secret = input.password
+      if (typeof secret !== 'string' || !secret.length || secret.length > 128) fail(400, '비밀번호를 입력해주세요. 최대 128자입니다.')
       const user = db.prepare('SELECT * FROM users WHERE username=?').get(name)
       if (!await verify(secret, user?.password) || !user) fail(401, '아이디 또는 비밀번호를 확인해주세요.')
       if (db.prepare('SELECT password FROM users WHERE id=?').get(user.id)?.password !== user.password) fail(401, '비밀번호가 변경되었습니다. 다시 로그인해주세요.')

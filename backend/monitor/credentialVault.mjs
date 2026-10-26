@@ -67,5 +67,11 @@ export function createCredentialVault(clock = Date.now) {
       for (const item of data.items.filter(i => i.venue === venue)) if (JSON.parse(decrypt(activeKey, item.box, context(item.id, item.venue))).apiKey === credentials.apiKey) throw new Error('이 API 키는 이미 연결되어 있습니다.')
       data.items.push({ id, venue, box: encrypt(activeKey, JSON.stringify(credentials), context(id, venue)) })
     },
+    replace(data, id, venue, input) {
+      if (!validVault(data) || !data.items.some(i => i.id === id && i.venue === venue)) throw message()
+      const staged = { ...data, items: data.items.filter(i => i.id !== id) }
+      this.add(staged, id, venue, input)
+      data.items = staged.items
+    },
   }
 }

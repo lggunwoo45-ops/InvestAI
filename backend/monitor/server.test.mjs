@@ -17,6 +17,82 @@ const position = () => ({ key: 'BTC:long', asset: 'BTC', side: 'long', size: 1, 
 const password = 'fixture-vault-password-only'
 const privateConfig = () => ({ requestId: 'private-connection-1', venue: 'bybit', label: 'API 보유 계정', notify: false, thresholds: { distance: 5, loss: 10, leverage: null }, consent: true, credentials: { apiKey: 'fixture_key_123456789', apiSecret: 'fixture_secret_123456789' } })
 
+test('connection settings persist, reject stale edits and refresh errors preserve the last successful snapshot', async t => {
+  const dir = await directory(t); let now = at, failRead = false, calls = 0
+  const options = { directory: dir, clock: () => now, channel: { configured: false }, positionReader: async () => { calls++; if (failRead) throw new Error('offline'); return { receivedAt: now, sourceAt: now, positions: [position()] } } }
+  let app = await serve(options)
+  try {
+    await app.post('/connections', connectionConfig())
+    let c = (await app.get()).connections[0]
+    const edit = { id: c.id, revision: 0, label: '수정한 계정', notify: false, thresholds: { distance: 3, loss: null, leverage: 7 }, account: 'not-allowed-to-change', venue: 'bybit' }
+    assert.equal((await app.post('/connections/update', edit)).status, 200)
+    assert.equal((await app.post('/connections/update', edit)).status, 409)
+    assert.equal((await app.post('/connections/update', { ...edit, revision: 1, notify: true })).status, 400)
+    assert.equal((await app.post('/connections/update', { ...edit, revision: 1, thresholds: { distance: -1, loss: null, leverage: null } })).status, 400)
+    c = (await app.get()).connections[0]
+    assert.equal(c.config.venue, 'hyperliquid'); assert.equal(c.config.account, connectionConfig().account)
+    assert.equal((await app.post('/connections/refresh', { id: c.id, revision: 1 })).status, 200)
+    const success = (await app.get()).connections[0].snapshot
+    assert.equal((await app.post('/connections/refresh', { id: c.id, revision: 1 })).status, 429); assert.equal(calls, 1)
+    now += 31000; failRead = true
+    assert.equal((await app.post('/connections/refresh', { id: c.id, revision: 1 })).status, 200)
+    c = (await app.get()).connections[0]; assert.deepEqual(c.snapshot, success); assert.ok(c.issue); assert.equal(c.lastAttemptAt, now)
+    await app.close(); app = await serve(options)
+    c = (await app.get()).connections[0]; assert.equal(c.config.label, edit.label); assert.equal(c.revision, 1); assert.equal(c.lastAttemptAt, now)
+    await app.post('/connections/pause', { id: c.id, paused: true })
+    assert.equal((await app.post('/connections/refresh', { id: c.id, revision: 2 })).status, 400)
+  } finally { await app.close() }
+})
+
+test('verified key replacement keeps history, stops bound signals, survives restart and never persists rejected keys', async t => {
+  const dir = await directory(t); let now = at, seen
+  const replacement = { apiKey: 'new_fixture_key_123456', apiSecret: 'new_fixture_secret_123456' }
+  const options = { directory: dir, clock: () => now, channel: { configured: false }, privateReader: async (_venue, keys) => {
+    seen = keys
+    if (keys.apiKey.startsWith('denied')) throw new PrivatePositionError('읽기 전용 키가 아닙니다.')
+    return { receivedAt: now, sourceAt: now, positions: [{ ...position(), quote: 'USDT' }] }
+  } }
+  let app = await serve(options)
+  try {
+    await app.post('/vault/setup', { password }); await app.post('/connections/private', privateConfig())
+    let c = (await app.get()).connections[0]; const originalEvents = c.events.length
+    const sig = { requestId: 'bound-rotation-test', name: 'opposite', asset: 'BTC', notify: false, purpose: 'opposition', holdingSide: 'long', positionRef: { connectionId: c.id, key: 'BTC:long' }, config: { ...defaultExplorerConfig, signals: ['ema-short'], side: 'short', timeframe: '1h' } }
+    assert.equal((await app.post('/signals', sig)).status, 200)
+    const request = { id: c.id, revision: 0, credentials: replacement, consent: true }
+    assert.equal((await app.post('/connections/credentials', { ...request, consent: false })).status, 400)
+    assert.equal((await app.post('/connections/credentials', { ...request, credentials: { ...replacement, apiKey: 'denied_fixture_key_123456' } })).status, 400)
+    now += 1000; await app.handler.tickPositions(); assert.deepEqual(seen, privateConfig().credentials)
+    assert.equal((await app.post('/connections/credentials', request)).status, 200)
+    const state = await app.get(); c = state.connections[0]
+    assert.equal(c.revision, 1); assert.equal(c.credentialsUpdatedAt, now); assert.equal(state.signals[0].active, false)
+    assert.ok(c.events.length > originalEvents); assert.equal(c.events.some(e => ['closed', 'opened'].includes(e.kind)), false)
+    assert.equal((await app.post('/connections/credentials', request)).status, 409)
+    for (const value of Object.values(replacement)) assert.ok(!JSON.stringify(state).includes(value))
+    const ledger = await readFile(join(dir, 'ledger.json'), 'utf8')
+    for (const value of [...Object.values(replacement), ...Object.values(privateConfig().credentials)]) assert.ok(!ledger.includes(value))
+    await app.close(); app = await serve(options); await app.post('/vault/unlock', { password }); now += 1000
+    await app.handler.tickPositions(); assert.deepEqual(seen, replacement)
+  } finally { await app.close() }
+})
+
+test('in-flight old-key responses cannot overwrite a verified key replacement', async t => {
+  const dir = await directory(t); let now = at, block = false, unblock, started
+  const began = new Promise(resolve => { started = resolve }), gate = new Promise(resolve => { unblock = resolve })
+  const replacement = { apiKey: 'replacement_key_123456', apiSecret: 'replacement_secret_123456' }
+  const app = await serve({ directory: dir, clock: () => now, channel: { configured: false }, privateReader: async (_venue, keys) => {
+    if (block && keys.apiKey === privateConfig().credentials.apiKey) { started(); await gate; return { receivedAt: now, sourceAt: null, positions: [] } }
+    return { receivedAt: now, sourceAt: null, positions: [{ ...position(), quote: 'USDT' }] }
+  } })
+  try {
+    await app.post('/vault/setup', { password }); await app.post('/connections/private', privateConfig())
+    const c = (await app.get()).connections[0]; now += 1000; block = true
+    const reading = app.handler.tickPositions(); await began
+    assert.equal((await app.post('/connections/credentials', { id: c.id, revision: 0, credentials: replacement, consent: true })).status, 200)
+    unblock(); await reading
+    const final = (await app.get()).connections[0]; assert.equal(final.snapshot.positions.length, 1); assert.equal(final.revision, 1)
+  } finally { unblock(); await app.close() }
+})
+
 test('private account keys are encrypted atomically, never exposed in status, and restart requires unlock', async t => {
   const dir = await directory(t); let now = at, calls = 0
   const options = { directory: dir, clock: () => now, channel: { configured: false }, privateReader: async (venue, credentials) => { calls++; assert.equal(venue, 'bybit'); assert.deepEqual(credentials, privateConfig().credentials); return { receivedAt: now, sourceAt: null, positions: [{ ...position(), quote: 'USDT' }] } } }

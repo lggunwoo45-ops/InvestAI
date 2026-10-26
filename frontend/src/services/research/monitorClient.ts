@@ -8,7 +8,7 @@ export interface PositionConnectionConfig { requestId: string; venue: PositionVe
 export interface VaultStatus { configured: boolean; unlocked: boolean }
 export interface PrivateConnectionInput extends Omit<PositionConnectionConfig, 'account' | 'venue'> { venue: 'binance' | 'bybit'; credentials: { apiKey: string; apiSecret: string }; consent: boolean }
 export interface PositionEvent { id: string; kind: keyof typeof positionEventLabels; at: number; sourceAt: number | null; position: PublicPosition | null; detail: string; delivery: { status: 'off' | 'pending' | 'sent' | 'uncertain'; attempts: number } }
-export interface PositionConnection { id: string; config: PositionConnectionConfig; createdAt: number; active: boolean; issue: string | null; snapshot: { receivedAt: number; sourceAt: number | null; positions: PublicPosition[] } | null; risk: Record<string, string[]>; events: PositionEvent[]; sequence: number }
+export interface PositionConnection { id: string; config: PositionConnectionConfig; createdAt: number; revision?: number; updatedAt?: number; lastAttemptAt?: number; credentialsUpdatedAt?: number; active: boolean; issue: string | null; snapshot: { receivedAt: number; sourceAt: number | null; positions: PublicPosition[] } | null; risk: Record<string, string[]>; events: PositionEvent[]; sequence: number }
 export interface SignalWatchConfig { requestId: string; name: string; asset: string; notify: boolean; config: ExplorerConfig; purpose: 'opportunity' | 'opposition'; holdingSide: 'long' | 'short' | null; positionRef?: { connectionId: string; key: string } }
 export interface SignalWatchEvent { id: string; at: number; observedAt: number; price: number; signals: string[]; outcome: 'pending' | 'entered' | 'up' | 'down' | 'timeout' | 'ambiguous' | 'unresolved' | 'cancelled'; entry: number | null; entryAt: number | null; exit: number | null; exitAt: number | null; net: number | null; delivery: { status: 'off' | 'pending' | 'sent' | 'uncertain'; attempts: number } }
 export interface SignalWatch { id: string; config: SignalWatchConfig & { version: string }; hash: string; createdAt: number; active: boolean; lastAt: number | null; matched: boolean; checkedAt: number | null; issue: string | null; events: SignalWatchEvent[] }
@@ -46,6 +46,9 @@ export const connectPositions = (config: PositionConnectionConfig) => request('/
 export const pausePositionConnection = (id: string, paused: boolean) => request('/connections/pause', { id, paused })
 export const removePositionConnection = (id: string) => request('/connections/remove', { id })
 export const connectPrivatePositions = (input: PrivateConnectionInput) => request('/connections/private', input, 30_000)
+export const updatePositionConnection = (id: string, revision: number, config: Pick<PositionConnectionConfig, 'label' | 'notify' | 'thresholds'>) => request('/connections/update', { id, revision, ...config })
+export const refreshPositionConnection = (id: string, revision: number) => request('/connections/refresh', { id, revision }, 30_000)
+export const replacePositionCredentials = (id: string, revision: number, credentials: PrivateConnectionInput['credentials'], consent: boolean) => request('/connections/credentials', { id, revision, credentials, consent }, 30_000)
 export const setupCredentialVault = (password: string) => request('/vault/setup', { password })
 export const unlockCredentialVault = (password: string) => request('/vault/unlock', { password })
 export const lockCredentialVault = () => request('/vault/lock', {})
