@@ -1,3 +1,6 @@
+import { boundedCalendarText } from './calendarIO.mjs'
+import { createSavedCalendarReader, validateCalendarSnapshot } from './calendarSnapshot.mjs'
+
 export const calendarSources = [
   { id: 'bls', name: '미국 노동통계국 BLS', url: 'https://www.bls.gov/schedule/news_release/bls.ics' },
   { id: 'fed', name: '미국 연방준비제도 FOMC', url: 'https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm' },
@@ -21,7 +24,7 @@ const titles = {
 }
 const unescapeIcs = text => text.replace(/\\[nN]/g, ' ').replace(/\\([,;\\])/g, '$1').trim()
 function validDate(y, m, d) { const value = new Date(Date.UTC(y, m - 1, d)); return value.getUTCFullYear() === y && value.getUTCMonth() === m - 1 && value.getUTCDate() === d }
-function parseStart(key, value) {
+export function parseStart(key, value) {
   const match = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})(Z?)$/.exec(value)
   if (!match) return null
   const [, yr, mo, dt, hr, mi, se, utc] = match, [y, m, d, h, minute, s] = [yr, mo, dt, hr, mi, se].map(Number)
@@ -83,23 +86,7 @@ export function parseFomcCalendar(html) {
   return [...events.values()]
 }
 
-async function boundedText(response) {
-  if (!response.body?.getReader) { const text = await response.text(); if (text.length > 1_000_000) throw new Error('too_large'); return text }
-  const reader = response.body.getReader(), decoder = new TextDecoder()
-  let text = '', size = 0
-  try {
-    while (true) {
-      const { value, done } = await reader.read()
-      if (done) break
-      size += value.byteLength
-      if (size > 1_000_000) throw new Error('too_large')
-      text += decoder.decode(value, { stream: true })
-    }
-    return text + decoder.decode()
-  } finally { await reader.cancel().catch(() => {}); reader.releaseLock() }
-}
-
-export function createEconomicCalendar({ fetchImpl = fetch, now = Date.now, onIssue = issue => console.warn('[economic-calendar]', JSON.stringify(issue)) } = {}) {
+export function createEconomicCalendar({ fetchImpl = fetch, now = Date.now, readSavedCalendar = createSavedCalendarReader({ fetchImpl, now }), onIssue = issue => console.warn('[economic-calendar]', JSON.stringify(issue)) } = {}) {
   const cache = new Map(), pending = new Map(), attempted = new Map(), shutdown = new AbortController()
   async function load(source) {
     const previous = cache.get(source.id)
@@ -109,13 +96,22 @@ export function createEconomicCalendar({ fetchImpl = fetch, now = Date.now, onIs
       try {
         const response = await fetchImpl(source.url, { redirect: 'error', signal: AbortSignal.any([shutdown.signal, AbortSignal.timeout(10_000)]), headers: { Accept: source.id === 'bls' ? 'text/calendar' : 'text/html' } })
         if (!response.ok) { const error = new Error('source_unavailable'); error.status = response.status; throw error }
-        const text = await boundedText(response), events = source.id === 'bls' ? parseBlsCalendar(text) : parseFomcCalendar(text)
+        const text = await boundedCalendarText(response), events = source.id === 'bls' ? parseBlsCalendar(text) : parseFomcCalendar(text)
         if (!events.length) throw new Error('schedule_not_found')
         cache.set(source.id, { events, fetchedAt: now(), ok: true })
       } catch (error) {
         cache.set(source.id, { ...previous, ok: false })
         // Fixed provider ID and bounded reason only; never log upstream bodies, request headers or credentials.
         if (!shutdown.signal.aborted) onIssue({ source: source.id, reason: Number.isInteger(error?.status) ? `http_${error.status}` : error?.name === 'TimeoutError' ? 'timeout' : ['invalid_calendar', 'schedule_not_found', 'too_large'].includes(error?.message) ? error.message : 'network_error' })
+        if (source.id === 'bls' && !shutdown.signal.aborted) {
+          try {
+            const saved = validateCalendarSnapshot(await readSavedCalendar(shutdown.signal), now())
+            // Preserve the collection clock, and never replace a newer observation with an older one.
+            if (!previous?.fetchedAt || saved.collectedAt >= previous.fetchedAt) cache.set(source.id, { events: saved.events, fetchedAt: saved.collectedAt, coverageEnd: saved.coverageEnd, via: 'nyfed', ok: true })
+          } catch {
+            if (!shutdown.signal.aborted) onIssue({ source: 'bls', reason: 'saved_calendar_unavailable' })
+          }
+        }
       }
       finally { attempted.set(source.id, now()) }
     })().finally(() => pending.delete(source.id))
@@ -133,7 +129,8 @@ export function createEconomicCalendar({ fetchImpl = fetch, now = Date.now, onIs
           const start = event.at ?? Date.parse(`${event.date}T00:00:00-04:00`)
           return end >= windowStart && start <= windowEnd
         }) : []
-        sources.push({ ...source, status: !usable ? 'unavailable' : result.ok ? 'available' : 'stale', fetchedAt: result?.fetchedAt ?? null, eventCount: rows.length })
+        const fresh = result?.ok && (!result.via || at - result.fetchedAt <= 12 * 3_600_000)
+        sources.push({ ...source, status: !usable ? 'unavailable' : fresh ? 'available' : 'stale', fetchedAt: result?.fetchedAt ?? null, eventCount: rows.length, ...(result?.via ? { via: result.via, coverageEnd: result.coverageEnd } : {}) })
         events.push(...rows)
       }
       events.sort((a, b) => (a.at ?? Date.parse(a.date)) - (b.at ?? Date.parse(b.date)))

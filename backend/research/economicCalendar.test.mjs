@@ -6,6 +6,7 @@ const event = (uid, start, extra = '', title = 'Consumer Price Index') => `BEGIN
 const ics = (...events) => `BEGIN:VCALENDAR\n${events.join('\n')}\nEND:VCALENDAR`
 const meeting = (month, dates) => `<div class="row fomc-meeting" "><div class="fomc-meeting__month col-xs-5"><strong>${month}</strong></div><div class="fomc-meeting--shaded fomc-meeting__date col-xs-4">${dates}</div></div>`
 const fed = `<h4><a id="example">2026 FOMC Meetings</a></h4>${meeting('October', '27-28')}${meeting('December', '8-9*')}<h4><a>2027 FOMC Meetings</a></h4>${meeting('January', '26-27')}`
+const noSaved = async () => { throw new Error('no_saved_calendar') }
 
 test('BLS converts Eastern DST and standard time, unfolds text and ignores nested alarms', () => {
   const rows = parseBlsCalendar(ics(event('summer', '20261030T083000', 'BEGIN:VALARM\nSUMMARY:wrong\nEND:VALARM'), event('winter', '20261106T083000', '', 'Employment Situa\n tion'), event('utc', '20261106T083000').replace('DTSTART;TZID=US-Eastern:20261106T083000', 'DTSTART:20261106T133000Z')))
@@ -24,7 +25,7 @@ test('FOMC preserves meeting date ranges without inventing announcement times; i
 })
 test('sources cache and coalesce independently, retain visibly stale data then expire after 24 hours', async () => {
   let at = Date.parse('2026-10-26T00:00:00Z'), calls = 0, fail = false
-  const calendar = createEconomicCalendar({ now: () => at, fetchImpl: async (url, options) => {
+  const calendar = createEconomicCalendar({ now: () => at, readSavedCalendar: noSaved, fetchImpl: async (url, options) => {
     calls++; assert.ok(calendarSources.some(s => s.url === url)); assert.equal(options.redirect, 'error')
     if (fail && url.endsWith('.ics')) throw new Error('offline')
     return new Response(url.endsWith('.ics') ? ics(event('cpi', '20261110T083000')) : fed)
@@ -41,18 +42,19 @@ test('sources cache and coalesce independently, retain visibly stale data then e
 })
 test('invalid provider content fails closed and failed sources retry no more than once a minute', async () => {
   let calls = 0
-  const calendar = createEconomicCalendar({ fetchImpl: async () => { calls++; return new Response('BLOCKED') } })
+  const calendar = createEconomicCalendar({ readSavedCalendar: noSaved, fetchImpl: async () => { calls++; return new Response('BLOCKED') } })
   const result = await calendar.snapshot(); assert.equal(result.events.length, 0); assert.ok(result.sources.every(s => s.status === 'unavailable'))
   await calendar.snapshot(); assert.equal(calls, 2); calendar.close()
 })
 test('logs only a bounded provider failure reason without changing the official feed request', async () => {
   const issues = []
-  const calendar = createEconomicCalendar({ onIssue: issue => issues.push(issue), fetchImpl: async (_url, options) => {
+  const calendar = createEconomicCalendar({ readSavedCalendar: noSaved, onIssue: issue => issues.push(issue), fetchImpl: async (_url, options) => {
     assert.ok(['text/calendar', 'text/html'].includes(options.headers.Accept))
     assert.equal(options.redirect, 'error')
     return new Response('private upstream details must not be logged', { status: 403 })
   } })
   await calendar.snapshot()
-  assert.deepEqual(issues, [{ source: 'bls', reason: 'http_403' }, { source: 'fed', reason: 'http_403' }])
+  assert.deepEqual(issues.filter(i => i.reason !== 'saved_calendar_unavailable'), [{ source: 'bls', reason: 'http_403' }, { source: 'fed', reason: 'http_403' }])
+  assert.ok(issues.some(i => i.reason === 'saved_calendar_unavailable'))
   calendar.close()
 })

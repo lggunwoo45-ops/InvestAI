@@ -10,6 +10,18 @@ export const calendarFixture: EconomicCalendar = { version: 1, fetchedAt: at, wi
     { id: 'bls:1', source: 'bls', title: '미국 고용보고서', originalTitle: 'Employment Situation', at: Date.parse('2026-11-06T13:30:00Z'), date: null, endDate: null, kind: 'release', timeZone: 'America/New_York' },
   ] }
 describe('public market event client', () => {
+  it('preserves verified saved-source metadata and rejects forged source coverage', async () => {
+    const value = structuredClone(calendarFixture)
+    Object.assign(value.sources[0]!, { via: 'nyfed', coverageEnd: at + 60 * 86400000 })
+    const fetchMock = vi.fn(async () => Response.json(value))
+    vi.stubGlobal('fetch', fetchMock)
+    expect((await fetchEconomicCalendar()).sources[0]?.via).toBe('nyfed')
+    value.sources[0]!.coverageEnd = at - 1
+    await expect(fetchEconomicCalendar()).rejects.toThrow('일정 출처')
+    value.sources[0]!.coverageEnd = at + 60 * 86400000
+    value.sources[0]!.id = 'fed'
+    await expect(fetchEconomicCalendar()).rejects.toThrow('일정 출처')
+  })
   it('uses fixed routes without credentials, validates sources and respects explicit date-only events', async () => {
     const fetchMock = vi.fn(async () => new Response(JSON.stringify(calendarFixture), { headers: { Date: new Date(at).toUTCString() } }))
     vi.stubGlobal('fetch', fetchMock)

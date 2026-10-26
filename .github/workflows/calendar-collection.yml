@@ -1,0 +1,57 @@
+name: Collect official economic calendar
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/calendar-collection.yml'
+      - 'backend/research/*Calendar*'
+      - 'backend/research/calendar*'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/calendar-collection.yml'
+      - 'backend/research/*Calendar*'
+      - 'backend/research/calendar*'
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-public-source:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate official calendar without publishing
+        run: node backend/research/collectCalendar.mjs
+
+  publish-calendar:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && github.repository == 'lggunwoo45-ops/InvestAI' && github.event.repository.private == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    concurrency:
+      group: official-calendar-publish
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Collect, validate and publish the public schedule
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node backend/research/collectCalendar.mjs --publish
