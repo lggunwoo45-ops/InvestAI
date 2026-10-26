@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
+import { useCompactLayout } from '@/hooks/useCompactLayout'
 import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
 import { fetchDerivativesHistory, historyPaths, type DerivativesHistory, type DerivativeSeries } from '@/services/research/derivativesHistory'
 import { researchNow } from '@/services/research/researchClock'
 import styles from './DerivativeHistory.module.css'
+import { DerivativeHeatPanel } from './DerivativeHeatPanel'
 
 const stamp = (at: number | null) => at === null ? '아직 없음' : new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }).format(at)
 const day = (at: number) => new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', month: 'short', day: 'numeric' }).format(at)
@@ -23,7 +25,7 @@ function Trend({ series, data }: { series: DerivativeSeries; data: DerivativesHi
 }
 
 export function DerivativeHistory({ asset }: { asset: string }) {
-  const simple = useDisplayMode().displayMode === 'simple'
+  const simple = useDisplayMode().displayMode === 'simple', compact = useCompactLayout()
   const [days, setDays] = useState(7), [metric, setMetric] = useState<'funding' | 'openInterest'>('openInterest')
   const [data, setData] = useState<DerivativesHistory | null>(null), [error, setError] = useState(''), [loading, setLoading] = useState(true), [revision, setRevision] = useState(0), [page, setPage] = useState(0)
   useEffect(() => {
@@ -53,6 +55,7 @@ export function DerivativeHistory({ asset }: { asset: string }) {
     {error && <p role="status" className={styles.notice}>{error}{visible && ' 아래는 마지막으로 불러온 저장 기록입니다.'}</p>}
     {!visible ? <p className={styles.empty}>{loading ? '서버에 저장된 기록을 불러오고 있어요.' : '저장 기록을 확인할 수 없습니다.'}</p> : <>
       {stale && !error && <p className={styles.notice}>일부 지표의 최근 수집이나 발표값을 확인하지 못했어요. 아래 시각의 저장 기록을 보여드립니다.</p>}
+      <DerivativeHeatPanel data={visible} simple={simple} now={researchNow(visible)} unavailable={!!error || researchNow(visible) - visible.fetchedAt > 120_000} />
       <div className={styles.cards}>
         <article><span>{simple ? '아직 끝나지 않은 선물 계약' : '최근 미결제약정 · 기초자산 수량'}</span><strong>{latest ? valueText(latest.value, 'openInterest', asset) : '자료 없음'}</strong><p>{change === null ? '24시간 전 비교 자료가 아직 없어요.' : `최근 관측값은 24시간 전보다 ${Math.abs(change).toFixed(2)}% ${change >= 0 ? '증가' : '감소'}`}</p><small>{stamp(interest?.lastAt ?? null)} 관측</small></article>
         <article><span>{simple ? '마지막으로 정산된 펀딩비율' : '최근 확정 펀딩률 · 정산 1회'}</span><strong>{funding?.points.length ? valueText(funding.points.at(-1)!.value, 'funding', asset) : '자료 없음'}</strong><p>{simple ? '양수면 롱이 숏에게, 음수면 숏이 롱에게 지불해요.' : '예상 펀딩률·연환산 수익률이 아닌 정산값입니다.'}</p><small>{stamp(funding?.lastAt ?? null)} 정산</small></article>
@@ -61,7 +64,7 @@ export function DerivativeHistory({ asset }: { asset: string }) {
       {!simple && <div className={styles.toolbar}><label>표시 지표 <select value={metric} onChange={e => { setMetric(e.target.value as typeof metric); setPage(0) }}><option value="openInterest">미결제약정</option><option value="funding">확정 펀딩률</option></select></label><button disabled={!visible.series.some(s => s.points.length)} onClick={() => download(visible)}>조회 기록 CSV 저장</button></div>}
       {selected && <Trend series={selected} data={visible} />}
       {simple ? <p className={styles.explanation}>미결제약정이 늘면 열린 계약이 늘었다는 뜻이에요. 가격 상승·하락 방향을 뜻하지는 않아요. 펀딩도 단독으로 매수·매도를 결정하는 기준은 아니에요.</p> : <>
-        <div className={styles.tableWrap}><table><caption>{metric === 'funding' ? '확정 펀딩률' : '시간별 미결제약정'} · 최근 시각순 · 한국 시간</caption><thead><tr><th>거래소 기준 시각</th><th>값</th><th>이 값을 처음 저장한 시각</th></tr></thead><tbody>{rows.slice(safePage * 20, safePage * 20 + 20).map(p => <tr key={p.at}><td>{stamp(p.at)}</td><td>{valueText(p.value, metric, asset)}</td><td>{stamp(p.knownAt)}</td></tr>)}</tbody></table>{!rows.length && <p className={styles.empty}>확보한 기록이 없습니다.</p>}</div>
+        {compact ? <ol className={styles.historyCards} aria-label="저장된 지표 기록">{rows.slice(safePage * 20, safePage * 20 + 20).map(p => <li key={p.at}><time>{stamp(p.at)} 관측</time><strong>{valueText(p.value, metric, asset)}</strong><small>이 값을 저장한 시각 · {stamp(p.knownAt)}</small></li>)}{!rows.length && <li>확보한 기록이 없습니다.</li>}</ol> : <div className={styles.tableWrap}><table><caption>{metric === 'funding' ? '확정 펀딩률' : '시간별 미결제약정'} · 최근 시각순 · 한국 시간</caption><thead><tr><th>거래소 기준 시각</th><th>값</th><th>이 값을 처음 저장한 시각</th></tr></thead><tbody>{rows.slice(safePage * 20, safePage * 20 + 20).map(p => <tr key={p.at}><td>{stamp(p.at)}</td><td>{valueText(p.value, metric, asset)}</td><td>{stamp(p.knownAt)}</td></tr>)}</tbody></table>{!rows.length && <p className={styles.empty}>확보한 기록이 없습니다.</p>}</div>}
         {!!rows.length && <div className={styles.pagination}><button disabled={safePage === 0} onClick={() => setPage(safePage - 1)}>이전 기록 페이지</button><span>{safePage + 1} / {Math.ceil(rows.length / 20)}</span><button disabled={(safePage + 1) * 20 >= rows.length} onClick={() => setPage(safePage + 1)}>다음 기록 페이지</button></div>}
         {!!interest?.gaps?.length && <details className={styles.caption}><summary>미결제약정 미확보 구간 {interest.gaps.length}개 확인</summary><ul>{interest.gaps.map(g => <li key={g.from}>{stamp(g.from)} ~ {stamp(g.to)}</li>)}</ul></details>}
       </>}

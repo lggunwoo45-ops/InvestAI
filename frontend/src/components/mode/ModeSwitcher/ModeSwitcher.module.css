@@ -3,3 +3,6 @@
 .switcher button[aria-pressed='true'] { background: var(--color-surface-raised); color: var(--color-text); box-shadow: inset 0 0 0 1px var(--color-border-strong); }
 .switcher button:focus-visible { outline: 2px solid var(--color-border-strong); outline-offset: 2px; }
 @media (max-width: 1400px) { .switcher { flex-basis: 190px; width: 190px; } }
+
+@media(max-width:760px) { .switcher { width: 164px; flex-basis: 164px; }.switcher button { min-height: 40px; padding: 8px 5px; font-size: 11px; } }
+@media(max-width:360px) { .switcher { width: 142px; flex-basis: 142px; } }

@@ -100,3 +100,11 @@ a {
     --header-height: 78px;
   }
 }
+
+@media (max-width: 760px) {
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+  [data-display-mode] main :is(button, summary) { min-height: 44px; touch-action: manipulation; }
+  main summary { padding-block: 10px; }
+  main :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) { font-size: 16px !important; }
+  main :is(input[type="checkbox"], input[type="radio"]) { min-width: 20px; min-height: 20px; }
+}
