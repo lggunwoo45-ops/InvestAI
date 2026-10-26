@@ -1,11 +1,11 @@
 import { researchBase } from '@/services/research/researchClient'
 import { investmentRecordLimits } from '../../../../backend/cloud/recordPolicy.mjs'
 
-export interface Member { id:string; username:string }
+export interface Member { id:string; username:string; email?:string|null; emailVerifiedAt?:number|null }
 export interface CloudRecord { key:string; value:string|null; version:number }
 export interface TelegramStatus { available:boolean; connected:boolean; issue:string|null; linkedAt:number|null }
 interface Pending { value:string|null; version:number }
-export interface CloudState { enabled:boolean; signup:boolean; loading:boolean; user:Member|null; error:string; syncing:boolean; pending:number; conflicts:string[]; revision:number; recovery:string; expired:boolean }
+export interface CloudState { enabled:boolean; signup:boolean; emailAvailable?:boolean; loading:boolean; user:Member|null; error:string; syncing:boolean; pending:number; conflicts:string[]; revision:number; recovery:string; expired:boolean }
 let state:CloudState={enabled:false,signup:false,loading:false,user:null,error:'',syncing:false,pending:0,conflicts:[],revision:0,recovery:'',expired:false}
 let token='',generation=0,initialized=false,records=new Map<string,CloudRecord>(),pending=new Map<string,Pending>(),sending=false
 const listeners=new Set<()=>void>()
@@ -42,8 +42,8 @@ export async function initializeCloud(){
   if(initialized)return
   initialized=true
   try{
-    const status=await cloudRequest<{enabled:boolean;signup:boolean;error?:string}>('/status')
-    publish({enabled:status.enabled,signup:status.signup})
+    const status=await cloudRequest<{enabled:boolean;signup:boolean;emailAvailable?:boolean;error?:string}>('/status')
+    publish({enabled:status.enabled,signup:status.signup,emailAvailable:status.emailAvailable===true})
     const saved=sessionStorage.getItem('investai.cloud.session')
     if(status.enabled&&saved){
       const parsed=JSON.parse(saved);if(typeof parsed.token!=='string')return
@@ -62,7 +62,7 @@ async function acceptSession(user:Member,rows:CloudRecord[],recovery=''){
   try{const saved=JSON.parse(sessionStorage.getItem(`investai.cloud.pending.${user.id}`)??'[]');if(Array.isArray(saved))pending=new Map(saved)}catch{/* Preserve the server copy on an unreadable cache. */}
   publish({user,error:'',conflicts:[],revision:state.revision+1,recovery,expired:false});remoteChanged();void syncCloud()
 }
-export async function signIn(mode:'login'|'register'|'recover',input:{username:string;password:string;recovery?:string}){
+export async function signIn(mode:'login'|'register'|'recover',input:{username:string;password:string;recovery?:string;emailTicket?:string}){
   const result=await cloudRequest<{token:string;user:Member;recovery?:string}>('/'+mode,input)
   // Read the new account before switching the global identity. In-flight writes still belong to the old token.
   const me=await cloudRequest<{records:CloudRecord[]}>('/me',undefined,'GET',result.token)
@@ -71,6 +71,11 @@ export async function signIn(mode:'login'|'register'|'recover',input:{username:s
   try{sessionStorage.setItem('investai.cloud.session',JSON.stringify({token}))}catch{/* An in-memory session remains usable until the tab closes. */}
   await acceptSession(result.user,me.records,result.recovery)
   return result.recovery
+}
+export async function refreshMember(){
+  const current=generation
+  const me=await cloudRequest<{user:Member}>('/me')
+  if(current===generation)publish({user:me.user})
 }
 export async function signOut(all=false){
   await syncCloud()

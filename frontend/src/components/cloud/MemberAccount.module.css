@@ -8,3 +8,4 @@
 
 .confirm>label{display:flex;align-items:center;gap:8px;margin-block:10px}.confirm summary{cursor:pointer;font-weight:600}.confirm ul{padding-left:20px;line-height:1.8}
 .passwordRules{display:flex;flex-wrap:wrap;gap:8px 16px;list-style:none;padding:0;margin:0;font-size:12px;color:var(--color-text-muted)}.passwordRules [data-met=true]{color:#26725b}
+.emailBox{display:grid;gap:10px;padding:14px;border:1px solid var(--color-border);border-radius:10px}.emailBox p{margin:0}.emailBox button{justify-self:start}

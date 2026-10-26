@@ -6,6 +6,7 @@ import { createPriceAlerts } from './prices.mjs'
 import { createMonitorHandler } from '../monitor/server.mjs'
 import { createQuoteReader } from '../monitor/quotes.mjs'
 import { createHistoryReader } from '../research/history.mjs'
+import { createEmailDelivery } from './emailDelivery.mjs'
 
 const principal=Symbol('authenticated cloud owner')
 const headers={ 'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff',Vary:'Origin' }
@@ -14,7 +15,7 @@ async function readBody(req, limit=220_000) {
   if(req.headers['x-investai-cloud']!=='1' || !String(req.headers['content-type']).startsWith('application/json')) fail(400,'요청 형식을 확인해주세요.')
   const chunks=[];let size=0
   for await(const chunk of req){size+=chunk.length;if(size>limit)fail(413,'요청 크기를 초과했습니다.');chunks.push(chunk)}
-  try{return JSON.parse(Buffer.concat(chunks).toString('utf8'))}catch{fail(400,'요청을 읽을 수 없습니다.')}
+  try{const value=JSON.parse(Buffer.concat(chunks).toString('utf8'));if(!value||typeof value!=='object'||Array.isArray(value))throw new Error();return value}catch{fail(400,'요청을 읽을 수 없습니다.')}
 }
 function coalesce(reader,ttl,clock){
   const cache=new Map()
@@ -31,7 +32,18 @@ export function createCloudHandler({ directory=process.env.INVESTAI_CLOUD_DIRECT
   const enabled=!!directory && isAbsolute(directory) && /^[a-f0-9]{64}$/i.test(secret ?? '')
   let accounts,telegram,prices,fatal=null,closing=false,ready,maintenanceBusy=false,ownsLease=false
   const workerId=randomUUID()
-  const monitors=new Map(), rates=new Map(), timers=[]
+  const monitors=new Map(), rates=new Map(), timers=[], mailJobs=new Set()
+  const emailDelivery=createEmailDelivery({env,fetcher})
+  const requireEmail=()=>{if(!emailDelivery.available)fail(503,'인증메일 발송 준비 중입니다. 복구 코드를 이용해주세요.');if(mailJobs.size>=8)fail(429,'인증메일 요청을 처리 중입니다. 잠시 후 다시 시도해주세요.')}
+  const queueEmail=job=>{
+    if(!job.delivery)return job.response
+    // Respond before contacting the provider; reset requests never reveal whether an address has an account.
+    const work=Promise.resolve().then(async()=>{
+      try{await emailDelivery.send(job.delivery);accounts.email.delivered(job.response.challenge)}
+      catch{accounts.email.failed(job.response.challenge);console.warn('[member-email] delivery_unconfirmed')}
+    }).finally(()=>mailJobs.delete(work))
+    mailJobs.add(work);return job.response
+  }
   const quotes=coalesce(quoteReader,10_000,clock), history=coalesce(historyReader,25_000,clock)
   const assertLease=()=>{if(fatal)throw new Error(fatal);const lease=accounts.db.prepare('SELECT * FROM worker WHERE id=1').get();if(!lease||lease.owner!==workerId||lease.expires<=clock())throw new Error('감시 실행 권한이 만료되었습니다.');accounts.db.prepare('UPDATE worker SET expires=? WHERE id=1 AND owner=?').run(clock()+30000,workerId)}
   const getMonitor=async owner=>{
@@ -57,7 +69,7 @@ export function createCloudHandler({ directory=process.env.INVESTAI_CLOUD_DIRECT
   }
   ready=(async()=>{
     if(!enabled)return
-    accounts=openAccounts(directory,clock)
+    accounts=openAccounts(directory,clock,{emailSecret:secret})
     // A durable lease fences writes after crashes or accidentally starting two workers.
     const deadline=Date.now()+leaseWaitMs
     while(!ownsLease){
@@ -91,16 +103,25 @@ export function createCloudHandler({ directory=process.env.INVESTAI_CLOUD_DIRECT
     res.setHeader('Access-Control-Allow-Methods','GET, POST, PUT, OPTIONS')
     if(req.method==='OPTIONS'){res.writeHead(204,headers);res.end();return}
     await ready
-    if(path==='/api/cloud/status' && req.method==='GET')return send(res,fatal?503:200,{enabled:enabled&&!fatal,signup:env.INVESTAI_CLOUD_SIGNUP==='true',error:fatal})
+    if(path==='/api/cloud/status' && req.method==='GET')return send(res,fatal?503:200,{enabled:enabled&&!fatal,signup:env.INVESTAI_CLOUD_SIGNUP==='true',emailAvailable:enabled&&!fatal&&emailDelivery.available,error:fatal})
     if(!enabled||fatal||closing)return send(res,503,{error:fatal??'회원 서버가 아직 연결되지 않았습니다.'})
     try{
       rate(`all:${req.socket.remoteAddress}`,2000,60_000)
+      if(['/api/cloud/email/signup/request','/api/cloud/email/signup/verify','/api/cloud/email/reset/request','/api/cloud/email/reset/complete'].includes(path)&&req.method==='POST'){
+        requireEmail();rate(`email:${req.socket.remoteAddress}`,30,600_000)
+        const input=await readBody(req,4096)
+        if(path.includes('/signup/')&&env.INVESTAI_CLOUD_SIGNUP!=='true')fail(403,'현재 신규 가입을 받지 않습니다.')
+        if(path.endsWith('/signup/request'))return send(res,202,queueEmail(accounts.email.requestSignup(input,req.socket.remoteAddress)))
+        if(path.endsWith('/signup/verify'))return send(res,200,accounts.email.verifySignup(input))
+        if(path.endsWith('/reset/request'))return send(res,202,queueEmail(accounts.email.requestReset(input,req.socket.remoteAddress)))
+        return send(res,200,await accounts.email.resetPassword(input))
+      }
       if(['/api/cloud/register','/api/cloud/login','/api/cloud/recover'].includes(path)&&req.method==='POST'){
         rate(`auth:${req.socket.remoteAddress}`,30,600_000)
         const input=await readBody(req)
         rate(`account:${digest(String(input.username).toLowerCase())}`,10,600_000)
         if(path.endsWith('/register')&&env.INVESTAI_CLOUD_SIGNUP!=='true')fail(403,'현재 신규 가입을 받지 않습니다.')
-        const result=await accounts[path.split('/').at(-1)](input)
+        const result=await accounts[path.split('/').at(-1)](input,{requireEmail:emailDelivery.available})
         await getMonitor(result.user.id)
         return send(res,200,result)
       }
@@ -120,7 +141,9 @@ export function createCloudHandler({ directory=process.env.INVESTAI_CLOUD_DIRECT
         if(path==='/api/cloud/export')return send(res,200,{version:1,exportedAt:clock(),user,records:accounts.records(user.id),prices:prices.list(user.id)})
       }
       if(!['POST','PUT'].includes(req.method))fail(405,'지원하지 않는 요청입니다.')
-      const input=await readBody(req,path==='/api/cloud/records'&&req.method==='PUT'?8_100_000:220_000)
+      const input=await readBody(req,path==='/api/cloud/records'&&req.method==='PUT'?8_100_000:path.startsWith('/api/cloud/email/')?4096:220_000)
+      if(path==='/api/cloud/email/link/request'){requireEmail();rate(`email-link:${user.id}`,10,600_000);return send(res,202,queueEmail(await accounts.email.requestLink(user.id,input)))}
+      if(path==='/api/cloud/email/link/verify'){requireEmail();accounts.email.verifyLink(user.id,input);return send(res,200,{user:accounts.authenticate(token)})}
       if(path==='/api/cloud/logout'){accounts.logout(token,input.all===true);return send(res,200,{ok:true})}
       if(path==='/api/cloud/records'&&req.method==='PUT')return send(res,200,accounts.putRecord(user.id,input))
       if(path==='/api/cloud/prices')return send(res,200,{rules:prices.register(user.id,input)})
@@ -131,7 +154,7 @@ export function createCloudHandler({ directory=process.env.INVESTAI_CLOUD_DIRECT
       fail(404,'없는 경로입니다.')
     }catch(e){send(res,e instanceof CloudError?e.status:503,{error:e instanceof CloudError?e.message:'요청을 완료하지 못했습니다. 저장 상태와 서버 연결을 확인해주세요.'})}
   }
-  handler.ready=ready;handler.tick=tick;handler.dispatch=dispatch
-  handler.close=async()=>{closing=true;await ready;timers.forEach(clearInterval);await prices?.close();while(maintenanceBusy)await new Promise(r=>setTimeout(r,20));for(const monitor of monitors.values())await monitor.then(m=>m.close()).catch(()=>{});if(accounts){if(ownsLease)accounts.db.prepare('DELETE FROM worker WHERE id=1 AND owner=?').run(workerId);accounts.close()}}
+  handler.ready=ready;handler.tick=tick;handler.dispatch=dispatch;handler.emailDrain=()=>Promise.all([...mailJobs])
+  handler.close=async()=>{closing=true;await ready;timers.forEach(clearInterval);await prices?.close();await handler.emailDrain();while(maintenanceBusy)await new Promise(r=>setTimeout(r,20));for(const monitor of monitors.values())await monitor.then(m=>m.close()).catch(()=>{});if(accounts){if(ownsLease)accounts.db.prepare('DELETE FROM worker WHERE id=1 AND owner=?').run(workerId);accounts.close()}}
   return handler
 }

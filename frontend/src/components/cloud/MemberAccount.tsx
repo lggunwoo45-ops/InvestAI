@@ -3,13 +3,15 @@ import { acknowledgeRecovery,cloudRequest,conflictCopies,importGuestResearch,res
 import { useCloud } from '@/services/cloud/useCloud'
 import styles from './MemberAccount.module.css'
 import { InvestmentImport } from './InvestmentImport'
-import { passwordChecks, passwordHint, validNewPassword } from '../../../../backend/cloud/passwordPolicy.mjs'
+import { passwordHint, validNewPassword } from '../../../../backend/cloud/passwordPolicy.mjs'
+import { EmailPasswordRecovery, MemberEmail, PasswordRules, SignupEmail } from './MemberEmail'
 
 function download(name:string,value:unknown){const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 export function MemberAccount(){
-  const cloud=useCloud(),[open,setOpen]=useState(()=>!!cloud.recovery),[mode,setMode]=useState<'login'|'register'|'recover'>('login')
+  const cloud=useCloud(),[open,setOpen]=useState(()=>!!cloud.recovery),[mode,setMode]=useState<'login'|'register'|'recover'|'emailRecover'>('login')
   const [username,setUsername]=useState(''),[password,setPassword]=useState(''),[recovery,setRecovery]=useState(''),[error,setError]=useState(''),[busy,setBusy]=useState(false),[message,setMessage]=useState('')
   const [telegram,setTelegram]=useState<TelegramStatus|null>(null),[pair,setPair]=useState(''),[importing,setImporting]=useState(false)
+  const [emailTicket,setEmailTicket]=useState('')
   useEffect(()=>{
     if(!cloud.user||!open)return
     let alive=true
@@ -18,24 +20,25 @@ export function MemberAccount(){
   },[cloud.user,open])
   if(!cloud.enabled)return null
   const act=async(work:()=>Promise<unknown>,success='')=>{setBusy(true);setError('');setMessage('');try{await work();setMessage(success)}catch(e){setError(e instanceof Error?e.message:'요청을 완료하지 못했습니다.')}finally{setBusy(false)}}
-  const submit=(event:FormEvent)=>{event.preventDefault();if(mode!=='login'&&!validNewPassword(password)){setError(passwordHint);return}void act(async()=>{await signIn(mode,{username,password,...(mode==='recover'?{recovery}:{})});setPassword('');setRecovery('')})}
-  const checks=passwordChecks(password)
+  const submit=(event:FormEvent)=>{event.preventDefault();if(mode==='emailRecover')return;if(mode!=='login'&&!validNewPassword(password)){setError(passwordHint);return}if(mode==='register'&&cloud.emailAvailable&&!emailTicket){setError('이메일 인증을 먼저 완료해주세요.');return}void act(async()=>{await signIn(mode,{username,password,...(mode==='recover'?{recovery}:{}),...(mode==='register'&&emailTicket?{emailTicket}:{})});setPassword('');setRecovery('');setEmailTicket('')})}
   return <section className={styles.member} aria-label="회원 기록과 알림">
     <div className={styles.bar}><div><b>{cloud.user?`${cloud.user.username}의 기록`:'다른 기기에서도 기록을 이어보세요'}</b><span>{cloud.user?(cloud.expired?'다시 로그인 필요':cloud.conflicts.length?'기록 충돌 확인 필요':cloud.pending?`전송 대기 ${cloud.pending}건`:cloud.syncing?'기록 동기화 중':'회원 기록 연결됨'):'계정으로 저장하고, 화면을 닫아도 가격 감시를 이어갑니다.'}</span></div><button onClick={()=>setOpen(!open)} aria-expanded={open}>{cloud.user?'계정·알림 설정':'로그인·가입'}</button></div>
     {(cloud.error||error)&&<p role="alert">{error||cloud.error}</p>}
     {open&&<div className={styles.content}>
-      {!cloud.user||cloud.expired?<form onSubmit={submit} className={styles.form}>
+      {!cloud.user||cloud.expired?mode==='emailRecover'?<EmailPasswordRecovery onLogin={()=>{setMode('login');setError('')}} onRecoveryCode={()=>{setMode('recover');setError('')}} />:<form onSubmit={submit} className={styles.form}>
         <h2>{mode==='register'?'InvestAI 계정 만들기':mode==='recover'?'복구 코드로 비밀번호 재설정':'내 기록으로 로그인'}</h2>
-        <p>InvestAI 전용 아이디를 사용합니다. 이메일 인증은 아직 제공하지 않으며, 비밀번호를 잊으면 가입 시 발급한 복구 코드가 필요합니다.</p>
-        <label>아이디<input autoComplete="username" required pattern="[a-zA-Z0-9_-]{4,32}" minLength={4} maxLength={32} value={username} onChange={e=>setUsername(e.target.value)}/></label>
+        <p>{cloud.emailAvailable?'InvestAI 전용 아이디를 사용합니다. 가입 시 이메일을 인증하며, 기존 회원은 로그인 후 이메일을 연결할 수 있어요.':'인증메일 발송은 준비 중입니다. 지금은 InvestAI 아이디와 비밀번호로 가입하고, 비밀번호를 잊으면 가입 시 받은 복구 코드를 사용하세요.'}</p>
+        <label>아이디<input autoComplete="username" required pattern="[a-zA-Z0-9_-]{4,32}" minLength={4} maxLength={32} value={username} onChange={e=>{setUsername(e.target.value);setEmailTicket('')}}/></label>
+        {mode==='register'&&cloud.emailAvailable&&<SignupEmail username={username} onTicket={setEmailTicket}/>}
         <label>{mode==='recover'?'새 비밀번호':'비밀번호'}<input type="password" autoComplete={mode==='login'?'current-password':'new-password'} required minLength={mode==='login'?1:8} maxLength={128} value={password} onChange={e=>setPassword(e.target.value)}/><small>{mode==='login'?'기존에 사용하던 비밀번호로 로그인하세요.':passwordHint}</small></label>
-        {mode!=='login'&&<ul className={styles.passwordRules} aria-label="비밀번호 조건">{([['length','8~128자'],['uppercase','영문 대문자'],['number','숫자'],['special','특수문자 (예: ! @ #)']] as const).map(([key,label])=><li key={key} data-met={checks[key]}>{checks[key]?'✓':'○'} {label}{checks[key]?' 충족':''}</li>)}</ul>}
+        {mode!=='login'&&<PasswordRules password={password}/>}
         {mode==='recover'&&<label>가입할 때 받은 복구 코드<input required autoComplete="off" value={recovery} onChange={e=>setRecovery(e.target.value)}/></label>}
         <button disabled={busy} type="submit">{busy?'확인 중…':mode==='register'?'계정 만들기':mode==='recover'?'비밀번호 재설정':'로그인'}</button>
-        <div className={styles.actions}><button type="button" onClick={()=>setMode('login')}>로그인</button>{cloud.signup&&<button type="button" onClick={()=>setMode('register')}>처음 가입하기</button>}<button type="button" onClick={()=>setMode('recover')}>비밀번호를 잊었어요</button></div>
+        <div className={styles.actions}><button type="button" onClick={()=>{setMode('login');setError('')}}>로그인</button>{cloud.signup&&<button type="button" onClick={()=>{setMode('register');setError('')}}>처음 가입하기</button>}<button type="button" onClick={()=>{setMode(cloud.emailAvailable?'emailRecover':'recover');setPassword('');setError('')}}>비밀번호를 잊었어요</button>{cloud.emailAvailable&&mode==='recover'&&<button type="button" onClick={()=>setMode('emailRecover')}>이메일로 복구하기</button>}</div>
         {cloud.expired&&<button type="button" disabled={busy} onClick={()=>void act(()=>signOut())}>이 탭 로그아웃</button>}
       </form>:<>
         {cloud.recovery&&<aside className={styles.recovery} role="status"><h3>복구 코드를 안전한 곳에 보관하세요</h3><p>비밀번호를 잊었을 때 필요합니다. 닫으면 다시 표시되지 않으며, 비밀번호를 재설정하면 새 코드로 바뀝니다.</p><code>{cloud.recovery}</code><button onClick={()=>download('investai-recovery-code.json',{username:cloud.user!.username,recovery:cloud.recovery})}>복구 코드 내려받기</button><button onClick={acknowledgeRecovery}>보관했어요</button></aside>}
+        <MemberEmail key={cloud.user.id} user={cloud.user} available={cloud.emailAvailable===true}/>
         <div className={styles.grid}><section><h3>내 기록</h3><p>보유·거래 기록, 목표/손절 기준, 관심목록·메모·검토 이력, 가격 시나리오와 연구실 기록을 계정에 저장합니다. 기존 브라우저 자료는 아래에서 직접 가져올 수 있습니다. 최근 본 종목과 화면 설정은 기기별로 유지합니다.</p><div className={styles.actions}><button disabled={busy||cloud.syncing} onClick={()=>void act(syncCloud)}>지금 동기화</button><button disabled={busy} onClick={()=>setImporting(!importing)}>기존 연구실 기록 가져오기</button><button disabled={busy} onClick={()=>void act(async()=>download('investai-member-records.json',await cloudRequest('/export')))}>회원 기록 내려받기</button></div>{importing&&<div className={styles.confirm}><p>이 브라우저의 연구실 기록을 현재 계정의 서버 저장소로 복사합니다. 원본은 남겨두며, 겹치는 회원 메모는 덮어쓰지 않습니다.</p><button disabled={busy} onClick={()=>void act(async()=>{await importGuestResearch();setImporting(false)},'가져오기를 처리했습니다. 위의 동기화 상태도 확인해주세요.')}>이 계정으로 복사하기</button></div>}
           <InvestmentImport />
           {cloud.conflicts.map(key=><div key={key} className={styles.confirm}><h4>{key==='investai.portfolio.v1'?'보유·거래 기록':key==='investai.watchlist-account.v1'?'관심목록·메모':key==='investai.scenarios.v1'?'가격 시나리오':key.includes('draft')?'작성 중인 메모':'연구실 기록'} 충돌</h4><p>두 기기에서 같은 기록을 수정했습니다. 두 버전을 내려받아 확인한 뒤 사용할 버전을 선택하세요.</p><button onClick={()=>download('investai-conflict.json',{key,...conflictCopies(key)})}>두 버전 내려받기</button><button disabled={busy} onClick={()=>void act(()=>resolveCloudConflict(key,'server'))}>서버 기록 사용</button><button disabled={busy} onClick={()=>void act(()=>resolveCloudConflict(key,'mine'))}>이 탭의 기록 사용</button></div>)}
