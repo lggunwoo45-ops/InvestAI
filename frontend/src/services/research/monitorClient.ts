@@ -1,4 +1,4 @@
-import type { ExplorerConfig } from './signalExplorer'
+import type { DerivativeContextPoint, ExplorerConfig } from './signalExplorer'
 import { localMonitorAvailable } from './monitorAvailability'
 import { cloudRequest,cloudSignedIn } from '@/services/cloud/cloudClient'
 import type { PublicPosition, PositionThresholds, positionEventLabels } from '../../../../backend/research/positionRisk.mjs'
@@ -10,8 +10,8 @@ export interface PrivateConnectionInput extends Omit<PositionConnectionConfig, '
 export interface PositionEvent { id: string; kind: keyof typeof positionEventLabels; at: number; sourceAt: number | null; position: PublicPosition | null; detail: string; delivery: { status: 'off' | 'pending' | 'sent' | 'uncertain'; attempts: number } }
 export interface PositionConnection { id: string; config: PositionConnectionConfig; createdAt: number; revision?: number; updatedAt?: number; lastAttemptAt?: number; credentialsUpdatedAt?: number; active: boolean; issue: string | null; snapshot: { receivedAt: number; sourceAt: number | null; positions: PublicPosition[] } | null; risk: Record<string, string[]>; events: PositionEvent[]; sequence: number }
 export interface SignalWatchConfig { requestId: string; name: string; asset: string; notify: boolean; config: ExplorerConfig; purpose: 'opportunity' | 'opposition'; holdingSide: 'long' | 'short' | null; positionRef?: { connectionId: string; key: string } }
-export interface SignalWatchEvent { id: string; at: number; observedAt: number; price: number; signals: string[]; outcome: 'pending' | 'entered' | 'up' | 'down' | 'timeout' | 'ambiguous' | 'unresolved' | 'cancelled'; entry: number | null; entryAt: number | null; exit: number | null; exitAt: number | null; net: number | null; delivery: { status: 'off' | 'pending' | 'sent' | 'uncertain'; attempts: number } }
-export interface SignalWatch { id: string; config: SignalWatchConfig & { version: string }; hash: string; createdAt: number; active: boolean; lastAt: number | null; matched: boolean; checkedAt: number | null; issue: string | null; events: SignalWatchEvent[] }
+export interface SignalWatchEvent { derivatives?: DerivativeContextPoint & { method: string; source: string }; id: string; at: number; observedAt: number; price: number; signals: string[]; outcome: 'pending' | 'entered' | 'up' | 'down' | 'timeout' | 'ambiguous' | 'unresolved' | 'cancelled'; entry: number | null; entryAt: number | null; exit: number | null; exitAt: number | null; net: number | null; delivery: { status: 'off' | 'pending' | 'sent' | 'uncertain'; attempts: number } }
+export interface SignalWatch { id: string; config: SignalWatchConfig & { version: string; derivativeVersion?: string }; hash: string; createdAt: number; active: boolean; lastAt: number | null; matched: boolean; derivativeState?: 'unknown' | 'match' | 'miss'; checkedAt: number | null; issue: string | null; events: SignalWatchEvent[] }
 export interface MonitorConfig {
   requestId: string
   instrument: { venue: 'upbit' | 'binance-spot' | 'binance-futures'; asset: string; quote: string; symbol?: string }
@@ -26,7 +26,7 @@ export interface MonitorRule {
   last: MonitorQuote | null; entered: MonitorQuote | null; result: { kind: Outcome; at: number; price: number | null; sourceAt: number | null; grossPercent: number | null; netPercent: number | null } | null
   events: MonitorEvent[]; issue: string | null; gaps: number
 }
-export interface MonitorState { version: 1; running: boolean; error: string | null; now: number; lastCycleAt: number | null; intervalMs: number; channelConfigured: boolean; vault?: VaultStatus; rules: MonitorRule[]; signals?: SignalWatch[]; connections?: PositionConnection[] }
+export interface MonitorState { version: 1; running: boolean; error: string | null; now: number; lastCycleAt: number | null; intervalMs: number; channelConfigured: boolean; derivativeSignalsAvailable?: boolean; vault?: VaultStatus; rules: MonitorRule[]; signals?: SignalWatch[]; connections?: PositionConnection[] }
 async function request(path: string, data?: unknown, timeout = 10_000): Promise<MonitorState> {
   if (cloudSignedIn()) return cloudRequest<MonitorState>('/monitor'+path,data)
   if (!localMonitorAvailable()) throw new Error('이 배포에서는 개인 감시 서버가 연결되지 않았습니다. PC용 InvestAI에서 이용할 수 있습니다.')

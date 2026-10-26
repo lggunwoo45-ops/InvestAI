@@ -15,7 +15,7 @@ const fixture = () => {
   const end = Math.floor(Date.now() / 3600000) * 3600000
   return { version: 1 as const, asset: 'BTC', timeframe: '1h' as const, requested: 1000, fetchedAt: Date.now(), asOf: Date.now(), source: 'test', candles: Array.from({ length: 240 }, (_, i) => { const close = 100 + 8 * Math.sin(i / 7); return { timestamp: end - (240 - i) * 3600000, open: close - .2, high: close + .5, low: close - .5, close, volume: 10 } }) }
 }
-const state = () => ({ version: 1 as const, running: true, error: null, now: Date.now(), lastCycleAt: Date.now(), intervalMs: 15000, channelConfigured: false, rules: [], signals: [] })
+const state = () => ({ version: 1 as const, running: true, error: null, now: Date.now(), lastCycleAt: Date.now(), intervalMs: 15000, channelConfigured: false, derivativeSignalsAvailable: true, rules: [], signals: [] })
 beforeEach(() => { localStorage.clear(); localStorage.setItem('market-copilot.language', 'ko'); vi.resetAllMocks(); vi.mocked(fetchResearchHistory).mockResolvedValue(fixture()); vi.mocked(readMonitor).mockResolvedValue(state()); vi.mocked(registerSignalWatch).mockResolvedValue(state()); vi.mocked(fetchDerivativeContext).mockImplementation(async (asset, timeframe, from, to) => ({ version: 1, method: DERIVATIVE_FILTER_VERSION, asset, timeframe, from, to, fetchedAt: Date.now(), firstStoredAt: from, source: 'Bybit USDT perpetual', points: Array.from({ length: (to - from) / timeframes[timeframe] + 1 }, (_, i) => { const at = from + i * timeframes[timeframe]; return { at, funding: { at: at - 3600000, knownAt: at - 1, value: .0001 }, openInterest: null } }) })) })
 it('uses real historical samples and retains parameters across distinct simple/expert layouts', async () => {
   const data = fixture(); vi.mocked(fetchResearchHistory).mockResolvedValue(data)
@@ -101,7 +101,7 @@ it('shows source failures without fabricated chart or result values', async () =
   expect(screen.getByText('시세를 불러온 뒤 실제 관측 결과를 계산합니다.')).toBeTruthy()
 })
 
-it('adds point-in-time conditions, keeps them in saved/shared presets and does not silently register an unsupported watch', async () => {
+it('adds point-in-time conditions, keeps them in saved/shared presets and registers the same derivative conditions for monitoring', async () => {
   renderWithProviders(<SignalExplorer asset="BTC" />)
   await screen.findByRole('img', { name: '최근 가격 흐름과 조건 충족 위치' })
   expect(fetchDerivativeContext).not.toHaveBeenCalled()
@@ -112,8 +112,9 @@ it('adds point-in-time conditions, keeps them in saved/shared presets and does n
   fireEvent.click(screen.getByRole('button', { name: '조건 링크 만들기' }))
   expect(JSON.parse(new URL((screen.getByLabelText('공유할 조건 링크') as HTMLInputElement).value).searchParams.get('config')!).funding).toBe('positive')
   fireEvent.click(screen.getByRole('button', { name: '전문가 설정 열기' }))
-  expect(screen.getByText(/이 조건의 자동 감시는 아직 지원하지 않습니다/)).toBeTruthy()
-  expect(screen.queryByRole('button', { name: '선택한 신호 감시 시작' })).toBeNull()
+  await waitFor(() => expect((screen.getByRole('button', { name: '선택한 신호 감시 시작' }) as HTMLButtonElement).disabled).toBe(false))
+  fireEvent.click(screen.getByRole('button', { name: '선택한 신호 감시 시작' }))
+  await waitFor(() => expect(registerSignalWatch).toHaveBeenCalledWith(expect.objectContaining({ config: expect.objectContaining({ funding: 'positive' }) })))
   fireEvent.click(screen.getByRole('button', { name: '추가 조건 해제' }))
   expect(screen.getByRole('button', { name: '선택한 신호 감시 시작' })).toBeTruthy()
 })
@@ -135,4 +136,15 @@ it('missing OI is counted as unavailable and never treated as flat or a matching
   expect(await screen.findByText('자료 부족으로 제외')).toBeTruthy()
   expect(screen.getByText('0개 비중복 사례')).toBeTruthy()
   expect(screen.getByText(/수집 초기에는 비교할 사례가 적거나 없을 수/)).toBeTruthy()
+})
+
+it('offers monitoring from a guided disclosure without requiring a switch to expert mode', async () => {
+  renderWithProviders(<SignalExplorer asset="BTC" />)
+  await screen.findByRole('img', { name: '최근 가격 흐름과 조건 충족 위치' })
+  expect(screen.getByText('이 조건이 다시 나타나면 자동으로 기록하기').closest('details')?.open).toBe(false)
+  fireEvent.click(screen.getByText('이 조건이 다시 나타나면 자동으로 기록하기'))
+  await waitFor(() => expect((screen.getByRole('button', { name: '선택한 신호 감시 시작' }) as HTMLButtonElement).disabled).toBe(false))
+  fireEvent.click(screen.getByRole('button', { name: '선택한 신호 감시 시작' }))
+  await waitFor(() => expect(registerSignalWatch).toHaveBeenCalledWith(expect.objectContaining({ config: defaultExplorerConfig, notify: false })))
+  expect(screen.getByRole('heading', { name: '내 생각을, 과거 흐름과 비교해보세요.' })).toBeTruthy()
 })

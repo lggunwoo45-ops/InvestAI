@@ -28,7 +28,7 @@ function coalesce(reader,ttl,clock){
     cache.set(key,{promise,until:clock()+ttl});return promise
   }
 }
-export function createCloudHandler({ directory=process.env.INVESTAI_CLOUD_DIRECTORY, secret=process.env.INVESTAI_CLOUD_KEY, origins=[], env=process.env, clock=Date.now, quoteReader=createQuoteReader(), historyReader=createHistoryReader(), fetcher=fetch, monitorOptions={}, autoStart=true, leaseWaitMs=35_000 }={}) {
+export function createCloudHandler({ directory=process.env.INVESTAI_CLOUD_DIRECTORY, secret=process.env.INVESTAI_CLOUD_KEY, origins=[], env=process.env, clock=Date.now, quoteReader=createQuoteReader(), historyReader=createHistoryReader(), derivativeContextReader=null, fetcher=fetch, monitorOptions={}, autoStart=true, leaseWaitMs=35_000 }={}) {
   const enabled=!!directory && isAbsolute(directory) && /^[a-f0-9]{64}$/i.test(secret ?? '')
   let accounts,telegram,prices,fatal=null,closing=false,ready,maintenanceBusy=false,ownsLease=false
   const workerId=randomUUID()
@@ -45,11 +45,12 @@ export function createCloudHandler({ directory=process.env.INVESTAI_CLOUD_DIRECT
     mailJobs.add(work);return job.response
   }
   const quotes=coalesce(quoteReader,10_000,clock), history=coalesce(historyReader,25_000,clock)
+  const derivativeContexts=derivativeContextReader ? coalesce(derivativeContextReader,25_000,clock) : null
   const assertLease=()=>{if(fatal)throw new Error(fatal);const lease=accounts.db.prepare('SELECT * FROM worker WHERE id=1').get();if(!lease||lease.owner!==workerId||lease.expires<=clock())throw new Error('감시 실행 권한이 만료되었습니다.');accounts.db.prepare('UPDATE worker SET expires=? WHERE id=1 AND owner=?').run(clock()+30000,workerId)}
   const getMonitor=async owner=>{
     if(!monitors.has(owner)){
       const promise=(async()=>{
-        const handler=createMonitorHandler({...monitorOptions,directory:join(directory,'members',owner),quoteReader:quotes,historyReader:history,channel:telegram.channel(owner),clock,autoStart,cloud:true,authorize:req=>req[principal]===owner,
+        const handler=createMonitorHandler({...monitorOptions,directory:join(directory,'members',owner),quoteReader:quotes,historyReader:history,derivativeContextReader:derivativeContexts,channel:telegram.channel(owner),clock,autoStart,cloud:true,authorize:req=>req[principal]===owner,
           storeFactory:async()=>({data:JSON.parse(accounts.db.prepare('SELECT value FROM monitors WHERE owner=?').get(owner)?.value??'{"version":1,"rules":[]}'),close:async()=>{},save:async next=>{
             const value=JSON.stringify(next);if(value.length>5_000_000)throw new Error('감시 저장 한도에 도달했습니다.')
             accounts.db.exec('BEGIN IMMEDIATE');try{assertLease();accounts.db.prepare('INSERT INTO monitors VALUES(?,?) ON CONFLICT(owner) DO UPDATE SET value=excluded.value').run(owner,value);accounts.db.exec('COMMIT')}catch(e){accounts.db.exec('ROLLBACK');throw e}
@@ -103,7 +104,7 @@ export function createCloudHandler({ directory=process.env.INVESTAI_CLOUD_DIRECT
     res.setHeader('Access-Control-Allow-Methods','GET, POST, PUT, OPTIONS')
     if(req.method==='OPTIONS'){res.writeHead(204,headers);res.end();return}
     await ready
-    if(path==='/api/cloud/status' && req.method==='GET')return send(res,fatal?503:200,{enabled:enabled&&!fatal,signup:env.INVESTAI_CLOUD_SIGNUP==='true',emailAvailable:enabled&&!fatal&&emailDelivery.available,error:fatal})
+    if(path==='/api/cloud/status' && req.method==='GET')return send(res,fatal?503:200,{enabled:enabled&&!fatal,signup:env.INVESTAI_CLOUD_SIGNUP==='true',emailAvailable:enabled&&!fatal&&emailDelivery.available,derivativeSignalsAvailable:enabled&&!fatal&&!!derivativeContexts,error:fatal})
     if(!enabled||fatal||closing)return send(res,503,{error:fatal??'회원 서버가 아직 연결되지 않았습니다.'})
     try{
       rate(`all:${req.socket.remoteAddress}`,2000,60_000)

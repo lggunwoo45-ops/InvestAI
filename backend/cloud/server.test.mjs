@@ -1,3 +1,4 @@
+import { defaultExplorerConfig } from '../research/signals.mjs'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { mkdtemp,rm } from 'node:fs/promises'
@@ -173,4 +174,27 @@ test('sending queued alerts never restores a rule stopped during an earlier send
     const saved=prices.list(member.user.id)[0]
     assert.equal(saved.active,false);assert.deepEqual(saved.events.map(e=>e.delivery),['sent','sent'])
   }finally{await prices.close();accounts.close();await rm(dir,{recursive:true,force:true})}
+})
+
+
+test('cloud derivative watches preserve both filters across restart and remain isolated by member', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'investai-cloud-derivative-'))
+  const options = { derivativeContextReader: async () => { throw new Error('no stored data yet') } }
+  let app = await serve(dir, options)
+  try {
+    assert.equal((await app.request('/status')).body.derivativeSignalsAvailable, true)
+    const a = (await app.request('/register', { username: 'derivative-a', password })).body
+    const b = (await app.request('/register', { username: 'derivative-b', password })).body
+    const signal = { requestId: 'cloud-derivative-1', name: '조건 감시', asset: 'BTC', notify: false, config: { ...defaultExplorerConfig, funding: 'negative', openInterest: 'falling' } }
+    assert.equal((await app.request('/monitor', undefined, a.token)).body.derivativeSignalsAvailable, true)
+    const result = await app.request('/monitor/signals', signal, a.token)
+    assert.equal(result.status, 200); assert.equal(result.body.signals[0].config.config.funding, 'negative')
+    assert.equal(result.body.signals[0].derivativeState, 'unknown')
+    assert.equal((await app.request('/monitor', undefined, b.token)).body.signals.length, 0)
+    assert.equal((await app.request('/monitor/signals/stop', { id: result.body.signals[0].id }, b.token)).status, 400)
+    await app.close(); app = await serve(dir, options)
+    const restored = (await app.request('/monitor', undefined, a.token)).body.signals[0]
+    assert.equal(restored.hash, result.body.signals[0].hash); assert.equal(restored.config.config.openInterest, 'falling')
+    assert.equal(restored.config.derivativeVersion, 'investai-derivatives-asof-1')
+  } finally { await app.close(); await rm(dir, { recursive: true, force: true }) }
 })

@@ -329,3 +329,56 @@ test('slow notification delivery cannot block price observations', async t => {
     release(); await dispatching
   } finally { release(); await app.close() }
 })
+
+
+test('derivative registration is capability gated; a shared lookup failure spares price-only signals and pending outcomes', async t => {
+  const dir = await directory(t), step = 3600000
+  let rows = Array.from({ length: 80 }, (_, i) => ({ timestamp: at + i * step, open: 100, high: 101, low: 99, close: 100, volume: 10 }))
+  let broken = false, reads = 0, sends = 0
+  const signal = { requestId: 'filtered-integration-1', asset: 'BTC', name: '파생 확인', notify: true, config: { ...defaultExplorerConfig, window: 1, signals: ['volume-long'], funding: 'positive', openInterest: 'rising' } }
+  const options = { directory: dir, clock: () => at + 90 * step, channel: { configured: true, send: async (_rule, event) => { sends++; assert.ok(event.derivatives); throw new Error('delivery uncertain') } }, historyReader: async () => ({ asset: 'BTC', timeframe: '1h', asOf: rows.at(-1).timestamp + step + 1, candles: rows }) }
+  let app = await serve(options)
+  try {
+    assert.equal((await app.get()).derivativeSignalsAvailable, false)
+    assert.equal((await app.post('/signals', signal)).status, 400)
+    await app.close()
+    options.derivativeContextReader = async (asset, timeframe, from, to) => {
+      reads++; if (broken) throw new Error('offline')
+      return { method: 'investai-derivatives-asof-1', asset, timeframe, from, to, points: Array.from({ length: (to - from) / step + 1 }, (_, i) => { const at = from + i * step; return { at, funding: { at: at - step, knownAt: at - 1, value: .0001 }, openInterest: { at: at - step, knownAt: at - 1, value: 110, previousAt: at - 25 * step, previousKnownAt: at - step, previousValue: 100, change24h: 10 } } }) }
+    }
+    app = await serve(options)
+    assert.equal((await app.get()).derivativeSignalsAvailable, true)
+    assert.equal((await app.post('/signals', signal)).status, 200)
+    assert.equal((await app.post('/signals', signal)).status, 200)
+    assert.equal((await app.post('/signals', { ...signal, config: { ...signal.config, funding: 'negative' } })).status, 400)
+    await app.post('/signals', { ...signal, requestId: 'price-only-integration-1', notify: false, config: { ...signal.config, funding: 'any', openInterest: 'any' } })
+    await app.handler.tickSignals(); assert.equal(reads, 1)
+    rows.push({ timestamp: at + 80 * step, open: 100, high: 101, low: 100, close: 101, volume: 40 })
+    await app.handler.tickSignals()
+    let state = await app.get(); assert.equal(state.signals[0].events.length, 1); assert.equal(state.signals[1].events.length, 1)
+    await app.handler.dispatch(); assert.equal(sends, 1)
+    const hash = state.signals[0].hash
+    await app.close(); app = await serve(options)
+    await app.handler.dispatch(); assert.equal(sends, 1) // interrupted/uncertain delivery is not retried
+    broken = true
+    rows.push({ timestamp: at + 81 * step, open: 101, high: 105, low: 100.9, close: 104, volume: 10 })
+    await app.handler.tickSignals(); state = await app.get()
+    assert.equal(state.running, true); assert.equal(state.signals[0].hash, hash)
+    assert.equal(state.signals[0].events[0].outcome, 'up'); assert.equal(state.signals[0].derivativeState, 'unknown')
+    rows.push({ timestamp: at + 82 * step, open: 100, high: 101, low: 100, close: 101, volume: 40 })
+    await app.handler.tickSignals(); state = await app.get()
+    assert.equal(state.signals[0].events.length, 1); assert.equal(state.signals[1].events.length, 2)
+    broken = false
+    rows.push({ timestamp: at + 83 * step, open: 100, high: 101, low: 100, close: 101, volume: 40 })
+    await app.handler.tickSignals(); state = await app.get()
+    assert.equal(state.signals[0].events.length, 1); assert.equal(state.signals[0].issue, null)
+    assert.equal(state.signals[0].events[0].delivery.status, 'uncertain')
+  } finally { await app.close() }
+})
+
+test('Telegram signal message includes selected derivative evidence without sending to a live recipient', async () => {
+  let payload
+  const channel = telegramChannel({ INVESTAI_TELEGRAM_ENABLED: 'true', INVESTAI_TELEGRAM_BOT_TOKEN: '123:fixture-token', INVESTAI_TELEGRAM_CHAT_ID: '123' }, async (_url, options) => { payload = JSON.parse(options.body); return new Response(JSON.stringify({ ok: true }), { headers: { 'content-type': 'application/json' } }) })
+  await channel.send({ config: { instrument: { venue: 'binance-futures', symbol: 'BTCUSDT', quote: 'USDT' }, side: 'long' } }, { id: 'test-evidence', at, kind: 'signal', price: 100, derivatives: { at: at + 3600000, funding: { value: .0001 }, openInterest: { change24h: 10 } } })
+  assert.match(payload.text, /Bybit/); assert.match(payload.text, /0.0100%/); assert.match(payload.text, /10.00%/); assert.match(payload.text, /봉 종료 전 저장 자료/)
+})

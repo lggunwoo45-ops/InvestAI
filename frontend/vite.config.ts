@@ -1,26 +1,27 @@
 import { fileURLToPath, URL } from 'node:url'
 import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vite'
+import { defineConfig, type ViteDevServer } from 'vite'
 import { createLocalAiGateway } from './tools/local-ai/gateway.mjs'
 import { createMarketHandler } from '../backend/market-data/server.mjs'
 import { createResearchHandler } from '../backend/research/server.mjs'
 import { createMonitorHandler } from '../backend/monitor/server.mjs'
 import { createCloudHandler } from '../backend/cloud/server.mjs'
 
+function connectResearch(server: Pick<ViteDevServer, 'middlewares' | 'httpServer'>) {
+  const research = createResearchHandler({ local: true })
+  const derivativeContextReader = research.derivativeContextReader
+  const cloud = createCloudHandler({ derivativeContextReader })
+  const monitor = createMonitorHandler({ directory: process.env.INVESTAI_LOCAL_MONITOR_DIRECTORY, derivativeContextReader })
+  server.middlewares.use(cloud); server.middlewares.use(monitor); server.middlewares.use(research)
+  server.httpServer?.once('close', () => { void Promise.all([cloud.close(), monitor.close()]).then(() => research.close()) })
+}
+
 export default defineConfig({
   base: './',
   plugins: [react(), {
-    name: 'member-cloud',
-    configureServer(server) { const handler = createCloudHandler(); server.middlewares.use(handler); server.httpServer?.on('close', () => { void handler.close() }) },
-    configurePreviewServer(server) { const handler = createCloudHandler(); server.middlewares.use(handler); server.httpServer?.on('close', () => { void handler.close() }) },
-  }, {
-    name: 'local-scenario-monitor',
-    configureServer(server) { const handler = createMonitorHandler({ directory: process.env.INVESTAI_LOCAL_MONITOR_DIRECTORY }); server.middlewares.use(handler); server.httpServer?.on('close', () => { void handler.close() }) },
-    configurePreviewServer(server) { const handler = createMonitorHandler({ directory: process.env.INVESTAI_LOCAL_MONITOR_DIRECTORY }); server.middlewares.use(handler); server.httpServer?.on('close', () => { void handler.close() }) },
-  }, {
-    name: 'local-market-research',
-    configureServer(server) { const handler = createResearchHandler({ local: true }); server.middlewares.use(handler); server.httpServer?.once('close', handler.close) },
-    configurePreviewServer(server) { const handler = createResearchHandler({ local: true }); server.middlewares.use(handler); server.httpServer?.once('close', handler.close) },
+    name: 'research-and-monitor',
+    configureServer: connectResearch,
+    configurePreviewServer: connectResearch,
   }, {
     name: 'local-ai-gateway',
     configureServer(server) { server.middlewares.use(createLocalAiGateway()) },

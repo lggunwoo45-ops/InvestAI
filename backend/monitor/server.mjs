@@ -6,7 +6,8 @@ import { openStore } from './store.mjs'
 import { createQuoteReader } from './quotes.mjs'
 import { telegramChannel } from './notifications.mjs'
 import { createHistoryReader } from '../research/history.mjs'
-import { createSignalWatch, normalizeSignalWatch, observeSignalWatch, signalFingerprint, stopSignalWatch, suspendSignalWatch } from './signalWatch.mjs'
+import { createSignalWatch, normalizeSignalWatch, observeSignalWatch, signalFingerprint, stopSignalWatch, suspendSignalWatch, deferDerivativeWatch } from './signalWatch.mjs'
+import { hasDerivativeFilters, timeframes, DERIVATIVE_FILTER_VERSION } from '../research/signals.mjs'
 import { createConnection, createPositionReader, normalizeConnection, observeConnection, validPositionSnapshot } from './positions.mjs'
 import { createCredentialVault, normalizeCredentials } from './credentialVault.mjs'
 import { createPrivatePositionReader, isPrivateVenue, PrivatePositionError } from './privatePositions.mjs'
@@ -31,7 +32,7 @@ async function body(req) {
 }
 const respond = (res, status, data) => { res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' }); res.end(JSON.stringify(data)) }
 
-export function createMonitorHandler({ directory = defaultDirectory, quoteReader = createQuoteReader(), historyReader = createHistoryReader(), positionReader = createPositionReader(), privateReader = createPrivatePositionReader(), channel = telegramChannel(), clock = Date.now, intervalMs = 15_000, autoStart = true, authorize = allowed, cloud = false, storeFactory = openStore } = {}) {
+export function createMonitorHandler({ directory = defaultDirectory, quoteReader = createQuoteReader(), historyReader = createHistoryReader(), derivativeContextReader = null, positionReader = createPositionReader(), privateReader = createPrivatePositionReader(), channel = telegramChannel(), clock = Date.now, intervalMs = 15_000, autoStart = true, authorize = allowed, cloud = false, storeFactory = openStore } = {}) {
   let store, state, fatal = null, stopped = false, timer, deliveryTimer, busy = false, deliveryBusy = false, lastCycleAt = null
   let signalTimer, signalBusy = false
   let positionTimer, positionBusy = false
@@ -125,14 +126,23 @@ export function createMonitorHandler({ directory = defaultDirectory, quoteReader
       const signalGroups = new Map((state.signals ?? []).filter(r => r.active).map(r => [`${r.config.asset}:${r.config.config.timeframe}:${r.config.config.bars}`, r.config]))
       for (const [key, config] of signalGroups) {
         if (stopped || fatal) break
-        let history, issue
+        let history, issue, contexts
         try { history = await historyReader(config.asset, config.config.timeframe, config.config.bars) } catch { issue = '신호 자료를 가져오지 못해 판정을 보류합니다.' }
+        const filtered = (state.signals ?? []).filter(r => r.active && `${r.config.asset}:${r.config.config.timeframe}:${r.config.config.bars}` === key && hasDerivativeFilters(r.config.config))
+        if (history?.candles.length && filtered.length && derivativeContextReader) {
+          const interval = timeframes[config.config.timeframe], last = history.candles.at(-1).timestamp
+          const from = Math.max(history.candles[0].timestamp, Math.min(...filtered.map(r => r.lastAt ?? last))) + interval, to = last + interval
+          try {
+            const data = await derivativeContextReader(config.asset, config.config.timeframe, from, to)
+            if (data.method === DERIVATIVE_FILTER_VERSION && data.asset === config.asset && data.timeframe === config.config.timeframe && data.from === from && data.to === to && Array.isArray(data.points)) contexts = new Map(data.points.map(p => [p.at, p]))
+          } catch { /* Missing derivatives defer filtered decisions, but price outcomes keep progressing. */ }
+        }
         if (stopped) break
         await mutate(next => {
           for (const rule of (next.signals ?? []).filter(r => r.active && `${r.config.asset}:${r.config.config.timeframe}:${r.config.config.bars}` === key)) {
             if (!checkBinding(next, rule)) continue
-            if (issue) rule.issue = issue
-            else observeSignalWatch(rule, history, clock())
+            if (issue) deferDerivativeWatch(rule, issue)
+            else observeSignalWatch(rule, history, clock(), contexts)
           }
         })
       }
@@ -181,7 +191,7 @@ export function createMonitorHandler({ directory = defaultDirectory, quoteReader
     deliveryBusy = true
     try { await ready; if (!fatal && !stopped) await deliver() } catch (e) { fatal ??= e.message } finally { deliveryBusy = false }
   }
-  const status = () => ({ version: 1, running: !fatal && !stopped, error: fatal, now: clock(), lastCycleAt, intervalMs, channelConfigured: channel.configured, vault: { configured: !!state?.vault, unlocked: vault.unlocked }, rules: state?.rules ?? [], signals: state?.signals ?? [], connections: (state?.connections ?? []).map(c => isPrivateVenue(c.config.venue) && !vault.unlocked ? { ...c, issue: lockedMessage } : c) })
+  const status = () => ({ version: 1, running: !fatal && !stopped, error: fatal, now: clock(), lastCycleAt, intervalMs, channelConfigured: channel.configured, derivativeSignalsAvailable: typeof derivativeContextReader === 'function', vault: { configured: !!state?.vault, unlocked: vault.unlocked }, rules: state?.rules ?? [], signals: state?.signals ?? [], connections: (state?.connections ?? []).map(c => isPrivateVenue(c.config.venue) && !vault.unlocked ? { ...c, issue: lockedMessage } : c) })
   function privateLimits(next, config) {
     if (!vault.unlocked || !next.vault) throw new Error(lockedMessage)
     if (config.notify && !channel.configured) throw new Error('외부 알림 채널이 설정되지 않았습니다.')
@@ -306,6 +316,7 @@ export function createMonitorHandler({ directory = defaultDirectory, quoteReader
           next.signals ??= []
           const previous = next.signals.find(r => r.config.requestId === config.requestId)
           if (previous) { if (previous.hash !== signalFingerprint(config)) throw new Error('이미 사용한 등록 식별자입니다.'); return }
+          if (hasDerivativeFilters(config.config) && !derivativeContextReader) throw new Error('이 감시 서버에는 파생 지표 저장소가 연결되지 않았습니다.')
           if (config.notify && !channel.configured) throw new Error('외부 알림 채널이 설정되지 않았습니다.')
           if (config.positionRef && bindingStatus(next, config) !== 'ready') throw new Error('연결한 포지션의 최신 상태를 확인한 뒤 등록해주세요.')
           if (config.positionRef && next.signals.some(r => r.active && r.config.positionRef?.connectionId === config.positionRef.connectionId && r.config.positionRef?.key === config.positionRef.key)) throw new Error('이 포지션의 반대 신호 감시가 이미 실행 중입니다.')

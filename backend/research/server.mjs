@@ -139,6 +139,7 @@ export function createResearchHandler({ local = false, origins = [], client = cr
       send(200, await client.snapshot(asset))
     } catch { send(503, { error: 'research_unavailable' }) } finally { active-- }
   }
+  handler.derivativeContextReader = typeof derivatives.context === 'function' ? (...args) => derivatives.context(...args) : null
   handler.close = () => { liquidations.close(); calendar.close(); return derivatives.close() }
   return handler
 }
