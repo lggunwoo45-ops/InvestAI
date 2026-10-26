@@ -34,6 +34,18 @@ function request(handler, url, { method = 'GET', origin, host = 'localhost:5173'
     handler(req, res)
   })
 }
+test('market events enforce origin/query/method boundaries, isolate polling quota and close resources', async () => {
+  let liquidationCalls = 0, calendarCalls = 0, closed = 0
+  const handler = createResearchHandler({ local: true, client: { snapshot: async asset => ({ asset }) }, liquidations: { snapshot(asset) { liquidationCalls++; return { asset } }, close() { closed++ } }, calendar: { async snapshot() { calendarCalls++; return { events: [] } }, close() { closed++ } } })
+  for (const path of ['/api/research/liquidations?asset=BTC&asset=ETH', '/api/research/liquidations?asset=XXX', '/api/research/calendar?url=https://bad.example']) assert.equal((await request(handler, path)).status, 400)
+  assert.equal((await request(handler, '/api/research/calendar', { origin: 'https://evil.example' })).status, 403)
+  assert.equal((await request(handler, '/api/research/calendar', { method: 'POST' })).status, 405)
+  for (let i = 0; i < 40; i++) assert.equal((await request(handler, '/api/research/liquidations?asset=BTC')).status, 200)
+  assert.equal((await request(handler, '/api/research/snapshot?asset=BTC')).status, 200)
+  assert.equal((await request(handler, '/api/research/calendar')).status, 200)
+  assert.equal(liquidationCalls, 40); assert.equal(calendarCalls, 1)
+  handler.close(); assert.equal(closed, 2)
+})
 test('local origin, asset and query validation prevent arbitrary requests', async () => {
   let calls = 0
   const handler = createResearchHandler({ local: true, client: { snapshot: async asset => { calls++; return { asset } } } })

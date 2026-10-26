@@ -32,6 +32,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { cloudSignedIn } from '@/services/cloud/cloudClient'
 import { CloudPriceAlerts } from './CloudPriceAlerts'
 import { ExpertResearchNav } from './ExpertResearchNav'
+import { EconomicCalendarPanel, LiquidationPanel } from './MarketEvents'
 
 const format = (value: number | null | undefined, digits = 2) => value === null || value === undefined || !Number.isFinite(value) ? '확인 불가' : value.toLocaleString('ko-KR', { maximumFractionDigits: digits })
 const percent = (value: number | null | undefined) => value === null || value === undefined ? '확인 불가' : `${format(value)}%`
@@ -147,7 +148,7 @@ function Premium({ snapshot, asset, now }: { snapshot: ResearchSnapshot | null; 
 
 }
 
-function Indicators({ snapshot, candles, now }: { snapshot: ResearchSnapshot | null; candles: readonly Candle[]; now: number }) {
+function Indicators({ snapshot, candles, now, asset }: { snapshot: ResearchSnapshot | null; candles: readonly Candle[]; now: number; asset: string }) {
   const simple = useDisplayMode().displayMode === 'simple'
   const global = object(object(sourceData(snapshot, 'global', now)).data), caps = object(global.market_cap_percentage)
   const sentiment = object(array(object(sourceData(snapshot, 'sentiment', now)).data)[0])
@@ -166,10 +167,10 @@ function Indicators({ snapshot, candles, now }: { snapshot: ResearchSnapshot | n
     <Metric title="테이커 매수/매도량 비율" value={format(numeric(latestTaker?.buySellRatio), 3)} detail="Binance 선물 · 최근 1시간 집계" /><Metric title="최근 확정 펀딩 백분위" value={percent(fundingPct)} detail={`최근 ${fundingValues.length}회 중 위치 · 1년 과열도 아님`} />
     <Metric title="최근 실현 시간 변동성" value={percent(vol?.hourly)} detail="완결 24개 시간 수익률의 표준편차" /><Metric title="일간 환산 변동성" value={percent(vol?.daily)} detail="시간 변동성 × √24 · 방향·예상 범위 보장 아님" />
   </div><MarketStructure snapshot={snapshot} now={now} /><h3>펀딩 이력</h3><div className={styles.tableWrap}><table><caption>최근 확정 펀딩 10회 · Binance</caption><thead><tr><th>정산 시각</th><th>확정 펀딩률</th></tr></thead><tbody>{funding.slice(-10).reverse().map((r, i) => <tr key={i}><td>{time(numeric(r.fundingTime))}</td><td>{percent(numeric(r.fundingRate) === null ? null : Number(r.fundingRate) * 100)}</td></tr>)}</tbody></table></div>
-    <p>ETF 순유입, 1년 분포 기반 종합 과열도, 실시간 청산 집계, 경제 일정은 검증된 데이터 공급원이 아직 연결되지 않았습니다. 임의 수치는 표시하지 않습니다.</p>
+    <p>ETF 순유입 자동 수집과 1년 분포 기반 종합 과열도는 검증된 데이터 공급원이 아직 연결되지 않았습니다. 임의 수치는 표시하지 않습니다.</p>
     <details><summary>ETF 순유입 기록·계산</summary><EtfLedger /></details>
   </section>
-  return <>{simple && <section className={styles.panel}><h2>숫자가 말해주는 시장의 모습</h2><div className={styles.metrics}>
+  return <><EconomicCalendarPanel /><LiquidationPanel key={asset} asset={asset} />{simple && <section className={styles.panel}><h2>숫자가 말해주는 시장의 모습</h2><div className={styles.metrics}>
     <Metric title="전체 코인 시장의 심리" value={sentimentFresh ? format(numeric(sentiment.value), 0) + ' / 100' : '자료 확인 필요'} detail="공포·탐욕 지수예요. 숫자가 낮을수록 공포, 높을수록 탐욕에 가까워요. 이 종목만의 심리는 아니에요." />
     <Metric title="전체 시장 중 비트코인 비중" value={globalFresh ? percent(numeric(caps.btc)) : '자료 확인 필요'} detail="전체 코인 시가총액에서 비트코인이 차지하는 몫이에요. 가격이 오를지 알려주는 확률은 아니에요." />
     <Metric title="상승·하락에 포지션을 둔 계정 비율" value={numeric(latestRatio?.longShortRatio) === null ? '자료 확인 필요' : format(numeric(latestRatio?.longShortRatio), 3) + '배'} detail="롱 계정 수를 숏 계정 수로 나눈 값이에요. 1보다 크면 롱 계정이 더 많아요. 투자 금액 비율은 아니에요." />
@@ -247,7 +248,7 @@ function Guide() {
     <dt>과거 도달 비율</dt><dd>정해진 과거 표본에서 경계를 먼저 통과한 비율입니다. 앞으로 성공할 확률이나 검증된 매매 우위가 아닙니다.</dd>
   </dl><h3>공개된 계산 범위</h3><p>자료를 받지 못하면 확인 불가로 표시합니다. 복합 과열 점수와 미래 방향 확률은 만들지 않습니다. 신호 탐색은 30개 조건과 9개 시간봉, 최근 최대 5,000개 완료 봉을 지원합니다. 선택 편향·표본 부족·펀딩 비용의 한계가 있습니다. 포지션 계산은 일정 유지증거금률의 격리 계약 가정입니다.</p>
     <h3>신호 탐색과 자료 출처</h3><p>지표 계산은 InvestAI의 관측 기준을 따릅니다. 각 신호의 설명에서 계산 조건과 한계를 확인할 수 있습니다. 저장한 조건을 감시로 연결하면 이후 새로 충족된 봉과 그 뒤의 가격 변화를 기록합니다.</p><ul><li><a href="https://developers.binance.com/en/docs/catalog" target="_blank" rel="noreferrer">Binance 공개 시장 데이터</a></li><li><a href="https://docs.upbit.com/kr" target="_blank" rel="noreferrer">Upbit 공개 시세</a></li><li><a href="https://alternative.me/crypto/fear-and-greed-index/" target="_blank" rel="noreferrer">Alternative.me 공포·탐욕</a></li><li><a href="https://www.coingecko.com/" target="_blank" rel="noreferrer">CoinGecko 시가총액</a></li></ul>
-    <p>PC용 감시는 프로그램이 실행되는 동안 브라우저와 독립적으로 동작하고 등록 근거와 관측 결과를 보관합니다. Telegram은 서버 채널 설정과 등록별 동의가 필요합니다. 회원 서버가 연결된 경우 계정별 저장과 상시 감시를 사용할 수 있습니다. 결제·구독 권한, 실시간 청산과 검증된 장기 성과는 아직 제공하지 않습니다. 국내·미국 주식과 원자재의 추가 시세 연결은 이 모드의 범위에 포함되지 않습니다.</p>
+    <p>PC용 감시는 프로그램이 실행되는 동안 브라우저와 독립적으로 동작하고 등록 근거와 관측 결과를 보관합니다. Telegram은 서버 채널 설정과 등록별 동의가 필요합니다. 회원 서버가 연결된 경우 계정별 저장과 상시 감시를 사용할 수 있습니다. 시장 지표에서 Bybit 청산 관측과 BLS·FOMC 경제 일정을 확인할 수 있습니다. 청산은 연결 이후 최대 15분의 관측값이며 시장 전체 집계가 아닙니다. 결제·구독 권한과 검증된 장기 성과는 아직 제공하지 않습니다. 국내·미국 주식과 원자재의 추가 시세 연결은 이 모드의 범위에 포함되지 않습니다.</p>
   </section>
 }
 
@@ -305,7 +306,7 @@ export function ResearchPage() {
     {mode === 'overview' && simple && <SimpleMarketSummary asset={asset} price={mark} at={markAt} candles={candles} loading={loading} onMode={setMode} onWatch={openMarket} watchlisted={isWatchlisted('upbit-' + asset.toLowerCase())} canWatch={!!visible} message={message} />}
     {mode === 'overview' && !simple && <><section className={styles.panel}><div className={styles.actions}><h2>{asset} 현재 시장 컨디션</h2><button onClick={openMarket} disabled={!visible}>{isWatchlisted(`upbit-${asset.toLowerCase()}`) ? '관심종목·분석 이어가기' : '관심종목 등록'}</button><Link to="/market">차트·뉴스로 이동</Link></div><p role="status">{message}</p><div className={styles.metrics}><Metric title="선물 마크가격" value={mark ? `${format(mark, 6)} USDT` : '확인 불가'} detail={`Binance · ${time(markAt)}`} /><Metric title="다음 정산 예상 펀딩률" value={funding === null ? '확인 불가' : percent(funding * 100)} detail={`정산 예정 ${time(field(markData, 'nextFundingTime'))}`} /><Metric title="최근 실현 시간 변동성" value={percent(vol?.hourly)} detail="최근 24개 시간 수익률 기준" /></div><Chart candles={candles} /><h3>현재 관측된 조건</h3><p>{signals.map(s => signalLabels[s]).join(' · ') || '완결된 시간봉이 부족하거나 해당 조건이 없습니다.'}</p><div className={styles.actions}><button onClick={() => setMode('position')}>내 포지션 위험 계산</button><button onClick={() => setMode('journal')}>검토 저장·이전과 비교</button></div></section></>}
     <div className={styles.modeContent}>
-    {mode === 'indicators' && <Indicators snapshot={visible} candles={candles} now={now} />}
+    {mode === 'indicators' && <Indicators snapshot={visible} candles={candles} now={now} asset={asset} />}
     {mode === 'position' && <Position key={asset} mark={mark} funding={funding} interval={fundingInterval} />}
     {mode === 'costs' && <Costs key={asset} funding={funding} interval={fundingInterval} snapshot={visible} now={now} />}
     {mode === 'premium' && <Premium key={asset} snapshot={visible} asset={asset} now={now} />}
