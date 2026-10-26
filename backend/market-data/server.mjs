@@ -76,5 +76,5 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const server = createServer((req, res) => handler(req, res, () => news(req, res, () => research(req, res, () => cloud(req, res)))))
   server.headersTimeout = 10_000; server.requestTimeout = 15_000; server.maxConnections = 256
   server.listen(Number(process.env.PORT ?? 8790), process.env.HOST ?? '127.0.0.1', () => console.log('InvestAI public market data server ready'))
-  for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => { handler.close(); server.closeAllConnections(); server.close(); void cloud.close() })
+  for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => { handler.close(); research.close(); server.closeAllConnections(); server.close(); void cloud.close() })
 }

@@ -2,6 +2,8 @@ import { createServer } from 'node:http'
 import { fileURLToPath } from 'node:url'
 import { resolve } from 'node:path'
 import { createHistoryReader, intervals } from './history.mjs'
+import { createLiquidationCollector } from './liquidations.mjs'
+import { createEconomicCalendar } from './economicCalendar.mjs'
 
 export const researchAssets = ['BTC', 'ETH', 'SOL', 'XRP', 'DOGE', 'BNB', 'ADA', 'AVAX', 'LINK', 'LTC', 'TRX', 'DOT', 'NEAR', 'APT', 'ARB', 'OP', 'SUI', 'BCH', 'ATOM', 'UNI', 'AAVE', 'INJ', 'TIA']
 
@@ -74,10 +76,10 @@ export function createResearchClient({ fetchImpl = fetch, now = Date.now } = {})
   }
 }
 
-export function createResearchHandler({ local = false, origins = [], client = createResearchClient(), now = Date.now, historyReader = createHistoryReader() } = {}) {
+export function createResearchHandler({ local = false, origins = [], client = createResearchClient(), now = Date.now, historyReader = createHistoryReader(), liquidations = createLiquidationCollector({ assets: researchAssets }), calendar = createEconomicCalendar() } = {}) {
   const allowed = new Set(origins)
-  let at = now(), requests = 0, active = 0
-  return async (req, res, next = () => { res.writeHead(404); res.end() }) => {
+  let at = now(), requests = 0, active = 0, eventRequests = 0, calendarActive = 0
+  const handler = async (req, res, next = () => { res.writeHead(404); res.end() }) => {
     if (!req.url?.startsWith('/api/research/')) return next()
     const headers = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', Vary: 'Origin' }
     const send = (status, body) => { if (!res.destroyed && !res.writableEnded) { res.writeHead(status, { ...headers, Date: new Date(now()).toUTCString() }); res.end(JSON.stringify(body)) } }
@@ -94,9 +96,19 @@ export function createResearchHandler({ local = false, origins = [], client = cr
     if (req.method !== 'GET' && !(wallet && req.method === 'POST')) return send(405, { error: 'read_only' })
     if (url.pathname === '/api/research/health') return send(200, { service: 'investai-research', version: 1 })
     const asset = url.searchParams.get('asset')
+    if (now() - at >= 60_000) { at = now(); requests = 0; eventRequests = 0 }
+    const liquidationRoute = url.pathname === '/api/research/liquidations', calendarRoute = url.pathname === '/api/research/calendar'
+    if (liquidationRoute || calendarRoute) {
+      if (calendarRoute ? url.searchParams.size !== 0 : url.searchParams.size !== 1 || !researchAssets.includes(asset)) return send(400, { error: 'invalid_query' })
+      // Public cached observations have their own budget; polling cannot starve history/wallet requests.
+      if (++eventRequests > 900 || (calendarRoute && calendarActive >= 16)) { headers['Retry-After'] = '60'; return send(429, { error: 'research_busy' }) }
+      if (calendarRoute) calendarActive++
+      try { return send(200, calendarRoute ? await calendar.snapshot() : liquidations.snapshot(asset)) }
+      catch { return send(503, { error: 'research_unavailable' }) }
+      finally { if (calendarRoute) calendarActive-- }
+    }
     if (!wallet && !history && url.pathname !== '/api/research/snapshot') return send(404, { error: 'not_found' })
     if (history ? url.searchParams.size !== 3 || !researchAssets.includes(asset) || !Object.hasOwn(intervals, url.searchParams.get('timeframe')) || !['1000', '3000', '5000'].includes(url.searchParams.get('count')) : wallet ? req.method !== 'POST' || url.searchParams.size !== 0 : url.searchParams.size !== 1 || !researchAssets.includes(asset)) return send(400, { error: 'invalid_query' })
-    if (now() - at >= 60_000) { at = now(); requests = 0 }
     if (++requests > 30 || active >= 3) { headers['Retry-After'] = '60'; return send(429, { error: 'research_busy' }) }
     active++
     try {
@@ -113,11 +125,14 @@ export function createResearchHandler({ local = false, origins = [], client = cr
       send(200, await client.snapshot(asset))
     } catch { send(503, { error: 'research_unavailable' }) } finally { active-- }
   }
+  handler.close = () => { liquidations.close(); calendar.close() }
+  return handler
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const handler = createResearchHandler({ origins: (process.env.UPBIT_ALLOWED_ORIGINS ?? '').split(',').filter(Boolean) })
   const server = createServer(handler)
+  server.on('close', handler.close)
   server.headersTimeout = 10_000; server.requestTimeout = 15_000; server.maxConnections = 128
   server.listen(Number(process.env.PORT ?? 8791), process.env.HOST ?? '127.0.0.1')
 }

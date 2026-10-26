@@ -19,8 +19,8 @@ export default defineConfig({
     configurePreviewServer(server) { const handler = createMonitorHandler({ directory: process.env.INVESTAI_LOCAL_MONITOR_DIRECTORY }); server.middlewares.use(handler); server.httpServer?.on('close', () => { void handler.close() }) },
   }, {
     name: 'local-market-research',
-    configureServer(server) { server.middlewares.use(createResearchHandler({ local: true })) },
-    configurePreviewServer(server) { server.middlewares.use(createResearchHandler({ local: true })) },
+    configureServer(server) { const handler = createResearchHandler({ local: true }); server.middlewares.use(handler); server.httpServer?.once('close', handler.close) },
+    configurePreviewServer(server) { const handler = createResearchHandler({ local: true }); server.middlewares.use(handler); server.httpServer?.once('close', handler.close) },
   }, {
     name: 'local-ai-gateway',
     configureServer(server) { server.middlewares.use(createLocalAiGateway()) },
