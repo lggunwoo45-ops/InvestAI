@@ -46,6 +46,16 @@ test('stored derivatives are read-only, validate scope, isolate quota and do not
   assert.equal((await request(handler, '/api/research/derivatives?asset=BTC&days=7')).status, 429)
   handler.close(); assert.equal(closed, true)
 })
+test('context API validates bounded closed-time grids, origins and read-only scope', async () => {
+  let calls = 0
+  const handler = createResearchHandler({ local: true, now: () => 100_000_000, derivatives: { context(asset, timeframe, from, to) { calls++; return { asset, timeframe, from, to } }, close() {} } })
+  const path = '/api/research/derivatives/context?asset=BTC&timeframe=1h&from=3600000&to=7200000'
+  assert.equal((await request(handler, path)).status, 200)
+  for (const bad of [path + '&extra=1', path.replace('BTC', 'BAD'), path.replace('7200000', '360000000'), path.replace('from=3600000', 'from=3600001'), path.replace('timeframe=1h', 'timeframe=toString')]) assert.equal((await request(handler, bad)).status, 400)
+  assert.equal((await request(handler, path, { origin: 'https://bad.example' })).status, 403)
+  assert.equal((await request(handler, path, { method: 'POST' })).status, 405)
+  assert.equal(calls, 1); handler.close()
+})
 test('market events enforce origin/query/method boundaries, isolate polling quota and close resources', async () => {
   let liquidationCalls = 0, calendarCalls = 0, closed = 0
   const handler = createResearchHandler({ local: true, client: { snapshot: async asset => ({ asset }) }, liquidations: { snapshot(asset) { liquidationCalls++; return { asset } }, close() { closed++ } }, calendar: { async snapshot() { calendarCalls++; return { events: [] } }, close() { closed++ } } })

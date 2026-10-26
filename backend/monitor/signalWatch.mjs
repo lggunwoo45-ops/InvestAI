@@ -1,8 +1,9 @@
 import { createHash, randomUUID } from 'node:crypto'
-import { ENGINE_VERSION, explorerSignals, matchesFrame, signalFrames, timeframes, validExplorerConfig } from '../research/signals.mjs'
+import { ENGINE_VERSION, explorerSignals, matchesFrame, signalFrames, timeframes, validExplorerConfig, hasDerivativeFilters } from '../research/signals.mjs'
 import { researchAssets } from '../research/server.mjs'
 
 export function normalizeSignalWatch(input) {
+  if (hasDerivativeFilters(input?.config)) throw new Error('파생 지표 추가 조건은 과거 비교용입니다. 자동 감시에서는 아직 지원하지 않습니다.')
   if (!input || typeof input.requestId !== 'string' || !/^[a-zA-Z0-9-]{8,80}$/.test(input.requestId) || !researchAssets.includes(input.asset) || typeof input.name !== 'string' || input.name.trim().length < 1 || input.name.length > 60 || typeof input.notify !== 'boolean' || !validExplorerConfig(input.config)) throw new Error('신호 감시의 이름과 조건을 확인해주세요.')
   const purpose = input.purpose ?? 'opportunity', holdingSide = input.holdingSide ?? null
   if (!['opportunity', 'opposition'].includes(purpose) || purpose === 'opposition' && (!['long', 'short'].includes(holdingSide) || input.config.signals.some(id => explorerSignals.find(s => s.id === id).side === holdingSide))) throw new Error('반대 신호 감시는 보유 방향과 반대 관점의 신호만 선택해주세요.')

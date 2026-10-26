@@ -1,3 +1,5 @@
+import { derivativeMatch, hasDerivativeFilters, validDerivativeFilters } from './derivativeContext.mjs';
+export { derivativeMatch, hasDerivativeFilters, DERIVATIVE_FILTER_VERSION } from './derivativeContext.mjs';
 export const timeframes = { '1m': 60_000, '3m': 180_000, '5m': 300_000, '10m': 600_000, '15m': 900_000, '30m': 1_800_000, '1h': 3_600_000, '4h': 14_400_000, '1d': 86_400_000 };
 const definitions = [
     ['rsi', '매도 압력 누적', '매수 압력 누적', 'momentum', '최근 하락 또는 상승이 한쪽으로 쌓인 구간입니다.', 'Wilder RSI(14) ≤ 30 / ≥ 70', '강한 추세에서는 극단 상태가 오래 이어질 수 있습니다.'],
@@ -101,9 +103,10 @@ export function signalFrames(candles, timeframe) {
 }
 export const defaultExplorerConfig = { timeframe: '1h', signals: ['rsi-long'], window: 3, horizon: 24, target: 2, cost: 0.2, side: 'long', regime: 'any', bars: 1000 };
 export function validExplorerConfig(c) {
+    if (!c || !validDerivativeFilters(c)) return false;
     return !!c && Object.hasOwn(timeframes, c.timeframe) && Array.isArray(c.signals) && c.signals.length > 0 && c.signals.length <= 30 && new Set(c.signals).size === c.signals.length && c.signals.every(id => explorerSignals.some(s => s.id === id)) && [1, 3, 6, 12].includes(c.window) && Number.isInteger(c.horizon) && c.horizon >= 1 && c.horizon <= 168 && Number.isFinite(c.target) && c.target > 0 && c.target < 100 && Number.isFinite(c.cost) && c.cost >= 0 && c.cost <= 10 && ['long', 'short'].includes(c.side) && ['any', 'above', 'below', 'volume'].includes(c.regime) && [1000, 3000, 5000].includes(c.bars);
 }
-export function matchesFrame(frames, candles, i, config) {
+export function matchesFrame(frames, candles, i, config, contexts) {
     const f = frames[i];
     if (!f?.ready)
         return false;
@@ -112,15 +115,28 @@ export function matchesFrame(frames, candles, i, config) {
         return false;
     if (!config.signals.length || !config.signals.every(id => window.some(x => x.signals.includes(id))))
         return false;
-    return config.regime === 'any' || config.regime === 'above' && candles[i].close > f.ema50 || config.regime === 'below' && candles[i].close < f.ema50 || config.regime === 'volume' && (f.volumeRatio ?? 0) >= 1.5;
+    const priceMatch = config.regime === 'any' || config.regime === 'above' && candles[i].close > f.ema50 || config.regime === 'below' && candles[i].close < f.ema50 || config.regime === 'volume' && (f.volumeRatio ?? 0) >= 1.5;
+    const decisionAt = f.at + timeframes[config.timeframe];
+    return priceMatch && derivativeMatch(config, contexts?.get(decisionAt), decisionAt) === 'match';
 }
-export function exploreHistory(candles, config, frames = signalFrames(candles, config.timeframe)) {
+export function exploreHistory(candles, config, frames = signalFrames(candles, config.timeframe), contexts) {
     if (!validExplorerConfig(config))
         return null;
     const records = [];
+    const filtered = hasDerivativeFilters(config), derivativeCoverage = { candidates: 0, available: 0, unknown: 0, excluded: 0, matched: 0 };
+    if (filtered) {
+        const priceConfig = { ...config, funding: 'any', openInterest: 'any' };
+        for (let i = 60; i < candles.length; i++) {
+            if (!matchesFrame(frames, candles, i, priceConfig)) continue;
+            derivativeCoverage.candidates++;
+            const at = candles[i].timestamp + timeframes[config.timeframe], status = derivativeMatch(config, contexts?.get(at), at);
+            if (status === 'unknown') derivativeCoverage.unknown++;
+            else { derivativeCoverage.available++; if (status === 'match') derivativeCoverage.matched++; else derivativeCoverage.excluded++; }
+        }
+    }
     let skippedGaps = 0, pending = 0;
     for (let i = 60; i < candles.length - 1; i++) {
-        if (!matchesFrame(frames, candles, i, config))
+        if (!matchesFrame(frames, candles, i, config, contexts))
             continue;
         if (i + config.horizon >= candles.length) {
             pending++;
@@ -148,7 +164,7 @@ export function exploreHistory(candles, config, frames = signalFrames(candles, c
                 break;
             }
         }
-        records.push({ at: candles[i].timestamp, enteredAt: future[0].timestamp, exitAt, entry, exit, outcome, net: exit === null ? null : (exit / entry - 1) * 100 * (config.side === 'long' ? 1 : -1) - config.cost });
+        records.push({ at: candles[i].timestamp, enteredAt: future[0].timestamp, exitAt, entry, exit, outcome, net: exit === null ? null : (exit / entry - 1) * 100 * (config.side === 'long' ? 1 : -1) - config.cost, ...(filtered ? { derivatives: contexts.get(candles[i].timestamp + timeframes[config.timeframe]) } : {}) });
         i += config.horizon - 1;
     }
     const valid = records.filter(r => r.net !== null), n = valid.length, hits = valid.filter(r => r.outcome === (config.side === 'long' ? 'up' : 'down')).length;
@@ -156,7 +172,7 @@ export function exploreHistory(candles, config, frames = signalFrames(candles, c
     const center = proportion === null ? 0 : (proportion + z * z / (2 * n)) / denominator;
     const half = proportion === null ? 0 : z * Math.sqrt(proportion * (1 - proportion) / n + z * z / (4 * n * n)) / denominator;
     const midpoint = candles[Math.floor(candles.length / 2)]?.timestamp ?? 0;
-    return { records, samples: n, hits, proportion, interval: proportion === null ? null : [Math.max(0, center - half), Math.min(1, center + half)], meanNet: n ? mean(valid.map(r => r.net)) : null, skippedGaps, pending,
+    return { records, samples: n, hits, proportion, interval: proportion === null ? null : [Math.max(0, center - half), Math.min(1, center + half)], meanNet: n ? mean(valid.map(r => r.net)) : null, skippedGaps, pending, ...(filtered ? { derivativeCoverage } : {}),
         up: records.filter(r => r.outcome === 'up').length, down: records.filter(r => r.outcome === 'down').length, timeout: records.filter(r => r.outcome === 'timeout').length, ambiguous: records.filter(r => r.outcome === 'ambiguous').length,
         splits: [valid.filter(r => r.at < midpoint), valid.filter(r => r.at >= midpoint)].map(rows => ({ samples: rows.length, meanNet: rows.length ? mean(rows.map(r => r.net)) : null })) };
 }
