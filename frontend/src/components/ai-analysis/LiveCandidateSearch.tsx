@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
+import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
+import { SimpleScanResults } from '@/components/simple/SimpleScanResults'
 import { Link } from 'react-router-dom'
 import { useLanguage } from '@/i18n/useLanguage'
 import { useMarketWorkspace } from '@/hooks/useMarketWorkspace'
@@ -20,6 +22,7 @@ export function LiveCandidateSearch() {
 }
 
 function SearchSession({ marketDataMode }: { marketDataMode: 'live' | 'mock' }) {
+  const simple = useDisplayMode().displayMode === 'simple'
   const { language } = useLanguage()
   const ko = language === 'ko'
   const [venue, setVenue] = useState<MarketVenue>('upbit-krw')
@@ -66,6 +69,7 @@ function SearchSession({ marketDataMode }: { marketDataMode: 'live' | 'mock' }) 
   const excluded = results.filter(result => result.decision.direction === 'unavailable')
   const expired = results.filter(result => clock > result.expiresAt).length
   const format = (value: number) => formatAnalysisPrice(value, language)
+  if (simple) return <SimpleScanResults results={results} now={clock} venue={venue} onVenue={changeVenue} status={status} progress={progress} disabled={marketDataMode !== 'live' || relayRequired} onStart={() => { void start() }} onCancel={cancel} />
   return <section className={styles.panel} aria-label={ko ? '실시간 조건 검색' : 'Live condition search'}>
     <header><div><h1>{ko ? '살펴볼 코인 찾기' : 'Find coins to review'}</h1><p>{ko ? `거래가 활발한 ${SCAN_LIMIT}개 코인의 흐름과 확인할 가격을 한 번에 살펴봐요.` : `Review the trends and price levels of ${SCAN_LIMIT} actively traded coins.`}</p></div><strong>{ko ? '실제 가격으로 계산해요' : 'Calculated from real prices'}</strong></header>
     <div className={styles.controls}>

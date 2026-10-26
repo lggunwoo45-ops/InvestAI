@@ -11,7 +11,7 @@ vi.mock('@/hooks/useMarketWorkspace', () => ({ useMarketWorkspace: () => ({ mark
 vi.mock('@/services/cryptoAnalysis/liveCandidateScan', async importOriginal => ({ ...await importOriginal<object>(), scanCandidates: mocks.scan }))
 
 const coin: MarketInstrument = { id: 'upbit-btc', symbol: 'BTC/KRW', marketId: 'upbit', name: 'Bitcoin', quoteCurrency: 'KRW', lastPrice: 100, volume24h: 1000, change24hPercent: 1 }
-beforeEach(() => { vi.clearAllMocks(); vi.spyOn(marketDataService, 'getMarketCatalog').mockImplementation(mocks.catalog); mocks.mode = 'live'; window.localStorage.setItem('market-copilot.language', 'en') })
+beforeEach(() => { window.localStorage.setItem('market-copilot.displayMode.v1', 'expert'); vi.clearAllMocks(); vi.spyOn(marketDataService, 'getMarketCatalog').mockImplementation(mocks.catalog); mocks.mode = 'live'; window.localStorage.setItem('market-copilot.language', 'en') })
 
 it('starts only on request, displays real result coverage and supports filters and analysis links', async () => {
   mocks.catalog.mockResolvedValue({ source: 'live', fetchedAt: Date.now(), instruments: [coin] })

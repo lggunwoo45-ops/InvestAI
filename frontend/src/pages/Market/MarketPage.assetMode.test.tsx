@@ -6,7 +6,7 @@ import { LAST_MARKET_INSTRUMENT_STORAGE_KEY, MARKET_ASSET_MODE_STORAGE_KEY } fro
 
 describe('Market asset separation', () => {
   beforeEach(() => {
-    window.localStorage.clear()
+    window.localStorage.clear(); window.localStorage.setItem('market-copilot.displayMode.v1', 'expert')
     window.history.pushState({}, '', '/market')
     vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('Network disabled in deterministic Market tests'))
   })

@@ -1,3 +1,4 @@
+import { SimpleWorkspace, SimpleTasks } from '@/components/simple/SimpleWorkspace'
 import { CLOUD_RECORDS_CHANGED } from '@/services/cloud/cloudClient'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, Navigate, useSearchParams } from 'react-router-dom'
@@ -299,6 +300,22 @@ function AnalysisWorkspace() {
       </div>}
       {selectedId && !selected && !loading && <p className={styles.warning} role="alert">{t.unavailable}</p>}
     </section>
+
+  const simpleView = Boolean(displayMode === 'simple')
+  if (simpleView) return <SimpleWorkspace title={selected ? selected.displaySymbol ?? selected.symbol : t.title} description={language === 'ko' ? '지금의 흐름과 다음에 확인할 가격부터 읽어보세요.' : 'Start with the current view and the next price to review.'}>
+    {selected ? <details className={styles.searchDisclosure}><summary>{language === 'ko' ? '종목 변경·검색' : 'Change or search instrument'}</summary>{searchPanel}</details> : searchPanel}
+    {selected && analysis && <>
+      {!isCrypto && sourceNotices}
+      {isCrypto && analysis.dataQuality === 'mock' && <p role="status">{analysis.dataQualityLabel} · {language === 'ko' ? '예시 자료로는 실제 매수·매도 판단을 제공하지 않아요.' : 'Example data does not provide a live buy or sell assessment.'}</p>}
+      {isCrypto ? <CryptoDecisionPanel key={selected.id} instrument={selected} activeTab={analysisTab} onTabChange={setAnalysisTab} daily={technicalData} language={language} averagePrice={validAveragePrice} quantity={savedPosition?.instrumentId === selected.id ? savedPosition.quantity : undefined} positionId={savedPosition?.instrumentId === selected.id ? savedPosition.id : undefined} detailsContent={<>{cryptoReferences}<details className={styles.referenceDetails}><summary>{language === 'ko' ? '이 분석에 질문하기' : 'Ask about this analysis'}</summary><EvidenceAssistant instrument={selected} live={marketDataMode === 'live'} /></details></>} investmentContent={<>{positionNotice}{positionPlan}{personalContext}<Link to="/portfolio">{language === 'ko' ? '내 종목 기록 관리' : 'Manage my holdings'} →</Link></>} holding={intent === 'holding'} onHoldingChange={value => { setIntent(value ? 'holding' : 'watching'); setReviewMode(value ? 'position' : 'interest') }} expert={false} onExpert={() => setDisplayMode('expert')} />
+        : <SimpleTasks label={language === 'ko' ? '이 종목에서 확인할 것' : 'Review this asset'} tasks={[
+          { id: 'summary', title: language === 'ko' ? '지금 확인할 것' : 'What to check', content: <>{practicalDecision && <PracticalDecisionCard result={recommendation ? { ...practicalDecision, title: recommendation.title, summary: recommendation.summary, reason: recommendation.why, nextCheck: recommendation.nextCheck } : practicalDecision} language={language} />}<p>{analysis.dataQualityLabel} · {analysis.dataQuality === 'mock' ? (language === 'ko' ? '예시 자료로 매수 판단을 제공하지 않아요.' : 'Example data is not a buy recommendation.') : analysis.reviewChecklist[0]}</p></> },
+          { id: 'holding', title: language === 'ko' ? '내 보유 상황' : 'My holding', content: <>{positionNotice}{personalContext}{positionPlan}<PositionReviewPanel basisPrice={validAveragePrice} currentPrice={currentPrice} dataQuality={analysis.dataQuality} language={language} nextCheck={analysis.reviewChecklist[0] ?? analysis.actionReadiness.nextChecks[0]} quoteCurrency={selected.quoteCurrency} /></> },
+          { id: 'evidence', title: language === 'ko' ? '왜 이렇게 보나요?' : 'Why this view?', content: <><ul>{analysis.evidence.slice(0, 3).map(item => <li key={item.id}><b>{item.label}</b><p>{item.reviewMeaning}</p></li>)}</ul>{selected.marketId === 'korea-stock' && <DartDisclosurePanel id="dart-disclosures" compact language={language} result={dartResult} />}<button type="button" onClick={() => setDisplayMode('expert')}>{language === 'ko' ? '전체 근거와 차트 보기' : 'All evidence and charts'}</button></> },
+        ]} />}
+      {isCrypto && researchAsset && <nav className={styles.researchJourney} aria-label={language === 'ko' ? '다음에 할 일' : 'Next steps'}><Link to={`/research?asset=${researchAsset}&mode=journal`}>{language === 'ko' ? '지금 생각 기록' : 'Save a note'} →</Link><Link to={`/research?asset=${researchAsset}&mode=alerts`}>{language === 'ko' ? '다시 볼 가격 알림' : 'Set a price alert'} →</Link></nav>}
+    </>}
+  </SimpleWorkspace>
 
   return <main className={styles.page} data-asset={isCrypto ? 'crypto' : 'stock'} data-display-mode={displayMode}>
     {!isCrypto && <header className={styles.header}>

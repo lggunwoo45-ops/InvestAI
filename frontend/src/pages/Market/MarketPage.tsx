@@ -1,4 +1,6 @@
 import { itemFromInstrument } from '@/services/watchlist/watchlistStorage'
+import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
+import { SimpleMarket } from '@/components/simple/SimpleMarket'
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 import { MarketDetailWorkspace } from '@/components/market-detail/MarketDetailWorkspace/MarketDetailWorkspace'
@@ -56,6 +58,7 @@ function initialVenue(instrument: MarketInstrument): MarketVenue {
 }
 
 export function MarketPage() {
+  const simple = useDisplayMode().displayMode === 'simple'
   const { language } = useLanguage()
   const compact = useCompactLayout()
   const [mobileView, setMobileView] = useState<'list' | 'detail'>('list')
@@ -190,6 +193,8 @@ export function MarketPage() {
       return next
     })
   }, [])
+
+  if (simple) return <SimpleMarket catalog={catalogState.catalog} loading={catalogState.loading} error={catalogState.error} venue={venue} onVenue={changeVenue} selected={selectedInstrument} onSelect={openInstrument} search={search} onSearch={setSearch} favorites={favoriteIds} favoritesOnly={favoritesOnly} onFavoritesOnly={setFavoritesOnly} onFavorite={changeFavorite} onRetry={() => setRetry(value => value + 1)} />
 
   const explorerPanel = (
     <MarketExplorer

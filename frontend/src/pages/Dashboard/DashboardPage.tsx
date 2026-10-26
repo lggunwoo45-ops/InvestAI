@@ -21,6 +21,7 @@ import { buildMarketRadar } from '@/services/market/marketRadarEngine'
 import { loadLastMarketInstrumentIds } from '@/pages/Market/marketAssetMode'
 import { safeNewsUrl } from '@/utils/safeNewsUrl'
 import styles from './DashboardPage.module.css'
+import { SimpleHome } from '@/pages/SimpleMode/SimpleHome'
 
 function SavedWatchlists() {
   const { sections } = useMarketOverview()
@@ -31,6 +32,10 @@ function SavedWatchlists() {
 }
 
 export function DashboardPage() {
+  return useDisplayMode().displayMode === 'simple' ? <SimpleHome /> : <DashboardOverview />
+}
+
+function DashboardOverview() {
   const simple = useDisplayMode().displayMode === 'simple'
   const { language } = useLanguage()
   const ko = language === 'ko'

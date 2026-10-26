@@ -1,9 +1,11 @@
+import { SimpleWorkspace } from '@/components/simple/SimpleWorkspace'
+import simpleStyles from '@/components/simple/SimpleWorkspace.module.css'
+import { safeNewsUrl } from '@/utils/safeNewsUrl'
 import { useMemo, useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 
 import { Icon } from '@/components/Icon/Icon'
 import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
-import { DisplayModeNotice } from '@/components/displayMode/DisplayModeNotice/DisplayModeNotice'
 import { NewsCard } from '@/components/news/NewsCard/NewsCard'
 import { NewsFilterSummary, type ActiveNewsFilter } from '@/components/news/NewsFilterSummary/NewsFilterSummary'
 import { NewsProviderStatus } from '@/components/news/NewsProviderStatus/NewsProviderStatus'
@@ -37,6 +39,8 @@ export function NewsPage() {
   const { language } = useLanguage()
   const { displayMode } = useDisplayMode()
   const text = uiText[language].news
+  const ko = language === 'ko'
+  const [simpleLimit, setSimpleLimit] = useState(6)
   const liveSubtitle = language === 'ko' ? '실제 발행된 뉴스의 제목·출처·시각을 확인하고 종목 분석으로 이어갑니다.' : 'Read published headlines, sources and dates, then open related instrument analysis.'
   useDocumentTitle(text.title)
   const location = useLocation()
@@ -66,10 +70,24 @@ export function NewsPage() {
   if (symbolFilter && selectedInstrument) activeFilters.push({ id: 'symbol', label: text.filterLabels.symbol, value: selectedInstrument.symbol, onRemove: () => updateFilters({ symbolFilter: false }) })
   const clearFilters = () => updateFilters({ category: 'all', query: '', market: 'all', sentiment: 'all', importance: 'all', symbolFilter: false })
 
+  if (displayMode === 'simple') {
+    const simpleArticles = filterNews(feed?.articles ?? [], { query, market, category: 'all', sentiment: 'all', importance: 'all', symbol: symbolFilter ? selectedInstrument?.symbol : null }).filter(article => providerMode === 'mock' || !article.isMock)
+    return <SimpleWorkspace title={ko ? '시장을 이해할 뉴스' : 'News to understand the market'} description={ko ? '기사 제목과 출처부터 읽어보세요. 뉴스 한 건으로 매수·매도를 결정하지 않아요.' : 'Start with the headline and source. A headline alone is not a trade signal.'}>
+      <div className={simpleStyles.controls}><label>{ko ? '궁금한 내용' : 'Search news'}<input type="search" value={query} onChange={event => { updateFilters({ query: event.target.value }); setSimpleLimit(6) }} /></label><label>{ko ? '어느 시장인가요?' : 'Which market?'}<select value={market} onChange={event => { updateFilters({ market: event.target.value as NewsMarket | 'all' }); setSimpleLimit(6) }}><option value="all">{text.allMarkets}</option>{markets.map(item => <option key={item} value={item}>{item === 'macro' ? text.categories.macro : uiText[language].sessions[item]}</option>)}</select></label>
+        {selectedInstrument && <button type="button" aria-pressed={symbolFilter} onClick={() => { updateFilters({ symbolFilter: !symbolFilter }); setSimpleLimit(6) }}>{selectedInstrument.symbol} {ko ? '관련만' : 'related only'}</button>}
+      </div>
+      {providerMode === 'mock' && <p role="status">{ko ? '예시 뉴스입니다. 실제 발행 기사와 다릅니다.' : 'Example news, not published articles.'}</p>}
+      <div className={simpleStyles.list}>{simpleArticles.slice(0, simpleLimit).map(article => <article className={simpleStyles.card} key={article.id}><small>{article.source} · {new Date(article.publishedAt).toLocaleString(language)}</small><h2>{safeNewsUrl(article.url) ? <a href={safeNewsUrl(article.url)!} target="_blank" rel="noreferrer">{article.title} ↗</a> : article.title}</h2>{article.summary && <p>{article.summary}</p>}
+        <footer>{Object.entries(article.relatedInstrumentIds ?? {}).slice(0, 3).map(([symbol, id]) => <Link key={id} to={`/my-analysis?instrumentId=${encodeURIComponent(id)}`}>{symbol} {ko ? '분석' : 'analysis'} →</Link>)}</footer>
+      </article>)}</div>
+      {!feed ? <p role="status">{text.loading}</p> : simpleArticles.length === 0 && <p role="status">{text.noResults}</p>}
+      {simpleLimit < simpleArticles.length && <button type="button" onClick={() => setSimpleLimit(value => value + 6)}>{ko ? '뉴스 더 보기' : 'More news'}</button>}
+      <details><summary>{ko ? '뉴스 연결 상태' : 'News connection'}</summary><NewsProviderStatus mode={providerMode} result={feed} onModeChange={setProviderMode} /></details>
+    </SimpleWorkspace>
+  }
   return (
     <div className={styles.page} data-display-mode={displayMode}>
       <header className={styles.heading}><div><span>MARKET INTELLIGENCE</span><h1>{text.title}</h1><p>{providerMode === 'live' ? liveSubtitle : text.subtitle}</p>{feed?.source === 'mock' && <strong className={styles.demo}>{text.demo}</strong>}{feed?.source === 'rss' && <strong className={styles.demo}>{text.provider.realRss}</strong>}{feed?.source === 'local-proxy' && <strong className={styles.demo}>{text.provider.localProxyRealRss}</strong>}</div><div className={styles.context}><span>{text.relatedMarket}</span><button type="button" disabled={!selectedInstrument} aria-pressed={symbolFilter} onClick={() => updateFilters({ symbolFilter: !symbolFilter })}>{selectedInstrument ? `${selectedInstrument.symbol} ${symbolFilter ? text.on : text.off}` : text.noSymbol}</button></div></header>
-      {displayMode === 'simple' && <DisplayModeNotice variant="panel">{uiText[language].displayMode.newsHint}</DisplayModeNotice>}
       <NewsProviderStatus mode={providerMode} result={feed} onModeChange={setProviderMode} />
       <div className={styles.controls}>
         <div className={styles.search}><span>{text.filterLabels.search}</span><label><Icon name="search" size={14} /><input type="search" value={query} onChange={(event) => updateFilters({ query: event.target.value })} placeholder={text.search} aria-label="Search news" /></label></div>

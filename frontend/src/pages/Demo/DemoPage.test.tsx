@@ -59,9 +59,9 @@ describe('DemoPage', () => {
   })
   it('renders the short bilingual-safe path before detailed content in Simple Mode', () => {
     renderPage(undefined, 'simple')
-    expect(screen.getByRole('heading', { name: 'Simple demo path' })).toBeTruthy()
-    expect(screen.getByRole('link', { name: 'Open Simple Candidate View' }).getAttribute('href')).toBe('/simple')
-    expect(screen.getByRole('heading', { name: 'Trust boundary' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Start here' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: /Browse markets/ }).getAttribute('href')).toBe('/market')
+    expect(screen.queryByRole('heading', { name: '5-minute investor demo script' })).toBeNull()
   })
 
   it('keeps runtime DART truth out of Beta System Status and idle until a manual check', () => {

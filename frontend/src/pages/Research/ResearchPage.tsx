@@ -1,3 +1,4 @@
+import { SimpleTasks } from '@/components/simple/SimpleWorkspace'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useLanguage } from '@/i18n/useLanguage'
@@ -83,7 +84,11 @@ function Position({ mark, funding, interval }: { mark: number | null; funding: n
       <Metric title="진입·현재가 청산 수수료" value={`${format(result.fees, 4)} USDT`} /><Metric title="보유 기간 펀딩 비용" value={`${format(result.funding, 4)} USDT`} detail="음수는 수취 · 미래 펀딩 고정 가정" /><Metric title="비용 반영 손익" value={`${format(result.net)} USDT`} />
     </div><p>예상 청산가는 유지증거금 구간·공제액·추가 증거금·청산 수수료를 반영하지 않는 근사값입니다. 실제 거래소 청산가와 다를 수 있습니다. 교차 증거금과 역선물에는 사용할 수 없습니다.</p></>}
   </section>
-  return <><PositionConnections /><details className={styles.panel} open><summary>직접 입력해서 손익 비교하기</summary>{!mark && <p>계산에 사용할 시장 가격을 확인할 수 없습니다. 비교할 가격을 직접 입력하거나 화면 위에서 새로고침해주세요.</p>}{simple ? guided : expert}</details><details className={styles.panel}><summary>저장 없이 공개 지갑 한 번 조회하기</summary><PublicWallet /></details></>
+  return <SimpleTasks all={!simple} label="포지션에서 할 일" tasks={[
+    { id: 'calculate', title: '직접 손익 계산', description: '계좌 연결 없이 계산해요', content: simple ? guided : expert },
+    { id: 'connect', title: '내 포지션 연결', description: '연결한 계좌의 위험 확인', content: <PositionConnections /> },
+    { id: 'wallet', title: '공개 지갑 조회', description: '공개 주소로 한 번 확인', content: <section className={styles.panel}><PublicWallet /></section> },
+  ]} />
 
 }
 
@@ -169,13 +174,20 @@ function Indicators({ snapshot, candles, now, asset }: { snapshot: ResearchSnaps
     <Metric title="최근 실현 시간 변동성" value={percent(vol?.hourly)} detail="완결 24개 시간 수익률의 표준편차" /><Metric title="일간 환산 변동성" value={percent(vol?.daily)} detail="시간 변동성 × √24 · 방향·예상 범위 보장 아님" />
   </div><MarketStructure snapshot={snapshot} now={now} /><h3>펀딩 이력</h3><div className={styles.tableWrap}><table><caption>최근 확정 펀딩 10회 · Binance</caption><thead><tr><th>정산 시각</th><th>확정 펀딩률</th></tr></thead><tbody>{funding.slice(-10).reverse().map((r, i) => <tr key={i}><td>{time(numeric(r.fundingTime))}</td><td>{percent(numeric(r.fundingRate) === null ? null : Number(r.fundingRate) * 100)}</td></tr>)}</tbody></table></div>
     <p>ETF 순유입 자동 수집과 1년 분포 기반 종합 과열도는 검증된 데이터 공급원이 아직 연결되지 않았습니다. 임의 수치는 표시하지 않습니다.</p>
-    <details><summary>ETF 순유입 기록·계산</summary><EtfLedger /></details>
+
   </section>
-  return <><DerivativeHistory key={`history-${asset}`} asset={asset} /><EconomicCalendarPanel /><LiquidationPanel key={asset} asset={asset} />{simple && <section className={styles.panel}><h2>숫자가 말해주는 시장의 모습</h2><div className={styles.metrics}>
+  return <SimpleTasks all={!simple} label="어떤 시장 흐름이 궁금하세요?" tasks={[
+    { id: 'mood', title: '지금 시장 분위기', description: '심리와 비트코인 비중', content: simple ? <section className={styles.panel}><h2>숫자가 말해주는 시장의 모습</h2><div className={styles.metrics}>
     <Metric title="전체 코인 시장의 심리" value={sentimentFresh ? format(numeric(sentiment.value), 0) + ' / 100' : '자료 확인 필요'} detail="공포·탐욕 지수예요. 숫자가 낮을수록 공포, 높을수록 탐욕에 가까워요. 이 종목만의 심리는 아니에요." />
     <Metric title="전체 시장 중 비트코인 비중" value={globalFresh ? percent(numeric(caps.btc)) : '자료 확인 필요'} detail="전체 코인 시가총액에서 비트코인이 차지하는 몫이에요. 가격이 오를지 알려주는 확률은 아니에요." />
     <Metric title="상승·하락에 포지션을 둔 계정 비율" value={numeric(latestRatio?.longShortRatio) === null ? '자료 확인 필요' : format(numeric(latestRatio?.longShortRatio), 3) + '배'} detail="롱 계정 수를 숏 계정 수로 나눈 값이에요. 1보다 크면 롱 계정이 더 많아요. 투자 금액 비율은 아니에요." />
-  </div><p className={styles.caption}>각 지표는 서로 다른 시각과 범위를 다뤄요. 최근 자료가 없으면 설명을 위한 숫자를 만들지 않아요.</p></section>}<details className={styles.panel} open={!simple}><summary>전체 지표·거래대금·펀딩 이력 자세히 보기</summary>{allIndicators}</details></>
+  </div><p className={styles.caption}>각 지표는 서로 다른 시각과 범위를 다뤄요. 최근 자료가 없으면 설명을 위한 숫자를 만들지 않아요.</p></section> : allIndicators },
+    { id: 'history', title: '며칠 동안의 변화', description: '계약과 보유 비용', content: <DerivativeHistory key={`history-${asset}`} asset={asset} /> },
+    { id: 'events', title: '다가오는 일정', description: '가격이 흔들릴 수 있는 날', content: <EconomicCalendarPanel /> },
+    { id: 'liquidations', title: '강제 정리된 포지션', description: '최근 관측한 청산', content: <LiquidationPanel key={asset} asset={asset} /> },
+    { id: 'etf', title: 'ETF 수급 기록', description: '확정 자료를 직접 합산', content: <section className={styles.panel}><h2>ETF 자금이 얼마나 들어왔나요?</h2><p>자동 수집은 아직 연결되지 않았어요. 확보한 날짜별 확정 자료만 직접 합산할 수 있어요.</p><EtfLedger /></section> },
+  ]} />
+
 
 }
 
@@ -313,7 +325,15 @@ export function ResearchPage() {
     {mode === 'premium' && <Premium key={asset} snapshot={visible} asset={asset} now={now} />}
     {mode === 'setups' && <SignalExplorer asset={asset} refresh={revision} />}
     {mode === 'journal' && <><Journal key={asset} asset={asset} snapshot={visible} candles={candles} now={now} /><details className={styles.relatedNews} open={!simple}><summary>기록에 참고할 뉴스 찾아보기</summary><ResearchNews asset={asset} /></details></>}
-    {mode === 'alerts' && <>{cloudSignedIn() && <CloudPriceAlerts key={asset} asset={asset} />}{localMonitorAvailable() ? <details className={styles.panel} open={!simple}><summary>포지션·신호·진입 조건 감시와 결과</summary><PositionConnections ledger /><SignalWatchPanel asset={asset} ledger /><MonitorWorkspace key={asset} asset={asset} /></details> : !simple ? <LocalMonitorNotice asset={asset} /> : null}<details className={simple && !localMonitorAvailable() ? styles.browserAlerts : styles.panel} open={!localMonitorAvailable()}><summary hidden={simple && !localMonitorAvailable()}>{simple ? "화면을 켜둔 동안만 가격 알림 받기" : "브라우저 조건 알림"}</summary>{browserAlerts}</details></>}
+    {mode === 'alerts' && <SimpleTasks all={!simple} initial={params.has('review') || !cloudSignedIn() ? 'browser' : 'server'} label="어떻게 알림을 받을까요?" tasks={[
+      { id: 'server', title: '화면을 닫아도 확인', description: '로그인 후 서버에서 감시', content: cloudSignedIn() ? <CloudPriceAlerts key={asset} asset={asset} /> : <section className={styles.panel}><h2>계정에 가격 조건을 저장하세요</h2><p>화면 위 계정 메뉴에서 로그인하면 서버가 조건을 확인해요. 외부 알림은 별도 채널 연결이 필요하며, 먼저 화면 안 기록으로 확인할 수 있어요.</p><Link to="/settings">계정·연결 설정 확인 →</Link></section> },
+      { id: 'browser', title: '이 화면에서만 확인', description: '열어둔 동안 가격 변화 확인', content: browserAlerts },
+      { id: 'conditions', title: '포지션·신호 감시', description: '연결된 조건과 이후 결과', content: localMonitorAvailable() ? <SimpleTasks all={!simple} label="감시할 조건" tasks={[
+        { id: 'positions', title: '보유 포지션', content: <PositionConnections ledger /> },
+        { id: 'signals', title: '과거 흐름 조건', content: <SignalWatchPanel asset={asset} ledger /> },
+        { id: 'entry', title: '진입 조건·결과', content: <MonitorWorkspace key={asset} asset={asset} /> },
+      ]} /> : <LocalMonitorNotice asset={asset} /> },
+    ]} />}
     {mode === 'guide' && (simple ? <section className={styles.panel}><h2>세 단계로 이어서 확인하세요</h2><ol><li><b>시장 보기</b>에서 지금 가격과 최근 변화를 살펴봐요.</li><li><b>내 종목 확인</b>에서 손익·과거 흐름·가격 비교 중 궁금한 내용을 골라요.</li><li><b>기록·알림</b>에서 생각을 남기고 다시 확인할 가격을 정해요.</li></ol><p>{cloudSignedIn() ? '회원 기록은 기기 간 동기화됩니다. 서버 감시로 등록한 조건은 화면을 닫아도 확인합니다.' : '기록은 이 브라우저에 저장돼요. 브라우저 가격 알림은 해당 화면이 열려 있는 동안만 확인합니다.'}</p><button onClick={() => setMode('check')}>내 종목 확인하기</button><p>신호를 직접 조합하거나 상세 지표를 비교하려면 전문가 모드로 전환하세요. 입력한 계산 조건과 기록은 이어서 사용할 수 있어요.</p></section> : <Guide />)}
     </div>
     <ResearchEvidence snapshot={visible} now={now} onMode={setMode} />

@@ -22,20 +22,20 @@ export function AppShell() {
   const isExplore = pathname.replace(/\/$/, '') === '/ai-analysis'
   // Analysis has its own contextual question panel; avoid two competing explanations.
   const focusedAnalysis = isExplore || ['/my-analysis', '/dashboard', '/portfolio', '/settings', '/trading', '/strategies', '/research'].includes(pathname.replace(/\/$/, ''))
-  const showCopilot = (compact ? mobileCopilotOpen : isAiCopilotOpen) && !focusedAnalysis
+  const showCopilot = (compact || displayMode === 'simple' ? mobileCopilotOpen : isAiCopilotOpen) && !focusedAnalysis
 
   return (
     <div className={classNames(styles.shell, !isSidebarPinned && styles.sidebarUnpinned)} data-display-mode={displayMode} data-explore={isExplore || undefined}>
       {displayMode === 'expert' && !compact && <Sidebar />}
       <div className={styles.workspace}>
-        {displayMode === 'simple' || compact ? <SimpleHeader hideCopilotToggle={focusedAnalysis} copilotOpen={compact ? mobileCopilotOpen : undefined} onToggleCopilot={compact ? () => setMobileCopilotOpen(open => !open) : undefined} /> : <Header hideCopilotToggle={focusedAnalysis} />}
+        {displayMode === 'simple' || compact ? <SimpleHeader hideCopilotToggle={focusedAnalysis} copilotOpen={mobileCopilotOpen} onToggleCopilot={() => setMobileCopilotOpen(open => !open)} /> : <Header hideCopilotToggle={focusedAnalysis} />}
         <div className={classNames(styles.body, !showCopilot && styles.aiCopilotClosed)}>
           <main className={styles.main}>
             <BetaRouteBanner />
-            <MemberAccount />
+            <MemberAccount compact={displayMode === 'simple'} />
             <Outlet />
           </main>
-          {showCopilot && <AiCopilot onClose={compact ? () => setMobileCopilotOpen(false) : undefined} />}
+          {showCopilot && <AiCopilot onClose={compact || displayMode === 'simple' ? () => setMobileCopilotOpen(false) : undefined} />}
         </div>
       </div>
     </div>

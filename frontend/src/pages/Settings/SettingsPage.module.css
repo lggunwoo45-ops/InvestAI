@@ -13,3 +13,5 @@
 .result { display: grid; gap: 10px; padding: 18px; border-left: 3px solid var(--color-accent, #155f77); background: var(--color-surface-raised); margin-top: 18px; }
 .result strong { font-size: 21px; }
 @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } .page { padding: 18px; } }
+
+.simpleStrategy { display: grid; gap: 20px; min-width: 0; }

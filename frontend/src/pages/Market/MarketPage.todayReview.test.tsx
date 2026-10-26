@@ -46,7 +46,7 @@ function openReviewInstrument() {
 
 describe('Market Today Review integration', () => {
   beforeEach(() => {
-    localStorage.clear()
+    localStorage.clear(); localStorage.setItem('market-copilot.displayMode.v1', 'expert')
     localStorage.setItem(WATCHLIST_STORAGE_KEY, JSON.stringify({ schemaVersion: WATCHLIST_SCHEMA_VERSION, watchlists: defaultWatchlists.map(list => ({ ...list, instrumentIds: [] })) }))
     saveWatchlist([itemFromInstrument(xrp)])
     vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('Network disabled in fixture test'))

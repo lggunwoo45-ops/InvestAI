@@ -1,3 +1,4 @@
+import { SimpleWorkspace, SimpleFeatureLinks } from '@/components/simple/SimpleWorkspace'
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 
@@ -12,7 +13,6 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { useMarketWorkspace } from '@/hooks/useMarketWorkspace'
 import { useNewsProviderMode } from '@/hooks/useNewsProviderMode'
 import { useLanguage } from '@/i18n/useLanguage'
-import { uiText } from '@/i18n/translations'
 import { getDemoScopeSummary } from '@/services/demo/demoScopeConfig'
 import { buildApiUsageStatus, buildDependencyHealth } from '@/services/health/dependencyHealth'
 import styles from './DemoPage.module.css'
@@ -102,11 +102,15 @@ export function DemoPage() {
   const p = readinessCopy[language]
   useDocumentTitle(scope.versionLabel)
 
-  const simpleRoutes = ['/dashboard', '/simple', '/news'] as const
+  if (displayMode === 'simple') return <SimpleWorkspace title={language === 'ko' ? '처음이라면 여기서 시작하세요' : 'Start here'} description={language === 'ko' ? '후보를 찾고, 한 종목을 확인하고, 다시 볼 가격을 기록하는 순서예요.' : 'Find a candidate, review one asset, then record a price to revisit.'}>
+    <GettingStartedFlow language={language} />
+    <SimpleFeatureLinks />
+    <details><summary>{language === 'ko' ? '사용할 수 있는 범위와 제한' : 'Coverage and limitations'}</summary><BetaLimitationsPanel language={language} /></details>
+  </SimpleWorkspace>
   return <div className={styles.page} data-display-mode={displayMode}>
     <GettingStartedFlow language={language} />
     <BetaLimitationsPanel language={language} />
-    {displayMode === 'simple' && <section className={styles.simplePath} aria-labelledby="simple-demo-path"><header><span>{uiText[language].displayMode.simpleFirst}</span><h2 id="simple-demo-path">{uiText[language].displayMode.simpleDemoPath}</h2></header><ol>{uiText[language].displayMode.simpleDemoSteps.map((step, index) => <li key={step}><b>{index + 1}</b>{simpleRoutes[index] ? <Link to={simpleRoutes[index]}>{step}</Link> : <span>{step}</span>}</li>)}</ol></section>}
+
     <header className={styles.hero}><span>{t.eyebrow}</span><h1>{scope.versionLabel}</h1><h2>{t.subtitle}</h2><p>{scope.positioning}</p><div><b>{t.crypto}</b><b>{t.stock}</b><b>{t.ai}</b><b>{t.rule}</b></div></header>
     <nav className={styles.quick} aria-label={t.quick}><span>{t.quick}</span>{t.quickLinks.map((link) => <Link key={link.label} to={link.route}><strong>{link.label} →</strong>{'hint' in link && <small>{link.hint}</small>}</Link>)}</nav>
 

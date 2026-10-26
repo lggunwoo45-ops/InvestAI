@@ -1,3 +1,4 @@
+import { DisplayModeProvider } from '@/app/displayMode/DisplayModeProvider'
 import { fireEvent, render, screen, within, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -10,7 +11,7 @@ const state = vi.hoisted(() => ({ unavailable: false }))
 vi.mock('@/i18n/useLanguage', () => ({ useLanguage: () => ({ language: 'en' }) }))
 vi.mock('@/hooks/useMarketWorkspace', () => ({ useMarketWorkspace: () => ({ marketDataMode: 'mock' }) }))
 vi.mock('@/hooks/useMarketCatalog', () => ({ useMarketCatalog: (venue: string) => ({ loading: false, error: state.unavailable ? 'offline' : null, catalog: state.unavailable ? null : { source: 'mock', fetchedAt: 1000, instruments: [{ id: `${venue}-btc`, marketId: venue.startsWith('upbit') ? 'upbit' : 'binance-spot', symbol: 'BTC', name: 'Bitcoin', quoteCurrency: venue === 'upbit-btc' ? 'BTC' : venue === 'upbit-krw' ? 'KRW' : 'USDT', lastPrice: 125 }] } }) }))
-const show = () => render(<MemoryRouter><PortfolioPage /></MemoryRouter>)
+const show = () => render(<MemoryRouter><DisplayModeProvider><PortfolioPage /></DisplayModeProvider></MemoryRouter>)
 const add = () => {
   fireEvent.change(screen.getByLabelText('Instrument · quote currency'), { target: { value: 'upbit-krw-btc' } })
   fireEvent.change(screen.getByLabelText('Average price'), { target: { value: '100' } })

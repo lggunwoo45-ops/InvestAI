@@ -1,3 +1,5 @@
+import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
+import { SimpleWorkspace } from '@/components/simple/SimpleWorkspace'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMarketCatalog } from '@/hooks/useMarketCatalog'
@@ -29,6 +31,7 @@ const planCopy = {
 }
 
 export function PortfolioPage() {
+  const simple = useDisplayMode().displayMode === 'simple'
   const { language } = useLanguage()
   const t = copy[language]
   const pt = planCopy[language]
@@ -122,16 +125,16 @@ export function PortfolioPage() {
   const ledgerText = language === 'ko'
     ? { realized: '기록된 실현손익', closed: '보유 종료', locked: '평단가와 수량은 거래 기록에서 자동 계산됩니다. 정정하려면 마지막 거래부터 취소하세요.', delete: '이 기록의 거래 내역과 실현손익도 함께 삭제됩니다.', notice: '현물 보유 기준 · 기록한 수수료 반영 · 세금/환율 미반영. 서로 다른 기준통화를 합산하지 않습니다. 시세는 조회 시점 기준입니다.' }
     : { realized: 'Recorded realized P/L', closed: 'Closed holding', locked: 'Average and quantity are calculated from the ledger. Correct entries by undoing from the last trade.', delete: 'The trade history and realized P/L of this holding will also be removed.', notice: 'Spot holdings. Includes recorded fees; excludes taxes and FX. Different currencies are never summed. Quotes reflect the time fetched.' }
-  return <main className={styles.page}>
-    <header className={styles.heading}><span>MY INVESTMENTS</span><h1>{t.title}</h1><p>{pt.subtitle}</p></header>
-    <nav className={styles.actions}><strong>{t.coins}</strong><Link to="/research?mode=position">{language === 'ko' ? '선물 포지션 연결·위험 알림' : 'Connect perpetual positions'}</Link><Link to="/market">{language === 'ko' ? '관심종목 · 마켓' : 'Watchlists · Market'}</Link>{store.positions.length > 0 && <button type="button" aria-expanded={formOpen || !!editing} aria-controls="portfolio-form" onClick={() => { reset(); setFormOpen(true) }}>{pt.add}</button>}<button type="button" onClick={() => setRetry(n => n + 1)}>{t.refresh}</button></nav>
+  const content = <main className={simple ? styles.simple : styles.page} data-portfolio-experience={simple ? 'simple' : 'expert'}>
+    {!simple && <header className={styles.heading}><span>MY INVESTMENTS</span><h1>{t.title}</h1><p>{pt.subtitle}</p></header>}
+    <nav className={styles.actions}><strong>{t.coins}</strong>{!simple && <Link to="/research?mode=position">{language === 'ko' ? '선물 포지션 연결·위험 알림' : 'Connect perpetual positions'}</Link>}<Link to="/market">{language === 'ko' ? '관심종목 · 마켓' : 'Watchlists · Market'}</Link>{store.positions.length > 0 && <button type="button" aria-expanded={formOpen || !!editing} aria-controls="portfolio-form" onClick={() => { reset(); setFormOpen(true) }}>{pt.add}</button>}<button type="button" onClick={() => setRetry(n => n + 1)}>{t.refresh}</button></nav>
     {store.error && <p role="alert">{t.storage}</p>}
     {totals.length > 0 && <section aria-label={pt.summary} className={styles.overview}>
       <div className={styles.sectionHeading}><h2>{pt.summary}</h2><span>{marketDataMode === 'mock' ? t.mock : t.live}</span></div>
       <div className={styles.totals}>{totals.map(total => <section key={total.currency} aria-label={`${pt.summary} ${total.currency}`} className={styles.total}>
         <header><strong>{total.currency}</strong><span>{pt.records} {total.count} · {pt.coverage} {total.pricedCount}/{total.count}</span></header>
         <dl><div><dt>{t.value}</dt><dd className={styles.totalValue}>{total.value === null ? '—' : number(total.value)}</dd></div>
-          <div><dt>{t.cost}</dt><dd>{total.cost === null ? '—' : number(total.cost)}</dd></div>
+          {!simple && <div><dt>{t.cost}</dt><dd>{total.cost === null ? '—' : number(total.cost)}</dd></div>}
           <div data-direction={total.profit === null || total.profit === 0 ? undefined : total.profit > 0 ? 'positive' : 'negative'}><dt>{t.profit}</dt><dd>{total.profit === null ? '—' : number(total.profit)}</dd></div>
           <div><dt>{t.rate}</dt><dd>{total.percent === null ? '—' : portfolioPercent(total.percent)}</dd></div></dl>
         {total.value === null && <p role="status">{total.pricedCount < total.count ? pt.incomplete : pt.range}</p>}
@@ -147,10 +150,10 @@ export function PortfolioPage() {
       <label>{t.average}<input required readOnly={!!editing?.ledger} type="number" min="0" step="any" value={average} onChange={e => setAverage(e.target.value)} /></label>
       <label>{t.quantity}<input required readOnly={!!editing?.ledger} type="number" min="0" step="any" value={quantity} onChange={e => setQuantity(e.target.value)} /></label>
       {editing?.ledger && <p className={styles.formTitle}>{ledgerText.locked}</p>}
-      <fieldset className={styles.planFields}><legend>{pt.plan}</legend><p id="plan-help">{pt.help}</p><div>
+      <details className={styles.planDisclosure} open={!simple || !!editing?.targetPrice || !!editing?.stopPrice}><summary>{pt.plan}</summary><fieldset className={styles.planFields}><legend>{pt.plan}</legend><p id="plan-help">{pt.help}</p><div>
         <label>{pt.target}<input aria-describedby="plan-help" type="number" min="0" step="any" value={target} onChange={e => setTarget(e.target.value)} /></label>
         <label>{pt.stop}<input aria-describedby="plan-help" type="number" min="0" step="any" value={stop} onChange={e => setStop(e.target.value)} /></label>
-      </div></fieldset>
+      </div></fieldset></details>
       <div className={styles.actions}><button disabled={!!store.error} type="submit">{t.save}</button>{(editing || formOpen) && <button type="button" onClick={reset}>{t.cancel}</button>}</div>
     </form>
     {message && <p role="status" className={styles.message}>{message}</p>}
@@ -168,7 +171,7 @@ export function PortfolioPage() {
       return <article key={p.id} aria-label={`${p.symbol} · ${p.venue}`}>
         <h2>{p.symbol}</h2><p>{p.exchange} · {p.venue} · {p.quoteCurrency}</p>
         <p>{p.quantity === 0 ? ledgerText.closed : quoteLabel}{result && quotedAt !== undefined && ` · ${new Date(quotedAt).toLocaleString()}`}</p>
-        <dl className={styles.positionMetrics}><div><dt>{t.average}</dt><dd>{number(p.averagePrice)} {p.quoteCurrency}</dd></div><div><dt>{t.quantity}</dt><dd>{number(p.quantity)}</dd></div><div><dt>{t.cost}</dt><dd>{number(p.averagePrice * p.quantity)} {p.quoteCurrency}</dd></div><div><dt>{t.value}</dt><dd>{result ? `${number(result.value)} ${p.quoteCurrency}` : '—'}</dd></div><div data-direction={result && result.profit !== 0 ? result.profit > 0 ? 'positive' : 'negative' : undefined}><dt>{t.profit}</dt><dd>{result ? `${number(result.profit)} ${p.quoteCurrency}` : '—'}</dd></div><div><dt>{t.rate}</dt><dd>{result ? portfolioPercent(result.percent) : '—'}</dd></div></dl>
+        {simple ? <div className={styles.simpleHolding}><div><span>{t.profit}</span><strong>{result ? `${number(result.profit)} ${p.quoteCurrency}` : '—'}</strong><b>{result ? portfolioPercent(result.percent) : t.unavailable}</b></div><details><summary>{language === 'ko' ? '얼마나 보유하고 있나요?' : 'Holding amounts'}</summary>        <dl className={styles.positionMetrics}><div><dt>{t.average}</dt><dd>{number(p.averagePrice)} {p.quoteCurrency}</dd></div><div><dt>{t.quantity}</dt><dd>{number(p.quantity)}</dd></div><div><dt>{t.cost}</dt><dd>{number(p.averagePrice * p.quantity)} {p.quoteCurrency}</dd></div><div><dt>{t.value}</dt><dd>{result ? `${number(result.value)} ${p.quoteCurrency}` : '—'}</dd></div></dl></details></div> : <dl className={styles.positionMetrics}><div><dt>{t.average}</dt><dd>{number(p.averagePrice)} {p.quoteCurrency}</dd></div><div><dt>{t.quantity}</dt><dd>{number(p.quantity)}</dd></div><div><dt>{t.cost}</dt><dd>{number(p.averagePrice * p.quantity)} {p.quoteCurrency}</dd></div><div><dt>{t.value}</dt><dd>{result ? `${number(result.value)} ${p.quoteCurrency}` : '—'}</dd></div><div data-direction={result && result.profit !== 0 ? result.profit > 0 ? 'positive' : 'negative' : undefined}><dt>{t.profit}</dt><dd>{result ? `${number(result.profit)} ${p.quoteCurrency}` : '—'}</dd></div><div><dt>{t.rate}</dt><dd>{result ? portfolioPercent(result.percent) : '—'}</dd></div></dl>}
         {p.quantity > 0 && <HoldingAnalysis position={p} review={review.reviews[p.id]} now={review.now} running={review.status === 'running'} language={language} />}
         <details className={styles.recordDetails}><summary>{language === 'ko' ? '거래 내역·목표가 관리' : 'Manage trades and price targets'}</summary>
         <TradeLedgerPanel key={`${p.id}:${revision}`} position={p} language={language} disabled={!!store.error} onSave={next => { const saved = commit(store.positions.map(item => item.id === p.id ? next : item), t.saved); if (saved) reset(); return saved }} />
@@ -192,4 +195,5 @@ export function PortfolioPage() {
     }} />
     <footer className={styles.storage}><p>{cloudSignedIn() ? (language === 'ko' ? '보유·거래 기록과 목표/손절 기준을 현재 계정으로 동기화합니다. 기존 브라우저 자료는 계정 설정에서 확인 후 가져올 수 있습니다.' : 'Holdings, trades and price criteria sync to this account. Import existing browser records from account settings after reviewing them.') : t.help}</p><button type="button" onClick={() => { setStore(readPortfolio()); setRevision(n => n + 1); reset(); setDeleting(null); setMessage('') }}>{t.reload}</button></footer></details>
   </main>
+  return <SimpleWorkspace enabled={simple} title={language === 'ko' ? '내 종목, 지금 어떤가요?' : 'How are my holdings doing?'} description={language === 'ko' ? '손익을 확인하고 보유 코인 분석을 눌러 다음에 확인할 가격을 알아보세요.' : 'Check your returns, then analyze your holdings for the next price to review.'}>{content}</SimpleWorkspace>
 }

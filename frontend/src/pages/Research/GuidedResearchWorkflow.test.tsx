@@ -87,6 +87,8 @@ describe('guided research tools share real calculations and drafts', () => {
     change('이번 검토 메모', '검토 연결 테스트')
     fireEvent.click(screen.getByRole('button', { name: '현재 검토 기준 저장' }))
     fireEvent.click(screen.getByRole('link', { name: '이 기록으로 가격 조건 정하기 →' }))
+    fireEvent.click(screen.getByRole('button', { name: /포지션·신호 감시/ }))
+    fireEvent.click(screen.getByRole('button', { name: '진입 조건·결과' }))
     await screen.findByText('감시 프로그램 연결됨')
     expect(registerMonitor).not.toHaveBeenCalled()
     change('목표 가격', '110'); change('손절 가격', '90')

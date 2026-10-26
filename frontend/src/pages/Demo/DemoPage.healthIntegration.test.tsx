@@ -27,7 +27,7 @@ function renderPage() {
 
 describe('DemoPage manual DART health integration', () => {
   beforeEach(() => {
-    window.localStorage.clear()
+    window.localStorage.clear(); window.localStorage.setItem('market-copilot.displayMode.v1', 'expert')
     window.localStorage.setItem('market-copilot.language', 'ko')
     window.localStorage.setItem('market-copilot.displayMode.v1', 'expert')
     checkDartConnection.mockReset()

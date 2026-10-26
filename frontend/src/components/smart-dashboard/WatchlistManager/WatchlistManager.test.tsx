@@ -20,7 +20,7 @@ function createDataTransfer() {
 
 describe('WatchlistManager drag safety', () => {
   beforeEach(() => {
-    window.localStorage.clear()
+    window.localStorage.clear(); window.localStorage.setItem('market-copilot.displayMode.v1', 'expert')
     window.history.pushState({}, '', '/dashboard')
   })
 

@@ -13,7 +13,7 @@ const instruments: MarketInstrument[] = [
 vi.mock('@/hooks/useMarketCatalog', () => ({ useMarketCatalog: vi.fn((venue: MarketVenue, _mode: MarketDataMode, _retry: number, enabled = true) => ({ catalog: enabled ? { venue, instruments: instruments.filter((item) => item.marketType === venue), source: 'mock', fetchedAt: 1700000000000 } : null, loading: false, error: null })) }))
 vi.mock('@/hooks/useTechnicalLevelData', () => ({ useTechnicalLevelData: () => ({ candles: [], currentPrice: null, dataQuality: 'mock', isLoading: false }) }))
 describe('AI Analysis evidence recommendations', () => {
-  beforeEach(() => { vi.clearAllMocks(); window.localStorage.clear(); window.localStorage.setItem('market-copilot.language', 'en') })
+  beforeEach(() => { vi.clearAllMocks(); window.localStorage.clear(); window.localStorage.setItem('market-copilot.displayMode.v1', 'expert'); window.localStorage.setItem('market-copilot.language', 'en') })
   it('updates useful recommendations and exclusions when the bucket changes', () => {
     renderWithProviders(<AiAnalysisPage />)
     expect(vi.mocked(useMarketCatalog)).not.toHaveBeenCalled()
