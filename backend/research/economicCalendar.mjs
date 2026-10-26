@@ -107,7 +107,7 @@ export function createEconomicCalendar({ fetchImpl = fetch, now = Date.now, onIs
     if (pending.has(source.id)) return pending.get(source.id)
     const work = (async () => {
       try {
-        const response = await fetchImpl(source.url, { redirect: 'error', signal: AbortSignal.any([shutdown.signal, AbortSignal.timeout(10_000)]), headers: { Accept: source.id === 'bls' ? 'text/calendar, text/plain;q=0.9, */*;q=0.1' : 'text/html', 'User-Agent': 'InvestAI/1.0 (+https://lggunwoo45-ops.github.io/InvestAI/; public economic calendar)' } })
+        const response = await fetchImpl(source.url, { redirect: 'error', signal: AbortSignal.any([shutdown.signal, AbortSignal.timeout(10_000)]), headers: { Accept: source.id === 'bls' ? 'text/calendar' : 'text/html' } })
         if (!response.ok) { const error = new Error('source_unavailable'); error.status = response.status; throw error }
         const text = await boundedText(response), events = source.id === 'bls' ? parseBlsCalendar(text) : parseFomcCalendar(text)
         if (!events.length) throw new Error('schedule_not_found')
