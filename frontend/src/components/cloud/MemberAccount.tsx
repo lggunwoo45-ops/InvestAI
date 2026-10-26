@@ -3,6 +3,7 @@ import { acknowledgeRecovery,cloudRequest,conflictCopies,importGuestResearch,res
 import { useCloud } from '@/services/cloud/useCloud'
 import styles from './MemberAccount.module.css'
 import { InvestmentImport } from './InvestmentImport'
+import { passwordChecks, passwordHint, validNewPassword } from '../../../../backend/cloud/passwordPolicy.mjs'
 
 function download(name:string,value:unknown){const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 export function MemberAccount(){
@@ -17,16 +18,18 @@ export function MemberAccount(){
   },[cloud.user,open])
   if(!cloud.enabled)return null
   const act=async(work:()=>Promise<unknown>,success='')=>{setBusy(true);setError('');setMessage('');try{await work();setMessage(success)}catch(e){setError(e instanceof Error?e.message:'요청을 완료하지 못했습니다.')}finally{setBusy(false)}}
-  const submit=(event:FormEvent)=>{event.preventDefault();void act(async()=>{await signIn(mode,{username,password,...(mode==='recover'?{recovery}:{})});setPassword('');setRecovery('')})}
+  const submit=(event:FormEvent)=>{event.preventDefault();if(mode!=='login'&&!validNewPassword(password)){setError(passwordHint);return}void act(async()=>{await signIn(mode,{username,password,...(mode==='recover'?{recovery}:{})});setPassword('');setRecovery('')})}
+  const checks=passwordChecks(password)
   return <section className={styles.member} aria-label="회원 기록과 알림">
     <div className={styles.bar}><div><b>{cloud.user?`${cloud.user.username}의 기록`:'다른 기기에서도 기록을 이어보세요'}</b><span>{cloud.user?(cloud.expired?'다시 로그인 필요':cloud.conflicts.length?'기록 충돌 확인 필요':cloud.pending?`전송 대기 ${cloud.pending}건`:cloud.syncing?'기록 동기화 중':'회원 기록 연결됨'):'계정으로 저장하고, 화면을 닫아도 가격 감시를 이어갑니다.'}</span></div><button onClick={()=>setOpen(!open)} aria-expanded={open}>{cloud.user?'계정·알림 설정':'로그인·가입'}</button></div>
     {(cloud.error||error)&&<p role="alert">{error||cloud.error}</p>}
     {open&&<div className={styles.content}>
       {!cloud.user||cloud.expired?<form onSubmit={submit} className={styles.form}>
         <h2>{mode==='register'?'InvestAI 계정 만들기':mode==='recover'?'복구 코드로 비밀번호 재설정':'내 기록으로 로그인'}</h2>
-        <p>InvestAI 전용 아이디를 사용합니다. 이메일이나 거래소 로그인 정보는 필요하지 않습니다.</p>
+        <p>InvestAI 전용 아이디를 사용합니다. 이메일 인증은 아직 제공하지 않으며, 비밀번호를 잊으면 가입 시 발급한 복구 코드가 필요합니다.</p>
         <label>아이디<input autoComplete="username" required pattern="[a-zA-Z0-9_-]{4,32}" minLength={4} maxLength={32} value={username} onChange={e=>setUsername(e.target.value)}/></label>
-        <label>{mode==='recover'?'새 비밀번호':'비밀번호'}<input type="password" autoComplete={mode==='login'?'current-password':'new-password'} required minLength={15} maxLength={128} value={password} onChange={e=>setPassword(e.target.value)}/><small>15자 이상. 기억하기 쉬운 긴 문장을 사용할 수 있어요.</small></label>
+        <label>{mode==='recover'?'새 비밀번호':'비밀번호'}<input type="password" autoComplete={mode==='login'?'current-password':'new-password'} required minLength={mode==='login'?1:8} maxLength={128} value={password} onChange={e=>setPassword(e.target.value)}/><small>{mode==='login'?'기존에 사용하던 비밀번호로 로그인하세요.':passwordHint}</small></label>
+        {mode!=='login'&&<ul className={styles.passwordRules} aria-label="비밀번호 조건">{([['length','8~128자'],['uppercase','영문 대문자'],['number','숫자'],['special','특수문자 (예: ! @ #)']] as const).map(([key,label])=><li key={key} data-met={checks[key]}>{checks[key]?'✓':'○'} {label}{checks[key]?' 충족':''}</li>)}</ul>}
         {mode==='recover'&&<label>가입할 때 받은 복구 코드<input required autoComplete="off" value={recovery} onChange={e=>setRecovery(e.target.value)}/></label>}
         <button disabled={busy} type="submit">{busy?'확인 중…':mode==='register'?'계정 만들기':mode==='recover'?'비밀번호 재설정':'로그인'}</button>
         <div className={styles.actions}><button type="button" onClick={()=>setMode('login')}>로그인</button>{cloud.signup&&<button type="button" onClick={()=>setMode('register')}>처음 가입하기</button>}<button type="button" onClick={()=>setMode('recover')}>비밀번호를 잊었어요</button></div>

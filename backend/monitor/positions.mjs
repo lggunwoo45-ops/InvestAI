@@ -73,7 +73,7 @@ export function createPositionReader(fetcher = fetch, clock = Date.now) {
   }
 }
 
-export function createConnection(config, now) { return { id: randomUUID(), config, createdAt: now, active: true, snapshot: null, issue: null, risk: {}, events: [], sequence: 0 } }
+export function createConnection(config, now) { return { id: randomUUID(), config, createdAt: now, revision: 0, active: true, snapshot: null, issue: null, risk: {}, events: [], sequence: 0 } }
 export function observeConnection(connection, snapshot, now, issue = null) {
   if (!connection.active) return
   if (issue || !validPositionSnapshot(snapshot) || now - snapshot.receivedAt > 90000 || snapshot.receivedAt - now > 5000) { connection.issue = issue ?? '포지션 자료가 오래되어 판정을 보류합니다.'; return }
@@ -104,6 +104,8 @@ export function validPositionSnapshot(s) {
 }
 export function validConnection(c) {
   try {
+    if (c.revision !== undefined && (!Number.isSafeInteger(c.revision) || c.revision < 0)) return false
+    for (const key of ['updatedAt', 'lastAttemptAt', 'credentialsUpdatedAt']) if (c[key] !== undefined && !positive(c[key])) return false
     return JSON.stringify(normalizeConnection(c.config)) === JSON.stringify(c.config) && typeof c.id === 'string' && !!positive(c.createdAt) && typeof c.active === 'boolean' && (c.issue === null || typeof c.issue === 'string') && (c.snapshot === null || validPositionSnapshot(c.snapshot)) && !!c.risk && typeof c.risk === 'object' && Object.values(c.risk).every(v => Array.isArray(v) && v.every(k => ['distance', 'loss', 'leverage'].includes(k))) && Number.isInteger(c.sequence) && c.sequence >= 0 && Array.isArray(c.events) && c.events.length <= 200 && new Set(c.events.map(e => e.id)).size === c.events.length && c.events.every(e => typeof e.id === 'string' && Object.hasOwn(positionEventLabels, e.kind) && !!positive(e.at) && (e.sourceAt === null || !!positive(e.sourceAt)) && typeof e.detail === 'string' && (e.position === null || validPositionSnapshot({ receivedAt: e.at, sourceAt: e.sourceAt, positions: [e.position] })) && ['off', 'pending', 'sent', 'uncertain'].includes(e.delivery?.status) && Number.isInteger(e.delivery.attempts) && e.delivery.attempts >= 0)
   } catch { return false }
 }

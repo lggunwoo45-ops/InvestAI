@@ -10,6 +10,7 @@ import { createSignalWatch, normalizeSignalWatch, observeSignalWatch, signalFing
 import { createConnection, createPositionReader, normalizeConnection, observeConnection, validPositionSnapshot } from './positions.mjs'
 import { createCredentialVault, normalizeCredentials } from './credentialVault.mjs'
 import { createPrivatePositionReader, isPrivateVenue, PrivatePositionError } from './privatePositions.mjs'
+import { editableConnection, updateConnection } from './connectionManagement.mjs'
 
 const defaultDirectory = fileURLToPath(new URL('../../.local-data/monitor/', import.meta.url))
 const loopback = value => ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(value)
@@ -34,6 +35,7 @@ export function createMonitorHandler({ directory = defaultDirectory, quoteReader
   let store, state, fatal = null, stopped = false, timer, deliveryTimer, busy = false, deliveryBusy = false, lastCycleAt = null
   let signalTimer, signalBusy = false
   let positionTimer, positionBusy = false
+  const positionReads = new Map(), manualReads = new Map()
   const vault = createCredentialVault(clock)
   let vaultBusy = false, privateBusy = false
   const lockedMessage = 'API 키 보관함이 잠겨 있습니다. 보관함을 열면 비공개 포지션 조회를 재개합니다.'
@@ -136,6 +138,33 @@ export function createMonitorHandler({ directory = defaultDirectory, quoteReader
       }
     } catch (e) { fatal ??= e.message } finally { signalBusy = false }
   }
+  function readConnection(id) {
+    if (positionReads.has(id)) return positionReads.get(id)
+    const reading = (async () => {
+      const c = state.connections?.find(c => c.id === id)
+      if (!c?.active || stopped || fatal) return
+      let snapshot, issue
+      const privateAccount = isPrivateVenue(c.config.venue), generation = vault.generation, revision = c.revision ?? 0
+      try {
+        if (privateAccount) {
+          if (!vault.unlocked) issue = lockedMessage
+          else snapshot = await privateReader(c.config.venue, vault.read(state.vault, c.config.account, c.config.venue), vault.signal)
+        } else snapshot = await positionReader(c.config)
+      } catch (e) { issue = e instanceof PrivatePositionError ? e.message : '거래소 자료를 확인하지 못했습니다. 이전 값은 보존하고 위험 판정을 보류합니다.' }
+      if (stopped) return
+      await mutate(next => {
+        const current = next.connections?.find(v => v.id === id)
+        // A response started before an edit, pause or key replacement must not overwrite it.
+        if (!current?.active || (current.revision ?? 0) !== revision) return
+        if (privateAccount && (generation !== vault.generation || !vault.unlocked)) { snapshot = undefined; issue = lockedMessage }
+        current.lastAttemptAt = clock()
+        observeConnection(current, snapshot, clock(), issue)
+        for (const rule of (next.signals ?? []).filter(r => r.active && r.config.positionRef?.connectionId === id)) checkBinding(next, rule)
+      })
+    })().finally(() => positionReads.delete(id))
+    positionReads.set(id, reading)
+    return reading
+  }
   async function tickPositions() {
     if (positionBusy || stopped) return
     positionBusy = true
@@ -143,22 +172,7 @@ export function createMonitorHandler({ directory = defaultDirectory, quoteReader
       await ready; if (fatal || stopped) return
       for (const c of (state.connections ?? []).filter(c => c.active)) {
         if (stopped || fatal) break
-        let snapshot, issue
-        const privateAccount = isPrivateVenue(c.config.venue), generation = vault.generation
-        try {
-          if (privateAccount) {
-            if (!vault.unlocked) issue = lockedMessage
-            else snapshot = await privateReader(c.config.venue, vault.read(state.vault, c.config.account, c.config.venue), vault.signal)
-          } else snapshot = await positionReader(c.config)
-        } catch (e) { issue = e instanceof PrivatePositionError ? e.message : '거래소 자료를 확인하지 못했습니다. 이전 값은 보존하고 위험 판정을 보류합니다.' }
-        if (stopped) break
-        await mutate(next => {
-          const current = next.connections?.find(v => v.id === c.id)
-          if (!current || !current.active) return
-          if (privateAccount && (generation !== vault.generation || !vault.unlocked)) { snapshot = undefined; issue = lockedMessage }
-          observeConnection(current, snapshot, clock(), issue)
-          for (const rule of (next.signals ?? []).filter(r => r.active && r.config.positionRef?.connectionId === c.id)) checkBinding(next, rule)
-        })
+        await readConnection(c.id)
       }
     } catch (e) { fatal ??= e.message } finally { positionBusy = false }
   }
@@ -237,6 +251,46 @@ export function createMonitorHandler({ directory = defaultDirectory, quoteReader
             next.connections ??= []; next.connections.push(connection)
           })
         } finally { privateBusy = false }
+      } else if (path === '/api/monitor/connections/update') {
+        await mutate(next => updateConnection(editableConnection(next, input), input, channel.configured, clock()))
+      } else if (path === '/api/monitor/connections/refresh') {
+        const c = editableConnection(state, input)
+        if (!c.active) throw new Error('갱신을 다시 시작한 뒤 조회해주세요.')
+        if (isPrivateVenue(c.config.venue) && !vault.unlocked) throw new Error(lockedMessage)
+        if ((manualReads.get(c.id) ?? 0) > clock() - 30_000) throw Object.assign(new Error('직접 조회는 30초마다 가능합니다. 잠시 뒤 다시 시도해주세요.'), { status: 429 })
+        manualReads.set(c.id, clock())
+        await readConnection(c.id)
+      } else if (path === '/api/monitor/connections/credentials') {
+        const original = editableConnection(state, input)
+        if (!isPrivateVenue(original.config.venue) || input.consent !== true) throw new Error('API 키 교체와 암호화 보관에 동의해주세요.')
+        if (!vault.unlocked || !state.vault) throw new Error(lockedMessage)
+        if (privateBusy) throw new Error('API 연결을 확인 중입니다. 잠시 후 다시 시도해주세요.')
+        const credentials = normalizeCredentials(input.credentials), generation = vault.generation
+        privateBusy = true
+        try {
+          let snapshot
+          try { snapshot = await privateReader(original.config.venue, credentials, vault.signal) }
+          catch (e) { throw new Error(e instanceof PrivatePositionError ? e.message : '새 키의 읽기 전용 권한을 확인하지 못했습니다. 기존 연결과 키는 유지합니다.') }
+          await mutate(next => {
+            const c = editableConnection(next, input)
+            if (!vault.unlocked || generation !== vault.generation) throw new Error('보관함 상태가 바뀌었습니다. 다시 시도해주세요.')
+            if (!validPositionSnapshot(snapshot) || clock() - snapshot.receivedAt > 90000 || snapshot.receivedAt > clock() + 5000) throw new Error('최신 포지션을 확인하지 못해 키를 교체하지 않았습니다.')
+            if (c.events.length + snapshot.positions.length * 4 > 200) throw new Error('기록 보관 한도가 부족합니다. 기록을 내보낸 뒤 새 연결을 만들어주세요.')
+            vault.replace(next.vault, c.config.account, c.config.venue, credentials)
+            c.revision = (c.revision ?? 0) + 1
+            c.credentialsUpdatedAt = c.updatedAt = c.lastAttemptAt = clock()
+            // Keys can belong to a different account. Do not infer trades across the replacement.
+            const wasActive = c.active, notify = c.config.notify
+            for (const event of c.events) if (event.delivery.status === 'pending') event.delivery.status = 'off'
+            c.snapshot = null; c.risk = {}; c.issue = null; c.active = true; c.config.notify = false
+            observeConnection(c, snapshot, clock())
+            c.active = wasActive; c.config.notify = notify
+            if (!wasActive) c.issue = '사용자가 갱신을 일시 정지했습니다.'
+            for (const rule of (next.signals ?? []).filter(r => r.active && r.config.positionRef?.connectionId === c.id)) {
+              stopSignalWatch(rule, clock()); rule.issue = 'API 키를 교체해 기존 반대 신호 감시를 종료했습니다. 새 포지션에서 다시 등록해주세요.'
+            }
+          })
+        } finally { privateBusy = false }
       } else if (path === '/api/monitor/rules') {
         const normalized = normalizeRule(input)
         await mutate(next => {
@@ -281,12 +335,14 @@ export function createMonitorHandler({ directory = defaultDirectory, quoteReader
           next.connections = next.connections.filter(c => c.id !== input.id)
           for (const rule of (next.signals ?? []).filter(r => r.active && r.config.positionRef?.connectionId === input.id)) { stopSignalWatch(rule, clock()); rule.issue = '계정 연결을 삭제해 반대 신호 감시를 종료했습니다.' }
         })
+        manualReads.delete(input.id)
       } else if (path === '/api/monitor/connections/pause') {
         await mutate(next => {
           const c = next.connections?.find(c => c.id === input.id)
           if (!c || typeof input.paused !== 'boolean') throw new Error('연결을 찾을 수 없습니다.')
           if (!input.paused && isPrivateVenue(c.config.venue) && !vault.unlocked) throw new Error(lockedMessage)
           if (!input.paused && (c.events.length >= 200 || next.connections.filter(v => v.active && v.id !== c.id).length >= 4)) throw new Error('연결 보관 또는 동시 감시 한도에 도달했습니다.')
+          c.revision = (c.revision ?? 0) + 1
           c.active = !input.paused; c.issue = input.paused ? '사용자가 갱신을 일시 정지했습니다.' : '다음 조회를 기다립니다.'
           for (const rule of (next.signals ?? []).filter(r => r.active && r.config.positionRef?.connectionId === c.id)) checkBinding(next, rule)
         })
@@ -295,7 +351,7 @@ export function createMonitorHandler({ directory = defaultDirectory, quoteReader
         await mutate(next => { const rule = next.rules.find(r => r.id === input.id); if (!rule) throw new Error('감시 기록을 찾을 수 없습니다.'); cancelRule(rule, clock()) })
       } else { respond(res, 404, { error: '없는 경로입니다.' }); return }
       respond(res, 200, status())
-    } catch (e) { respond(res, fatal ? 503 : 400, { error: e instanceof SyntaxError ? '요청을 읽을 수 없습니다.' : e.message }) }
+    } catch (e) { respond(res, fatal ? 503 : e.status === 409 || e.status === 429 ? e.status : 400, { error: e instanceof SyntaxError ? '요청을 읽을 수 없습니다.' : e.message }) }
   }
   handler.tick = tick
   handler.tickSignals = tickSignals
@@ -311,6 +367,7 @@ export function createMonitorHandler({ directory = defaultDirectory, quoteReader
   handler.close = async () => {
     stopped = true; vault.lock(); clearInterval(timer); clearInterval(deliveryTimer); clearInterval(signalTimer); clearInterval(positionTimer); await ready
     while (busy || deliveryBusy || signalBusy || positionBusy || vaultBusy || privateBusy) await new Promise(resolve => setTimeout(resolve, 25))
+    await Promise.allSettled([...positionReads.values()])
     await queue; await store?.close()
   }
   if (autoStart) {

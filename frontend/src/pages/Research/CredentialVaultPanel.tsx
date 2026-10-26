@@ -3,7 +3,7 @@ import { lockCredentialVault, removeCredentialVault, setupCredentialVault, unloc
 import styles from './PositionConnections.module.css'
 import { cloudSignedIn } from '@/services/cloud/cloudClient'
 
-export function CredentialVaultPanel({ vault, disabled, act }: { vault?: VaultStatus; disabled: boolean; act: (work: () => Promise<MonitorState>, success: string) => Promise<void> }) {
+export function CredentialVaultPanel({ vault, disabled, act }: { vault?: VaultStatus; disabled: boolean; act: (work: () => Promise<MonitorState>, success: string) => Promise<unknown> }) {
   const [password, setPassword] = useState(''), [repeat, setRepeat] = useState(''), [error, setError] = useState(''), [removing, setRemoving] = useState(false)
   const configured = !!vault?.configured, unlocked = !!vault?.unlocked
   if (cloudSignedIn()) return <aside className={styles.vault}><h4>회원 전용 키 보관함</h4><p>조회 전용 키를 서버에 암호화해 보관합니다. 계정별로 분리하며, 브라우저를 닫아도 서버가 포지션을 확인합니다. 연결을 삭제하면 해당 키도 삭제합니다.</p><p role="status">{unlocked?'암호화 보관함 준비됨':'보관함을 열지 못했습니다. 서버 설정을 확인해주세요.'}</p></aside>

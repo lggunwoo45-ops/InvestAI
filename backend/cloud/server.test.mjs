@@ -9,7 +9,7 @@ import { openAccounts } from './accounts.mjs'
 import { createMemberTelegram } from './telegram.mjs'
 import { createPriceAlerts } from './prices.mjs'
 
-const secret='1'.repeat(64),password='only-a-test-passphrase-123'
+const secret='1'.repeat(64),password='Only-a-test-passphrase-123!'
 async function serve(directory,options={}){
   const handler=createCloudHandler({directory,secret,env:{INVESTAI_CLOUD_SIGNUP:'true'},origins:['https://app.example'],autoStart:false,...options})
   await handler.ready
@@ -66,7 +66,7 @@ test('accounts isolate records, reject stale writes, revoke sessions and recover
     assert.equal((await app.request('/records',undefined)).status,401)
     assert.equal((await app.request('/monitor',undefined,b.body.token)).body.rules.length,0)
     assert.equal((await app.request('/monitor/vault/remove',{confirm:true},token)).status,400)
-    const recovery=await app.request('/recover',{username:'alice',password:'a-new-test-passphrase-456',recovery:a.body.recovery})
+    const recovery=await app.request('/recover',{username:'alice',password:'A-new-test-passphrase-456!',recovery:a.body.recovery})
     assert.equal(recovery.status,200);assert.notEqual(recovery.body.recovery,a.body.recovery)
     assert.equal((await app.request('/records',undefined,token)).status,401)
     assert.equal((await app.request('/recover',{username:'alice',password,recovery:a.body.recovery})).status,401)
@@ -152,6 +152,7 @@ test('member API keys remain encrypted and isolated, and the vault resumes after
     const restored=(await app.request('/monitor',undefined,first.token)).body
     assert.deepEqual(restored.vault,{configured:true,unlocked:true});assert.equal(restored.connections.length,1)
     assert.equal((await app.request('/monitor/connections/remove',{id:restored.connections[0].id},second.token)).status,400)
+    for (const action of ['update','refresh','credentials']) assert.equal((await app.request(`/monitor/connections/${action}`,{id:restored.connections[0].id,revision:0,label:'other',notify:false,thresholds:config.thresholds,credentials,consent:true},second.token)).status,400)
     assert.equal((await app.request('/monitor',undefined,first.token)).body.connections.length,1)
   }finally{await app.close();await rm(dir,{recursive:true,force:true})}
 })

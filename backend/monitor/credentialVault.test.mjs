@@ -5,6 +5,20 @@ import { createCredentialVault, validVault, normalizeCredentials } from './crede
 const password = 'fixture-vault-password-only'
 const credentials = { apiKey: 'fixture_api_key_123456', apiSecret: 'fixture_api_secret_123456' }
 const id = 'key-11111111-1111-4111-8111-111111111111'
+
+test('replacing a key rejects duplicates without losing the previous encrypted record', async () => {
+  const vault = createCredentialVault(); let data
+  await vault.setup(password, async value => { data = value })
+  const otherId = 'key-22222222-2222-4222-8222-222222222222', other = { apiKey: 'other_fixture_key_123456', apiSecret: 'other_fixture_secret_123456' }
+  vault.add(data, id, 'bybit', credentials); vault.add(data, otherId, 'bybit', other)
+  const before = JSON.stringify(data)
+  assert.throws(() => vault.replace(data, id, 'bybit', other), /이미 연결/)
+  assert.equal(JSON.stringify(data), before); assert.deepEqual(vault.read(data, id, 'bybit'), credentials)
+  const replacement = { ...credentials, apiSecret: 'new_fixture_secret_123456' }
+  vault.replace(data, id, 'bybit', replacement)
+  assert.equal(validVault(data), true); assert.deepEqual(vault.read(data, id, 'bybit'), replacement)
+  assert.equal(data.items.length, 2); vault.lock()
+})
 test('vault encrypts both keys, authenticates on unlock, binds ciphertext to venue and record, and clears its session', async () => {
   const vault = createCredentialVault(); let data
   await vault.setup(password, async value => { data = value })

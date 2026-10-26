@@ -3,9 +3,38 @@ import { fireEvent, screen, waitFor } from '@testing-library/react'
 import { renderWithProviders } from '@/test/renderWithProviders'
 import * as monitor from '@/services/research/monitorClient'
 import { PositionConnections } from './PositionConnections'
-vi.mock('@/services/research/monitorClient', async original => ({ ...await original<typeof monitor>(), readMonitor: vi.fn(), connectPositions: vi.fn(), connectPrivatePositions: vi.fn(), setupCredentialVault: vi.fn(), unlockCredentialVault: vi.fn(), lockCredentialVault: vi.fn(), removeCredentialVault: vi.fn(), pausePositionConnection: vi.fn(), removePositionConnection: vi.fn(), registerSignalWatch: vi.fn() }))
+vi.mock('@/services/research/monitorClient', async original => ({ ...await original<typeof monitor>(), readMonitor: vi.fn(), connectPositions: vi.fn(), connectPrivatePositions: vi.fn(), setupCredentialVault: vi.fn(), unlockCredentialVault: vi.fn(), lockCredentialVault: vi.fn(), removeCredentialVault: vi.fn(), pausePositionConnection: vi.fn(), removePositionConnection: vi.fn(), registerSignalWatch: vi.fn(), updatePositionConnection: vi.fn(), refreshPositionConnection: vi.fn(), replacePositionCredentials: vi.fn() }))
 const fixture = (connected = false): monitor.MonitorState => ({ version: 1, running: true, error: null, now: Date.now(), lastCycleAt: Date.now(), intervalMs: 15000, channelConfigured: false, rules: [], signals: [], connections: connected ? [{ id: 'connection-1', config: { requestId: 'connection-test', venue: 'hyperliquid', account: `0x${'a'.repeat(40)}`, label: '보유 계정', notify: false, thresholds: { distance: 5, loss: 10, leverage: null } }, active: true, createdAt: Date.now(), issue: null, sequence: 0, risk: {}, events: [], snapshot: { receivedAt: Date.now(), sourceAt: Date.now(), positions: [{ key: 'BTC:long', asset: 'BTC', side: 'long', size: 1, entryPrice: 100, currentPrice: 82, liquidationPrice: 80, unrealizedPnl: -18, leverage: 5, marginType: 'cross', quote: 'USDC' }] } }] : [] })
 beforeEach(() => { localStorage.clear(); localStorage.setItem('market-copilot.language', 'ko'); vi.clearAllMocks(); vi.mocked(monitor.readMonitor).mockResolvedValue(fixture()) })
+it('updates existing settings with a captured revision and requests a real refresh', async () => {
+  const initial = fixture(true), updated = fixture(true); updated.connections![0].revision = 1; updated.connections![0].config.label = '수정된 계정'
+  vi.mocked(monitor.readMonitor).mockResolvedValue(initial); vi.mocked(monitor.updatePositionConnection).mockResolvedValue(updated); vi.mocked(monitor.refreshPositionConnection).mockResolvedValue(updated)
+  renderWithProviders(<PositionConnections />)
+  fireEvent.click(await screen.findByRole('button', { name: '연결 설정 수정' }))
+  fireEvent.change(screen.getByLabelText('연결 이름 수정'), { target: { value: '수정된 계정' } })
+  fireEvent.change(screen.getByLabelText('청산 거리 수정'), { target: { value: '3' } })
+  fireEvent.change(screen.getByLabelText('진입금액 대비 손실 수정'), { target: { value: '' } })
+  fireEvent.click(screen.getByRole('button', { name: '변경 저장' }))
+  await waitFor(() => expect(monitor.updatePositionConnection).toHaveBeenCalledWith('connection-1', 0, { label: '수정된 계정', notify: false, thresholds: { distance: 3, loss: null, leverage: null } }))
+  await screen.findByText('수정된 계정'); expect(screen.queryByLabelText('연결 이름 수정')).toBeNull()
+  fireEvent.click(screen.getByRole('button', { name: '지금 다시 조회' }))
+  await waitFor(() => expect(monitor.refreshPositionConnection).toHaveBeenCalledWith('connection-1', 1))
+})
+it('keeps rejected edits open and clears replacement credentials after failed verification', async () => {
+  const data = fixture(true); data.vault = { configured: true, unlocked: true }; data.connections![0].config.venue = 'bybit'
+  vi.mocked(monitor.readMonitor).mockResolvedValue(data); vi.mocked(monitor.updatePositionConnection).mockRejectedValue(new Error('다른 화면에서 변경됐습니다.')); vi.mocked(monitor.replacePositionCredentials).mockRejectedValue(new Error('새 키 권한 확인 실패'))
+  renderWithProviders(<PositionConnections />)
+  fireEvent.click(await screen.findByRole('button', { name: '연결 설정 수정' })); fireEvent.click(screen.getByRole('button', { name: '변경 저장' }))
+  await screen.findByText('다른 화면에서 변경됐습니다.'); expect(screen.getByLabelText('연결 이름 수정')).toBeTruthy()
+  fireEvent.click(screen.getByRole('button', { name: 'API 키 교체' }))
+  fireEvent.change(screen.getByLabelText('새 API 키'), { target: { value: 'replacement_api_key_123' } }); fireEvent.change(screen.getByLabelText('새 API 비밀 키'), { target: { value: 'replacement_secret_123' } })
+  expect((screen.getByRole('button', { name: '확인 후 키 교체' }) as HTMLButtonElement).disabled).toBe(true)
+  fireEvent.click(screen.getByRole('checkbox', { name: /새 키를 이 PC에/ })); fireEvent.click(screen.getByRole('button', { name: '확인 후 키 교체' }))
+  await screen.findByText('새 키 권한 확인 실패')
+  expect(monitor.replacePositionCredentials).toHaveBeenCalledWith('connection-1', 0, { apiKey: 'replacement_api_key_123', apiSecret: 'replacement_secret_123' }, true)
+  expect((screen.getByLabelText('새 API 키') as HTMLInputElement).value).toBe(''); expect((screen.getByLabelText('새 API 비밀 키') as HTMLInputElement).value).toBe('')
+  expect(JSON.stringify(localStorage) + JSON.stringify(sessionStorage)).not.toContain('replacement_')
+})
 it('shows no invented positions and registers an explicit public connection with editable thresholds', async () => {
   vi.mocked(monitor.connectPositions).mockResolvedValue(fixture(true))
   renderWithProviders(<PositionConnections />)
