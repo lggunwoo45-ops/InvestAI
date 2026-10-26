@@ -36,6 +36,18 @@ describe('member research synchronization',()=>{
     expect(localStorage.getItem('investai.cloud.session')).toBeNull()
     await client.signOut();expect(client.researchStorage.getItem('investai.research.draft.v1.BTC')).toBe('guest note')
   })
+  it('refreshing verified email preserves pending records and does not switch account context',async()=>{
+    const {client,fetcher,offline}=await setup()
+    offline(true)
+    client.researchStorage.setItem('investai.research.draft.v1.BTC','unsent note')
+    await client.syncCloud()
+    fetcher.mockResolvedValueOnce(Response.json({user:{id:'member-a',username:'alice',email:'alice@example.test',emailVerifiedAt:1}}))
+    await client.refreshMember()
+    expect(client.cloudSnapshot().user?.email).toBe('alice@example.test')
+    expect(client.cloudSnapshot().pending).toBe(1)
+    expect(client.researchStorage.getItem('investai.research.draft.v1.BTC')).toBe('unsent note')
+    offline(false);await client.syncCloud()
+  })
   it('does not silently overwrite another device and keeps both conflict copies',async()=>{
     const {client,remote,conflict,value}=await setup();remote('other device');conflict(true)
     client.researchStorage.setItem('investai.research.draft.v1.BTC','my note')

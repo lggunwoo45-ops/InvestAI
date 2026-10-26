@@ -21,7 +21,7 @@ it('shows new rules on signup and recovery, validates composition and accepts ex
   await waitFor(() => expect(signIn).toHaveBeenCalledWith('register', { username: 'newuser', password: 'Abcdef1!' }))
   fireEvent.click(screen.getByRole('button', { name: '비밀번호를 잊었어요' }))
   expect(screen.getByLabelText(/^새 비밀번호/).getAttribute('minlength')).toBe('8')
-  expect(screen.getByText(/이메일 인증은 아직/)).toBeTruthy()
+  expect(screen.getByText(/인증메일 발송은 준비 중/)).toBeTruthy()
 })
 it('does not apply new composition rules to existing-member login', async () => {
   render(<MemberAccount />); fireEvent.click(screen.getByRole('button', { name: '로그인·가입' }))

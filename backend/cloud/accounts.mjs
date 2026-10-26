@@ -5,6 +5,7 @@ import { randomBytes, randomUUID, createHash, scrypt, timingSafeEqual } from 'no
 import { promisify } from 'node:util'
 import { investmentRecordLimits, validInvestmentEnvelope } from './recordPolicy.mjs'
 import { passwordHint, validNewPassword } from './passwordPolicy.mjs'
+import { createEmailAccounts } from './emailAccounts.mjs'
 
 const derive = promisify(scrypt)
 export const digest = value => createHash('sha256').update(value).digest('hex')
@@ -19,7 +20,7 @@ async function verify(password, encoded) {
   const actual = await hash(password, reference.split(':')[0])
   return timingSafeEqual(Buffer.from(actual), Buffer.from(reference))
 }
-export function openAccounts(directory, clock = Date.now) {
+export function openAccounts(directory, clock = Date.now, { emailSecret = randomBytes(32) } = {}) {
   mkdirSync(directory, { recursive: true, mode: 0o700 })
   const db = new DatabaseSync(join(directory, 'accounts.sqlite'))
   db.exec(`PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000;
@@ -39,23 +40,29 @@ export function openAccounts(directory, clock = Date.now) {
     db.prepare('DELETE FROM sessions WHERE expires < ?').run(clock())
     db.prepare('INSERT INTO sessions VALUES(?,?,?)').run(digest(token), user.id, expires)
     db.prepare('DELETE FROM sessions WHERE owner=? AND hash NOT IN (SELECT hash FROM sessions WHERE owner=? ORDER BY expires DESC LIMIT 10)').run(user.id, user.id)
-    return { token, expires, user: { id: user.id, username: user.username } }
+    return { token, expires, user: { id: user.id, username: user.username, ...email.profile(user.id) } }
   }
   const username = input => {
     if (typeof input !== 'string' || !/^[a-zA-Z0-9_-]{4,32}$/.test(input)) fail(400, '아이디는 영문·숫자·밑줄·하이픈 4~32자로 입력해주세요.')
     return input.toLowerCase()
   }
   const password = value => { if (!validNewPassword(value)) fail(400, passwordHint); return value }
+  const email = createEmailAccounts({ db, clock, secret: emailSecret, fail, digest, hash: value => hash(password(value)), verify, limited, username })
   return {
-    db, close: () => db.close(), users: () => db.prepare('SELECT id,username FROM users').all(),
-    register: input => limited(async () => {
+    db, email, close: () => db.close(), users: () => db.prepare('SELECT id,username FROM users').all(),
+    register: (input, { requireEmail = false } = {}) => limited(async () => {
       const name = username(input.username), secret = password(input.password)
+      if (requireEmail || input.emailTicket) email.signupProof(input)
       if (db.prepare('SELECT COUNT(*) AS count FROM users').get().count >= 50) fail(503, '베타 가입 인원이 가득 찼습니다.')
       const encoded = await hash(secret), recovery = randomBytes(24).toString('base64url'), id = randomUUID()
       // Hashing yields to other requests. Check the capacity again before the synchronous insert.
       if (db.prepare('SELECT COUNT(*) AS count FROM users').get().count >= 50) fail(503, '베타 가입 인원이 가득 찼습니다.')
-      try { db.prepare('INSERT INTO users VALUES(?,?,?,?,?)').run(id, name, encoded, digest(recovery), clock()) }
-      catch (e) { if (e.code?.startsWith('ERR_SQLITE')) fail(409, '사용할 수 없는 아이디입니다. 다른 아이디를 선택해주세요.'); throw e }
+      db.exec('BEGIN IMMEDIATE')
+      try {
+        db.prepare('INSERT INTO users VALUES(?,?,?,?,?)').run(id, name, encoded, digest(recovery), clock())
+        if (requireEmail || input.emailTicket) email.attachSignup(id, input)
+        db.exec('COMMIT')
+      } catch (e) { db.exec('ROLLBACK'); if (e.code?.startsWith('ERR_SQLITE')) fail(409, '사용할 수 없는 아이디입니다. 다른 아이디를 선택해주세요.'); throw e }
       return { ...session({ id, username: name }), recovery }
     }),
     login: input => limited(async () => {
@@ -77,7 +84,7 @@ export function openAccounts(directory, clock = Date.now) {
         // Compare again after password hashing; a recovery code can be consumed only once.
         const updated = db.prepare('UPDATE users SET password=?,recovery=? WHERE id=? AND recovery=?').run(encoded, digest(recovery), user.id, user.recovery)
         if (!updated.changes) fail(409, '이미 사용한 복구 코드입니다.')
-        db.prepare('DELETE FROM sessions WHERE owner=?').run(user.id); db.exec('COMMIT')
+        db.prepare('DELETE FROM sessions WHERE owner=?').run(user.id); email.invalidate(user.id); db.exec('COMMIT')
       } catch (e) { db.exec('ROLLBACK'); throw e }
       return { ...session(user), recovery }
     }),
@@ -85,7 +92,7 @@ export function openAccounts(directory, clock = Date.now) {
       if (!/^[A-Za-z0-9_-]{43}$/.test(token ?? '')) fail(401, '로그인이 필요합니다.')
       const user = db.prepare('SELECT users.id,users.username FROM sessions JOIN users ON users.id=sessions.owner WHERE hash=? AND expires>?').get(digest(token), clock())
       if (!user) fail(401, '로그인이 만료되었습니다. 다시 로그인해주세요.')
-      return user
+      return { ...user, ...email.profile(user.id) }
     },
     logout(token, all = false) { const user = this.authenticate(token); db.prepare(all ? 'DELETE FROM sessions WHERE owner=?' : 'DELETE FROM sessions WHERE hash=?').run(all ? user.id : digest(token)) },
     records(owner) { return db.prepare('SELECT key,value,version FROM records WHERE owner=?').all(owner) },
