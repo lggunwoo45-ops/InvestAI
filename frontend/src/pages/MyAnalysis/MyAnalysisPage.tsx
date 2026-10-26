@@ -1,3 +1,4 @@
+import { CLOUD_RECORDS_CHANGED } from '@/services/cloud/cloudClient'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, Navigate, useSearchParams } from 'react-router-dom'
 import { analysisContextKey, readAnalysisSession, saveAnalysisSession, type AnalysisTab } from '@/services/myAnalysis/analysisSession'
@@ -101,7 +102,9 @@ function AnalysisWorkspace() {
   useEffect(() => {
     const sync = (event: StorageEvent) => { if (event.key === PORTFOLIO_KEY || event.key === null) setSavedPortfolio(readPortfolio()) }
     window.addEventListener('storage', sync)
-    return () => window.removeEventListener('storage', sync)
+    const remote = () => setSavedPortfolio(readPortfolio())
+    window.addEventListener(CLOUD_RECORDS_CHANGED, remote)
+    return () => { window.removeEventListener('storage', sync); window.removeEventListener(CLOUD_RECORDS_CHANGED, remote) }
   }, [])
   const [query, setQuery] = useState('')
   const [requestedInstrumentId] = useState<string | null>(() => params.get('instrumentId'))

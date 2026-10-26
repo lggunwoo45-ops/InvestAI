@@ -3,6 +3,7 @@ import { mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { randomBytes, randomUUID, createHash, scrypt, timingSafeEqual } from 'node:crypto'
 import { promisify } from 'node:util'
+import { investmentRecordLimits, validInvestmentEnvelope } from './recordPolicy.mjs'
 
 const derive = promisify(scrypt)
 export const digest = value => createHash('sha256').update(value).digest('hex')
@@ -87,9 +88,10 @@ export function openAccounts(directory, clock = Date.now) {
     logout(token, all = false) { const user = this.authenticate(token); db.prepare(all ? 'DELETE FROM sessions WHERE owner=?' : 'DELETE FROM sessions WHERE hash=?').run(all ? user.id : digest(token)) },
     records(owner) { return db.prepare('SELECT key,value,version FROM records WHERE owner=?').all(owner) },
     putRecord(owner, { key, value, version }) {
-      const validKey = ['investai.research.observations.v1','investai.signal-presets.v1','investai.research.rules.v1','investai.research.events.v1'].includes(key) || /^investai\.research\.draft\.v1\.[A-Z0-9]{2,12}$/.test(key)
-      if (!validKey || !Number.isSafeInteger(version) || version < 0 || value !== null && (typeof value !== 'string' || Buffer.byteLength(value) > 200_000)) fail(400, '저장할 기록의 형식을 확인해주세요.')
-      if (value !== null && !key.includes('.draft.')) { try { const rows = JSON.parse(value); if (!Array.isArray(rows) || rows.length > 100) throw new Error() } catch { fail(400, '기록 목록을 확인해주세요.') } }
+      const investment = Object.hasOwn(investmentRecordLimits, key)
+      const validKey = investment || ['investai.research.observations.v1','investai.signal-presets.v1','investai.research.rules.v1','investai.research.events.v1'].includes(key) || /^investai\.research\.draft\.v1\.[A-Z0-9]{2,12}$/.test(key)
+      if (!validKey || !Number.isSafeInteger(version) || version < 0 || value !== null && (typeof value !== 'string' || Buffer.byteLength(value) > (investment ? investmentRecordLimits[key] : 200_000))) fail(400, '저장할 기록의 형식과 용량을 확인해주세요.')
+      if (value !== null && !key.includes('.draft.')) { try { const rows = JSON.parse(value); if (investment ? !validInvestmentEnvelope(key, rows) : !Array.isArray(rows) || rows.length > 100) throw new Error() } catch { fail(400, '기록 목록을 확인해주세요.') } }
       if (key.includes('.draft.') && value?.length > 1000) fail(400, '메모는 1,000자까지 저장할 수 있습니다.')
       db.exec('BEGIN IMMEDIATE')
       try {

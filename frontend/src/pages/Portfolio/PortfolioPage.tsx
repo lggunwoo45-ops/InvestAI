@@ -17,6 +17,7 @@ import { portfolioNumber as number, portfolioPercent } from '@/utils/formatPortf
 import { summarizePortfolio } from '@/services/portfolio/portfolioReview'
 import { coinVenues, PORTFOLIO_KEY, positionFor, readPortfolio, valuation, writePortfolio, type CoinVenue, type Position } from '@/services/portfolio/portfolioStorage'
 import styles from './PortfolioPage.module.css'
+import { CLOUD_RECORDS_CHANGED, cloudSignedIn } from '@/services/cloud/cloudClient'
 
 const copy = {
   ko: { title: '내 투자', coins: '내 코인', help: '관심종목과 별도로 이 브라우저에 저장됩니다. 브라우저 데이터 삭제 시 사라지며 기기 간 동기화되지 않습니다.', venue: '거래소 · 마켓', asset: '종목 · 기준통화', average: '평단가', quantity: '수량', save: '저장', edit: '수정', remove: '삭제', confirm: '이 보유 기록을 삭제할까요?', cancel: '취소', analyze: '내 종목 분석', empty: '저장한 코인이 없습니다.', select: '종목 선택', loading: '시세 불러오는 중', unavailable: '시세 이용 불가', mock: '모의 시세', live: '조회 시세', value: '평가금액', profit: '평가손익', rate: '수익률', refresh: '시세 새로고침', error: '변경하지 못했습니다. 유효한 양수를 입력하세요. 저장공간 제한 또는 다른 탭의 변경도 확인해주세요.', storage: '저장 데이터를 읽을 수 없어 변경을 중지했습니다. 기존 데이터는 보존됩니다.', reload: '저장 데이터 다시 읽기', saved: '저장했습니다.', deleted: '삭제했습니다.', notice: '현물 보유 기준 · 수수료/세금/환율 미반영. 서로 다른 기준통화를 합산하지 않습니다. 시세는 조회 시점 기준입니다.', search: '종목 검색', cost: '매입금액' },
@@ -68,7 +69,7 @@ export function PortfolioPage() {
   }, [editing, formOpen])
   useEffect(() => {
     const sync = (event: StorageEvent) => {
-      if (event.key === PORTFOLIO_KEY || event.key === null) {
+      if (!cloudSignedIn() && (event.key === PORTFOLIO_KEY || event.key === null)) {
         setRevision(n => n + 1)
         setStore(readPortfolio()); setEditing(null); setDeleting(null); setAverage(''); setQuantity(''); setTarget(''); setStop(''); setInstrumentId(''); setMessage('')
       }
@@ -76,9 +77,20 @@ export function PortfolioPage() {
     window.addEventListener('storage', sync)
     return () => window.removeEventListener('storage', sync)
   }, [])
+  useEffect(() => {
+    const remote = () => {
+      if (!cloudSignedIn()) return
+      const next = readPortfolio()
+      if (next.raw === store.raw && next.error === store.error) return
+      if (editing || formOpen) { setMessage(language === 'ko' ? '다른 기기에서 기록이 바뀌었습니다. 작성 중인 입력은 유지했습니다. 저장 데이터를 다시 읽고 변경 내용을 확인해주세요.' : 'Another device changed these holdings. Your input is retained. Reload saved data before saving.'); return }
+      setStore(next); setRevision(n => n + 1); setDeleting(null)
+    }
+    window.addEventListener(CLOUD_RECORDS_CHANGED, remote)
+    return () => window.removeEventListener(CLOUD_RECORDS_CHANGED, remote)
+  }, [store.raw, store.error, editing, formOpen, language])
   const reset = () => { setEditing(null); setAverage(''); setQuantity(''); setTarget(''); setStop(''); setInstrumentId(''); setQuery(''); setFormOpen(false) }
   const commit = (positions: Position[], success: string) => {
-    try { setStore(writePortfolio(positions, store.raw)); setRevision(n => n + 1); setMessage(success); return true }
+    try { setStore(writePortfolio(positions, store.raw)); setRevision(n => n + 1); setMessage(cloudSignedIn() ? (language === 'ko' ? '변경을 반영했습니다. 서버 저장 상태는 위의 계정 표시에서 확인하세요.' : 'Changes queued. Check the account bar for server sync status.') : success); return true }
     catch { setMessage(t.error); return false }
   }
   const save = () => {
@@ -178,6 +190,6 @@ export function PortfolioPage() {
         return saved
       } catch { return false }
     }} />
-    <footer className={styles.storage}><p>{t.help}</p><button type="button" onClick={() => { setStore(readPortfolio()); setRevision(n => n + 1); reset(); setDeleting(null); setMessage('') }}>{t.reload}</button></footer></details>
+    <footer className={styles.storage}><p>{cloudSignedIn() ? (language === 'ko' ? '보유·거래 기록과 목표/손절 기준을 현재 계정으로 동기화합니다. 기존 브라우저 자료는 계정 설정에서 확인 후 가져올 수 있습니다.' : 'Holdings, trades and price criteria sync to this account. Import existing browser records from account settings after reviewing them.') : t.help}</p><button type="button" onClick={() => { setStore(readPortfolio()); setRevision(n => n + 1); reset(); setDeleting(null); setMessage('') }}>{t.reload}</button></footer></details>
   </main>
 }

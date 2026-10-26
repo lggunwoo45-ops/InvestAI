@@ -1,4 +1,5 @@
 import type { MarketInstrument } from '@/types/market'
+import { memberStorage } from '@/services/cloud/cloudClient'
 import type { AnalysisFrame, Direction } from '@/services/cryptoAnalysis/cryptoDecisionEngine'
 
 export const SCENARIO_KEY = 'investai.scenarios.v1'
@@ -78,7 +79,7 @@ export function validScenarioData(value: unknown): value is ScenarioData {
 export function readScenarios(): ScenarioStore {
   let raw: string | null = null
   try {
-    raw = localStorage.getItem(SCENARIO_KEY)
+    raw = memberStorage.getItem(SCENARIO_KEY)
     const data: unknown = raw === null ? { version: 1, scenarios: [], events: [] } : JSON.parse(raw)
     if (!validScenarioData(data)) throw new Error('storage')
     return { ...data, raw, error: false }
@@ -91,7 +92,7 @@ export function writeScenarios(data: ScenarioData, expectedRaw: string | null): 
   if (current.error) throw new Error('storage')
   if (current.raw !== expectedRaw) throw new Error('conflict')
   const raw = JSON.stringify({ version: 1, scenarios: data.scenarios, events: data.events })
-  localStorage.setItem(SCENARIO_KEY, raw)
+  memberStorage.setItem(SCENARIO_KEY, raw)
   window.dispatchEvent(new Event(SCENARIO_CHANGED))
   return { ...data, raw, error: false }
 }

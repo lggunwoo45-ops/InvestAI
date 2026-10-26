@@ -7,6 +7,7 @@ import { PORTFOLIO_KEY, readPortfolio } from '@/services/portfolio/portfolioStor
 import { summarizePortfolio } from '@/services/portfolio/portfolioReview'
 import { portfolioNumber, portfolioPercent } from '@/utils/formatPortfolio'
 import styles from './PortfolioSummaryCard.module.css'
+import { CLOUD_RECORDS_CHANGED } from '@/services/cloud/cloudClient'
 
 export function PortfolioSummaryCard() {
   const { language } = useLanguage()
@@ -18,8 +19,10 @@ export function PortfolioSummaryCard() {
   useEffect(() => {
     const sync = (event: StorageEvent) => { if (event.key === PORTFOLIO_KEY || event.key === null) setStore(readPortfolio()) }
     window.addEventListener('storage', sync)
+    const remote = () => setStore(readPortfolio())
+    window.addEventListener(CLOUD_RECORDS_CHANGED, remote)
     const timer = setInterval(() => setNow(Date.now()), 5000)
-    return () => { window.removeEventListener('storage', sync); clearInterval(timer) }
+    return () => { window.removeEventListener('storage', sync); window.removeEventListener(CLOUD_RECORDS_CHANGED, remote); clearInterval(timer) }
   }, [])
   const positions = store.positions.filter(p => p.quantity > 0)
   const hasHoldings = positions.length > 0

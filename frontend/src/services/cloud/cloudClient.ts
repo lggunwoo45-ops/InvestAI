@@ -1,4 +1,5 @@
 import { researchBase } from '@/services/research/researchClient'
+import { investmentRecordLimits } from '../../../../backend/cloud/recordPolicy.mjs'
 
 export interface Member { id:string; username:string }
 export interface CloudRecord { key:string; value:string|null; version:number }
@@ -29,7 +30,9 @@ function cache(){
   if(!state.user)return
   try{sessionStorage.setItem(`investai.cloud.pending.${state.user.id}`,JSON.stringify([...pending]))}catch{publish({error:'동기화 전 메모를 임시 보관하지 못했습니다. 이 탭을 닫기 전에 동기화를 완료해주세요.'})}
 }
-const remoteChanged=()=>window.dispatchEvent(new Event('investai-cloud-records'))
+export const CLOUD_RECORDS_CHANGED='investai-cloud-records'
+export const notifyCloudRecords=()=>window.dispatchEvent(new Event(CLOUD_RECORDS_CHANGED))
+const remoteChanged=notifyCloudRecords
 function applyRemote(rows:CloudRecord[]){
   let changed=false
   for(const row of rows){if(!pending.has(row.key)&&records.get(row.key)?.value!==row.value)changed=true;records.set(row.key,row)}
@@ -90,7 +93,7 @@ export async function syncCloud(){
         if(pending.get(key)===job)pending.delete(key)
         else {const newer=pending.get(key);if(newer)newer.version=result.version}
         cache()
-      }catch(e){if(e instanceof CloudRequestError&&e.status===409){publish({conflicts:[...new Set([...state.conflicts,key])],error:'다른 기기에서 수정한 기록과 충돌했습니다. 계정에서 확인해주세요.'});continue}throw e}
+      }catch(e){if(current!==generation)return;if(e instanceof CloudRequestError&&e.status===409){publish({conflicts:[...new Set([...state.conflicts,key])],error:'다른 기기에서 수정한 기록과 충돌했습니다. 계정에서 확인해주세요.'});continue}throw e}
     }
     const latest=await cloudRequest<{records:CloudRecord[]}>('/records')
     if(current===generation)applyRemote(latest.records)
@@ -108,11 +111,25 @@ export async function resolveCloudConflict(key:string,choice:'server'|'mine'){
   publish({conflicts:state.conflicts.filter(k=>k!==key)});cache();remoteChanged();await syncCloud()
 }
 export function conflictCopies(key:string){return {local:pending.get(key)?.value??null,server:records.get(key)?.value??null}}
+/** Stage a group only after validation and a durable tab-cache write succeed. */
+export function stageMemberRecords(changes:ReadonlyMap<string,string|null>){
+  if(!state.user)throw new Error('먼저 로그인해주세요.')
+  const next=new Map(pending)
+  for(const [key,value] of changes){
+    if(value!==null&&new TextEncoder().encode(value).length>(investmentRecordLimits[key]??200_000))throw new Error('기록의 계정 저장 용량을 초과했습니다. 원본을 백업해주세요.')
+    const previous=pending.get(key)
+    next.set(key,{value,version:previous?.version??records.get(key)?.version??0})
+  }
+  try{sessionStorage.setItem(`investai.cloud.pending.${state.user.id}`,JSON.stringify([...next]))}
+  catch{throw new Error('전송 대기 기록을 보관하지 못해 변경하지 않았습니다. 저장 공간을 확인해주세요.')}
+  pending=next;publish({});scheduleSync()
+}
 export const researchStorage:Pick<Storage,'getItem'|'setItem'|'removeItem'>={
   getItem(key){return state.user?(pending.has(key)?pending.get(key)!.value:records.get(key)?.value??null):localStorage.getItem(key)},
-  setItem(key,value){if(!state.user){localStorage.setItem(key,value);return}const previous=pending.get(key);pending.set(key,{value,version:previous?.version??records.get(key)?.version??0});cache();publish({});scheduleSync()},
-  removeItem(key){if(!state.user){localStorage.removeItem(key);return}const previous=pending.get(key);pending.set(key,{value:null,version:previous?.version??records.get(key)?.version??0});cache();publish({});scheduleSync()},
+  setItem(key,value){if(!state.user){localStorage.setItem(key,value);return}stageMemberRecords(new Map([[key,value]]))},
+  removeItem(key){if(!state.user){localStorage.removeItem(key);return}stageMemberRecords(new Map([[key,null]]))},
 }
+export const memberStorage=researchStorage
 export async function importGuestResearch(){
   if(!state.user)throw new Error('먼저 로그인해주세요.')
   const keys=['investai.research.observations.v1','investai.signal-presets.v1','investai.research.rules.v1','investai.research.events.v1']
