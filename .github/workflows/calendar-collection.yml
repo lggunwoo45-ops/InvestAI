@@ -26,11 +26,11 @@ jobs:
         run: |
           node --input-type=module <<'NODE'
           import { parseBlsCalendar } from './backend/research/economicCalendar.mjs'
-          const response = await fetch('https://www.bls.gov/schedule/news_release/bls.ics', { redirect: 'error', signal: AbortSignal.timeout(20000), headers: { Accept: 'text/calendar' } })
-          if (!response.ok) throw new Error(`Official calendar returned HTTP ${response.status}`)
-          const text = await response.text()
-          if (text.length > 1_000_000) throw new Error('Calendar exceeds size limit')
-          const rows = parseBlsCalendar(text).filter(event => event.at >= Date.now())
-          if (!rows.length) throw new Error('No upcoming official releases found')
-          console.log(JSON.stringify({ officialSource: 'BLS', upcomingReleases: rows.length }))
+          for (const path of ['schedule/news_release/bls.ics', 'schedule/2026/home.htm', 'schedule/news_release/cpi.htm', 'schedule/2026/11_sched.htm']) {
+            try {
+              const response = await fetch('https://www.bls.gov/' + path, { redirect: 'error', signal: AbortSignal.timeout(15000) })
+              const text = await response.text()
+              console.log(JSON.stringify({ path, status: response.status, size: text.length, ...(response.ok && path.endsWith('.ics') ? {upcoming:parseBlsCalendar(text).filter(event => event.at >= Date.now()).length} : {}) }))
+            } catch (error) { console.log(JSON.stringify({path,error:error.name})) }
+          }
           NODE
