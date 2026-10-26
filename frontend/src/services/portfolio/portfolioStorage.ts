@@ -1,5 +1,6 @@
 import type { MarketInstrument, MarketVenue } from '@/types/market'
 import { calculateLedger, type TradeLedger } from './tradeLedger'
+import { memberStorage } from '@/services/cloud/cloudClient'
 
 export const PORTFOLIO_KEY = 'investai.portfolio.v1'
 export const coinVenues = ['upbit-krw', 'upbit-btc', 'upbit-usdt', 'binance-spot'] as const
@@ -38,7 +39,7 @@ export function validPosition(value: unknown): value is Position {
 }
 export function readPortfolio(): PortfolioState {
   try {
-    const raw = localStorage.getItem(PORTFOLIO_KEY)
+    const raw = memberStorage.getItem(PORTFOLIO_KEY)
     if (raw === null) return { positions: [], raw, error: null }
     const data = JSON.parse(raw)
     if (!validPortfolioData(data)) throw new Error('invalid')
@@ -63,7 +64,7 @@ export function writePortfolio(positions: Position[], expectedRaw: string | null
   if (current.raw !== expectedRaw) throw new Error('conflict')
   // v2 prevents older app tabs from silently changing ledger-derived balances.
   const raw = JSON.stringify({ version: positions.some(p => p.ledger) ? 2 : 1, positions })
-  localStorage.setItem(PORTFOLIO_KEY, raw)
+  memberStorage.setItem(PORTFOLIO_KEY, raw)
   return { positions, raw, error: null }
 }
 export function positionFor(instrument: MarketInstrument, venue: MarketVenue, averagePrice: number, quantity: number, id: string): Position {

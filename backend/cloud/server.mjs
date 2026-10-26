@@ -10,10 +10,10 @@ import { createHistoryReader } from '../research/history.mjs'
 const principal=Symbol('authenticated cloud owner')
 const headers={ 'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff',Vary:'Origin' }
 const send=(res,status,value)=>{res.writeHead(status,headers);res.end(JSON.stringify(value))}
-async function readBody(req) {
+async function readBody(req, limit=220_000) {
   if(req.headers['x-investai-cloud']!=='1' || !String(req.headers['content-type']).startsWith('application/json')) fail(400,'요청 형식을 확인해주세요.')
   const chunks=[];let size=0
-  for await(const chunk of req){size+=chunk.length;if(size>220_000)fail(413,'요청 크기를 초과했습니다.');chunks.push(chunk)}
+  for await(const chunk of req){size+=chunk.length;if(size>limit)fail(413,'요청 크기를 초과했습니다.');chunks.push(chunk)}
   try{return JSON.parse(Buffer.concat(chunks).toString('utf8'))}catch{fail(400,'요청을 읽을 수 없습니다.')}
 }
 function coalesce(reader,ttl,clock){
@@ -120,7 +120,7 @@ export function createCloudHandler({ directory=process.env.INVESTAI_CLOUD_DIRECT
         if(path==='/api/cloud/export')return send(res,200,{version:1,exportedAt:clock(),user,records:accounts.records(user.id),prices:prices.list(user.id)})
       }
       if(!['POST','PUT'].includes(req.method))fail(405,'지원하지 않는 요청입니다.')
-      const input=await readBody(req)
+      const input=await readBody(req,path==='/api/cloud/records'&&req.method==='PUT'?8_100_000:220_000)
       if(path==='/api/cloud/logout'){accounts.logout(token,input.all===true);return send(res,200,{ok:true})}
       if(path==='/api/cloud/records'&&req.method==='PUT')return send(res,200,accounts.putRecord(user.id,input))
       if(path==='/api/cloud/prices')return send(res,200,{rules:prices.register(user.id,input)})

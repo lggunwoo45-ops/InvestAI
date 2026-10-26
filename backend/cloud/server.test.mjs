@@ -17,6 +17,41 @@ async function serve(directory,options={}){
   const base=`http://127.0.0.1:${server.address().port}/api/cloud`
   return {handler,async request(path,data,token,method=data===undefined?'GET':'POST',headers={}){const response=await fetch(base+path,{method,headers:{origin:'https://app.example','content-type':'application/json','x-investai-cloud':'1','x-investai-monitor':'1',...(token?{authorization:`Bearer ${token}`} : {}),...headers},body:data===undefined?undefined:JSON.stringify(data)});return {status:response.status,body:await response.json(),headers:response.headers}},async close(){await handler.close();server.closeAllConnections();await new Promise(r=>server.close(r))}}
 }
+
+test('member holdings, watchlist bundles and scenarios persist with owner isolation and version conflicts',async()=>{
+  const dir=await mkdtemp(join(tmpdir(),'investai-investments-'));let app=await serve(dir)
+  try{
+    const a=(await app.request('/register',{username:'investor',password})).body,b=(await app.request('/register',{username:'separate',password})).body
+    const position={id:'position-1',exchange:'upbit',venue:'upbit-krw',instrumentId:'upbit-btc',symbol:'BTC',quoteCurrency:'KRW',averagePrice:100,quantity:2,targetPrice:120,stopPrice:80,ledger:{version:1,opening:{averagePrice:100,quantity:1},trades:[{id:'trade-1',side:'buy',price:100,quantity:1,fee:0,at:'2026-10-20T00:00:00.000Z'}]}}
+    const value=JSON.stringify({version:2,positions:Array.from({length:700},(_,n)=>({...position,id:`position-${n}`}))})
+    assert.ok(Buffer.byteLength(value)>220000)
+    const key='investai.portfolio.v1'
+    assert.equal((await app.request('/records',{key,value,version:0},a.token,'PUT')).status,200)
+    assert.equal((await app.request('/records',{key,value:'{"version":1,"positions":[]}',version:0},a.token,'PUT')).status,409)
+    assert.deepEqual((await app.request('/records',undefined,b.token)).body.records,[])
+    const watch=JSON.stringify({version:1,watchlists:[{id:'crypto',name:'Crypto',isDefault:true,instrumentIds:['upbit-btc']}],items:[]})
+    assert.equal((await app.request('/records',{key:'investai.watchlist-account.v1',value:watch,version:0},a.token,'PUT')).status,200)
+    assert.equal((await app.request('/records',{key:'investai.scenarios.v1',value:'{"version":1,"scenarios":[],"events":[]}',version:0},a.token,'PUT')).status,200)
+    await app.close();app=await serve(dir)
+    const restored=(await app.request('/export',undefined,a.token)).body.records
+    assert.equal(restored.find(r=>r.key===key).value,value)
+    assert.equal(restored.find(r=>r.key==='investai.watchlist-account.v1').value,watch)
+    assert.equal((await app.request('/records',{key,value:null,version:1},a.token,'PUT')).status,200)
+    assert.equal((await app.request('/records',undefined,a.token)).body.records.find(r=>r.key===key).value,null)
+  }finally{await app.close();await rm(dir,{recursive:true,force:true})}
+})
+
+test('investment records reject unknown keys, malformed envelopes and oversized data without changing prior records',async()=>{
+  const dir=await mkdtemp(join(tmpdir(),'investai-investment-bounds-')),app=await serve(dir)
+  try{
+    const a=(await app.request('/register',{username:'bounded',password})).body,key='investai.portfolio.v1',value='{"version":1,"positions":[]}'
+    assert.equal((await app.request('/records',{key,value,version:0},a.token,'PUT')).status,200)
+    for(const row of [{key:'investai.portfolio.secret',value},{key,value:'[]'},{key,value:'{"version":99,"positions":[]}'},{key:'investai.watchlist-account.v1',value:'{"version":1,"watchlists":[],"items":[{}]}'},{key:'investai.scenarios.v1',value:'{}'},{key,value:JSON.stringify({version:1,positions:[],padding:'x'.repeat(4_000_000)})}]){
+      assert.equal((await app.request('/records',{...row,version:1},a.token,'PUT')).status,400)
+    }
+    assert.equal((await app.request('/records',undefined,a.token)).body.records.find(r=>r.key===key).value,value)
+  }finally{await app.close();await rm(dir,{recursive:true,force:true})}
+})
 test('accounts isolate records, reject stale writes, revoke sessions and recover with a one-use code',async()=>{
   const dir=await mkdtemp(join(tmpdir(),'investai-cloud-auth-'));const app=await serve(dir)
   try{

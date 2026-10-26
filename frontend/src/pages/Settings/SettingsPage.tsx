@@ -8,9 +8,11 @@ import { marketDataService } from '@/services/market/marketDataService'
 import { localAiCall } from '@/services/ai/localAiClient'
 import { notificationPermission, notificationPreference, setNotificationPreference } from '@/services/scenarios/browserNotifications'
 import styles from './SettingsPage.module.css'
+import { useCloud } from '@/services/cloud/useCloud'
 
 export function SettingsPage() {
   const { language, setLanguage } = useLanguage()
+  const cloud = useCloud()
   const ko = language === 'ko'
   const { displayMode, setDisplayMode } = useDisplayMode()
   const { marketDataMode, setMarketDataMode } = useMarketWorkspace()
@@ -77,7 +79,7 @@ export function SettingsPage() {
         <label>{ko ? '설명 수준' : 'Detail'}<select value={displayMode} onChange={e => setDisplayMode(e.target.value as 'simple' | 'expert')}><option value="simple">{ko ? '쉽게 보기' : 'Simple'}</option><option value="expert">{ko ? '자세히 보기' : 'Expert'}</option></select></label>
         <label>{ko ? '언어' : 'Language'}<select value={language} onChange={e => setLanguage(e.target.value as 'ko' | 'en')}><option value="ko">한국어</option><option value="en">English</option></select></label>
         <label>{ko ? '시세 모드' : 'Quote mode'}<select value={marketDataMode} onChange={e => setMarketDataMode(e.target.value as 'live' | 'mock')}><option value="live">{ko ? '실제 시세' : 'Live'}</option><option value="mock">{ko ? '예시 시세' : 'Demo'}</option></select></label>
-        <p>{ko ? '보유 내역은 이 브라우저에 저장돼요. 기기를 바꾸기 전 내 투자에서 백업해주세요.' : 'Holdings stay in this browser. Export a backup before switching devices.'}</p><Link to="/portfolio">{ko ? '내 투자·백업 열기 →' : 'Holdings and backup →'}</Link>
+        <p>{cloud.user ? (ko ? '보유·거래 기록과 관심종목을 현재 계정으로 동기화해요. 전송 대기나 충돌은 위의 계정 표시에서 확인하세요.' : 'Holdings, trades and watchlists sync to this account. Check pending changes or conflicts in the account bar.') : (ko ? '비회원 기록은 이 브라우저에 저장돼요. 로그인 후 계정 설정에서 기존 기록을 가져올 수 있어요.' : 'Guest records stay in this browser. Sign in and import them from account settings.')}</p><Link to="/portfolio">{ko ? '내 투자·백업 열기 →' : 'Holdings and backup →'}</Link>
       </section>
       <section className={styles.card}><h2>{ko ? '시세와 뉴스' : 'Quotes and news'}</h2>
         <button type="button" disabled={busy} onClick={() => void check()}>{busy ? (ko ? '확인 중…' : 'Checking…') : (ko ? '업비트 연결 확인' : 'Check Upbit')}</button><p role="status">{connection}</p>

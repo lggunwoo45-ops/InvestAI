@@ -10,10 +10,8 @@ export function App() {
   const basename = !isFileProtocol && window.location.hostname.endsWith('github.io') ? '/InvestAI' : undefined
 
   return (
-    <AppProviders>
-      <Router basename={basename}>
-        <CloudBoundary><AppRoutes /></CloudBoundary>
-      </Router>
-    </AppProviders>
+    <Router basename={basename}>
+      <CloudBoundary><AppProviders><AppRoutes /></AppProviders></CloudBoundary>
+    </Router>
   )
 }
