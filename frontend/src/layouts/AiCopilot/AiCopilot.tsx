@@ -24,7 +24,7 @@ import { formatMarketChange, formatMarketPrice } from '@/utils/formatMarketValue
 import type { AiScenarioTimeframe } from '@/types/aiScenario'
 import styles from './AiCopilot.module.css'
 
-export function AiCopilot() {
+export function AiCopilot({ onClose }: { onClose?: () => void } = {}) {
   const { toggleAiCopilot } = useUiStore()
   const { selectedInstrument, selectedTimeframe, activeMarketState, marketDataMode } = useMarketWorkspace()
   const { mode: newsProviderMode, result: newsResult } = useNewsProviderMode()
@@ -102,7 +102,7 @@ export function AiCopilot() {
           <span className={styles.aiIcon}><Icon name="sparkles" size={15} /></span>
           <div><strong>{text.title}</strong><span>{isStock ? text.company : text.scenario}</span></div>
         </div>
-        <button type="button" onClick={toggleAiCopilot} aria-label="Close AI Copilot">×</button>
+        <button type="button" onClick={onClose ?? toggleAiCopilot} aria-label="Close AI Copilot">×</button>
       </div>
 
       <div className={styles.contextBar}>

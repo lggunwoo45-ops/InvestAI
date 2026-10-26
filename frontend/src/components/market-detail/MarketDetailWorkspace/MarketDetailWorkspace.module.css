@@ -19,3 +19,6 @@
   .workspace,.stock { grid-template-columns: minmax(240px, 42vw) minmax(0, 1fr); }
   .workspace.instrumentListCollapsed,.stock.instrumentListCollapsed { grid-template-columns: 48px minmax(0, 1fr); }
 }
+@media (max-width: 760px) {
+  .workspace,.workspace.instrumentListCollapsed,.stock.instrumentListCollapsed { display: block; height: auto; overflow: visible; }
+}

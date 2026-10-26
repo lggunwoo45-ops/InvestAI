@@ -242,3 +242,41 @@
 .recovery p { margin: 0 0 8px; }
 .recovery button { margin-top: 8px; padding: 7px 12px; border: 1px solid var(--color-border); border-radius: 6px; background: var(--color-surface); color: var(--color-text); cursor: pointer; }
 .recovery summary { cursor: pointer; }
+
+@media (max-width: 760px) {
+  .explorer { display: block; height: auto; border: 0; }
+  .header { flex-wrap: wrap; padding: 12px; gap: 10px; }
+  .header > strong { font-size: 14px; }
+  .count { justify-content: flex-start; gap: 8px; }
+  .count span { font-size: 11px; }
+  .navigation { margin: 0 12px; border: 1px solid var(--color-border); border-radius: 12px; overflow: hidden; }
+  .marketSection,.quoteSection { padding-left: 0; }
+  .navLabel { padding: 10px 12px 2px; font: 600 12px system-ui; }
+  .providerTabs,.venueTabs,.quoteTabs { padding: 3px 8px 8px; gap: 4px; }
+  .navigation button,.marketSection .venueTabs button,.quoteSection .quoteTabs button { padding: 8px 12px; font: 600 13px system-ui; border-radius: 8px; }
+  .controls { padding: 12px; }
+  .filterRow { gap: 10px; }
+  .scopes { width: 100%; display: grid; grid-template-columns: 1fr 1fr 1.4fr; gap: 4px; }
+  .filterRow button,.filterRow select { height: 44px; font: 13px system-ui; border-radius: 8px; }
+  .scopes button { padding: 6px; white-space: normal; }
+  .filterRow .sortFallback { display: flex; margin-left: 0; flex: 1; font-size: 13px; }
+  .sortFallback select { flex: 1; min-width: 0; }
+  .filterRow .direction { display: block; min-width: 80px; padding-inline: 10px; }
+  .scroll { overflow: visible; overscroll-behavior: auto; scroll-margin-top: 70px; }
+  .mobileCards { display: grid; gap: 10px; padding: 0 12px; }
+  .mobileCards .row { position: static; width: auto; height: auto !important; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; padding: 14px; border: 1px solid var(--color-border); border-radius: 12px; background: var(--color-surface); }
+  .mobileCards .instrument { grid-column: 1; grid-row: 1; padding: 0; }
+  .mobileCards .identityLine strong { font-size: 15px; }
+  .mobileCards .instrument small { font: 12px/1.5 system-ui; margin-top: 4px; white-space: normal; overflow-wrap: anywhere; }
+  .mobileCards .instrument em { font-size: 10px; }
+  .mobileCards .star { grid-column: 2; grid-row: 1; width: 44px; min-height: 44px; background: var(--color-surface-raised); border-radius: 9px; }
+  .mobileCards .numeric { min-width: 0; padding: 0; text-align: left; white-space: normal; overflow-wrap: anywhere; font-size: 15px; }
+  .mobileCards .numeric small { display: block; color: var(--color-text-muted); font: 11px/1.7 system-ui; }
+  .mobileCards .numeric:nth-of-type(2) { text-align: right; }
+  .mobileCards .numeric:nth-of-type(3) { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 12px; border-top: 1px solid var(--color-border); padding-top: 8px; }
+  .mobileCards .positive { color: var(--color-positive); }
+  .mobileCards .reviewReason { margin-top: 8px; -webkit-line-clamp: unset; overflow: visible; font-size: 12px; }
+  .mobilePagination { display: flex; align-items: center; justify-content: center; gap: 20px; padding: 20px 12px; font-size: 14px; }
+  .mobilePagination button { min-width: 74px; border: 1px solid var(--color-border); border-radius: 9px; background: var(--color-surface); color: var(--color-text); font: inherit; }
+  .mobilePagination button:disabled { opacity: .45; }
+}

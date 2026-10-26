@@ -12,3 +12,4 @@
 .buy { color: var(--color-positive); }
 .sell { color: var(--color-danger); }
 @media (min-width: 2200px) { .row { min-height: 26px; font-size: 11px; } }
+@media (max-width: 760px) { .trades { grid-template-rows: 44px 30px minmax(0,1fr); }.trades h2 { font-size: 14px; }.trades header span,.columns { font-size: 11px; }.rows { overscroll-behavior: auto; scrollbar-gutter: auto; }.row { min-height: 32px; font-size: 12px; } }

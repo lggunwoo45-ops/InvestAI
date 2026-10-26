@@ -5,3 +5,4 @@
 .toolbar button:hover { color: var(--color-text); background: var(--color-surface-raised); }
 .toolbar button[aria-pressed="true"] { color: var(--color-text); border-color: var(--color-border-strong); background: var(--color-surface-raised); }
 .toolbar i { width: 1px; height: 13px; flex: 0 0 auto; margin: 0 5px; background: var(--color-surface-raised); }
+@media (max-width: 760px) { .toolbar { height: auto; min-height: 52px; padding: 6px; gap: 4px; flex-wrap: wrap; overflow: visible; }.toolbar button { min-width: 42px; font-size: 12px; }.toolbar > span { font-size: 10px; }.toolbar i { display: none; } }

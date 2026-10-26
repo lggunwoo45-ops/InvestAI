@@ -7,11 +7,11 @@ import { WATCHLIST_STORAGE_KEY } from '@/utils/watchlistStorage'
 const MARKET_LIST_COLLAPSED_KEY = 'market-copilot.market-list-collapsed.v1'
 const originalMatchMedia = window.matchMedia
 
-function mockNarrowViewport(matches: boolean) {
+function mockNarrowViewport(matches: boolean, phone = false) {
   Object.defineProperty(window, 'matchMedia', {
     configurable: true,
     value: vi.fn().mockImplementation((query: string) => ({
-      matches: query === '(max-width: 900px)' ? matches : false,
+      matches: query === '(max-width: 900px)' ? matches : query === '(max-width: 760px)' ? phone : false,
       media: query,
       onchange: null,
       addListener: vi.fn(),
@@ -24,6 +24,30 @@ function mockNarrowViewport(matches: boolean) {
 }
 
 describe('Market instrument-list layout', () => {
+  it('opens a full-width detail view on phones and returns to the same search, sort and watchlist', async () => {
+    mockNarrowViewport(true, true)
+    render(<App />)
+    fireEvent.click(await screen.findByRole('button', { name: 'MOCK' }))
+    await screen.findByRole('button', { name: 'Open BTC/KRW' })
+    expect(screen.queryByRole('img', { name: /TradingView candlestick chart/ })).toBeNull()
+    expect(screen.queryByRole('complementary', { name: 'AI Copilot' })).toBeNull()
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search instruments' }), { target: { value: 'XRP' } })
+    fireEvent.change(screen.getByRole('combobox', { name: 'Sort' }), { target: { value: 'price' } })
+    fireEvent.click(await screen.findByRole('button', { name: 'Add to watchlist XRP/KRW' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Open XRP/KRW' }))
+    expect(await screen.findByRole('img', { name: /XRP\/KRW 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
+    expect(screen.queryByRole('searchbox', { name: 'Search instruments' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Show instruments' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: '4H' }))
+    expect(await screen.findByRole('img', { name: /XRP\/KRW 4H TradingView candlestick chart/ })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Instrument list' }))
+    expect((screen.getByRole('searchbox', { name: 'Search instruments' }) as HTMLInputElement).value).toBe('XRP')
+    expect((screen.getByRole('combobox', { name: 'Sort' }) as HTMLSelectElement).value).toBe('price')
+    expect(screen.getByRole('button', { name: 'Remove from watchlist XRP/KRW' }).getAttribute('aria-pressed')).toBe('true')
+    fireEvent.click(screen.getByRole('tab', { name: 'US Stocks' }))
+    expect(screen.getByRole('button', { name: 'Instrument list' }).getAttribute('aria-pressed')).toBe('true')
+    expect((screen.getByRole('searchbox', { name: 'Search instruments' }) as HTMLInputElement).value).toBe('')
+  })
   beforeEach(() => {
     window.localStorage.clear()
     window.history.pushState({}, '', '/market')

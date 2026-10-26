@@ -19,3 +19,4 @@
 .spread span { color: var(--color-text); font-size: 9px; text-transform: uppercase; }
 .spread strong { color: var(--color-text); font: 600 10px ui-monospace, monospace; }
 @media (min-width: 2200px) { .level { min-height: 25px; font-size: 11px; } }
+@media (max-width: 760px) { .orderbook { grid-template-rows: 44px 30px minmax(0,1fr); }.orderbook h2 { font-size: 14px; }.orderbook header span,.columns { font-size: 11px; }.levels { overscroll-behavior: auto; scrollbar-gutter: auto; }.level { min-height: 32px; font-size: 12px; }.spread { height: 36px; }.spread span,.spread strong { font-size: 12px; } }

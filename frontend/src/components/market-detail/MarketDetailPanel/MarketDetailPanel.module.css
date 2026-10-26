@@ -32,3 +32,27 @@
 .signalEntry { margin: 16px; border: 1px solid var(--color-border); border-radius: 12px; padding: 20px; display: flex; align-items: center; gap: 20px; background: linear-gradient(115deg, #eef3ff, #fff); }
 .signalEntry > div { flex: 1; }.signalEntry span { font-size: 9px; letter-spacing: .14em; color: var(--color-accent); font-weight: 700; }.signalEntry h3 { margin: 8px 0; font-size: 16px; }.signalEntry p { margin: 0; font-size: 11px; color: var(--color-text-muted); line-height: 1.8; }.signalEntry a { border-radius: 7px; padding: 11px 14px; text-decoration: none; background: var(--color-accent); color: white; font-size: 12px; white-space: nowrap; }
 @media (max-width: 620px) { .signalEntry { flex-direction: column; align-items: start; margin: 12px; padding: 16px; } }
+/* Keep the chart visible when the signal entry adds a fifth workspace row. */
+.detail { grid-template-rows: auto auto auto minmax(320px, 1fr) auto; overflow-y: auto; }
+.header { min-height: 98px; }
+.feedControl { flex-wrap: wrap; }
+.stats > div { min-height: 52px; }
+.signalEntry { flex-wrap: wrap; }
+.signalEntry > div { min-width: 180px; }
+@media (max-width: 760px) {
+  .detail { display: block; overflow: visible; }
+  .header { grid-template-columns: minmax(0, 1fr); padding: 16px 12px; gap: 14px; }
+  .identity > span,.identity p { font-size: 12px; white-space: normal; }
+  .identity h1,.stock .identity h1 { font-size: 22px; white-space: normal; overflow-wrap: anywhere; }
+  .quote { text-align: left; }
+  .quote strong { font-size: 26px; overflow-wrap: anywhere; }
+  .quote span { font-size: 13px; }
+  .feedControl { flex-wrap: wrap; gap: 10px; }
+  .analysisLink { display: inline-flex; align-items: center; min-height: 44px; font-size: 13px; }
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stats > div { padding: 12px; gap: 8px; border-bottom: 1px solid var(--color-border); }
+  .stats dt { font-size: 11px; }
+  .stats dd { font-size: 13px; white-space: normal; overflow-wrap: anywhere; }
+  .chartArea { overflow: visible; }
+  .signalEntry p { font-size: 13px; }
+}

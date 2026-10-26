@@ -9,3 +9,10 @@
   .content { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); }
   .content > :first-child { border-right: 1px solid var(--color-border); border-bottom: 0; }
 }
+@media (max-width: 760px) {
+  .panel { display: block; border-left: 0; border-top: 1px solid var(--color-border); }
+  .title { min-height: 48px; padding: 10px 12px; gap: 8px; flex-wrap: wrap; }
+  .title strong { font-size: 14px; }
+  .content { grid-template-columns: minmax(0, 1fr); grid-template-rows: 370px 300px; overflow: visible; }
+  .content > :first-child { border-right: 0; border-bottom: 1px solid var(--color-border); }
+}

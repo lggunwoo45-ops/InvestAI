@@ -1,4 +1,5 @@
 import { useWatchlists } from '@/hooks/useWatchlists'
+import { useCompactLayout } from '@/hooks/useCompactLayout'
 import { getReviewReasons, currentReviewData } from '@/services/watchlist/reviewQueue'
 import { ReviewReasonDisplay } from '@/components/market/ReviewReasonDisplay/ReviewReasonDisplay'
 import { itemFromInstrument } from '@/services/watchlist/watchlistStorage'
@@ -57,6 +58,8 @@ export function MarketExplorer({
   onSelect, onToggleFavorite, onRetry, compact = false,
 }: MarketExplorerProps) {
   const { language } = useLanguage()
+  const mobile = useCompactLayout()
+  const [mobilePage, setMobilePage] = useState({ key: '', index: 0 })
   const text = marketExplorerText[language]
   const catalog = freshCatalog ?? cachedCatalog ?? null
   const showingCached = !freshCatalog && !!cachedCatalog
@@ -92,6 +95,10 @@ export function MarketExplorer({
     spotQuoteFilter: !favoritesOnly && venue === 'binance-spot' ? spotQuoteFilter : undefined,
   }), [catalog, deferredSearch, favoriteIds, favoritesOnly, sortDirection, sortField, spotQuoteFilter, venue])
   const instruments = reviewOnly && favoritesOnly ? queried.filter(item => reasonsFor(item).length > 0) : queried
+  const pageKey = JSON.stringify([venue, deferredSearch, favoritesOnly, reviewOnly, sortField, sortDirection, spotQuoteFilter])
+  const pageCount = Math.max(1, Math.ceil(instruments.length / 20))
+  const pageIndex = mobilePage.key === pageKey ? Math.min(mobilePage.index, pageCount - 1) : 0
+  const changePage = (index: number) => { setMobilePage({ key: pageKey, index }); scrollRef.current?.scrollIntoView?.({ block: 'start' }) }
   const source = catalog?.source ?? (isCrypto && mode === 'live' ? 'live' : 'mock')
   const sortLabel = sortField === 'change' ? text.change : text[sortField]
   const directionLabel = sortDirection === 'asc' ? text.ascending : text.descending
@@ -99,7 +106,7 @@ export function MarketExplorer({
   const showQuoteTag = venue === 'binance-spot' && spotQuoteFilter === 'Other'
   const getItemKey = useCallback((index: number) => instruments[index]?.id ?? index, [instruments])
   const virtualizer = useVirtualizer({
-    count: instruments.length,
+    count: mobile ? 0 : instruments.length,
     getScrollElement: () => scrollRef.current,
     estimateSize: () => favoritesOnly ? 78 : 50,
     getItemKey,
@@ -110,7 +117,9 @@ export function MarketExplorer({
   const rowHeight = favoritesOnly ? 78 : 50
   const measuredItems = virtualizer.getVirtualItems()
   // The initial rows remain accessible before ResizeObserver reports a viewport.
-  const visibleItems = measuredItems.length > 0
+  const visibleItems = mobile
+    ? instruments.slice(pageIndex * 20, (pageIndex + 1) * 20).map((instrument, index) => ({ key: instrument.id, index: pageIndex * 20 + index, start: 0 }))
+    : measuredItems.length > 0
     ? measuredItems
     : instruments.slice(0, 20).map((instrument, index) => ({ key: instrument.id, index, start: index * rowHeight }))
 
@@ -162,24 +171,24 @@ export function MarketExplorer({
         </div>
       </div>
 
-      <div className={styles.tableHead}>
+      {!mobile && <div className={styles.tableHead}>
         {sortFields.map((field) => {
           const label = field === 'change' ? text.change : text[field]
           const active = sortField === field
           return <button key={field} type="button" className={active ? styles.activeSort : ''} aria-pressed={active} aria-label={`${text.sortBy} ${label}${active ? `, ${directionLabel}` : ''}`} onClick={() => onSortFieldChange(field)}>{label}<span aria-hidden="true">{active ? sortDirection === 'asc' ? '↑' : '↓' : '↕'}</span></button>
         })}
         <span aria-label={text.favorites}>★</span>
-      </div>
+      </div>}
       <div className={styles.scroll} ref={scrollRef} role="region" aria-label={`${text.venue[venue]} ${text.instruments}`}>
         {showingCached && catalog && <div className={styles.recovery} role="status">{language === 'ko' ? '재연결 중에는 이전 목록을 표시합니다. 가격은 현재 시세가 아닙니다. 조회 시각: ' : 'Showing the previous list while reconnecting. Prices are not current. Retrieved: '}{new Date(catalog.fetchedAt).toLocaleString(language === 'ko' ? 'ko-KR' : 'en-US')}</div>}
         {loading && <div className={styles.recovery} role="status">{venue.startsWith('upbit-') ? (language === 'ko' ? '업비트 응답을 기다리고 있습니다. 일시 실패 시 자동으로 다시 시도합니다.' : 'Waiting for Upbit. Temporary failures are retried automatically.') : text.loading}</div>}
         {!loading && error && <div className={styles.recovery} role="alert"><p>{errorHelp}</p><details><summary>{language === 'ko' ? '오류 정보' : 'Error details'}</summary><small>{error}</small></details><button type="button" onClick={onRetry}>{text.retry}</button></div>}
         {!loading && !error && instruments.length === 0 && unavailableVisible.length === 0 && <div className={styles.state}><p>{favoritesOnly ? (language === 'ko' ? (reviewOnly ? '다시 볼 종목이 없습니다.' : '관심종목이 없습니다.') : (reviewOnly ? 'No instruments need review.' : 'No watchlist items.')) : text.empty}</p>{search && <button type="button" onClick={() => onSearchChange('')}>{text.clearSearch}</button>}</div>}
-        {instruments.length > 0 && <div className={styles.virtualSize} style={{ height: Math.max(virtualizer.getTotalSize(), instruments.length * rowHeight) }}>
+        {instruments.length > 0 && <div className={mobile ? styles.mobileCards : styles.virtualSize} style={mobile ? undefined : { height: Math.max(virtualizer.getTotalSize(), instruments.length * rowHeight) }}>
           {visibleItems.map((item) => {
             const instrument = instruments[item.index]
             const favorite = favoriteIds.has(instrument.id)
-            return <div key={item.key} className={`${styles.row} ${favoritesOnly ? styles.reviewRow : ''} ${selectedInstrumentId === instrument.id ? styles.selected : ''}`} style={{ transform: `translateY(${item.start}px)` }} data-index={item.index}>
+            return <div key={item.key} className={`${styles.row} ${favoritesOnly ? styles.reviewRow : ''} ${selectedInstrumentId === instrument.id ? styles.selected : ''}`} style={mobile ? undefined : { transform: `translateY(${item.start}px)` }} data-index={item.index}>
               <button type="button" className={styles.instrument} onClick={() => onSelect(instrument)} aria-label={`${text.open} ${instrument.symbol}`} aria-current={selectedInstrumentId === instrument.id ? 'true' : undefined}>
                 <span className={styles.identityLine}>
                   <strong>{instrument.displaySymbol ?? instrument.symbol}</strong>
@@ -191,13 +200,18 @@ export function MarketExplorer({
                 {favoritesOnly && <span className={styles.reviewReason}><ReviewReasonDisplay item={getWatchlistItem(instrument.id) ?? itemFromInstrument(instrument)} current={activeReview?.instrumentId === instrument.id ? activeReview.snapshot : undefined} reasons={reasonsFor(instrument)} language={language} /></span>}
                 {selectedInstrumentId === instrument.id && <em>{text.selected}</em>}
               </button>
-              <span className={styles.numeric}>{formatMarketPrice(instrument)}</span>
-              <span className={`${styles.numeric} ${instrument.change24hPercent >= 0 ? styles.positive : styles.negative}`}>{formatMarketChange(instrument.change24hPercent)}</span>
-              <span className={styles.numeric}>{formatMarketVolume(instrument.volume24h, instrument.quoteCurrency)}</span>
+              <span className={styles.numeric}>{mobile && <small>{text.price}</small>}{formatMarketPrice(instrument)}</span>
+              <span className={`${styles.numeric} ${instrument.change24hPercent >= 0 ? styles.positive : styles.negative}`}>{mobile && <small>{text.change}</small>}{formatMarketChange(instrument.change24hPercent)}</span>
+              <span className={styles.numeric}>{mobile && <small>{text.volume}</small>}{formatMarketVolume(instrument.volume24h, instrument.quoteCurrency)}</span>
               <button type="button" className={styles.star} aria-label={`${language === 'ko' ? (favorite ? '관심 해제' : '관심 등록') : (favorite ? 'Remove from watchlist' : 'Add to watchlist')} ${instrument.symbol}`} aria-pressed={favorite} onClick={() => onToggleFavorite(instrument.id)}>{favorite ? '★' : '☆'}</button>
             </div>
           })}
         </div>}
+        {mobile && instruments.length > 0 && <nav className={styles.mobilePagination} aria-label={language === 'ko' ? '종목 목록 페이지' : 'Instrument list pages'}>
+          <button type="button" disabled={pageIndex === 0} onClick={() => changePage(pageIndex - 1)}>{language === 'ko' ? '이전' : 'Previous'}</button>
+          <span>{pageIndex + 1} / {pageCount}</span>
+          <button type="button" disabled={pageIndex === pageCount - 1} onClick={() => changePage(pageIndex + 1)}>{language === 'ko' ? '다음' : 'Next'}</button>
+        </nav>}
         {!loading && favoritesOnly && unavailableVisible.map(item => <div key={item.instrumentId} className={styles.unavailable}>
           <strong>{item.symbol} · {item.displayName}</strong><ReviewReasonDisplay item={item} reasons={getReviewReasons(item, {}, clock)} language={language} />
           <button type="button" aria-label={`${language === 'ko' ? '관심 해제' : 'Remove from watchlist'} ${item.symbol}`} onClick={() => removeFromWatchlist(item.instrumentId)}>★</button>
