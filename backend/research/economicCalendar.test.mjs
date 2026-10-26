@@ -45,3 +45,14 @@ test('invalid provider content fails closed and failed sources retry no more tha
   const result = await calendar.snapshot(); assert.equal(result.events.length, 0); assert.ok(result.sources.every(s => s.status === 'unavailable'))
   await calendar.snapshot(); assert.equal(calls, 2); calendar.close()
 })
+test('identifies the public client and logs only a bounded provider failure reason', async () => {
+  const issues = []
+  const calendar = createEconomicCalendar({ onIssue: issue => issues.push(issue), fetchImpl: async (_url, options) => {
+    assert.match(options.headers['User-Agent'], /^InvestAI\/1\.0/)
+    assert.equal(options.redirect, 'error')
+    return new Response('private upstream details must not be logged', { status: 403 })
+  } })
+  await calendar.snapshot()
+  assert.deepEqual(issues, [{ source: 'bls', reason: 'http_403' }, { source: 'fed', reason: 'http_403' }])
+  calendar.close()
+})
