@@ -1,0 +1,36 @@
+name: Collect official economic calendar
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/calendar-collection.yml'
+      - 'backend/research/*Calendar*'
+      - 'backend/research/calendar*'
+
+permissions:
+  contents: read
+
+jobs:
+  verify-public-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify official BLS calendar access
+        run: |
+          node --input-type=module <<'NODE'
+          import { parseBlsCalendar } from './backend/research/economicCalendar.mjs'
+          const response = await fetch('https://www.bls.gov/schedule/news_release/bls.ics', { redirect: 'error', signal: AbortSignal.timeout(20000), headers: { Accept: 'text/calendar' } })
+          if (!response.ok) throw new Error(`Official calendar returned HTTP ${response.status}`)
+          const text = await response.text()
+          if (text.length > 1_000_000) throw new Error('Calendar exceeds size limit')
+          const rows = parseBlsCalendar(text).filter(event => event.at >= Date.now())
+          if (!rows.length) throw new Error('No upcoming official releases found')
+          console.log(JSON.stringify({ officialSource: 'BLS', upcomingReleases: rows.length }))
+          NODE
