@@ -33,6 +33,7 @@ import { cloudSignedIn } from '@/services/cloud/cloudClient'
 import { CloudPriceAlerts } from './CloudPriceAlerts'
 import { ExpertResearchNav } from './ExpertResearchNav'
 import { EconomicCalendarPanel, LiquidationPanel } from './MarketEvents'
+import { DerivativeHistory } from './DerivativeHistory'
 
 const format = (value: number | null | undefined, digits = 2) => value === null || value === undefined || !Number.isFinite(value) ? '확인 불가' : value.toLocaleString('ko-KR', { maximumFractionDigits: digits })
 const percent = (value: number | null | undefined) => value === null || value === undefined ? '확인 불가' : `${format(value)}%`
@@ -170,7 +171,7 @@ function Indicators({ snapshot, candles, now, asset }: { snapshot: ResearchSnaps
     <p>ETF 순유입 자동 수집과 1년 분포 기반 종합 과열도는 검증된 데이터 공급원이 아직 연결되지 않았습니다. 임의 수치는 표시하지 않습니다.</p>
     <details><summary>ETF 순유입 기록·계산</summary><EtfLedger /></details>
   </section>
-  return <><EconomicCalendarPanel /><LiquidationPanel key={asset} asset={asset} />{simple && <section className={styles.panel}><h2>숫자가 말해주는 시장의 모습</h2><div className={styles.metrics}>
+  return <><DerivativeHistory key={`history-${asset}`} asset={asset} /><EconomicCalendarPanel /><LiquidationPanel key={asset} asset={asset} />{simple && <section className={styles.panel}><h2>숫자가 말해주는 시장의 모습</h2><div className={styles.metrics}>
     <Metric title="전체 코인 시장의 심리" value={sentimentFresh ? format(numeric(sentiment.value), 0) + ' / 100' : '자료 확인 필요'} detail="공포·탐욕 지수예요. 숫자가 낮을수록 공포, 높을수록 탐욕에 가까워요. 이 종목만의 심리는 아니에요." />
     <Metric title="전체 시장 중 비트코인 비중" value={globalFresh ? percent(numeric(caps.btc)) : '자료 확인 필요'} detail="전체 코인 시가총액에서 비트코인이 차지하는 몫이에요. 가격이 오를지 알려주는 확률은 아니에요." />
     <Metric title="상승·하락에 포지션을 둔 계정 비율" value={numeric(latestRatio?.longShortRatio) === null ? '자료 확인 필요' : format(numeric(latestRatio?.longShortRatio), 3) + '배'} detail="롱 계정 수를 숏 계정 수로 나눈 값이에요. 1보다 크면 롱 계정이 더 많아요. 투자 금액 비율은 아니에요." />
