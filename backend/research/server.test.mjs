@@ -34,6 +34,18 @@ function request(handler, url, { method = 'GET', origin, host = 'localhost:5173'
     handler(req, res)
   })
 }
+test('stored derivatives are read-only, validate scope, isolate quota and do not trigger collection', async () => {
+  let calls = 0, closed = false
+  const handler = createResearchHandler({ local: true, derivatives: { snapshot(asset, days) { calls++; return { asset, days } }, close() { closed = true } } })
+  for (const path of ['?asset=BTC&days=365', '?asset=BTC&days=7&url=x', '?asset=BAD&days=7', '?asset=BTC&asset=ETH']) assert.equal((await request(handler, '/api/research/derivatives' + path)).status, 400)
+  assert.equal((await request(handler, '/api/research/derivatives?asset=BTC&days=7', { method: 'POST' })).status, 405)
+  assert.equal((await request(handler, '/api/research/derivatives?asset=BTC&days=7', { origin: 'https://bad.example' })).status, 403)
+  assert.equal(calls, 0)
+  assert.deepEqual((await request(handler, '/api/research/derivatives?asset=BTC&days=7')).body, { asset: 'BTC', days: 7 })
+  for (let i = 1; i < 120; i++) await request(handler, '/api/research/derivatives?asset=BTC&days=7')
+  assert.equal((await request(handler, '/api/research/derivatives?asset=BTC&days=7')).status, 429)
+  handler.close(); assert.equal(closed, true)
+})
 test('market events enforce origin/query/method boundaries, isolate polling quota and close resources', async () => {
   let liquidationCalls = 0, calendarCalls = 0, closed = 0
   const handler = createResearchHandler({ local: true, client: { snapshot: async asset => ({ asset }) }, liquidations: { snapshot(asset) { liquidationCalls++; return { asset } }, close() { closed++ } }, calendar: { async snapshot() { calendarCalls++; return { events: [] } }, close() { closed++ } } })
