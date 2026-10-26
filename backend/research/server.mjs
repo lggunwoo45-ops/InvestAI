@@ -4,7 +4,7 @@ import { resolve, join } from 'node:path'
 import { createHistoryReader, intervals } from './history.mjs'
 import { createLiquidationCollector } from './liquidations.mjs'
 import { createEconomicCalendar } from './economicCalendar.mjs'
-import { createDerivativeCollector } from './derivatives.mjs'
+import { createDerivativeCollector, validContextQuery } from './derivatives.mjs'
 
 export const researchAssets = ['BTC', 'ETH', 'SOL', 'XRP', 'DOGE', 'BNB', 'ADA', 'AVAX', 'LINK', 'LTC', 'TRX', 'DOT', 'NEAR', 'APT', 'ARB', 'OP', 'SUI', 'BCH', 'ATOM', 'UNI', 'AAVE', 'INJ', 'TIA']
 
@@ -79,7 +79,7 @@ export function createResearchClient({ fetchImpl = fetch, now = Date.now } = {})
 
 export function createResearchHandler({ local = false, origins = [], client = createResearchClient(), now = Date.now, historyReader = createHistoryReader(), liquidations = createLiquidationCollector({ assets: researchAssets }), calendar = createEconomicCalendar(), derivatives = createDerivativeCollector({ directory: process.env.INVESTAI_RESEARCH_DIRECTORY || (process.env.INVESTAI_CLOUD_DIRECTORY ? join(process.env.INVESTAI_CLOUD_DIRECTORY, 'research-history') : undefined), assets: researchAssets }) } = {}) {
   const allowed = new Set(origins)
-  let at = now(), requests = 0, active = 0, eventRequests = 0, calendarActive = 0, derivativeRequests = 0
+  let at = now(), requests = 0, active = 0, eventRequests = 0, calendarActive = 0, derivativeRequests = 0, contextRequests = 0
   const handler = async (req, res, next = () => { res.writeHead(404); res.end() }) => {
     if (!req.url?.startsWith('/api/research/')) return next()
     const headers = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', Vary: 'Origin' }
@@ -97,7 +97,14 @@ export function createResearchHandler({ local = false, origins = [], client = cr
     if (req.method !== 'GET' && !(wallet && req.method === 'POST')) return send(405, { error: 'read_only' })
     if (url.pathname === '/api/research/health') return send(200, { service: 'investai-research', version: 1 })
     const asset = url.searchParams.get('asset')
-    if (now() - at >= 60_000) { at = now(); requests = 0; eventRequests = 0; derivativeRequests = 0 }
+    if (now() - at >= 60_000) { at = now(); requests = 0; eventRequests = 0; derivativeRequests = 0; contextRequests = 0 }
+    if (url.pathname === '/api/research/derivatives/context') {
+      const timeframe = url.searchParams.get('timeframe'), from = Number(url.searchParams.get('from')), to = Number(url.searchParams.get('to'))
+      if (url.searchParams.size !== 4 || !validContextQuery(asset, timeframe, from, to, now(), researchAssets)) return send(400, { error: 'invalid_query' })
+      if (++contextRequests > 30) { headers['Retry-After'] = '60'; return send(429, { error: 'research_busy' }) }
+      try { return send(200, derivatives.context(asset, timeframe, from, to)) }
+      catch { return send(503, { error: 'history_context_unavailable' }) }
+    }
     if (url.pathname === '/api/research/derivatives') {
       if (url.searchParams.size !== 2 || !researchAssets.includes(asset) || !['7', '30', '90'].includes(url.searchParams.get('days'))) return send(400, { error: 'invalid_query' })
       if (++derivativeRequests > 120) { headers['Retry-After'] = '60'; return send(429, { error: 'research_busy' }) }

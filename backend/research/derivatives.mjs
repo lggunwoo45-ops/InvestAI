@@ -3,6 +3,12 @@ import { mkdirSync } from 'node:fs'
 import { join, isAbsolute } from 'node:path'
 import { randomUUID } from 'node:crypto'
 import { boundedCalendarText } from './calendarIO.mjs'
+import { buildDerivativeContext, DERIVATIVE_FILTER_VERSION } from './derivativeContext.mjs'
+import { intervals } from './history.mjs'
+
+export function validContextQuery(asset, timeframe, from, to, now, assets) {
+  return assets.includes(asset) && Object.hasOwn(intervals, timeframe) && [from, to].every(n => Number.isSafeInteger(n) && n > 0 && n % intervals[timeframe] === 0) && from <= to && to <= now && (to - from) / intervals[timeframe] < 10000
+}
 
 export const HOUR = 3_600_000, DAY = 24 * HOUR, COLLECTION_INTERVAL = 15 * 60_000
 const metrics = ['funding', 'openInterest']
@@ -59,6 +65,11 @@ export function openDerivativeStore(directory, clock = Date.now) {
       return db.prepare(`SELECT o.at,o.value,o.knownAt FROM observations o WHERE o.asset=? AND o.metric=? AND o.at>=? AND o.at<=? AND o.knownAt<=?
         AND NOT EXISTS (SELECT 1 FROM observations newer WHERE newer.asset=o.asset AND newer.metric=o.metric AND newer.at=o.at AND newer.knownAt>o.knownAt AND newer.knownAt<=?) ORDER BY o.at`).all(asset, metric, from, to, knownAt, knownAt)
     },
+    contextRows(asset, from, to) {
+      const rows = db.prepare('SELECT metric,at,knownAt,value FROM observations WHERE asset=? AND at>=? AND at<=? AND knownAt<=? LIMIT 100001').all(asset, Math.max(from - 26 * HOUR, clock() - 365 * DAY), to, to)
+      if (rows.length > 100000) throw new Error('context_capacity')
+      return rows
+    },
     close() { db.close() },
   }
 }
@@ -97,6 +108,12 @@ export function createDerivativeCollector({ directory, assets, clock = Date.now,
   if (autoStart) { void tick(); timer = setInterval(() => { void tick() }, 60_000); timer.unref?.() }
   return {
     tick,
+    context(asset, timeframe, from, to) {
+      const fetchedAt = clock()
+      if (!validContextQuery(asset, timeframe, from, to, fetchedAt, assets)) throw new Error('invalid_context_query')
+      const firstStoredAt = db.prepare('SELECT MIN(knownAt) at FROM observations WHERE asset=?').get(asset).at
+      return { version: 1, method: DERIVATIVE_FILTER_VERSION, asset, timeframe, from, to, fetchedAt, firstStoredAt, source: 'Bybit USDT perpetual', points: buildDerivativeContext(store.contextRows(asset, from, to), from, to, intervals[timeframe]) }
+    },
     snapshot(asset, days) {
       if (!assets.includes(asset) || ![7, 30, 90].includes(days)) throw new Error('invalid_history_query')
       const fetchedAt = clock(), from = Math.ceil((fetchedAt - days * DAY) / HOUR) * HOUR, to = Math.floor(fetchedAt / HOUR) * HOUR

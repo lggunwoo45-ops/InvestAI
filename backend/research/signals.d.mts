@@ -1,3 +1,6 @@
+import type { DerivativeFilters, DerivativeContextPoint } from './derivativeContext.mjs';
+export { derivativeMatch, hasDerivativeFilters, DERIVATIVE_FILTER_VERSION } from './derivativeContext.mjs';
+export type { DerivativeContextPoint } from './derivativeContext.mjs';
 export interface Candle {
     timestamp: number;
     open: number;
@@ -40,7 +43,7 @@ export interface SignalFrame {
 }
 /** Sequential, closed-bar-only features. Gaps reset indicator seeds and warm-up. */
 export declare function signalFrames(candles: readonly Candle[], timeframe: ResearchTimeframe): SignalFrame[];
-export interface ExplorerConfig {
+export interface ExplorerConfig extends DerivativeFilters {
     timeframe: ResearchTimeframe;
     signals: string[];
     window: 1 | 3 | 6 | 12;
@@ -53,8 +56,9 @@ export interface ExplorerConfig {
 }
 export declare const defaultExplorerConfig: ExplorerConfig;
 export declare function validExplorerConfig(c: ExplorerConfig): boolean;
-export declare function matchesFrame(frames: readonly SignalFrame[], candles: readonly Candle[], i: number, config: ExplorerConfig): boolean;
+export declare function matchesFrame(frames: readonly SignalFrame[], candles: readonly Candle[], i: number, config: ExplorerConfig, contexts?: ReadonlyMap<number, DerivativeContextPoint>): boolean;
 export interface ExplorerSample {
+    derivatives?: DerivativeContextPoint;
     at: number;
     enteredAt: number;
     exitAt: number;
@@ -64,6 +68,7 @@ export interface ExplorerSample {
     net: number | null;
 }
 export interface ExplorerResult {
+    derivativeCoverage?: { candidates: number; available: number; unknown: number; excluded: number; matched: number };
     records: ExplorerSample[];
     samples: number;
     hits: number;
@@ -81,4 +86,4 @@ export interface ExplorerResult {
         meanNet: number | null;
     }[];
 }
-export declare function exploreHistory(candles: readonly Candle[], config: ExplorerConfig, frames?: SignalFrame[]): ExplorerResult | null;
+export declare function exploreHistory(candles: readonly Candle[], config: ExplorerConfig, frames?: SignalFrame[], contexts?: ReadonlyMap<number, DerivativeContextPoint>): ExplorerResult | null;

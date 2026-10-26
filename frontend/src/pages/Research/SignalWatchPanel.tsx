@@ -1,7 +1,7 @@
 import { cloudSignedIn } from '@/services/cloud/cloudClient'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { explorerSignals, validExplorerConfig, type ExplorerConfig } from '@/services/research/signalExplorer'
+import { explorerSignals, validExplorerConfig, hasDerivativeFilters, type ExplorerConfig } from '@/services/research/signalExplorer'
 import { readMonitor, registerSignalWatch, stopSignalWatch, type MonitorState, type SignalWatchConfig } from '@/services/research/monitorClient'
 import styles from './SignalExplorer.module.css'
 import { localMonitorAvailable } from '@/services/research/monitorAvailability'
@@ -9,6 +9,7 @@ import { LocalMonitorNotice } from './LocalMonitorNotice'
 const labels = { pending: '다음 봉 대기', entered: '이후 가격 관찰 중', up: '상단 먼저 도달', down: '하단 먼저 도달', timeout: '기간 종료', ambiguous: '양쪽 도달·순서 불명', unresolved: '자료 공백·판정 불가', cancelled: '감시 종료' }
 const delivery = { off: '외부 발송 안 함', pending: '발송 대기', sent: '발송 확인', uncertain: '발송 여부 미확인' }
 export function SignalWatchPanel({ asset, config, name, ledger = false }: { asset: string; config?: ExplorerConfig; name?: string; ledger?: boolean }) {
+  if (config && hasDerivativeFilters(config)) return <p className={styles.notice}>파생 지표 추가 조건은 과거 비교용입니다. 이 조건의 자동 감시는 아직 지원하지 않습니다.</p>
   return localMonitorAvailable() ? <LocalSignalWatchPanel asset={asset} config={config} name={name} ledger={ledger} /> : <LocalMonitorNotice kind="signals" asset={asset} />
 }
 
