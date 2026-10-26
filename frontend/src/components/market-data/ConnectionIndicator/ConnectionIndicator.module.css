@@ -9,3 +9,4 @@
 .pending i { animation: pulse 1.3s ease-in-out infinite; }
 @keyframes pulse { 50% { opacity: .35; } }
 @media (prefers-reduced-motion: reduce) { .pending i { animation: none; } }
+@media (max-width: 760px) { .indicator strong { font-size: 11px; }.indicator span { font: 11px/1.5 system-ui; white-space: normal; overflow-wrap: anywhere; } }

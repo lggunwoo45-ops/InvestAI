@@ -14,6 +14,7 @@ import {
 } from 'lightweight-charts'
 
 import { useUserChartLines } from '@/hooks/useUserChartLines'
+import { useCompactLayout } from '@/hooks/useCompactLayout'
 import { useLanguage } from '@/i18n/useLanguage'
 import type { ChartOverlayGroup, ChartOverlayVisibility } from '@/types/chartOverlays'
 import type { MarketDataMode, MarketInstrument } from '@/types/market'
@@ -82,6 +83,7 @@ function chartPricePrecision(price: number, quoteCurrency: string) {
 
 export const CandlestickChart = memo(function CandlestickChart({ candles, instrument, timeframe, mode, preview = false, technicalAnalysis, technicalLoading = false }: CandlestickChartProps) {
   const { language } = useLanguage()
+  const compact = useCompactLayout()
   const containerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
   const candleSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null)
@@ -131,14 +133,14 @@ export const CandlestickChart = memo(function CandlestickChart({ candles, instru
         background: { type: ColorType.Solid, color: chartColor('--color-surface', '#ffffff') },
         textColor: chartColor('--color-text-muted', '#52637b'),
         fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
-        fontSize: 10,
+        fontSize: compact ? 12 : 10,
       },
       grid: { vertLines: { color: chartColor('--color-border', '#e2e8f1') }, horzLines: { color: chartColor('--color-border', '#e2e8f1') } },
       crosshair: { vertLine: { color: chartColor('--color-text-muted', '#52637b'), labelBackgroundColor: chartColor('--color-accent', '#315eea') }, horzLine: { color: chartColor('--color-text-muted', '#52637b'), labelBackgroundColor: chartColor('--color-accent', '#315eea') } },
       rightPriceScale: { borderColor: chartColor('--color-border', '#e2e8f1'), scaleMargins: { top: 0.08, bottom: 0.24 } },
       timeScale: { borderColor: chartColor('--color-border', '#e2e8f1'), timeVisible: timeframe !== '1D', secondsVisible: false, rightOffset: 4, barSpacing: 7 },
       handleScale: true,
-      handleScroll: true,
+      handleScroll: { mouseWheel: true, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: !compact },
     })
     const candleSeries = chart.addSeries(CandlestickSeries, {
       upColor: chartColor('--color-positive', '#087b5e'), downColor: chartColor('--color-danger', '#c0344d'), wickUpColor: chartColor('--color-positive', '#087b5e'), wickDownColor: chartColor('--color-danger', '#c0344d'), borderVisible: false,
@@ -166,7 +168,7 @@ export const CandlestickChart = memo(function CandlestickChart({ candles, instru
       dataKeyRef.current = null
       activePriceLines.clear()
     }
-  }, [instrument.id, instrument.quoteCurrency, timeframe])
+  }, [compact, instrument.id, instrument.quoteCurrency, timeframe])
 
   useEffect(() => {
     const candleData: CandlestickData<UTCTimestamp>[] = candles.map((candle) => ({
@@ -183,6 +185,7 @@ export const CandlestickChart = memo(function CandlestickChart({ candles, instru
     }))
     const dataKey = `${instrument.id}:${timeframe}`
     const previous = previousCandlesRef.current
+    const firstData = dataKeyRef.current !== dataKey || previous.length === 0
     // REST refreshes can correct older bars; update(last) would leave cached history on screen.
     const incremental = previous.length > 0 && (candles.length === previous.length || candles.length === previous.length + 1)
       && previous.slice(0, -1).every((candle, index) => candle === candles[index])
@@ -191,7 +194,10 @@ export const CandlestickChart = memo(function CandlestickChart({ candles, instru
     if (dataKeyRef.current !== dataKey || !incremental) {
       candleSeriesRef.current?.setData(candleData)
       volumeSeriesRef.current?.setData(volumeData)
-      if (candleData.length > 0) chartRef.current?.timeScale().fitContent()
+      if (candleData.length > 0 && firstData) {
+        if (compact) chartRef.current?.timeScale().setVisibleLogicalRange({ from: Math.max(0, candleData.length - 45), to: candleData.length + 2 })
+        else chartRef.current?.timeScale().fitContent()
+      }
       dataKeyRef.current = dataKey
       return
     }
@@ -199,7 +205,7 @@ export const CandlestickChart = memo(function CandlestickChart({ candles, instru
     const latestVolume = volumeData.at(-1)
     if (latestCandle) candleSeriesRef.current?.update(latestCandle)
     if (latestVolume) volumeSeriesRef.current?.update(latestVolume)
-  }, [candles, instrument.id, timeframe])
+  }, [candles, compact, instrument.id, timeframe])
 
   useEffect(() => {
     const series = candleSeriesRef.current
@@ -211,13 +217,14 @@ export const CandlestickChart = memo(function CandlestickChart({ candles, instru
       activePriceLinesRef.current.delete(id)
     })
     renderedPriceLines.forEach((line) => {
-      const options = { id: line.id, price: line.price, title: line.label, color: line.color, lineWidth: line.width, lineStyle: line.style, lineVisible: true, axisLabelVisible: true }
+      const showLabel = !compact || analysisMode || line.id.startsWith('user:')
+      const options = { id: line.id, price: line.price, title: showLabel ? line.label : '', color: line.color, lineWidth: line.width, lineStyle: line.style, lineVisible: true, axisLabelVisible: showLabel }
       const existing = activePriceLinesRef.current.get(line.id)
       if (existing) existing.applyOptions(options)
       else activePriceLinesRef.current.set(line.id, series.createPriceLine(options))
     })
     return undefined
-  }, [instrument.id, renderedPriceLines, timeframe])
+  }, [analysisMode, compact, instrument.id, renderedPriceLines, timeframe])
 
   return (
     <figure className={styles.chart} data-chart-structure-panel={chartStructurePanelCollapsed ? 'collapsed' : 'expanded'}>

@@ -5,6 +5,7 @@ import { MarketDetailWorkspace } from '@/components/market-detail/MarketDetailWo
 import { MarketAssetSwitcher } from '@/components/market/MarketAssetSwitcher/MarketAssetSwitcher'
 import { MarketExplorer } from '@/components/market/MarketExplorer/MarketExplorer'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
+import { useCompactLayout } from '@/hooks/useCompactLayout'
 import { useMarketCatalog } from '@/hooks/useMarketCatalog'
 import { useMarketDetailData } from '@/hooks/useMarketDetailData'
 import { useMarketWorkspace } from '@/hooks/useMarketWorkspace'
@@ -56,6 +57,10 @@ function initialVenue(instrument: MarketInstrument): MarketVenue {
 
 export function MarketPage() {
   const { language } = useLanguage()
+  const compact = useCompactLayout()
+  const [mobileView, setMobileView] = useState<'list' | 'detail'>('list')
+  const pageRef = useRef<HTMLElement>(null)
+  useEffect(() => { if (compact) pageRef.current?.parentElement?.scrollTo?.({ top: 0 }) }, [compact, mobileView])
   useDocumentTitle(marketExplorerText[language].title)
   const { selectedInstrument, selectedTimeframe, marketDataMode, selectInstrument, clearInstrument, selectTimeframe, setMarketDataMode } = useMarketWorkspace()
   const { favoriteIds, toggleWatchlist, trackRecentlyViewed } = useWatchlists()
@@ -152,6 +157,7 @@ export function MarketPage() {
     if (instrument) toggleWatchlist(itemFromInstrument(instrument))
   }, [catalogState.catalog, catalogState.cachedCatalog, toggleWatchlist])
   const changeVenue = useCallback((next: MarketVenue) => {
+    setMobileView('list')
     const nextAssetMode = assetModeForVenue(next)
     if (nextAssetMode !== assetMode) {
       const persistedId = lastInstrumentIdsRef.current[nextAssetMode]
@@ -210,17 +216,17 @@ export function MarketPage() {
       favoriteIds={favoriteIds}
       onVenueChange={changeVenue}
       onModeChange={setMarketDataMode}
-      onSelect={openInstrument}
+      onSelect={(instrument) => { openInstrument(instrument); setMobileView('detail') }}
       onToggleFavorite={changeFavorite}
       onRetry={() => setRetry((value) => value + 1)}
-      compact={Boolean(selectedInstrument)}
+      compact={!compact && Boolean(selectedInstrument)}
     />
   )
   const listIsCollapsed = Boolean(selectedInstrument && instrumentListCollapsed)
   const layoutText = marketExplorerText[language].layout
   const workspaceSwitcher = <div className={styles.workspaceControls}>
     <MarketAssetSwitcher activeMode={assetMode} onChange={(mode) => changeVenue(defaultVenueByAssetMode[mode])} />
-    {!listIsCollapsed && <label className={styles.workspaceSearch}><span aria-hidden="true">⌕</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={language === 'ko' ? '종목 검색' : 'Search instruments'} aria-label={language === 'ko' ? '종목 검색' : 'Search instruments'} /></label>}
+    {(compact ? mobileView === 'list' : !listIsCollapsed) && <label className={styles.workspaceSearch}><span aria-hidden="true">⌕</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={language === 'ko' ? '종목 검색' : 'Search instruments'} aria-label={language === 'ko' ? '종목 검색' : 'Search instruments'} /></label>}
   </div>
   const workspaceHeader = workspaceSwitcher
   const explorer = <div className={`${styles.navigator} ${selectedInstrument ? styles.navigatorDetail : ''} ${listIsCollapsed ? styles.navigatorCollapsed : ''}`}>
@@ -243,21 +249,12 @@ export function MarketPage() {
     </div>
   </div>
 
-  if (!selectedInstrument) return <main className={styles.page}>{workspaceHeader}{explorer}</main>
-
   const preview = detailState.preview
   const snapshot = selectedSnapshot ?? preview?.snapshot
-  const currentSnapshot = snapshot?.instrument.id === selectedInstrument.id && snapshot.timeframe === selectedTimeframe
-  if (!currentSnapshot || (!detailState.state && !preview)) {
-    return <main className={styles.page}>{workspaceHeader}<div className={`${styles.pendingWorkspace} ${listIsCollapsed ? styles.pendingWorkspaceCollapsed : ''}`}>
-        {explorer}
-        <div className={styles.detailState}>{detailState.error ?? `Connecting ${selectedInstrument.symbol} · ${detailState.state?.connection.message ?? 'Preparing market workspace…'}`}</div>
-      </div></main>
-  }
-
-  return <main className={styles.page}>{workspaceHeader}<MarketDetailWorkspace
-      navigator={explorer}
-      instrumentListCollapsed={listIsCollapsed}
+  const currentSnapshot = selectedInstrument && snapshot?.instrument.id === selectedInstrument.id && snapshot.timeframe === selectedTimeframe
+  const detailWorkspace = currentSnapshot && snapshot && (detailState.state || preview) ? <MarketDetailWorkspace
+      navigator={compact ? null : explorer}
+      instrumentListCollapsed={compact || listIsCollapsed}
       snapshot={snapshot}
       connection={detailState.state?.connection ?? { requestedMode: marketDataMode, effectiveMode: 'live', status: 'connecting', provider: 'Upbit Korea', reconnectAttempt: 0, lastUpdatedAt: null, message: 'Checking latest candle history…' }}
       previewAt={preview?.storedAt}
@@ -265,5 +262,25 @@ export function MarketPage() {
       onSelectTimeframe={selectTimeframe}
       marketDataMode={marketDataMode}
       onMarketDataModeChange={setMarketDataMode}
-    /></main>
+    /> : null
+
+  if (compact) return <main ref={pageRef} className={`${styles.page} ${styles.mobilePage}`} data-mobile-market-view={mobileView}>
+    {workspaceHeader}
+    <nav className={styles.mobileNavigation} aria-label={language === 'ko' ? '마켓 화면' : 'Market view'}>
+      <button type="button" aria-pressed={mobileView === 'list'} onClick={() => setMobileView('list')}>{language === 'ko' ? '종목 목록' : 'Instrument list'}</button>
+      <button type="button" aria-pressed={mobileView === 'detail'} disabled={!selectedInstrument} onClick={() => setMobileView('detail')}>{language === 'ko' ? '종목 상세' : 'Instrument detail'}</button>
+    </nav>
+    <div className={styles.mobileExplorer} hidden={mobileView !== 'list'}>{explorerPanel}</div>
+    {mobileView === 'detail' && (detailWorkspace ?? <div className={styles.detailState} role="status">{detailState.error ?? (language === 'ko' ? `${selectedInstrument?.symbol ?? ''} 시세를 불러오고 있습니다. 위의 종목 목록으로 돌아갈 수 있습니다.` : `Loading ${selectedInstrument?.symbol ?? ''}. You can return to the instrument list above.`)}</div>)}
+  </main>
+
+  if (!selectedInstrument) return <main className={styles.page}>{workspaceHeader}{explorer}</main>
+  if (!currentSnapshot || (!detailState.state && !preview)) {
+    return <main className={styles.page}>{workspaceHeader}<div className={`${styles.pendingWorkspace} ${listIsCollapsed ? styles.pendingWorkspaceCollapsed : ''}`}>
+        {explorer}
+        <div className={styles.detailState}>{detailState.error ?? `Connecting ${selectedInstrument.symbol} · ${detailState.state?.connection.message ?? 'Preparing market workspace…'}`}</div>
+      </div></main>
+  }
+
+  return <main className={styles.page}>{workspaceHeader}{detailWorkspace}</main>
 }

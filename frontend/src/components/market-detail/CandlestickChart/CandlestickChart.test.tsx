@@ -9,21 +9,24 @@ import type { Candle } from '@/types/marketDetail'
 import { CandlestickChart } from './CandlestickChart'
 
 const chartMock = vi.hoisted(() => {
+  const viewport = { compact: false }
+  const setVisibleLogicalRange = vi.fn()
   const createPriceLine = vi.fn((options: unknown) => ({ options, applyOptions: vi.fn() }))
   const removePriceLine = vi.fn()
   const candleSeries = { setData: vi.fn(), update: vi.fn(), createPriceLine, removePriceLine, priceScale: vi.fn(() => ({ applyOptions: vi.fn() })) }
   const volumeSeries = { setData: vi.fn(), update: vi.fn(), priceScale: vi.fn(() => ({ applyOptions: vi.fn() })) }
-  const createChart = vi.fn(() => {
+  const createChart = vi.fn((_container: unknown, _options: unknown) => {
     let seriesIndex = 0
     return {
       addSeries: vi.fn(() => seriesIndex++ === 0 ? candleSeries : volumeSeries),
       applyOptions: vi.fn(),
-      timeScale: vi.fn(() => ({ fitContent: vi.fn() })),
+      timeScale: vi.fn(() => ({ fitContent: vi.fn(), setVisibleLogicalRange })),
       remove: vi.fn(),
     }
   })
-  return { createChart, createPriceLine, removePriceLine, candleSeries, volumeSeries }
+  return { createChart, createPriceLine, removePriceLine, candleSeries, volumeSeries, viewport, setVisibleLogicalRange }
 })
+vi.mock('@/hooks/useCompactLayout', () => ({ useCompactLayout: () => chartMock.viewport.compact }))
 
 vi.mock('lightweight-charts', () => ({
   CandlestickSeries: 'CandlestickSeries',
@@ -48,6 +51,16 @@ const candles: readonly Candle[] = Array.from({ length: 60 }, (_, index) => {
 const technicalAnalysis = buildTechnicalLevelAnalysis({ instrument, candles, language: 'en', dataQuality: 'mock' })
 
 describe('CandlestickChart chart overlays', () => {
+  it('leaves vertical touch scrolling to the page and preserves the phone zoom when history refreshes', () => {
+    chartMock.viewport.compact = true
+    const { rerender } = render(<LanguageProvider><CandlestickChart candles={[]} instrument={instrument} timeframe="1H" mode="live" technicalAnalysis={technicalAnalysis} /></LanguageProvider>)
+    expect(chartMock.setVisibleLogicalRange).not.toHaveBeenCalled()
+    rerender(<LanguageProvider><CandlestickChart candles={candles} instrument={instrument} timeframe="1H" mode="live" technicalAnalysis={technicalAnalysis} /></LanguageProvider>)
+    expect(chartMock.createChart.mock.lastCall?.[1]).toMatchObject({ layout: { fontSize: 12 }, handleScroll: { vertTouchDrag: false, horzTouchDrag: true } })
+    expect(chartMock.setVisibleLogicalRange).toHaveBeenCalledWith({ from: 15, to: 62 })
+    rerender(<LanguageProvider><CandlestickChart candles={candles.map(c => ({ ...c }))} instrument={instrument} timeframe="1H" mode="live" technicalAnalysis={technicalAnalysis} /></LanguageProvider>)
+    expect(chartMock.setVisibleLogicalRange).toHaveBeenCalledOnce()
+  })
   it('replaces all cached bars when refreshed history corrects an older candle', () => {
     chartMock.candleSeries.setData.mockClear()
     chartMock.candleSeries.update.mockClear()
@@ -63,6 +76,8 @@ describe('CandlestickChart chart overlays', () => {
     expect(chartMock.candleSeries.update).toHaveBeenCalledOnce()
   })
   beforeEach(() => {
+    chartMock.viewport.compact = false
+    chartMock.setVisibleLogicalRange.mockClear()
     localStorage.clear()
     chartMock.createChart.mockClear()
     chartMock.createPriceLine.mockClear()

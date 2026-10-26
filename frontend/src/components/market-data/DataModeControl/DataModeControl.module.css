@@ -4,3 +4,4 @@
 .control button:hover { color: var(--color-text); background: var(--color-surface-raised); }
 .control button:focus-visible { outline: 1px solid var(--color-border-strong); outline-offset: -2px; }
 .control .active { color: var(--color-text); background: var(--color-surface-raised); }
+@media (max-width: 760px) { .control { height: 44px; border-radius: 8px; overflow: hidden; }.control button { min-width: 56px; font-size: 11px; } }
