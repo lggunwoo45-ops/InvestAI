@@ -99,7 +99,7 @@ async function boundedText(response) {
   } finally { await reader.cancel().catch(() => {}); reader.releaseLock() }
 }
 
-export function createEconomicCalendar({ fetchImpl = fetch, now = Date.now } = {}) {
+export function createEconomicCalendar({ fetchImpl = fetch, now = Date.now, onIssue = issue => console.warn('[economic-calendar]', JSON.stringify(issue)) } = {}) {
   const cache = new Map(), pending = new Map(), attempted = new Map(), shutdown = new AbortController()
   async function load(source) {
     const previous = cache.get(source.id)
@@ -108,11 +108,15 @@ export function createEconomicCalendar({ fetchImpl = fetch, now = Date.now } = {
     const work = (async () => {
       try {
         const response = await fetchImpl(source.url, { redirect: 'error', signal: AbortSignal.any([shutdown.signal, AbortSignal.timeout(10_000)]), headers: { Accept: source.id === 'bls' ? 'text/calendar' : 'text/html' } })
-        if (!response.ok) throw new Error('source_unavailable')
+        if (!response.ok) { const error = new Error('source_unavailable'); error.status = response.status; throw error }
         const text = await boundedText(response), events = source.id === 'bls' ? parseBlsCalendar(text) : parseFomcCalendar(text)
         if (!events.length) throw new Error('schedule_not_found')
         cache.set(source.id, { events, fetchedAt: now(), ok: true })
-      } catch { cache.set(source.id, { ...previous, ok: false }) }
+      } catch (error) {
+        cache.set(source.id, { ...previous, ok: false })
+        // Fixed provider ID and bounded reason only; never log upstream bodies, request headers or credentials.
+        if (!shutdown.signal.aborted) onIssue({ source: source.id, reason: Number.isInteger(error?.status) ? `http_${error.status}` : error?.name === 'TimeoutError' ? 'timeout' : ['invalid_calendar', 'schedule_not_found', 'too_large'].includes(error?.message) ? error.message : 'network_error' })
+      }
       finally { attempted.set(source.id, now()) }
     })().finally(() => pending.delete(source.id))
     pending.set(source.id, work)
