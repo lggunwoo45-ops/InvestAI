@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
 import { researchNow } from '@/services/research/researchClock'
-import { economicSourceLinks, fetchEconomicCalendar, fetchLiquidations, simpleCalendarTitles, upcomingEvents, type EconomicEvent } from '@/services/research/marketEvents'
+import { economicSourceLinks, nyFedCalendarLink, fetchEconomicCalendar, fetchLiquidations, simpleCalendarTitles, upcomingEvents, type EconomicEvent } from '@/services/research/marketEvents'
 import styles from './MarketEvents.module.css'
 
 const money = (value: number) => value.toLocaleString('ko-KR', { maximumFractionDigits: 2 })
@@ -68,13 +68,16 @@ export function EconomicCalendarPanel() {
   const now = researchNow(data), aged = !!data && now - data.fetchedAt > 120_000
   const events = data ? upcomingEvents(data, now, simple ? 30 : days, simple ? 'all' : source).filter(e => !simple || e.source === 'fed' || simpleCalendarTitles.has(e.originalTitle)) : []
   const stale = !!error || aged || data?.sources.some(s => s.status !== 'available')
+  const saved = data?.sources.find(s => s.via === 'nyfed')
+  const coverageDate = saved?.coverageEnd ? new Intl.DateTimeFormat('ko-KR', { timeZone: 'America/New_York', year: 'numeric', month: 'long', day: 'numeric' }).format(saved.coverageEnd) : null
   return <section className={styles.panel} aria-labelledby="calendar-title">
     <header className={styles.header}><div><span className={styles.eyebrow}>OFFICIAL CALENDAR · 미국 경제</span><h2 id="calendar-title">{simple ? '다가오는 경제 일정을 확인하세요' : '주요 경제 일정'}</h2></div><button disabled={loading} onClick={refresh}>일정 다시 확인</button></header>
-    <p className={styles.intro}>{simple ? '주요 물가·고용 발표와 미국 금리 회의를 모았어요. 앞으로 30일의 일정이며, 더 많은 BLS 일정은 전문가 모드에서 확인할 수 있어요.' : 'BLS 공식 발표 일정과 FOMC 회의 일정 · 발표 시각은 한국 시간(KST), 회의일은 미국 동부 기준입니다.'}</p>
+    <p className={styles.intro}>{simple ? '주요 물가·고용 발표와 미국 금리 회의를 모았어요. 앞으로 30일 중 가까운 일정부터 보여드려요.' : 'BLS 발표 일정과 FOMC 회의 일정 · 발표 시각은 한국 시간(KST), 회의일은 미국 동부 기준입니다.'}</p>
+    {saved && <p className={styles.caption}>물가·고용 일정은 <a href={nyFedCalendarLink} target="_blank" rel="noreferrer">뉴욕 연준 경제 일정</a>에 게시된 BLS 주요 7종을 기준으로 합니다. {coverageDate}까지 공개된 월별 일정을 확인했으며, 이후 일정은 아직 포함하지 않습니다.</p>}
     {error && <p role="status" className={styles.notice}>{error}</p>}
     {data && stale && <p className={styles.notice}>일부 일정의 최신 상태를 확인하지 못했습니다. 마지막 확인 자료는 변경됐을 수 있으니 공식 일정을 확인해주세요.</p>}
     {!simple && <div className={styles.toolbar}><label>조회 기간 <select value={days} onChange={e => setDays(Number(e.target.value))}><option value={7}>앞으로 7일</option><option value={30}>앞으로 30일</option><option value={90}>앞으로 90일</option></select></label><label>발표 기관 <select value={source} onChange={e => setSource(e.target.value)}><option value="all">전체 기관</option><option value="bls">BLS · 물가·고용</option><option value="fed">FOMC · 금리 회의</option></select></label></div>}
     {!data ? <p className={styles.empty}>{loading ? '공식 일정을 불러오고 있어요.' : '공식 일정을 확인할 수 없습니다.'}</p> : !events.length ? <p className={styles.empty}>{data.sources.some(s => s.status === 'unavailable') ? '불러오지 못한 기관이 있어 일정이 비어 있을 수 있습니다.' : '선택한 기간에 공식 자료에서 확인된 일정이 없습니다.'}</p> : simple ? <><ol className={styles.agenda}>{events.slice(0, expanded ? 50 : 3).map(e => <li key={e.id}><span className={styles.sourceTag}>{e.source === 'fed' ? '금리 회의' : '물가·고용'}{data.sources.find(s => s.id === e.source)?.status === 'stale' ? ' · 이전 자료' : ''}</span><h3>{e.title}</h3><p>{eventTime(e)}</p>{e.at === null && <small>발표 시각은 공식 일정에 제공되지 않았어요.</small>}</li>)}</ol>{events.length > 3 && <button onClick={() => setExpanded(v => !v)}>{expanded ? '가까운 일정만 보기' : `30일 일정 ${events.length}개 보기`}</button>}</> : <div className={styles.tableWrap}><table><caption>예정된 발표·회의 · 일정은 변경될 수 있습니다</caption><thead><tr><th>일시</th><th>일정</th><th>기관</th></tr></thead><tbody>{events.map(e => <tr key={e.id}><td>{eventTime(e)}{e.at === null && <small className={styles.block}>발표 시각 미제공</small>}</td><td>{e.title}</td><td>{e.source === 'fed' ? 'FOMC' : 'BLS'}{data.sources.find(s => s.id === e.source)?.status === 'stale' && ' · 이전 자료'}</td></tr>)}</tbody></table></div>}
-    <footer className={styles.caption}><p>공식 자료를 한 시간마다 확인합니다. BLS·FOMC 이외 기관의 일정, 예상치·발표값은 포함하지 않습니다.</p><div className={styles.sources}>{(['bls', 'fed'] as const).map(id => { const item = data?.sources.find(s => s.id === id); return <span key={id}><a href={economicSourceLinks[id]} target="_blank" rel="noreferrer">{id === 'bls' ? 'BLS 공식 일정' : 'FOMC 공식 일정'}</a> · {item?.status === 'unavailable' ? '불러오기 실패' : item?.fetchedAt ? `${kst(item.fetchedAt)} 확인${item.status === 'stale' ? ' · 이전 자료' : ''}` : '확인 중'}</span> })}</div></footer>
+    <footer className={styles.caption}><p>{saved ? '뉴욕 연준 일정은 6시간마다 수집을 시도하며, FOMC는 한 시간마다 확인합니다.' : '공식 자료를 한 시간마다 확인합니다.'} BLS·FOMC 이외 기관의 일정, 예상치·발표값은 포함하지 않습니다.</p><div className={styles.sources}>{(['bls', 'fed'] as const).map(id => { const item = data?.sources.find(s => s.id === id); return <span key={id}><a href={item?.via === 'nyfed' ? nyFedCalendarLink : economicSourceLinks[id]} target="_blank" rel="noreferrer">{id === 'bls' ? item?.via === 'nyfed' ? 'BLS · 뉴욕 연준 경유' : 'BLS 공식 일정' : 'FOMC 공식 일정'}</a> · {item?.status === 'unavailable' ? '불러오기 실패' : item?.fetchedAt ? `${kst(item.fetchedAt)} ${item.via ? '수집' : '확인'}${item.status === 'stale' ? ' · 이전 자료' : ''}` : '확인 중'}</span> })}</div></footer>
   </section>
 }

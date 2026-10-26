@@ -7,14 +7,24 @@ on:
       - '.github/workflows/calendar-collection.yml'
       - 'backend/research/*Calendar*'
       - 'backend/research/calendar*'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/calendar-collection.yml'
+      - 'backend/research/*Calendar*'
+      - 'backend/research/calendar*'
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
   verify-public-source:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    timeout-minutes: 2
+    timeout-minutes: 3
     steps:
       - uses: actions/checkout@v4
         with:
@@ -22,15 +32,26 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Verify official BLS calendar access
-        run: |
-          node --input-type=module <<'NODE'
-          import { parseBlsCalendar } from './backend/research/economicCalendar.mjs'
-          for (const url of ['https://www.newyorkfed.org/research/calendars/i-nov26.html', 'https://fred.stlouisfed.org/releases/calendar?od=asc&rid=10&ve=2026-12-31&view=year&vs=2026-01-01']) {
-            try {
-              const response = await fetch(url, { redirect: 'error', signal: AbortSignal.timeout(15000) })
-              const text = await response.text()
-              console.log(JSON.stringify({ url, status: response.status, size: text.length, hasCpi:text.includes('Consumer Price Index') }))
-            } catch (error) { console.log(JSON.stringify({url,error:error.name})) }
-          }
-          NODE
+      - name: Validate official calendar without publishing
+        run: node backend/research/collectCalendar.mjs
+
+  publish-calendar:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && github.repository == 'lggunwoo45-ops/InvestAI' && github.event.repository.private == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    concurrency:
+      group: official-calendar-publish
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Collect, validate and publish the public schedule
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node backend/research/collectCalendar.mjs --publish
