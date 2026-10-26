@@ -44,6 +44,7 @@
 .dot, .dotActive { width: 7px; height: 7px; background: #94a3b8; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
 .dotActive { background: #168d80; box-shadow: 0 0 0 3px #168d8018; }
 .resultTabs { display: flex; gap: 18px; padding: 0 24px; border-bottom: 1px solid var(--color-border); overflow-x: auto; }
+.validationLink { margin: 18px 24px 24px; padding: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; border-radius: 12px; background: var(--color-accent-soft); font-size: 13px; }.studio .validationLink button { min-height: 44px; font-size: 13px; }
 .studio .resultTabs button { border: 0; border-bottom: 2px solid transparent; border-radius: 0; white-space: nowrap; padding: 17px 0; font-size: 12px; background: transparent; color: var(--color-text-muted); }
 .studio .resultTabs button[aria-selected='true'] { color: var(--color-accent); border-bottom-color: var(--color-accent); font-weight: 700; }
 .resultHeading { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 24px 24px 12px; }
