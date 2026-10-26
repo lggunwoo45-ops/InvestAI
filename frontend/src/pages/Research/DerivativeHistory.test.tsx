@@ -2,7 +2,8 @@ import { fireEvent, render, screen, cleanup, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { DerivativeHistory } from './DerivativeHistory'
 import { fetchDerivativesHistory, type DerivativesHistory } from '@/services/research/derivativesHistory'
-let mode = 'simple'
+let mode = 'simple', compact = false
+vi.mock('@/hooks/useCompactLayout', () => ({ useCompactLayout: () => compact }))
 vi.mock('@/app/displayMode/useDisplayMode', () => ({ useDisplayMode: () => ({ displayMode: mode }) }))
 vi.mock('@/services/research/derivativesHistory', async original => ({ ...await original<typeof import('@/services/research/derivativesHistory')>(), fetchDerivativesHistory: vi.fn() }))
 const at = Date.parse('2026-10-26T12:00:00Z'), hour = 3_600_000
@@ -13,7 +14,7 @@ function fixture(days = 7): DerivativesHistory {
     { metric: 'openInterest', unit: 'BTC', status: 'available', attemptedAt: at, succeededAt: at, firstAt: points[0]!.at, lastAt: points[1]!.at, gaps: [{ from: at - days * 24 * hour, to: at - 26 * hour }], points },
   ] }
 }
-beforeEach(() => { mode = 'simple'; vi.spyOn(Date, 'now').mockReturnValue(at); vi.mocked(fetchDerivativesHistory).mockImplementation(async (_a, days) => fixture(days)) })
+beforeEach(() => { mode = 'simple'; compact = false; vi.spyOn(Date, 'now').mockReturnValue(at); vi.mocked(fetchDerivativesHistory).mockImplementation(async (_a, days) => fixture(days)) })
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.clearAllMocks() })
 it('simple mode explains actual history and missing coverage without a raw table', async () => {
   render(<DerivativeHistory asset="BTC" />)
@@ -42,4 +43,13 @@ it('empty collections never appear as zero and errors keep old data clearly labe
   vi.mocked(fetchDerivativesHistory).mockRejectedValueOnce(new Error('연결 실패'))
   fireEvent.click(screen.getByRole('button', { name: '저장 기록 새로고침' }))
   expect(await screen.findByText(/마지막으로 불러온 저장 기록/)).toBeTruthy()
+})
+
+it('uses readable record cards on a narrow screen while retaining expert export and metric selection', async () => {
+  mode = 'expert'; compact = true
+  render(<DerivativeHistory asset="BTC" />)
+  expect(await screen.findByRole('list', { name: '저장된 지표 기록' })).toBeTruthy()
+  expect(screen.queryByRole('table')).toBeNull()
+  expect(screen.getByRole('button', { name: '조회 기록 CSV 저장' })).toBeTruthy()
+  expect(screen.getByLabelText('표시 지표')).toBeTruthy()
 })

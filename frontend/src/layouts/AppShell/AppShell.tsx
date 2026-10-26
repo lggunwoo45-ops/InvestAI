@@ -9,12 +9,14 @@ import { Header } from '../Header/Header'
 import { SimpleHeader } from '../Header/SimpleHeader'
 import { Sidebar } from '../Sidebar/Sidebar'
 import styles from './AppShell.module.css'
+import { useCompactLayout } from '@/hooks/useCompactLayout'
 import { MemberAccount } from '@/components/cloud/MemberAccount'
 
 export function AppShell() {
   const { isAiCopilotOpen, isSidebarPinned } = useUiStore()
   const { displayMode } = useDisplayMode()
   const { pathname } = useLocation()
+  const compact = useCompactLayout()
   const isExplore = pathname.replace(/\/$/, '') === '/ai-analysis'
   // Analysis has its own contextual question panel; avoid two competing explanations.
   const focusedAnalysis = isExplore || ['/my-analysis', '/dashboard', '/portfolio', '/settings', '/trading', '/strategies', '/research'].includes(pathname.replace(/\/$/, ''))
@@ -22,9 +24,9 @@ export function AppShell() {
 
   return (
     <div className={classNames(styles.shell, !isSidebarPinned && styles.sidebarUnpinned)} data-display-mode={displayMode} data-explore={isExplore || undefined}>
-      {displayMode === 'expert' && <Sidebar />}
+      {displayMode === 'expert' && !compact && <Sidebar />}
       <div className={styles.workspace}>
-        {displayMode === 'simple' ? <SimpleHeader hideCopilotToggle={focusedAnalysis} /> : <Header hideCopilotToggle={focusedAnalysis} />}
+        {displayMode === 'simple' || compact ? <SimpleHeader hideCopilotToggle={focusedAnalysis} /> : <Header hideCopilotToggle={focusedAnalysis} />}
         <div className={classNames(styles.body, !showCopilot && styles.aiCopilotClosed)}>
           <main className={styles.main}>
             <BetaRouteBanner />

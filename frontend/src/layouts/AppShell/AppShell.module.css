@@ -25,3 +25,11 @@
     box-shadow: -14px 0 32px var(--color-shadow);
   }
 }
+
+@supports (height: 100dvh) { .shell { height: 100dvh; } }
+@media (max-width: 760px) {
+  .shell, .shell.sidebarUnpinned { grid-template-columns: minmax(0, 1fr); }
+  .workspace { grid-template-rows: auto minmax(0, 1fr); }
+  .main { scrollbar-gutter: auto; overscroll-behavior-y: auto; padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .body > aside { width: 100%; }
+}

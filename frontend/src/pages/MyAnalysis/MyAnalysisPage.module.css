@@ -52,3 +52,16 @@
 @media(max-width:700px) { .page[data-asset="crypto"] .header { display:flex; flex-wrap:wrap; } .page[data-asset="crypto"] .mode > span { display:none; } }
 .researchJourney { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 20px 24px; border: 1px solid #dce5f6; background: linear-gradient(110deg, #eef3ff, #fff); border-radius: 14px; }
 .researchJourney > div { display: grid; gap: 6px; flex: 1; min-width: 200px; }.researchJourney span { font-size: 9px; letter-spacing: .14em; color: var(--color-accent); font-weight: 700; }.researchJourney b { font-size: 15px; }.researchJourney small { font-size: 10px; color: var(--color-text-muted); }.researchJourney a { text-decoration: none; font-size: 12px; border: 1px solid #d5dff5; background: white; border-radius: 8px; padding: 11px 14px; color: var(--color-accent); }
+
+@media(max-width:600px) {
+  .page { padding: 16px 12px; grid-template-columns: minmax(0, 1fr); }
+  .page > *, .page label, .header > div, .searchPanel input { min-width: 0; }
+  .header { grid-template-columns: minmax(0, 1fr); padding: 18px; }
+  .header h1 { font-size: 25px; overflow-wrap: anywhere; }
+  .mode { white-space: normal; flex-wrap: wrap; }.mode button { max-width: 100%; }
+  .searchMeta, .analysisHeading { flex-wrap: wrap; overflow-wrap: anywhere; }
+  .results button { grid-template-columns: minmax(0, 1fr); }
+  .page[data-asset="crypto"] .instrumentHeader { grid-template-columns: minmax(0, 1fr); }
+  .page[data-asset="crypto"] .quote { text-align: left; }
+  .researchJourney { padding: 16px; }.researchJourney > div { min-width: 0; }
+}

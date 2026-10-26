@@ -239,3 +239,14 @@
   .navGroups button b { font-size: 13px; word-break: keep-all; line-height: 1.5; }
   .navGroups button span { display: none; }
 }
+
+@media (max-width: 600px) {
+  .page { padding: 16px 12px; gap: 16px; }
+  .page :is(p, label, summary) { overflow-wrap: anywhere; }
+  .page .sources { grid-template-columns: minmax(0, 1fr); }
+  .page .toolbar { flex-wrap: wrap; }
+  .page :is(h1, h2, h3) { word-break: keep-all; overflow-wrap: anywhere; }
+  .page .panel { padding: 16px; }
+  .page :is(th, td) { font-size: 13px; }
+  .page .chart svg { min-height: 160px; }
+}
