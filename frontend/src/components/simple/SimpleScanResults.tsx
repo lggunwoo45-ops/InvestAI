@@ -35,7 +35,7 @@ export function SimpleScanResults({ results, now, venue, onVenue, status, progre
     </div>
     {selected.length === 0 && <div className={styles.empty}>
       <h2>{ko ? status === 'idle' ? '무엇을 살지 막막하다면' : running ? '조건이 맞는 종목부터 보여드릴게요' : status === 'error' || disabled ? '지금은 후보를 확인할 수 없어요' : '지금은 새 후보를 제시하지 않을게요' : status === 'idle' ? 'Start with a small shortlist' : running ? 'Qualifying assets will appear here' : status === 'error' || disabled ? 'Candidates are unavailable' : 'No new candidates to suggest right now'}</h2>
-      <p>{ko ? status === 'idle' ? '한 번 눌러 가격 흐름, 거래량, 주의할 가격을 함께 확인하세요. 마음에 드는 종목은 현재 분석에서 다시 살펴볼 수 있어요.' : pendingData > 0 ? `${pendingData}개는 자료가 부족하거나 오래됐어요. 나머지에서도 모든 조건을 충족한 후보가 없어요. 후보가 없다는 것이 시장 전체의 하락 신호는 아니에요.` : '상승 흐름·거래량·가격 구간·위험 조건을 함께 확인해요. 조건을 충족하지 않으면 억지로 종목을 채우지 않아요.' : 'Candidates need a fresh upward trend, sufficient trading activity and a suitable price plan. An empty list is not a market-wide sell signal.'}</p>
+      <p>{ko ? status === 'idle' ? '한 번 눌러 가격 흐름, 거래량, 주의할 가격을 함께 확인하세요. 마음에 드는 종목은 현재 분석에서 다시 살펴볼 수 있어요.' : running ? '지금까지 확인한 종목에서는 아직 후보를 찾지 못했어요. 다른 종목도 확인하고 있으니 잠시 기다려주세요.' : pendingData > 0 ? `${pendingData}개는 자료가 부족하거나 오래됐어요. 확인한 나머지 결과에도 모든 조건을 충족한 후보가 없어요. 후보가 없다는 것이 시장 전체의 하락 신호는 아니에요.` : '상승 흐름·거래량·가격 구간·위험 조건을 함께 확인해요. 조건을 충족하지 않으면 억지로 종목을 채우지 않아요.' : 'Candidates need a fresh upward trend, sufficient trading activity and a suitable price plan. An empty list is not a market-wide sell signal.'}</p>
     </div>}
     <div className={styles.cards}>{selected.map(result => {
       const { instrument, decision, analyzedAt } = result
