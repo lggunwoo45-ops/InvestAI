@@ -185,6 +185,7 @@ export const CandlestickChart = memo(function CandlestickChart({ candles, instru
     }))
     const dataKey = `${instrument.id}:${timeframe}`
     const previous = previousCandlesRef.current
+    const firstData = dataKeyRef.current !== dataKey || previous.length === 0
     // REST refreshes can correct older bars; update(last) would leave cached history on screen.
     const incremental = previous.length > 0 && (candles.length === previous.length || candles.length === previous.length + 1)
       && previous.slice(0, -1).every((candle, index) => candle === candles[index])
@@ -193,7 +194,7 @@ export const CandlestickChart = memo(function CandlestickChart({ candles, instru
     if (dataKeyRef.current !== dataKey || !incremental) {
       candleSeriesRef.current?.setData(candleData)
       volumeSeriesRef.current?.setData(volumeData)
-      if (candleData.length > 0 && dataKeyRef.current !== dataKey) {
+      if (candleData.length > 0 && firstData) {
         if (compact) chartRef.current?.timeScale().setVisibleLogicalRange({ from: Math.max(0, candleData.length - 45), to: candleData.length + 2 })
         else chartRef.current?.timeScale().fitContent()
       }

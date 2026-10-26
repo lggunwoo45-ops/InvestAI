@@ -53,7 +53,9 @@ const technicalAnalysis = buildTechnicalLevelAnalysis({ instrument, candles, lan
 describe('CandlestickChart chart overlays', () => {
   it('leaves vertical touch scrolling to the page and preserves the phone zoom when history refreshes', () => {
     chartMock.viewport.compact = true
-    const { rerender } = render(<LanguageProvider><CandlestickChart candles={candles} instrument={instrument} timeframe="1H" mode="live" technicalAnalysis={technicalAnalysis} /></LanguageProvider>)
+    const { rerender } = render(<LanguageProvider><CandlestickChart candles={[]} instrument={instrument} timeframe="1H" mode="live" technicalAnalysis={technicalAnalysis} /></LanguageProvider>)
+    expect(chartMock.setVisibleLogicalRange).not.toHaveBeenCalled()
+    rerender(<LanguageProvider><CandlestickChart candles={candles} instrument={instrument} timeframe="1H" mode="live" technicalAnalysis={technicalAnalysis} /></LanguageProvider>)
     expect(chartMock.createChart.mock.lastCall?.[1]).toMatchObject({ layout: { fontSize: 12 }, handleScroll: { vertTouchDrag: false, horzTouchDrag: true } })
     expect(chartMock.setVisibleLogicalRange).toHaveBeenCalledWith({ from: 15, to: 62 })
     rerender(<LanguageProvider><CandlestickChart candles={candles.map(c => ({ ...c }))} instrument={instrument} timeframe="1H" mode="live" technicalAnalysis={technicalAnalysis} /></LanguageProvider>)
