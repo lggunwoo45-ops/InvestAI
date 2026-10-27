@@ -1,0 +1,57 @@
+import { act, cleanup, renderHook } from '@testing-library/react'
+import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import { fetchResearch } from '@/services/research/researchClient'
+import type { ResearchSnapshot } from '@/services/research/researchModel'
+import { useResearchSnapshot } from './useResearchSnapshot'
+vi.mock('@/services/research/researchClient', () => ({ fetchResearch: vi.fn() }))
+const snapshot = (asset = 'BTC'): ResearchSnapshot => ({ version: 1, asset, symbol: asset + 'USDT', fetchedAt: Date.now(), sources: {} })
+beforeEach(() => { vi.useFakeTimers(); vi.mocked(fetchResearch).mockReset(); vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('visible') })
+afterEach(() => { cleanup(); vi.useRealTimers(); vi.restoreAllMocks() })
+it('refreshes every minute without dropping the last snapshot or overlapping requests', async () => {
+  const first = snapshot()
+  vi.mocked(fetchResearch).mockResolvedValueOnce(first)
+  const view = renderHook(() => useResearchSnapshot('BTC', 0, true))
+  await act(async () => {})
+  expect(fetchResearch).toHaveBeenCalledTimes(1)
+  let finish!: (value: ResearchSnapshot) => void
+  vi.mocked(fetchResearch).mockImplementationOnce(() => new Promise(resolve => { finish = resolve }))
+  await act(async () => { vi.advanceTimersByTime(60_000) })
+  expect(view.result.current.loading).toBe(true)
+  expect(view.result.current.snapshot).toBe(first)
+  await act(async () => { vi.advanceTimersByTime(60_000) })
+  expect(fetchResearch).toHaveBeenCalledTimes(2)
+  const next = snapshot()
+  await act(async () => { finish(next) })
+  expect(view.result.current.snapshot).toBe(next)
+})
+it('pauses background requests, resumes on visibility, and respects manual pause', async () => {
+  vi.mocked(fetchResearch).mockImplementation(async asset => snapshot(asset))
+  const view = renderHook(({ auto }) => useResearchSnapshot('BTC', 0, auto), { initialProps: { auto: true } })
+  await act(async () => {})
+  vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden')
+  await act(async () => { vi.advanceTimersByTime(180_000) })
+  expect(fetchResearch).toHaveBeenCalledTimes(1)
+  vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('visible')
+  await act(async () => { document.dispatchEvent(new Event('visibilitychange')) })
+  expect(fetchResearch).toHaveBeenCalledTimes(2)
+  view.rerender({ auto: false })
+  await act(async () => { vi.advanceTimersByTime(120_000); window.dispatchEvent(new Event('online')) })
+  expect(fetchResearch).toHaveBeenCalledTimes(2)
+})
+it('keeps same-asset observations on failure but never shows an old asset or late aborted response', async () => {
+  const first = snapshot()
+  vi.mocked(fetchResearch).mockResolvedValueOnce(first).mockRejectedValueOnce(new Error('provider failed'))
+  const view = renderHook(({ asset, revision }) => useResearchSnapshot(asset, revision, true), { initialProps: { asset: 'BTC', revision: 0 } })
+  await act(async () => {})
+  await act(async () => { vi.advanceTimersByTime(60_000) })
+  expect(view.result.current.snapshot).toBe(first)
+  expect(view.result.current.error).toBe('provider failed')
+  let finish!: (value: ResearchSnapshot) => void
+  vi.mocked(fetchResearch).mockImplementationOnce(() => new Promise(resolve => { finish = resolve })).mockResolvedValueOnce(snapshot('SOL'))
+  view.rerender({ asset: 'ETH', revision: 0 })
+  expect(view.result.current.snapshot).toBeNull()
+  view.rerender({ asset: 'SOL', revision: 0 })
+  await act(async () => {})
+  await act(async () => { finish(snapshot('ETH')) })
+  expect(view.result.current.snapshot?.asset).toBe('SOL')
+})

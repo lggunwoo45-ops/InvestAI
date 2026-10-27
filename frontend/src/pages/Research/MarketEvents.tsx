@@ -1,3 +1,4 @@
+import { ResearchHelp } from './ResearchHelp'
 import { useCallback, useEffect, useState } from 'react'
 import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
 import { researchNow } from '@/services/research/researchClock'
@@ -45,6 +46,7 @@ export function LiquidationPanel({ asset }: { asset: string }) {
   return <section className={styles.panel} aria-labelledby="liquidation-title">
     <header className={styles.header}><div><span className={styles.eyebrow}>BYBIT · {asset} / USDT</span><h2 id="liquidation-title">{simple ? '강제로 끝난 선물 거래가 있나요?' : '실시간 청산 관측'}</h2></div><span className={live ? styles.live : styles.waiting}>{status}</span></header>
     <p className={styles.intro}>{simple ? '맡긴 돈이 부족해 거래소가 포지션을 강제로 정리한 기록이에요. 상승에 건 롱과 하락에 건 숏을 나눠 볼 수 있어요.' : 'Bybit USDT 선형 선물 공개 스트림 · 서버에서 받은 청산 기록을 10초마다 갱신합니다.'}</p>
+    <ResearchHelp topic="liquidations" />
     {error && <p role="status" className={styles.notice}>{error}</p>}
     <div className={styles.toolbar}><div className={styles.segments} role="group" aria-label="청산 관측 구간">{[1, 5, 15].map(n => <button key={n} aria-pressed={n === minutes} onClick={() => setMinutes(n)}>최근 {n}분</button>)}</div><button disabled={loading} onClick={refresh}>청산 다시 확인</button></div>
     {!observed || !window ? <div className={styles.empty}><strong>{error ? '청산 기록을 확인할 수 없어요' : '거래소 연결을 확인하고 있어요'}</strong><p>연결이 확인되면 관측한 기록을 표시합니다.</p></div> : <>
@@ -75,6 +77,7 @@ export function EconomicCalendarPanel() {
     <p className={styles.intro}>{simple ? '주요 물가·고용 발표와 미국 금리 회의를 모았어요. 앞으로 30일 중 가까운 일정부터 보여드려요.' : 'BLS 발표 일정과 FOMC 회의 일정 · 발표 시각은 한국 시간(KST), 회의일은 미국 동부 기준입니다.'}</p>
     {saved && <p className={styles.caption}>물가·고용 일정은 <a href={nyFedCalendarLink} target="_blank" rel="noreferrer">뉴욕 연준 경제 일정</a>에 게시된 BLS 주요 7종을 기준으로 합니다. {coverageDate}까지 공개된 월별 일정을 확인했으며, 이후 일정은 아직 포함하지 않습니다.</p>}
     {error && <p role="status" className={styles.notice}>{error}</p>}
+    <ResearchHelp topic="events" />
     {data && stale && <p className={styles.notice}>일부 일정의 최신 상태를 확인하지 못했습니다. 마지막 확인 자료는 변경됐을 수 있으니 공식 일정을 확인해주세요.</p>}
     {!simple && <div className={styles.toolbar}><label>조회 기간 <select value={days} onChange={e => setDays(Number(e.target.value))}><option value={7}>앞으로 7일</option><option value={30}>앞으로 30일</option><option value={90}>앞으로 90일</option></select></label><label>발표 기관 <select value={source} onChange={e => setSource(e.target.value)}><option value="all">전체 기관</option><option value="bls">BLS · 물가·고용</option><option value="fed">FOMC · 금리 회의</option></select></label></div>}
     {!data ? <p className={styles.empty}>{loading ? '공식 일정을 불러오고 있어요.' : '공식 일정을 확인할 수 없습니다.'}</p> : !events.length ? <p className={styles.empty}>{data.sources.some(s => s.status === 'unavailable') ? '불러오지 못한 기관이 있어 일정이 비어 있을 수 있습니다.' : '선택한 기간에 공식 자료에서 확인된 일정이 없습니다.'}</p> : simple ? <><ol className={styles.agenda}>{events.slice(0, expanded ? 50 : 3).map(e => <li key={e.id}><span className={styles.sourceTag}>{e.source === 'fed' ? '금리 회의' : '물가·고용'}{data.sources.find(s => s.id === e.source)?.status === 'stale' ? ' · 이전 자료' : ''}</span><h3>{e.title}</h3><p>{eventTime(e)}</p>{e.at === null && <small>발표 시각은 공식 일정에 제공되지 않았어요.</small>}</li>)}</ol>{events.length > 3 && <button onClick={() => setExpanded(v => !v)}>{expanded ? '가까운 일정만 보기' : `30일 일정 ${events.length}개 보기`}</button>}</> : <div className={styles.tableWrap}><table><caption>예정된 발표·회의 · 일정은 변경될 수 있습니다</caption><thead><tr><th>일시</th><th>일정</th><th>기관</th></tr></thead><tbody>{events.map(e => <tr key={e.id}><td>{eventTime(e)}{e.at === null && <small className={styles.block}>발표 시각 미제공</small>}</td><td>{e.title}</td><td>{e.source === 'fed' ? 'FOMC' : 'BLS'}{data.sources.find(s => s.id === e.source)?.status === 'stale' && ' · 이전 자료'}</td></tr>)}</tbody></table></div>}

@@ -1,3 +1,4 @@
+import { ResearchHelp } from './ResearchHelp'
 import { useRef, useState } from 'react'
 import { researchBase } from '@/services/research/researchClient'
 import { array, numeric, object } from '@/services/research/researchModel'
@@ -8,6 +9,7 @@ export function PublicWallet() {
   const clear = () => { generation.current++; setResult(null); setMessage(''); setLoading(false) }
   const format = (v: unknown) => numeric(v) === null ? '미제공' : Number(v).toLocaleString('ko-KR', { maximumFractionDigits: 6 })
   return <section className={styles.subpanel}><h3>Hyperliquid 공개 포지션 조회</h3><p>입력한 공개 주소를 Hyperliquid 정보 API에 전달해 현재 포지션을 읽습니다. 주소와 결과는 저장하지 않습니다. 개인 키·지갑 연결은 필요하지 않습니다.</p>
+    <ResearchHelp topic="connections" />
     <form onSubmit={async e => {
       e.preventDefault()
       if (!/^0x[0-9a-fA-F]{40}$/.test(address.trim())) { setMessage('0x로 시작하는 42자리 공개 주소를 입력해주세요.'); return }

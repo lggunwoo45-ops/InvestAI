@@ -12,21 +12,34 @@ export function providerNow(snapshot: ResearchSnapshot | null, key: string, now:
   return source && typeof source.serverTime === 'number' && Number.isFinite(source.serverTime) && typeof source.receivedAt === 'number'
     ? source.serverTime + Math.max(0, source.ageMs ?? 0) + Math.max(0, now - source.receivedAt) : now
 }
-export function sourceData(snapshot: ResearchSnapshot | null, key: string, now = Date.now()): unknown {
+export type ResearchSourceState = 'ready' | 'missing' | 'unavailable' | 'expired' | 'timeInvalid' | 'providerDelayed' | 'empty'
+/** The diagnostic and calculation gates share exactly the same freshness rules. */
+export function researchSourceState(snapshot: ResearchSnapshot | null, key: string, now = Date.now()): ResearchSourceState {
   const source = snapshot?.sources[key]
+  if (!source) return 'missing'
+  if (source.status !== 'available') return 'unavailable'
+  if (!Number.isFinite(source.receivedAt) || !Number.isFinite(now)) return 'timeInvalid'
   const age = now - (source?.receivedAt ?? 0)
-  if (source?.status !== 'available' || age < 0 || age > (['global', 'sentiment'].includes(key) ? 1_200_000 : 180_000)) return null
+  if (age < 0) return 'timeInvalid'
+  if (age > (['global', 'sentiment'].includes(key) ? 1_200_000 : 180_000)) return 'expired'
   const data = source.data
+  if (data === null || data === undefined || Array.isArray(data) && !data.length || typeof data === 'object' && !Array.isArray(data) && !Object.keys(data).length) return 'empty'
   const clock = providerNow(snapshot, key, now)
+  if (!Number.isFinite(clock)) return 'timeInvalid'
   const providerAt = ['mark', 'interest'].includes(key) ? numeric(object(data).time)
     : ['spot', 'futures'].includes(key) ? numeric(object(data).closeTime)
       : ['ratios', 'taker', 'interestHistory'].includes(key) ? numeric(object(array(data).at(-1)).timestamp) : undefined
-  if (providerAt !== undefined && (providerAt === null || clock - providerAt < -5000 || clock - providerAt > (['ratios', 'taker', 'interestHistory'].includes(key) ? 7_200_000 : 180_000))) return null
+  if (providerAt !== undefined && (providerAt === null || clock - providerAt < -5000)) return 'timeInvalid'
+  if (providerAt !== undefined && clock - providerAt! > (['ratios', 'taker', 'interestHistory'].includes(key) ? 7_200_000 : 180_000)) return 'providerDelayed'
   if (key === 'candles') {
     const latest = closedCandles(data, clock).at(-1)
-    if (!latest || clock - latest.timestamp > 7_200_000) return null
+    if (!latest) return 'empty'
+    if (clock - latest.timestamp > 7_200_000) return 'providerDelayed'
   }
-  return data
+  return 'ready'
+}
+export function sourceData(snapshot: ResearchSnapshot | null, key: string, now = Date.now()): unknown {
+  return researchSourceState(snapshot, key, now) === 'ready' ? snapshot!.sources[key].data : null
 }
 export function observedFundingInterval(snapshot: ResearchSnapshot | null, now: number): number | null {
   const info = array(sourceData(snapshot, 'fundingInfo', now)).map(object).find(row => row.symbol === snapshot?.symbol)

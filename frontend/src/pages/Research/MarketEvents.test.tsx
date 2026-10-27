@@ -19,7 +19,7 @@ it('simple mode explains observed notional and incomplete coverage without a raw
   render(<LiquidationPanel asset="BTC" />)
   expect(await screen.findByText('상승에 건 거래 · 롱')).toBeTruthy()
   expect(screen.getByText(/일부 구간만 관측/)).toBeTruthy()
-  expect(screen.getByText(/실제 체결금액과 다를/)).toBeTruthy()
+  expect(screen.getAllByText(/실제 체결금액과 다를/).length).toBeGreaterThan(0)
   expect(screen.queryByRole('table')).toBeNull()
   fireEvent.click(screen.getByRole('button', { name: '최근 15분' }))
   expect(screen.getByText('최근 15분 동안 관측한 BTC 청산')).toBeTruthy()

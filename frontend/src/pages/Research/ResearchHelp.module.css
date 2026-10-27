@@ -1,0 +1,15 @@
+.help { min-width:0; font-size:13px; line-height:1.75; overflow-wrap:anywhere; }
+.help .intro { margin:0 0 8px; color:var(--color-text-secondary); }
+.help details { margin:8px 0 0; padding:10px 0; border-top:1px solid var(--color-border); }
+.help summary { color:var(--color-accent); cursor:pointer; font-size:13px; }
+.help summary:focus-visible { outline:2px solid var(--color-accent); outline-offset:4px; }
+.help dl { margin:12px 0 0; display:grid; gap:12px; }
+.help dt { font-weight:650; color:var(--color-text-primary); }
+.help dd { margin:3px 0 0; color:var(--color-text-secondary); }
+.library { min-width:0; padding:22px; border:1px solid var(--color-border); border-radius:16px; background:var(--color-surface); }
+.library > h2 { margin:0; }
+.library > label { display:grid; gap:8px; max-width:460px; }
+.libraryGrid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin-top:20px; }
+.libraryGrid article { min-width:0; padding:18px; border:1px solid var(--color-border); border-radius:12px; }
+.libraryGrid h3 { margin:0 0 8px; font-size:16px; }
+@media(max-width:700px) { .libraryGrid { grid-template-columns:1fr; } .library { padding:16px; } }

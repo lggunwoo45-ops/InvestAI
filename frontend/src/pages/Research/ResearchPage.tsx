@@ -6,9 +6,13 @@ import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
 import { useWatchlists } from '@/hooks/useWatchlists'
 import { useMarketWorkspace } from '@/hooks/useMarketWorkspace'
 import { itemFromInstrument } from '@/services/watchlist/watchlistStorage'
-import { fetchResearch } from '@/services/research/researchClient'
+import { useResearchSnapshot } from '@/hooks/useResearchSnapshot'
+import { ResearchHelp, ResearchGuideLibrary } from './ResearchHelp'
+import { modeGuides } from './researchGuides'
+import { ResearchDataStatus } from './ResearchDataStatus'
+import { MarketIndicatorCards } from './MarketIndicatorCards'
 import { researchNow } from '@/services/research/researchClock'
-import { array, candleSignals, closedCandles, kimchiPremium, numeric, object, observedFundingInterval, percentile, positionRisk, providerNow, researchAssets, signalLabels, sourceData, volatilitySummary, type ResearchSnapshot, type Signal } from '@/services/research/researchModel'
+import { array, candleSignals, closedCandles, kimchiPremium, numeric, object, observedFundingInterval, positionRisk, providerNow, researchAssets, signalLabels, sourceData, volatilitySummary, type ResearchSnapshot, type Signal } from '@/services/research/researchModel'
 import { readJournalDraft, readObservations, saveJournalDraft, saveObservation, type ResearchObservation } from '@/services/research/researchJournal'
 import type { Candle } from '@/types/marketDetail'
 import styles from './ResearchPage.module.css'
@@ -19,7 +23,6 @@ import { PremiumTable } from './PremiumTable'
 import { PublicWallet } from './PublicWallet'
 import { PositionConnections } from './PositionConnections'
 import { ResearchNews } from './ResearchNews'
-import { MarketStructure } from './MarketStructure'
 import { MonitorWorkspace } from './MonitorWorkspace'
 import { researchModes as modes, type ResearchMode as Mode } from './researchExperience'
 import { SimpleCoinCheck, SimpleMarketSummary, SimpleResearchNav, SimpleToolIntro } from './SimpleResearch'
@@ -156,36 +159,12 @@ function Premium({ snapshot, asset, now }: { snapshot: ResearchSnapshot | null; 
 
 function Indicators({ snapshot, candles, now, asset }: { snapshot: ResearchSnapshot | null; candles: readonly Candle[]; now: number; asset: string }) {
   const simple = useDisplayMode().displayMode === 'simple'
-  const global = object(object(sourceData(snapshot, 'global', now)).data), caps = object(global.market_cap_percentage)
-  const sentiment = object(array(object(sourceData(snapshot, 'sentiment', now)).data)[0])
-  const sentimentAt = numeric(sentiment.timestamp), sentimentFresh = sentimentAt !== null && now - sentimentAt * 1000 >= 0 && now - sentimentAt * 1000 < 172_800_000
-  const globalAt = numeric(global.updated_at), globalFresh = globalAt !== null && now - globalAt * 1000 >= 0 && now - globalAt * 1000 < 3_600_000
-  const interest = sourceData(snapshot, 'interest', now), ratios = array(sourceData(snapshot, 'ratios', now)).map(object), taker = array(sourceData(snapshot, 'taker', now)).map(object)
-  const latestRatio = ratios.at(-1), latestTaker = taker.at(-1), funding = array(sourceData(snapshot, 'fundingHistory', now)).map(object)
-  const fundingValues = funding.flatMap(r => { const n = numeric(r.fundingRate); return n === null ? [] : [n] })
-  const fundingPct = fundingValues.length ? percentile(fundingValues, fundingValues.at(-1)!) : null
-  const vol = volatilitySummary(candles), usdt = numeric(caps.usdt), usdc = numeric(caps.usdc)
-  const allIndicators = <section className={styles.panel}><h2>시장 지표·파생상품 컨디션</h2><div className={styles.metrics}>
-    <Metric title="공포·탐욕" value={sentimentFresh ? format(numeric(sentiment.value), 0) : '확인 불가'} detail={<>Alternative.me · {sentimentFresh ? String(sentiment.value_classification ?? '') : '발행 시각 확인 필요'}<br /><a href="https://alternative.me/crypto/fear-and-greed-index/" target="_blank" rel="noreferrer">출처·방법론</a></>} />
-    <Metric title="BTC 도미넌스" value={globalFresh ? percent(numeric(caps.btc)) : '확인 불가'} detail="CoinGecko · 전체 시가총액 대비" /><Metric title="ETH 도미넌스" value={globalFresh ? percent(numeric(caps.eth)) : '확인 불가'} detail="CoinGecko · 전체 시가총액 대비" />
-    <Metric title="USDT + USDC 비중" value={globalFresh && usdt !== null && usdc !== null ? percent(usdt + usdc) : '확인 불가'} detail="두 코인 합산 · 모든 스테이블코인 비중은 아님" />
-    <Metric title="미결제약정 (기초자산 수량)" value={format(field(interest, 'openInterest'))} detail={`Binance · ${time(field(interest, 'time'))}`} /><Metric title="롱/숏 계정 비율" value={format(numeric(latestRatio?.longShortRatio), 3)} detail="Binance 계정 수 기준 · 포지션 금액 비율 아님" />
-    <Metric title="테이커 매수/매도량 비율" value={format(numeric(latestTaker?.buySellRatio), 3)} detail="Binance 선물 · 최근 1시간 집계" /><Metric title="최근 확정 펀딩 백분위" value={percent(fundingPct)} detail={`최근 ${fundingValues.length}회 중 위치 · 1년 과열도 아님`} />
-    <Metric title="최근 실현 시간 변동성" value={percent(vol?.hourly)} detail="완결 24개 시간 수익률의 표준편차" /><Metric title="일간 환산 변동성" value={percent(vol?.daily)} detail="시간 변동성 × √24 · 방향·예상 범위 보장 아님" />
-  </div><MarketStructure snapshot={snapshot} now={now} /><h3>펀딩 이력</h3><div className={styles.tableWrap}><table><caption>최근 확정 펀딩 10회 · Binance</caption><thead><tr><th>정산 시각</th><th>확정 펀딩률</th></tr></thead><tbody>{funding.slice(-10).reverse().map((r, i) => <tr key={i}><td>{time(numeric(r.fundingTime))}</td><td>{percent(numeric(r.fundingRate) === null ? null : Number(r.fundingRate) * 100)}</td></tr>)}</tbody></table></div>
-    <p>ETF 순유입 자동 수집과 1년 분포 기반 종합 과열도는 검증된 데이터 공급원이 아직 연결되지 않았습니다. 임의 수치는 표시하지 않습니다.</p>
-
-  </section>
   return <SimpleTasks all={!simple} label="어떤 시장 흐름이 궁금하세요?" tasks={[
-    { id: 'mood', title: '지금 시장 분위기', description: '심리와 비트코인 비중', content: simple ? <section className={styles.panel}><h2>숫자가 말해주는 시장의 모습</h2><div className={styles.metrics}>
-    <Metric title="전체 코인 시장의 심리" value={sentimentFresh ? format(numeric(sentiment.value), 0) + ' / 100' : '자료 확인 필요'} detail="공포·탐욕 지수예요. 숫자가 낮을수록 공포, 높을수록 탐욕에 가까워요. 이 종목만의 심리는 아니에요." />
-    <Metric title="전체 시장 중 비트코인 비중" value={globalFresh ? percent(numeric(caps.btc)) : '자료 확인 필요'} detail="전체 코인 시가총액에서 비트코인이 차지하는 몫이에요. 가격이 오를지 알려주는 확률은 아니에요." />
-    <Metric title="상승·하락에 포지션을 둔 계정 비율" value={numeric(latestRatio?.longShortRatio) === null ? '자료 확인 필요' : format(numeric(latestRatio?.longShortRatio), 3) + '배'} detail="롱 계정 수를 숏 계정 수로 나눈 값이에요. 1보다 크면 롱 계정이 더 많아요. 투자 금액 비율은 아니에요." />
-  </div><p className={styles.caption}>각 지표는 서로 다른 시각과 범위를 다뤄요. 최근 자료가 없으면 설명을 위한 숫자를 만들지 않아요.</p></section> : allIndicators },
+    { id: 'mood', title: '지금 시장 분위기', description: '심리와 비트코인 비중', content: <MarketIndicatorCards snapshot={snapshot} candles={candles} now={now} simple={simple} /> },
     { id: 'history', title: '며칠 동안의 변화', description: '계약과 보유 비용', content: <DerivativeHistory key={`history-${asset}`} asset={asset} /> },
     { id: 'events', title: '다가오는 일정', description: '가격이 흔들릴 수 있는 날', content: <EconomicCalendarPanel /> },
     { id: 'liquidations', title: '강제 정리된 포지션', description: '최근 관측한 청산', content: <LiquidationPanel key={asset} asset={asset} /> },
-    { id: 'etf', title: 'ETF 수급 기록', description: '확정 자료를 직접 합산', content: <section className={styles.panel}><h2>ETF 자금이 얼마나 들어왔나요?</h2><p>자동 수집은 아직 연결되지 않았어요. 확보한 날짜별 확정 자료만 직접 합산할 수 있어요.</p><EtfLedger /></section> },
+    { id: 'etf', title: 'ETF 수급 기록', description: '확정 자료를 직접 합산', content: <section className={styles.panel}><h2>ETF 자금이 얼마나 들어왔나요?</h2><p>자동 수집은 아직 연결되지 않았어요. 확보한 날짜별 확정 자료만 직접 합산할 수 있어요.</p><ResearchHelp topic="etf" /><EtfLedger /></section> },
   ]} />
 
 
@@ -274,22 +253,12 @@ export function ResearchPage() {
   const requestedMode = params.get('mode'), mode: Mode = requestedMode === 'check' && simple ? 'check' : modes.some(([key]) => key === requestedMode) ? requestedMode as Mode : 'overview'
   const requestedAsset = params.get('asset'), asset = researchAssets.some(a => a === requestedAsset) ? requestedAsset! : 'BTC'
   const [revision, setRevision] = useState(0), [clientNow, setNow] = useState(Date.now)
-  const requestKey = `${asset}:${revision}`
-  const [request, setRequest] = useState<{ key: string; snapshot: ResearchSnapshot | null; error: string }>({ key: '', snapshot: null, error: '' })
-  const loading = request.key !== requestKey
-  const snapshot = request.key === requestKey ? request.snapshot : null
-  const error = request.key === requestKey ? request.error : ''
-  const [auto, setAuto] = useState(false), [message, setMessage] = useState('')
+  const [auto, setAuto] = useState(true), [message, setMessage] = useState('')
+  const { snapshot, loading, error, checkedAt } = useResearchSnapshot(asset, revision, auto)
   const { addToWatchlist, isWatchlisted } = useWatchlists(), { selectInstrument } = useMarketWorkspace()
   useEffect(() => { const timer = window.setInterval(() => setNow(Date.now()), 30_000); return () => clearInterval(timer) }, [])
-  useEffect(() => { if (!auto) return; const timer = window.setInterval(() => setRevision(v => v + 1), 60_000); return () => clearInterval(timer) }, [auto])
-  useEffect(() => {
-    const controller = new AbortController()
-    fetchResearch(asset, controller.signal).then(result => { if (!controller.signal.aborted) { setRequest({ key: requestKey, snapshot: result, error: '' }); setNow(Date.now()) } }).catch(reason => { if (!controller.signal.aborted) setRequest({ key: requestKey, snapshot: null, error: reason instanceof Error ? reason.message : '자료를 불러오지 못했습니다.' }) })
-    return () => controller.abort()
-  }, [asset, requestKey])
   const visible = snapshot?.asset === asset ? snapshot : null
-  const now = researchNow(visible, clientNow)
+  const now = researchNow(visible, Math.max(clientNow, checkedAt))
   const candles = useMemo(() => closedCandles(sourceData(visible, 'candles', now), providerNow(visible, 'candles', now)), [visible, now])
   const markData = sourceData(visible, 'mark', now), markAt = field(markData, 'time')
   const markFresh = markData !== null && markAt !== null
@@ -309,12 +278,14 @@ export function ResearchPage() {
   }
   return <div className={[styles.page, simple ? styles.simplePage : styles.expertPage].join(' ')} data-research-experience={displayMode}>
     <header className={styles.workspaceHeader}><div className={styles.heading}><span>{simple ? '한 번에 하나씩, 쉽게 살펴보세요' : 'INVESTAI · RESEARCH WORKSPACE'}</span><h1>{simple ? (language === 'ko' ? '시장·기록' : 'Market & Reviews') : (language === 'ko' ? '시장·리스크 연구실' : 'Market & Risk Lab')}</h1>{!simple && <p>시장 지표와 거래 조건을 분석하고, 검토 근거를 비교합니다.</p>}</div><div className={styles.headerActions}><label>{simple ? '살펴볼 코인' : '검토 종목'}<select aria-label="검토 종목" value={asset} onChange={e => { setParams({ asset: e.target.value, mode }); setMessage('') }}>{researchAssets.map(a => <option key={a}>{a}</option>)}</select></label><button disabled={loading} onClick={() => setRevision(v => v + 1)}>{loading ? '확인 중…' : '↻ 새로고침'}</button></div></header>
-    {!simple && <div className={styles.expertControls}><label className={styles.check}><input type="checkbox" checked={auto} onChange={e => setAuto(e.target.checked)} />열린 동안 1분마다 갱신</label><small>마지막 확인: {time(visible?.fetchedAt)}</small><button onClick={() => setDisplayMode('simple')}>쉬운 설명으로 보기</button></div>}
+    {!simple && <div className={styles.expertControls}><label className={styles.check}><input type="checkbox" checked={auto} onChange={e => setAuto(e.target.checked)} />화면을 보는 동안 1분마다 갱신</label><small>마지막 확인: {time(visible?.fetchedAt)}</small><button onClick={() => setDisplayMode('simple')}>쉬운 설명으로 보기</button></div>}
     {error && !['setups', 'position'].includes(mode) && <p className={styles.notice} role="alert">{simple ? '지금 시장 자료를 불러오지 못했어요. 새로고침으로 다시 확인해주세요. 저장한 기록과 직접 입력 계산은 계속 사용할 수 있어요.' : error}</p>}
     {delayedMark && !['setups', 'position'].includes(mode) && <p className={styles.notice} role="status">{simple ? '가격 자료가 오래되어 비교와 새 기록 저장을 잠시 멈췄어요. 새로고침 후 다시 확인해주세요.' : '마크가격 관측 시각: ' + time(rawMarkAt) + '. 갱신이 필요해 현재가 채우기와 검토 저장을 제한했습니다.'}</p>}
     {simple ? <SimpleResearchNav mode={mode} onMode={setMode} /> : <ExpertResearchNav mode={mode} onMode={setMode} />}
     {simple && <SimpleToolIntro mode={mode} onBack={() => setMode('check')} />}
     {simple && ['journal', 'alerts'].includes(mode) && <nav className={styles.recordNav} aria-label="기록과 가격 알림"><button aria-current={mode === 'journal' ? 'page' : undefined} onClick={() => setMode('journal')}>생각 기록</button><button aria-current={mode === 'alerts' ? 'page' : undefined} onClick={() => setMode('alerts')}>가격 알림</button></nav>}
+    {!['guide', 'check'].includes(mode) && <ResearchHelp key={mode} topic={modeGuides[mode]} intro />}
+    {!['guide', 'check', 'setups'].includes(mode) && <ResearchDataStatus snapshot={visible} now={now} loading={loading} error={error} auto={auto} onAuto={() => setAuto(true)} onRefresh={() => setRevision(v => v + 1)} />}
     {mode === 'check' && <SimpleCoinCheck asset={asset} onMode={setMode} />}
     {mode === 'overview' && simple && <SimpleMarketSummary asset={asset} price={mark} at={markAt} candles={candles} loading={loading} onMode={setMode} onWatch={openMarket} watchlisted={isWatchlisted('upbit-' + asset.toLowerCase())} canWatch={!!visible} message={message} />}
     {mode === 'overview' && !simple && <><section className={styles.panel}><div className={styles.actions}><h2>{asset} 현재 시장 컨디션</h2><button onClick={openMarket} disabled={!visible}>{isWatchlisted(`upbit-${asset.toLowerCase()}`) ? '관심종목·분석 이어가기' : '관심종목 등록'}</button><Link to="/market">차트·뉴스로 이동</Link></div><p role="status">{message}</p><div className={styles.metrics}><Metric title="선물 마크가격" value={mark ? `${format(mark, 6)} USDT` : '확인 불가'} detail={`Binance · ${time(markAt)}`} /><Metric title="다음 정산 예상 펀딩률" value={funding === null ? '확인 불가' : percent(funding * 100)} detail={`정산 예정 ${time(field(markData, 'nextFundingTime'))}`} /><Metric title="최근 실현 시간 변동성" value={percent(vol?.hourly)} detail="최근 24개 시간 수익률 기준" /></div><Chart candles={candles} /><h3>현재 관측된 조건</h3><p>{signals.map(s => signalLabels[s]).join(' · ') || '완결된 시간봉이 부족하거나 해당 조건이 없습니다.'}</p><div className={styles.actions}><button onClick={() => setMode('position')}>내 포지션 위험 계산</button><button onClick={() => setMode('journal')}>검토 저장·이전과 비교</button></div></section></>}
@@ -336,8 +307,9 @@ export function ResearchPage() {
     ]} />}
     {mode === 'guide' && (simple ? <section className={styles.panel}><h2>세 단계로 이어서 확인하세요</h2><ol><li><b>시장 보기</b>에서 지금 가격과 최근 변화를 살펴봐요.</li><li><b>내 종목 확인</b>에서 손익·과거 흐름·가격 비교 중 궁금한 내용을 골라요.</li><li><b>기록·알림</b>에서 생각을 남기고 다시 확인할 가격을 정해요.</li></ol><p>{cloudSignedIn() ? '회원 기록은 기기 간 동기화됩니다. 서버 감시로 등록한 조건은 화면을 닫아도 확인합니다.' : '기록은 이 브라우저에 저장돼요. 브라우저 가격 알림은 해당 화면이 열려 있는 동안만 확인합니다.'}</p><button onClick={() => setMode('check')}>내 종목 확인하기</button><p>신호를 직접 조합하거나 상세 지표를 비교하려면 전문가 모드로 전환하세요. 입력한 계산 조건과 기록은 이어서 사용할 수 있어요.</p></section> : <Guide />)}
     </div>
+    {mode === 'guide' && <ResearchGuideLibrary />}
     <ResearchEvidence snapshot={visible} now={now} onMode={setMode} />
-    {simple && mode !== 'alerts' && <details className={styles.evidence}><summary>가격 새로고침 설정</summary><label className={styles.check}><input type="checkbox" checked={auto} onChange={e => setAuto(e.target.checked)} />이 화면을 켜둔 동안 1분마다 새 자료 확인</label><p>마지막 확인: {time(visible?.fetchedAt)}</p></details>}
+    {simple && mode !== 'alerts' && <details className={styles.evidence}><summary>가격 새로고침 설정</summary><label className={styles.check}><input type="checkbox" checked={auto} onChange={e => setAuto(e.target.checked)} />이 화면을 보는 동안 1분마다 새 자료 확인</label><p>마지막 확인: {time(visible?.fetchedAt)}</p></details>}
     {simple && <div className={styles.simpleLinks}><button onClick={() => setMode("guide")}>사용 방법</button><button onClick={() => setDisplayMode("expert")}>전체 지표를 한 화면에서 보기 →</button></div>}
     <footer className={styles.footer}>관측·계산을 돕는 정보입니다. 자료 출처·시각과 계산 가정을 함께 확인하세요.</footer>
   </div>

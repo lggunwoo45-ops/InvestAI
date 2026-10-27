@@ -25,7 +25,7 @@
 .panel { min-width: 0; border: 1px solid var(--color-border-strong); border-radius: 16px; padding: 24px; background: var(--color-surface); }
 .panel h2 { margin: 0 0 14px; font-size: 20px; }
 .panel h3 { margin-top: 24px; font-size: 15px; }
-.metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-block: 20px; }
+.metrics { align-items:start; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-block: 20px; }
 .metric { display: grid; align-content: start; gap: 10px; padding: 18px; border: 1px solid var(--color-border); border-radius: 12px; min-width: 0; }
 .metric > span { font-size: 12px; color: var(--color-text-muted); }
 .metric strong { font-size: 21px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
@@ -253,3 +253,13 @@
 
 .simpleNav b { word-break: keep-all; }
 .toolIntro details { margin-top: 10px; font-size: 12px; color: var(--color-text-muted); }
+
+.evidenceTable td { vertical-align:top; min-width:130px; font-size:13px; }
+.evidenceTable td p { margin:6px 0; }
+@media(max-width:650px) {
+  .evidenceTable, .evidenceTable tbody { display:block; }
+  .evidenceTable thead { display:none; }
+  .evidenceTable tr { display:grid; gap:8px; padding:16px 0; border-bottom:1px solid var(--color-border); }
+  .page .evidenceTable td { display:block; min-width:0; padding:0; border:0; }
+  .evidenceTable td::before { content:attr(data-label); display:block; margin-bottom:4px; font-size:11px; color:var(--color-text-muted); }
+}
