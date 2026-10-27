@@ -1,3 +1,4 @@
+import { ResearchHelp } from './ResearchHelp'
 import { array, numeric, object, sourceData, type ResearchSnapshot } from '@/services/research/researchModel'
 import styles from './ResearchPage.module.css'
 export function MarketStructure({ snapshot, now }: { snapshot: ResearchSnapshot | null; now: number }) {
@@ -13,6 +14,6 @@ export function MarketStructure({ snapshot, now }: { snapshot: ResearchSnapshot 
     <article className={styles.metric}><span>24시간 전 집계 대비</span><strong>{delta === null ? '확인 불가' : `${fmt(delta)}%`}</strong><small>계약 규모 변화이며 방향 신호가 아닙니다.</small></article>
     <article className={styles.metric}><span>현물 24시간 거래대금</span><strong>{fmt(spot)} USDT</strong><small>Binance 현물 · 해당 종목</small></article>
     <article className={styles.metric}><span>선물 24시간 거래대금</span><strong>{fmt(futures)} USDT</strong><small>Binance USDT 선물 · 해당 종목</small></article>
-  </div><div className={styles.tableWrap}><table><caption>미결제약정 최근 6개 시간 집계</caption><thead><tr><th>관측 시각</th><th>기초자산 수량</th><th>명목가치 (USDT)</th></tr></thead><tbody>{rows.slice(-6).reverse().map((r, i) => <tr key={i}><td>{numeric(r.timestamp) ? new Date(Number(r.timestamp)).toLocaleString('ko-KR') : '시각 미확인'}</td><td>{fmt(numeric(r.sumOpenInterest))}</td><td>{fmt(numeric(r.sumOpenInterestValue))}</td></tr>)}</tbody></table></div><small>두 시장의 거래대금은 동일한 자금의 순유입이나 현물 실수요를 뜻하지 않습니다.</small></section>
+  </div><ResearchHelp topic="interest" /><ResearchHelp topic="turnover" /><div className={styles.tableWrap}><table><caption>미결제약정 최근 6개 시간 집계</caption><thead><tr><th>관측 시각</th><th>기초자산 수량</th><th>명목가치 (USDT)</th></tr></thead><tbody>{rows.slice(-6).reverse().map((r, i) => <tr key={i}><td>{numeric(r.timestamp) ? new Date(Number(r.timestamp)).toLocaleString('ko-KR') : '시각 미확인'}</td><td>{fmt(numeric(r.sumOpenInterest))}</td><td>{fmt(numeric(r.sumOpenInterestValue))}</td></tr>)}</tbody></table></div><small>두 시장의 거래대금은 동일한 자금의 순유입이나 현물 실수요를 뜻하지 않습니다.</small></section>
   )
 }

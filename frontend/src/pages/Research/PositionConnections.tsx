@@ -1,3 +1,4 @@
+import { ResearchHelp } from './ResearchHelp'
 import { cloudSignedIn } from '@/services/cloud/cloudClient'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -25,7 +26,7 @@ function exportConnection(c: PositionConnection) {
 }
 
 export function PositionConnections({ ledger = false }: { ledger?: boolean }) {
-  return localMonitorAvailable() ? <LocalPositionConnections ledger={ledger} /> : <LocalMonitorNotice kind="positions" />
+  return <><ResearchHelp topic="connections" />{localMonitorAvailable() ? <LocalPositionConnections ledger={ledger} /> : <LocalMonitorNotice kind="positions" />}</>
 }
 
 function LocalPositionConnections({ ledger = false }: { ledger?: boolean }) {

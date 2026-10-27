@@ -1,3 +1,4 @@
+import { CryptoAnalysisHelp } from './CryptoAnalysisHelp'
 import { withMarketContext, contextExplanation } from '@/services/cryptoAnalysis/marketContext'
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { SaveScenario } from '@/components/scenarios/SaveScenario'
@@ -100,6 +101,7 @@ export function CryptoDecisionPanel({ instrument, daily, language, averagePrice,
   }
   return <section className={styles.panel} aria-label={t.title} data-bias={decision.direction} data-display-mode={expert ? 'expert' : 'simple'} data-tab={tab}>
     <header className={styles.heading}>{expert && <h2>{ko ? '지금 무엇을 보면 될까요?' : 'What should I look at now?'}</h2>}<div className={styles.tools}><button type="button" onClick={copySummary}>{t.copy}</button><small role="status">{copyState === 'copied' ? t.copied : copyState === 'error' ? t.copyError : ''}</small></div></header>
+    <CryptoAnalysisHelp decision={decision} language={language} />
     <div className={styles.tabs} role="tablist" aria-label={t.tabLabel}>{tabs.map((value, index) => <button type="button" role="tab" key={value} id={`${tabId}-${value}`} aria-controls={`${tabId}-${value}-panel`} aria-selected={tab === value} tabIndex={tab === value ? 0 : -1} ref={node => { tabButtons.current[index] = node }} onClick={() => setTab(value)} onKeyDown={event => {
       const next = event.key === 'ArrowRight' ? (index + 1) % tabs.length : event.key === 'ArrowLeft' ? (index + tabs.length - 1) % tabs.length : event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : null
       if (next === null) return

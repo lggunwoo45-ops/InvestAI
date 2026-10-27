@@ -1,0 +1,12 @@
+.status { display:flex; align-items:center; gap:20px; justify-content:space-between; padding:14px 18px; border:1px solid var(--color-border); border-radius:14px; background:var(--color-surface); min-width:0; }
+.status > div { min-width:0; }
+.eyebrow { display:block; font-size:11px; color:var(--color-accent); letter-spacing:.05em; margin-bottom:6px; }
+.status strong { font-size:15px; }
+.status p { margin:7px 0; font-size:12px; color:var(--color-text-secondary); max-width:740px; }
+.status small { font-size:11px; }
+.stamp { display:block; margin-top:6px; }
+.actions { display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; flex:0 0 250px; }
+.actions span { font-size:12px; width:100%; text-align:right; color:var(--color-text-secondary); }
+.issue { display:grid; gap:5px; margin:0; font-size:12px; line-height:1.7; color:var(--color-text-secondary); }
+.issue b { color:var(--color-warning); font-weight:600; }
+@media(max-width:700px) { .status { flex-direction:column; align-items:stretch; padding:16px; } .actions { flex-basis:auto; justify-content:flex-start; } .actions span { text-align:left; } }

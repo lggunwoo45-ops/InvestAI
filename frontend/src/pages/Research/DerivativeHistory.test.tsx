@@ -38,7 +38,7 @@ it('empty collections never appear as zero and errors keep old data clearly labe
   const empty = fixture(); empty.series.forEach(s => { s.points = []; s.firstAt = null; s.lastAt = null; s.status = 'unavailable' })
   vi.mocked(fetchDerivativesHistory).mockResolvedValueOnce(empty)
   render(<DerivativeHistory asset="BTC" />)
-  expect(await screen.findAllByText('자료 없음')).toHaveLength(2)
+  expect(await screen.findAllByText('저장된 관측값 없음')).toHaveLength(2)
   expect(screen.queryByText('0 BTC')).toBeNull()
   vi.mocked(fetchDerivativesHistory).mockRejectedValueOnce(new Error('연결 실패'))
   fireEvent.click(screen.getByRole('button', { name: '저장 기록 새로고침' }))
