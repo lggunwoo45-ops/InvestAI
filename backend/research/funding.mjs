@@ -33,6 +33,8 @@ export function createFundingReader({ assets, fetchImpl = fetch, now = Date.now 
         const rows = JSON.parse(body + decoder.decode())
         if (!Array.isArray(rows) || rows.length > 1000) throw new Error('invalid_funding_response')
         for (const row of rows) {
+          const numeric = value => typeof value === 'number' || typeof value === 'string' && value.trim() !== ''
+          if (!numeric(row?.fundingRate) || (row?.markPrice != null && row.markPrice !== '' && !numeric(row.markPrice))) throw new Error('invalid_funding_response')
           const at = row?.fundingTime, rate = Number(row?.fundingRate)
           const markPrice = row?.markPrice == null || row.markPrice === '' ? null : Number(row.markPrice)
           if (row?.symbol !== symbol || (row.rateType != null && row.rateType !== 'Regular') || !Number.isSafeInteger(at) || at < cursor || at > to || (records.length && at <= records.at(-1).at) || row.fundingRate == null || row.fundingRate === '' || !Number.isFinite(rate) || Math.abs(rate) > 1 || (markPrice !== null && (!Number.isFinite(markPrice) || markPrice <= 0))) throw new Error('invalid_funding_response')

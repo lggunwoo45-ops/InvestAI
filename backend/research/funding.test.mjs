@@ -17,7 +17,7 @@ test('paginates inclusive times without overlap, shares pending requests, caches
   for (const args of [['BAD', 0, clock], ['BTC', 0, clock + 1], ['BTC', 1.5, clock], ['BTC', clock, 0]]) await assert.rejects(reader(...args), /invalid_funding_query/)
 })
 test('fails closed on partial pages, duplicates, invalid times/rates/prices and other venues or rate types', async () => {
-  for (const rows of [[row(0), row(0)], [{ ...row(0), fundingTime: -1 }], [{ ...row(0), symbol: 'ETHUSDT' }], [{ ...row(0), fundingRate: '' }], [{ ...row(0), fundingRate: 'NaN' }], [{ ...row(0), markPrice: 'bad' }], [{ ...row(0), rateType: 'Special' }]]) {
+  for (const rows of [[row(0), row(0)], [{ ...row(0), fundingTime: -1 }], [{ ...row(0), symbol: 'ETHUSDT' }], [{ ...row(0), fundingRate: '' }], [{ ...row(0), fundingRate: ' ' }], [{ ...row(0), fundingRate: false }], [{ ...row(0), fundingRate: 'NaN' }], [{ ...row(0), markPrice: 'bad' }], [{ ...row(0), markPrice: true }], [{ ...row(0), rateType: 'Special' }]]) {
     const reader = createFundingReader({ assets: ['BTC'], now: () => clock, fetchImpl: async () => response(rows) })
     await assert.rejects(reader('BTC', 0, clock), /invalid_funding_response/)
   }
