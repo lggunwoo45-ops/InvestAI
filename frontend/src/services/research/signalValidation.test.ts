@@ -2,6 +2,7 @@ import { expect, it } from 'vitest'
 import { defaultExplorerConfig, type DerivativeContextPoint, type ExplorerConfig } from './signalExplorer'
 import { validateSignalHistory, type ValidationCosts } from './signalValidation'
 import type { ResearchHistory } from './researchClient'
+import type { FundingHistory } from './fundingSettlements'
 const hour = 3_600_000, base = Date.UTC(2026, 0, 1)
 const config: ExplorerConfig = { ...defaultExplorerConfig, signals: ['three-long'], window: 1, horizon: 4, target: 2 }
 const costs: ValidationCosts = { fee: .05, slippage: .1, dailyHolding: 0 }
@@ -106,4 +107,31 @@ it('exports a detached public-evidence record that reproduces the exact result',
   expect(saved.input.history.candles[0].close).toBe(100.05)
   expect(validateSignalHistory(saved.input.history, saved.input.config, saved.input.costs)).toEqual(saved)
   expect(r.periods.reduce((n, p) => n + p.stats.samples, 0)).toBe(r.validation.stats.samples)
+})
+function fundingHistory(): FundingHistory {
+  return { version: 1, asset: 'BTC', source: 'Binance USDⓈ-M', from: base, to: base + 400 * hour, fetchedAt: base + 400 * hour,
+    records: Array.from({ length: 51 }, (_, i) => ({ at: base + i * 8 * hour, rate: .001, markPrice: 110 })) }
+}
+it('applies actual funding instead of daily holding, excludes missing evidence and exports reproducible costs', () => {
+  const data = history(), funding = fundingHistory(), settled = { ...costs, funding: 'settled' as const, dailyHolding: 1 }
+  const report = validateSignalHistory(data, { ...config, horizon: 12 }, settled, undefined, Object.assign(funding, { privateNote: 'secret' }))
+  const t = report.training.trades[0], ratio = t.exitLow * .999 / (t.entry * 1.001)
+  expect(t.funding!.debitHigh).toBeGreaterThan(0)
+  expect(t.netLow).toBeCloseTo((ratio - 1) * 100 - .05 * (1 + ratio) - t.funding!.debitHigh, 10)
+  expect(report.input.costs.dailyHolding).toBe(0)
+  expect(JSON.stringify(report)).not.toContain('secret')
+  expect(validateSignalHistory(report.input.history, report.input.config, report.input.costs, undefined, report.input.funding)).toEqual(report)
+  const missing = validateSignalHistory(data, config, settled, undefined, { ...funding, records: [] })
+  expect(missing.validation.stats.samples).toBe(0); expect(missing.validation.fundingExcluded).toBeGreaterThan(0)
+  expect(missing.validation.stats.meanNetLow).toBeNull()
+  expect(() => validateSignalHistory(data, config, settled)).toThrow('정산 기록')
+  expect(() => validateSignalHistory({ ...data, source: 'Bybit' }, config, settled, undefined, funding)).toThrow('정산 기록')
+  expect(() => validateSignalHistory(data, config, settled, undefined, { ...funding, asset: 'ETH' })).toThrow('정산 기록')
+})
+it('funding changes after the split cannot change training results, and assumed mode ignores supplied settlements', () => {
+  const data = history(), funding = fundingHistory(), settled = { ...costs, funding: 'settled' as const }
+  const first = validateSignalHistory(data, config, settled, undefined, funding)
+  const changed = { ...funding, records: funding.records.map(r => ({ ...r, rate: r.at >= first.splitAt ? -.01 : r.rate })) }
+  expect(validateSignalHistory(data, config, settled, undefined, changed).training).toEqual(first.training)
+  expect(validateSignalHistory(data, config, costs, undefined, funding)).toEqual(validateSignalHistory(data, config, costs))
 })
