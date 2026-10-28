@@ -9,7 +9,11 @@ interface Props { history?: ResearchHistory; config: ExplorerConfig; contexts?: 
 interface Inputs { history: Props['history']; contexts: Props['contexts']; configKey: string; costKey: string }
 const pct = (n: number | null) => n === null ? '—' : `${n.toFixed(2)}%`
 const date = (n: number) => new Date(n).toLocaleString('ko-KR', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
-const range = (a: number | null, b: number | null) => a === null || b === null ? '—' : Math.abs(a - b) < .000001 ? pct(a) : `${pct(a)} ~ ${pct(b)}`
+const range = (a: number | null, b: number | null, digits = 2) => {
+  if (a === null || b === null) return '—'
+  const low = a.toFixed(digits), high = b.toFixed(digits)
+  return low === high ? `${low}%` : `${low}% ~ ${high}%`
+}
 function verdict(s: ValidationStats) {
   if (!s.samples) return '뒤 구간에 비교할 사례가 없어요'
   if (s.samples < 30) return '사례가 적어 아직 판단하기 어려워요'
@@ -70,7 +74,7 @@ export function SignalValidation({ history, config, contexts, simple, loading }:
     {report && stats && <div className={styles.report}>
       <div className={styles.conclusion}><small>뒤 30% 구간 · 완료 사례 {stats.samples}건</small><h4>{verdict(stats)}</h4><p>{stats.samples < 30 ? '30건은 참고용 표본 안내 기준일 뿐이에요. 기록이 더 쌓인 뒤 다시 비교하세요.' : '기간을 나눈 관측 결과이며 매수 추천이나 앞으로의 수익 확률은 아니에요.'}</p></div>
       <div className={styles.metrics}><div><span>비용 차감 후 평균 변화</span><strong>{range(stats.meanNetLow, stats.meanNetHigh)}</strong><small>사례별 진입 금액 대비 · 누적 수익률 아님</small></div><div><span>비용 차감 전 평균 변화</span><strong>{range(stats.meanGrossLow, stats.meanGrossHigh)}</strong><small>같은 사례에 적용한 가격 변화</small></div></div>
-      {report.input.funding && <article className={styles.fundingSummary} aria-label="펀딩비 반영 결과"><div><small>뒤 구간 · 사례당 평균 펀딩비</small><strong>{range(stats.meanFundingLow, stats.meanFundingHigh)}</strong><span>양수는 지급한 비용 · 음수는 받은 금액</span></div><p>정산 기록 {report.input.funding.records.length.toLocaleString()}건 조회 · 뒤 구간 {report.validation.fundingExcluded}개 사례 제외 · 정산 시점에 따라 금액이 달라지는 사례 {stats.uncertainFunding}건</p><p>최신 정산 이후 구간, 기록 공백, 정산 가격 누락은 0원으로 처리하지 않아요. 범위로 표시된 금액은 봉 안의 종료 시각과 정산 전후 15초 차이를 반영한 보수적인 추정입니다.</p></article>}
+      {report.input.funding && <article className={styles.fundingSummary} aria-label="펀딩비 반영 결과"><div><small>뒤 구간 · 사례당 평균 펀딩비</small><strong>{range(stats.meanFundingLow, stats.meanFundingHigh, 4)}</strong><span>양수는 지급한 비용 · 음수는 받은 금액</span></div><p>정산 기록 {report.input.funding.records.length.toLocaleString()}건 조회 · 뒤 구간 {report.validation.fundingExcluded}개 사례 제외 · 정산 시점에 따라 금액이 달라지는 사례 {stats.uncertainFunding}건</p><p>최신 정산 이후 구간, 기록 공백, 정산 가격 누락은 0원으로 처리하지 않아요. 범위로 표시된 금액은 봉 안의 종료 시각과 정산 전후 15초 차이를 반영한 보수적인 추정입니다.</p></article>}
       <div className={styles.comparison}>{[['앞 70% 비교 구간', report.training], ['뒤 30% 검증 구간', report.validation]].map(([title, value]) => {
         const part = value as SignalValidationReport['training']
         return <article key={String(title)}><h4>{String(title)}</h4><p>{date(part.from)} – {date(part.to)}</p><b>{range(part.stats.meanNetLow, part.stats.meanNetHigh)}</b><span>비용 차감 후 평균 · {part.stats.samples}건</span><small>양쪽 도달 {part.stats.ambiguous}건 · 자료 공백 {part.gaps}건 · {title === '앞 70% 비교 구간' ? '경계 넘어 제외' : '관찰 미완료'} {part.incomplete}건 · 파생 자료 부족 {part.unknown}건{report.input.funding && ` · 펀딩 근거 부족 ${part.fundingExcluded}건`}</small></article>
@@ -85,7 +89,7 @@ export function SignalValidation({ history, config, contexts, simple, loading }:
         <p>진입 가격은 불리하게, 청산 가격도 불리하게 조정하고 각 체결 금액에 수수료를 적용합니다. {report.input.funding ? '같은 Binance USDⓈ-M의 정산 가격 × 펀딩률을 체결된 진입 금액으로 나누어 계산합니다. 하루 보유비용 가정은 함께 빼지 않아요.' : `하루 보유비용은 ${report.input.costs.dailyHolding}% 가정이며, 봉 안의 종료 시각은 알 수 없어 해당 봉 끝까지 부과합니다.`} 기존 탐색 비용 {report.input.config.cost}%는 이 결과에서 사용하지 않습니다.</p>
         {report.input.funding && <p>전후 정산 기록으로 둘러싸인 기간만 계산하고, 8시간 1분보다 긴 기록 간격은 제외합니다. 거래소의 누락을 모두 탐지할 수는 없어요. Bybit 자료는 선택한 진입 조건에만 쓰며 Binance 펀딩비로 대신 사용하지 않습니다. <a href="https://www.binance.com/en/support/faq/detail/360033525031" target="_blank" rel="noreferrer">거래소 펀딩비 계산 안내</a></p>}
         <p>{report.input.history.source} · {report.input.history.candles.length.toLocaleString()}개 완료 봉 · {report.signalVersion} · {report.version}{report.derivativeVersion ? ` · ${report.derivativeVersion} · 추가 조건 Bybit USDT perpetual` : ''}</p>
-        <div className={styles.table}><table><caption>뒤 구간 최근 30건</caption><thead><tr><th>신호 발생</th><th>결과</th><th>비용 차감 후</th>{report.input.funding && <th>펀딩비 · 지급 + / 수취 −</th>}</tr></thead><tbody>{report.validation.trades.slice(-30).reverse().map(t => <tr key={t.signalAt}><td>{date(t.signalAt)}</td><td>{{ up: '상단 도달', down: '하단 도달', timeout: '기간 종료', ambiguous: '양쪽·순서 불명' }[t.outcome]}</td><td>{range(t.netLow, t.netHigh)}</td>{report.input.funding && <td>{t.funding ? range(t.funding.debitLow, t.funding.debitHigh) : '—'}</td>}</tr>)}</tbody></table></div>
+        <div className={styles.table}><table><caption>뒤 구간 최근 30건</caption><thead><tr><th>신호 발생</th><th>결과</th><th>비용 차감 후</th>{report.input.funding && <th>펀딩비 · 지급 + / 수취 −</th>}</tr></thead><tbody>{report.validation.trades.slice(-30).reverse().map(t => <tr key={t.signalAt}><td>{date(t.signalAt)}</td><td>{{ up: '상단 도달', down: '하단 도달', timeout: '기간 종료', ambiguous: '양쪽·순서 불명' }[t.outcome]}</td><td>{range(t.netLow, t.netHigh)}</td>{report.input.funding && <td>{t.funding ? range(t.funding.debitLow, t.funding.debitHigh, 4) : '—'}</td>}</tr>)}</tbody></table></div>
       </details>
       <div className={styles.export}><button onClick={() => download(report)}>검증 기록 다운로드</button><small>가격·정산 기록·조건·비용·제외 건수·결과를 함께 저장합니다. 개인 계정·보유 정보는 포함하지 않아요.</small></div>
     </div>}
