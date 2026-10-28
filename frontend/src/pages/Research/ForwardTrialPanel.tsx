@@ -24,7 +24,7 @@ function TrialPanel({ asset, config, ledger = false }: { asset: string; config?:
     const fields = { asset, name: name.trim() || `${asset} 미래 검증`, config: { ...config, bars: 1000 as const, cost: fixedCost }, notify: false, purpose: 'validation' as const, holdingSide: null, trialDays: days }
     const key = JSON.stringify(fields); if (request.current?.key !== key) request.current = { key, id: crypto.randomUUID() }
     setBusy(true); setMessage('')
-    try { apply(await registerSignalWatch({ ...fields, requestId: request.current.id })); setMessage('조건과 비용을 고정했어요. 첫 조회 이후 새로 완료되는 봉부터 관측합니다.') } catch (e) { setMessage(e instanceof Error ? e.message : '등록하지 못했습니다.') } finally { setBusy(false) }
+    try { apply(await registerSignalWatch({ ...fields, requestId: request.current.id })); request.current = null; setMessage('조건과 비용을 고정했어요. 첫 조회 이후 새로 완료되는 봉부터 관측합니다.') } catch (e) { setMessage(e instanceof Error ? e.message : '등록하지 못했습니다.') } finally { setBusy(false) }
   }
   const download = (rule: SignalWatch) => { const url = URL.createObjectURL(new Blob([JSON.stringify({ version: 'forward-report-1', exportedAt: state?.now, rule, summary: summarizeTrial(rule) }, null, 2)], { type: 'application/json' })); const a = document.createElement('a'); a.href = url; a.download = `investai-${rule.config.asset}-forward.json`; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000) }
   const rules = (state?.signals ?? []).filter(r => r.config.purpose === 'validation' && (ledger || r.config.asset === asset))

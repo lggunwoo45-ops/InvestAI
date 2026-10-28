@@ -20,6 +20,10 @@ it('registers new immutable trials with explicit cost and duration, never histor
   await waitFor(() => expect(registerSignalWatch).toHaveBeenCalledOnce())
   expect(vi.mocked(registerSignalWatch).mock.calls[0][0]).toMatchObject({ asset: 'BTC', purpose: 'validation', notify: false, trialDays: 7, config: { cost: .4 } })
   expect(screen.getByText(/시작한 미래 검증이 없습니다/)).toBeTruthy()
+  // Confirmed registration ends the retry identity; another explicit start is a new trial.
+  fireEvent.click(button)
+  await waitFor(() => expect(registerSignalWatch).toHaveBeenCalledTimes(2))
+  expect(vi.mocked(registerSignalWatch).mock.calls[1][0].requestId).not.toBe(vi.mocked(registerSignalWatch).mock.calls[0][0].requestId)
 })
 it('blocks trials shorter than one full observation', async () => {
   render(<MemoryRouter><ForwardTrialPanel asset="BTC" config={{ ...defaultExplorerConfig, timeframe: '1d', horizon: 30 }} /></MemoryRouter>)
