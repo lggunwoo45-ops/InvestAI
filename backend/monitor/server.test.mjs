@@ -15,6 +15,25 @@ const config = () => ({ requestId: 'one', instrument: { venue: 'binance-futures'
 const connectionConfig = () => ({ requestId: 'public-connection-1', venue: 'hyperliquid', account: `0x${'a'.repeat(40)}`, label: 'private label', notify: false, thresholds: { distance: 5, loss: 10, leverage: null } })
 const position = () => ({ key: 'BTC:long', asset: 'BTC', side: 'long', size: 1, entryPrice: 100, currentPrice: 100, liquidationPrice: 80, unrealizedPnl: 0, leverage: 5, marginType: 'cross', quote: 'USDC' })
 const password = 'fixture-vault-password-only'
+test('future trials remain frozen across restart and expire even while upstream data is unavailable', async t => {
+  const dir = await directory(t); let now = at, reads = 0
+  const options = { directory: dir, clock: () => now, channel: { configured: false }, historyReader: async () => { reads++; throw new Error('offline') } }
+  const trial = { requestId: 'trial-integration-1', asset: 'BTC', name: '7일 시험', purpose: 'validation', trialDays: 7, notify: false, config: defaultExplorerConfig }
+  let app = await serve(options)
+  try {
+    assert.equal((await app.post('/signals', trial)).status, 200)
+    assert.equal((await app.post('/signals', trial)).status, 200)
+    assert.equal((await app.post('/signals', { ...trial, trialDays: 30 })).status, 400)
+    const before = (await app.get()).signals[0]
+    assert.equal((await app.get()).signals.length, 1)
+    await app.close(); app = await serve(options)
+    assert.equal((await app.get()).signals[0].hash, before.hash)
+    await app.handler.tickSignals(); assert.equal(reads, 1)
+    now += 7 * 86400000; await app.handler.tickSignals()
+    const after = (await app.get()).signals[0]
+    assert.equal(after.active, false); assert.equal(after.endReason, 'period'); assert.equal(after.events.length, 0); assert.equal(reads, 1)
+  } finally { await app.close() }
+})
 const privateConfig = () => ({ requestId: 'private-connection-1', venue: 'bybit', label: 'API 보유 계정', notify: false, thresholds: { distance: 5, loss: 10, leverage: null }, consent: true, credentials: { apiKey: 'fixture_key_123456789', apiSecret: 'fixture_secret_123456789' } })
 
 test('connection settings persist, reject stale edits and refresh errors preserve the last successful snapshot', async t => {

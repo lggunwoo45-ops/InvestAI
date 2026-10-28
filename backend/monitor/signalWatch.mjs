@@ -6,12 +6,15 @@ import { derivativeMatch, DERIVATIVE_FILTER_VERSION } from '../research/derivati
 export function normalizeSignalWatch(input) {
   if (!input || typeof input.requestId !== 'string' || !/^[a-zA-Z0-9-]{8,80}$/.test(input.requestId) || !researchAssets.includes(input.asset) || typeof input.name !== 'string' || input.name.trim().length < 1 || input.name.length > 60 || typeof input.notify !== 'boolean' || !validExplorerConfig(input.config)) throw new Error('신호 감시의 이름과 조건을 확인해주세요.')
   const purpose = input.purpose ?? 'opportunity', holdingSide = input.holdingSide ?? null
-  if (!['opportunity', 'opposition'].includes(purpose) || purpose === 'opposition' && (!['long', 'short'].includes(holdingSide) || input.config.signals.some(id => explorerSignals.find(s => s.id === id).side === holdingSide))) throw new Error('반대 신호 감시는 보유 방향과 반대 관점의 신호만 선택해주세요.')
+  if (!['opportunity', 'opposition', 'validation'].includes(purpose) || purpose === 'opposition' && (!['long', 'short'].includes(holdingSide) || input.config.signals.some(id => explorerSignals.find(s => s.id === id).side === holdingSide))) throw new Error('반대 신호 감시는 보유 방향과 반대 관점의 신호만 선택해주세요.')
+  if (purpose === 'validation' && (![7, 30, 90].includes(input.trialDays) || input.notify)) throw new Error('미래 검증은 7·30·90일 중 선택하며 외부 알림을 발송하지 않습니다.')
   const c = input.config
+  if (purpose === 'validation' && c.bars !== 1000) throw new Error('미래 검증의 실시간 계산은 최근 1,000봉을 사용합니다.')
+  if (purpose === 'validation' && (c.horizon + 2) * timeframes[c.timeframe] >= input.trialDays * 86400000) throw new Error('한 사례의 관찰 기간보다 긴 검증 기간을 선택해주세요.')
   if (hasDerivativeFilters(c) && input.derivativeVersion !== undefined && input.derivativeVersion !== DERIVATIVE_FILTER_VERSION) throw new Error('파생 조건의 버전을 확인해주세요.')
   const ref = input.positionRef
   if (ref && (purpose !== 'opposition' || typeof ref.connectionId !== 'string' || ref.connectionId.length > 80 || ref.key !== `${input.asset}:${holdingSide}`)) throw new Error('연결 포지션과 반대 신호 조건이 일치하지 않습니다.')
-  return { requestId: input.requestId, name: input.name.trim(), asset: input.asset, notify: input.notify, purpose, holdingSide: purpose === 'opposition' ? holdingSide : null, version: ENGINE_VERSION, config: { timeframe: c.timeframe, signals: [...c.signals].sort(), window: c.window, horizon: c.horizon, target: c.target, cost: c.cost, side: c.side, regime: c.regime, bars: c.bars, ...(c.funding && c.funding !== 'any' ? { funding: c.funding } : {}), ...(c.openInterest && c.openInterest !== 'any' ? { openInterest: c.openInterest } : {}) }, ...(ref ? { positionRef: { connectionId: ref.connectionId, key: ref.key } } : {}), ...(hasDerivativeFilters(c) ? { derivativeVersion: DERIVATIVE_FILTER_VERSION } : {}) }
+  return { requestId: input.requestId, name: input.name.trim(), asset: input.asset, notify: input.notify, purpose, holdingSide: purpose === 'opposition' ? holdingSide : null, version: ENGINE_VERSION, config: { timeframe: c.timeframe, signals: [...c.signals].sort(), window: c.window, horizon: c.horizon, target: c.target, cost: c.cost, side: c.side, regime: c.regime, bars: c.bars, ...(c.funding && c.funding !== 'any' ? { funding: c.funding } : {}), ...(c.openInterest && c.openInterest !== 'any' ? { openInterest: c.openInterest } : {}) }, ...(purpose === 'validation' ? { trialDays: input.trialDays, trialVersion: 'forward-1' } : {}), ...(ref ? { positionRef: { connectionId: ref.connectionId, key: ref.key } } : {}), ...(hasDerivativeFilters(c) ? { derivativeVersion: DERIVATIVE_FILTER_VERSION } : {}) }
 }
 export const signalFingerprint = config => createHash('sha256').update(JSON.stringify(config)).digest('hex')
 export function createSignalWatch(config, now) { return { id: randomUUID(), config, hash: signalFingerprint(config), createdAt: now, active: true, lastAt: null, matched: false, checkedAt: null, issue: null, events: [], ...(hasDerivativeFilters(config.config) ? { derivativeState: 'unknown' } : {}) } }
@@ -30,7 +33,15 @@ export function deferDerivativeWatch(rule, issue) {
   if (hasDerivativeFilters(rule.config.config)) { rule.derivativeState = 'unknown'; rule.matched = false }
   rule.issue = issue
 }
+export function expireSignalTrial(rule, now) {
+  if (rule.active && rule.config.purpose === 'validation' && now >= rule.createdAt + rule.config.trialDays * 86400000) {
+    rule.active = false; rule.endedAt = now; rule.endReason = 'period'
+    rule.events.filter(e => ['pending', 'entered'].includes(e.outcome)).forEach(e => finish(e, 'unresolved', null, rule.config.config, now))
+    rule.issue = '정해 둔 검증 기간이 끝났습니다. 종료 시점까지 관찰하지 못한 결과는 제외합니다.'
+  }
+}
 export function observeSignalWatch(rule, history, now, contexts) {
+  expireSignalTrial(rule, now)
   const c = rule.config.config, candles = history.candles, last = candles.at(-1), interval = timeframes[c.timeframe]
   if (!rule.active) return
   if (!last || history.asset !== rule.config.asset || history.timeframe !== c.timeframe || !Number.isFinite(history.asOf) || history.asOf - last.timestamp > interval * 2 || history.asOf - last.timestamp < interval) { deferDerivativeWatch(rule, '최신 완료 봉을 확인할 수 없어 신호 판정을 보류합니다.'); return }
@@ -67,12 +78,14 @@ export function observeSignalWatch(rule, history, now, contexts) {
     recovering ||= filtered && rule.derivativeState === 'unknown'
     const match = evaluate(i)
     // Only newly confirmed current conditions produce events; reconnect does not replay old signals.
-    if (match && !rule.matched && !recovering && history.asOf - bar.timestamp <= interval * 2) {
+    const trial = rule.config.purpose === 'validation'
+    const eligible = trial ? bar.timestamp >= rule.createdAt && bar.timestamp + (c.horizon + 1) * interval <= rule.createdAt + rule.config.trialDays * 86400000 && (!rule.events.length || bar.timestamp - rule.events.at(-1).at >= c.horizon * interval) : !rule.matched
+    if (match && eligible && !recovering && history.asOf - bar.timestamp <= interval * 2) {
       if (rule.events.length >= 100) { stopSignalWatch(rule, now); rule.issue = '100개 신호 기록을 보관해 감시와 진행 중 관찰을 종료했습니다. 새 감시로 이어갈 수 있습니다.'; break }
       rule.events.push({ id: `${rule.id}:${bar.timestamp}`, at: bar.timestamp, observedAt: now, price: bar.close, signals: [...frames[i].signals], outcome: 'pending', entry: null, entryAt: null, exit: null, exitAt: null, net: null, delivery: { status: rule.config.notify ? 'pending' : 'off', attempts: 0 }, ...(filtered ? { derivatives: { ...structuredClone(contexts.get(bar.timestamp + interval)), ...(c.funding === undefined || c.funding === 'any' ? { funding: null } : {}), ...(c.openInterest === undefined || c.openInterest === 'any' ? { openInterest: null } : {}), method: DERIVATIVE_FILTER_VERSION, source: 'Bybit USDT perpetual' } } : {}) })
     }
     rule.lastAt = bar.timestamp; rule.matched = match
   }
 }
-export function stopSignalWatch(rule, now) { rule.active = false; rule.events.filter(e => ['pending', 'entered'].includes(e.outcome)).forEach(e => finish(e, 'cancelled', null, rule.config.config, now)) }
+export function stopSignalWatch(rule, now) { rule.active = false; if (rule.config.purpose === 'validation') { rule.endedAt = now; rule.endReason = rule.events.length >= 100 ? 'limit' : 'manual' }; rule.events.filter(e => ['pending', 'entered'].includes(e.outcome)).forEach(e => finish(e, 'cancelled', null, rule.config.config, now)) }
 export function suspendSignalWatch(rule, now) { rule.lastAt = null; rule.matched = false; if (hasDerivativeFilters(rule.config.config)) rule.derivativeState = 'unknown'; rule.events.filter(e => ['pending', 'entered'].includes(e.outcome)).forEach(e => finish(e, 'unresolved', null, rule.config.config, now)) }

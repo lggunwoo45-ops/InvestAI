@@ -104,7 +104,7 @@ export function signalFrames(candles, timeframe) {
 export const defaultExplorerConfig = { timeframe: '1h', signals: ['rsi-long'], window: 3, horizon: 24, target: 2, cost: 0.2, side: 'long', regime: 'any', bars: 1000 };
 export function validExplorerConfig(c) {
     if (!c || !validDerivativeFilters(c)) return false;
-    return !!c && Object.hasOwn(timeframes, c.timeframe) && Array.isArray(c.signals) && c.signals.length > 0 && c.signals.length <= 30 && new Set(c.signals).size === c.signals.length && c.signals.every(id => explorerSignals.some(s => s.id === id)) && [1, 3, 6, 12].includes(c.window) && Number.isInteger(c.horizon) && c.horizon >= 1 && c.horizon <= 168 && Number.isFinite(c.target) && c.target > 0 && c.target < 100 && Number.isFinite(c.cost) && c.cost >= 0 && c.cost <= 10 && ['long', 'short'].includes(c.side) && ['any', 'above', 'below', 'volume'].includes(c.regime) && [1000, 3000, 5000].includes(c.bars);
+    return !!c && Object.hasOwn(timeframes, c.timeframe) && Array.isArray(c.signals) && c.signals.length > 0 && c.signals.length <= 30 && new Set(c.signals).size === c.signals.length && c.signals.every(id => explorerSignals.some(s => s.id === id)) && [1, 3, 6, 12].includes(c.window) && Number.isInteger(c.horizon) && c.horizon >= 1 && c.horizon <= 168 && Number.isFinite(c.target) && c.target > 0 && c.target < 100 && Number.isFinite(c.cost) && c.cost >= 0 && c.cost <= 10 && ['long', 'short'].includes(c.side) && ['any', 'above', 'below', 'volume'].includes(c.regime) && [1000, 3000, 5000, 20000].includes(c.bars);
 }
 export function matchesFrame(frames, candles, i, config, contexts) {
     const f = frames[i];

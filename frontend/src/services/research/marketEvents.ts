@@ -5,6 +5,7 @@ import { researchAssets } from './researchModel'
 export interface LiquidationEvent { id: string; asset: string; at: number; side: 'long' | 'short'; size: number; bankruptcyPrice: number; notional: number }
 export interface LiquidationWindow { minutes: number; count: number; long: number; short: number; complete: boolean }
 export interface Liquidations { version: 1; asset: string; fetchedAt: number; status: 'connecting' | 'live' | 'disconnected'; startedAt: number | null; continuousSince: number | null; lastMessageAt: number | null; reconnects: number; windows: LiquidationWindow[]; events: LiquidationEvent[] }
+export interface LiquidationArchive { version: 1; asset: string; source: string; fetchedAt: number; from: number; to: number; hours: number; persistent: boolean; retentionDays: 7; rows: { at: number; coveredMs: number; count: number | null; long: number | null; short: number | null }[] }
 export interface EconomicEvent { id: string; source: 'bls' | 'fed'; title: string; originalTitle: string; at: number | null; date: string | null; endDate: string | null; kind: 'release' | 'meeting'; timeZone: 'America/New_York' }
 export interface EconomicSource { id: 'bls' | 'fed'; name: string; url: string; status: 'available' | 'stale' | 'unavailable'; fetchedAt: number | null; eventCount: number; via?: 'nyfed'; coverageEnd?: number }
 export interface EconomicCalendar { version: 1; fetchedAt: number; windowStart: number; windowEnd: number; events: EconomicEvent[]; sources: EconomicSource[] }
@@ -29,6 +30,12 @@ export async function fetchLiquidations(asset: string, signal?: AbortSignal): Pr
   const { value: v, date, started } = await fetchEvents(`liquidations?asset=${encodeURIComponent(asset)}`, signal)
   if (v.asset !== asset || !['connecting', 'live', 'disconnected'].includes(v.status) || ![v.startedAt, v.continuousSince, v.lastMessageAt].every(nullableTime) || !Number.isSafeInteger(v.reconnects) || v.reconnects < 0 || !Array.isArray(v.windows) || v.windows.length !== 3 || v.windows.some((w: LiquidationWindow, i: number) => !w || w.minutes !== [1, 5, 15][i] || ![w.long, w.short].every(finite) || !Number.isSafeInteger(w.count) || w.count < 0 || typeof w.complete !== 'boolean') || !Array.isArray(v.events) || v.events.length > 50 || v.events.some((e: LiquidationEvent) => !e || typeof e.id !== 'string' || e.asset !== asset || !finite(e.at) || !['long', 'short'].includes(e.side) || ![e.size, e.bankruptcyPrice, e.notional].every(n => finite(n) && n > 0))) throw new Error('청산 자료 형식을 확인할 수 없습니다.')
   return rememberResearchClock(v as Liquidations, date, started)
+}
+export async function fetchLiquidationArchive(asset: string, hours: number, signal?: AbortSignal): Promise<LiquidationArchive> {
+  if (!researchAssets.some(a => a === asset) || ![24, 168].includes(hours)) throw new Error('청산 이력 조회 범위를 확인해주세요.')
+  const { value: v, date, started } = await fetchEvents(`liquidations/history?asset=${asset}&hours=${hours}`, signal)
+  if (v.asset !== asset || v.source !== 'Bybit USDT linear' || v.hours !== hours || v.retentionDays !== 7 || typeof v.persistent !== 'boolean' || !Number.isSafeInteger(v.from) || !Number.isSafeInteger(v.to) || v.to % 3600000 !== 0 || v.to - v.from !== hours * 3600000 || v.to > v.fetchedAt || !Array.isArray(v.rows) || v.rows.length !== hours || v.rows.some((r: LiquidationArchive['rows'][number], i: number) => !r || r.at !== v.from + i * 3600000 || !finite(r.coveredMs) || r.coveredMs > 3600000 || ![r.count, r.long, r.short].every(n => n === null || finite(n)) || r.count !== null && !Number.isSafeInteger(r.count) || (r.count === null) !== (r.long === null) || (r.count === null) !== (r.short === null))) throw new Error('청산 기록의 기간과 금액을 확인할 수 없어요.')
+  return rememberResearchClock(v as LiquidationArchive, date, started)
 }
 export async function fetchEconomicCalendar(signal?: AbortSignal): Promise<EconomicCalendar> {
   const { value: v, date: serverDate, started } = await fetchEvents('calendar', signal)

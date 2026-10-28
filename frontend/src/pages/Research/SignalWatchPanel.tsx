@@ -1,3 +1,4 @@
+import { ForwardTrialPanel } from './ForwardTrialPanel'
 import { cloudSignedIn } from '@/services/cloud/cloudClient'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -9,7 +10,7 @@ import { LocalMonitorNotice } from './LocalMonitorNotice'
 const labels = { pending: '다음 봉 대기', entered: '이후 가격 관찰 중', up: '상단 먼저 도달', down: '하단 먼저 도달', timeout: '기간 종료', ambiguous: '양쪽 도달·순서 불명', unresolved: '자료 공백·판정 불가', cancelled: '감시 종료' }
 const delivery = { off: '외부 발송 안 함', pending: '발송 대기', sent: '발송 확인', uncertain: '발송 여부 미확인' }
 export function SignalWatchPanel({ asset, config, name, ledger = false }: { asset: string; config?: ExplorerConfig; name?: string; ledger?: boolean }) {
-  return localMonitorAvailable() ? <LocalSignalWatchPanel asset={asset} config={config} name={name} ledger={ledger} /> : <LocalMonitorNotice kind="signals" asset={asset} />
+  return localMonitorAvailable() ? <><LocalSignalWatchPanel asset={asset} config={config} name={name} ledger={ledger} />{ledger && <ForwardTrialPanel asset={asset} ledger />}</> : <LocalMonitorNotice kind="signals" asset={asset} />
 }
 
 function LocalSignalWatchPanel({ asset, config, name, ledger = false }: { asset: string; config?: ExplorerConfig; name?: string; ledger?: boolean }) {
@@ -34,7 +35,7 @@ function LocalSignalWatchPanel({ asset, config, name, ledger = false }: { asset:
     if (request.current?.body !== body) request.current = { body, id: crypto.randomUUID() }
     try { apply(await registerSignalWatch({ ...fields, requestId: request.current.id } as SignalWatchConfig)); setMessage('신호 감시를 등록했어요. 첫 조회를 기준으로 잡고, 이후 새로 충족된 조건부터 기록합니다.') } catch (e) { setMessage(e instanceof Error ? e.message : '등록하지 못했습니다.') } finally { setBusy(false) }
   }
-  const rules = (state?.signals ?? []).filter(r => ledger || r.config.asset === asset)
+  const rules = (state?.signals ?? []).filter(r => r.config.purpose !== 'validation' && (ledger || r.config.asset === asset))
   return <section className={styles.signalWatch} aria-label="신호 감시와 관측 결과">
     <h3>{ledger ? '저장한 신호, 이후에는 어떻게 됐을까요?' : '다시 나타나면 알려주세요'}</h3>
     <p>{cloudSignedIn() ? '서버가 화면과 독립적으로 완료된 봉을 확인합니다.' : 'PC와 감시 프로그램이 켜져 있는 동안 완료된 봉을 확인합니다.'} 같은 조건이 계속 유지될 때는 반복 기록하지 않아요.</p>

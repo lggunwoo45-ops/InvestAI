@@ -66,7 +66,7 @@ test('stored revision context is bounded, persistent and isolated by asset', asy
   assert.equal(result.firstStoredAt, base + HOUR); assert.equal(result.points[0].funding, null)
   assert.equal(result.points[1].funding.value, .001); assert.equal(result.points[2].funding.value, -.001)
   assert.ok(collector.context('ETH', '1h', base, base + 2 * HOUR).points.every(p => p.funding === null))
-  for (const args of [['BTC', '1h', base, base + 2 * DAY], ['BTC', '1h', base + 1, base + HOUR], ['BTC', 'toString', base, base], ['BAD', '1h', base, base], ['BTC', '1m', base - 10000 * 60_000, base]]) assert.equal(validContextQuery(...args, clock(), ['BTC']), false)
+  for (const args of [['BTC', '1h', base, base + 2 * DAY], ['BTC', '1h', base + 1, base + HOUR], ['BTC', 'toString', base, base], ['BAD', '1h', base, base], ['BTC', '1m', base - 20000 * 60_000, base]]) assert.equal(validContextQuery(...args, clock(), ['BTC']), false)
 })
 test('derivative watch conditions are retained while legacy normalization stays identical', () => {
   const input = { requestId: 'signal-test-1', asset: 'BTC', name: 'test', notify: false, config: defaultExplorerConfig }

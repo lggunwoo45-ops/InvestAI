@@ -5,7 +5,7 @@ import { rememberResearchClock } from './researchClock'
 
 export interface ResearchHistory { version: 1; asset: string; timeframe: ResearchTimeframe; requested: number; fetchedAt: number; asOf: number; source: string; candles: Candle[] }
 export async function fetchResearchHistory(asset: string, timeframe: ResearchTimeframe, count: number, signal?: AbortSignal): Promise<ResearchHistory> {
-  if (!researchAssets.some(a => a === asset) || !Object.hasOwn(timeframes, timeframe) || ![1000, 3000, 5000].includes(count)) throw new Error('조회 조건을 확인해주세요.')
+  if (!researchAssets.some(a => a === asset) || !Object.hasOwn(timeframes, timeframe) || ![1000, 3000, 5000, 20000].includes(count)) throw new Error('조회 조건을 확인해주세요.')
   const startedAt = performance.now()
   const response = await fetch(`${researchBase()}/history?asset=${encodeURIComponent(asset)}&timeframe=${timeframe}&count=${count}`, { signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(90_000)]) : AbortSignal.timeout(90_000), credentials: 'omit', redirect: 'error' })
   if (!response.ok) throw new Error(response.status === 429 ? '조회가 많습니다. 잠시 후 다시 불러와주세요.' : '과거 시세를 불러오지 못했습니다. 다시 불러오기를 눌러주세요.')

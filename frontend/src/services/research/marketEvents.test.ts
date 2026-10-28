@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { fetchEconomicCalendar, fetchLiquidations, upcomingEvents, type EconomicCalendar } from './marketEvents'
+import { fetchEconomicCalendar, fetchLiquidations, fetchLiquidationArchive, upcomingEvents, type EconomicCalendar } from './marketEvents'
 
 afterEach(() => vi.unstubAllGlobals())
 const at = Date.parse('2026-10-26T00:00:00Z')
@@ -10,6 +10,15 @@ export const calendarFixture: EconomicCalendar = { version: 1, fetchedAt: at, wi
     { id: 'bls:1', source: 'bls', title: '미국 고용보고서', originalTitle: 'Employment Situation', at: Date.parse('2026-11-06T13:30:00Z'), date: null, endDate: null, kind: 'release', timeZone: 'America/New_York' },
   ] }
 describe('public market event client', () => {
+  it('validates archived hour grids, scope and null amounts before displaying them',async()=>{
+    const value={version:1,source:'Bybit USDT linear',asset:'BTC',hours:24,from:at-24*3600000,to:at,fetchedAt:at,persistent:true,retentionDays:7,rows:Array.from({length:24},(_,i)=>({at:at-(24-i)*3600000,coveredMs:0,count:null as number|null,long:null as number|null,short:null as number|null}))}
+    const mock=vi.fn(async()=>Response.json(value));vi.stubGlobal('fetch',mock)
+    expect((await fetchLiquidationArchive('BTC',24)).rows[0].long).toBeNull()
+    expect(mock.mock.calls[0]).toEqual(['/api/research/liquidations/history?asset=BTC&hours=24',expect.objectContaining({credentials:'omit'})])
+    value.rows[0].long=0;await expect(fetchLiquidationArchive('BTC',24)).rejects.toThrow('청산 기록')
+    value.rows[0].long=null;value.rows[0].coveredMs=3600001;await expect(fetchLiquidationArchive('BTC',24)).rejects.toThrow('청산 기록')
+    await expect(fetchLiquidationArchive('BTC',365)).rejects.toThrow('조회 범위')
+  })
   it('preserves verified saved-source metadata and rejects forged source coverage', async () => {
     const value = structuredClone(calendarFixture)
     Object.assign(value.sources[0]!, { via: 'nyfed', coverageEnd: at + 60 * 86400000 })

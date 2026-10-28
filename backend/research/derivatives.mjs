@@ -7,7 +7,7 @@ import { buildDerivativeContext, DERIVATIVE_FILTER_VERSION } from './derivativeC
 import { intervals } from './history.mjs'
 
 export function validContextQuery(asset, timeframe, from, to, now, assets) {
-  return assets.includes(asset) && Object.hasOwn(intervals, timeframe) && [from, to].every(n => Number.isSafeInteger(n) && n > 0 && n % intervals[timeframe] === 0) && from <= to && to <= now && (to - from) / intervals[timeframe] < 10000
+  return assets.includes(asset) && Object.hasOwn(intervals, timeframe) && [from, to].every(n => Number.isSafeInteger(n) && n > 0 && n % intervals[timeframe] === 0) && from <= to && to <= now && (to - from) / intervals[timeframe] < 20000
 }
 
 export const HOUR = 3_600_000, DAY = 24 * HOUR, COLLECTION_INTERVAL = 15 * 60_000

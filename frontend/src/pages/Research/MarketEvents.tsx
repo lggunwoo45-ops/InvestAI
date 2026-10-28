@@ -1,3 +1,4 @@
+import { LiquidationArchivePanel } from './LiquidationArchivePanel'
 import { ResearchHelp } from './ResearchHelp'
 import { useCallback, useEffect, useState } from 'react'
 import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
@@ -58,7 +59,8 @@ export function LiquidationPanel({ asset }: { asset: string }) {
         <p className={styles.caption}>수집 시작 {data.startedAt !== null ? kst(data.startedAt) : '미확인'} · 연속 연결 {data.continuousSince !== null ? kst(data.continuousSince) : '끊김'} · 재연결 {data.reconnects}회</p>
       </>}
     </>}
-    <footer className={styles.caption}>Bybit 한 거래소의 관측값입니다. 금액은 수량 × 파산가격이며 실제 체결금액과 다를 수 있습니다. 최대 15분 보관하며 서버 재시작 전 기록은 복원하지 않습니다. <a href="https://bybit-exchange.github.io/docs/v5/websocket/public/all-liquidation" target="_blank" rel="noreferrer">데이터 기준</a></footer>
+    <footer className={styles.caption}>Bybit 한 거래소의 관측값입니다. 금액은 수량 × 파산가격이며 실제 체결금액과 다를 수 있습니다. 개별 사건은 최대 15분 표시하고, 아래 기록실에서 시간별 합계를 최대 7일 확인할 수 있습니다. <a href="https://bybit-exchange.github.io/docs/v5/websocket/public/all-liquidation" target="_blank" rel="noreferrer">데이터 기준</a></footer>
+    <LiquidationArchivePanel key={asset} asset={asset} />
   </section>
 }
 

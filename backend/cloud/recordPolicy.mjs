@@ -1,4 +1,6 @@
+import { ETF_KEY, validEtfLedger } from '../research/etfLedger.mjs'
 export const investmentRecordLimits = Object.freeze({
+  [ETF_KEY]: 500_000,
   'investai.portfolio.v1': 4_000_000,
   'investai.watchlist-account.v1': 1_000_000,
   'investai.scenarios.v1': 200_000,
@@ -7,6 +9,7 @@ export const investmentRecordLimits = Object.freeze({
 // Bound the stored envelope on the server. Each client also validates the full
 // portfolio ledger / review / scenario schema before rendering or editing it.
 export function validInvestmentEnvelope(key, data) {
+  if (key === ETF_KEY) return validEtfLedger(data)
   if (!data || typeof data !== 'object' || Array.isArray(data)) return false
   const unique = (rows, field, max) => Array.isArray(rows) && rows.length <= max && rows.every(r => r && typeof r[field] === 'string' && r[field].length > 0 && r[field].length <= 160) && new Set(rows.map(r => r[field])).size === rows.length
   if (key === 'investai.portfolio.v1') return [1, 2].includes(data.version) && unique(data.positions, 'id', 1000)

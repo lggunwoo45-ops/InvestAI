@@ -1,6 +1,20 @@
 import { beforeEach,afterEach,describe,it,expect,vi } from 'vitest'
 
 describe('member research synchronization',()=>{
+  it('imports guest ETF records only on request and preserves existing member values and revisions',async()=>{
+    const {client,fetcher}=await setup()
+    const key='investai.etf-ledger.v1'
+    const row={asset:'BTC',date:'2026-01-01',flow:100,source:'guest',updatedAt:1,revision:1,previous:[]}
+    localStorage.setItem(key,JSON.stringify({version:1,rows:[row,{...row,asset:'ETH'}]}))
+    expect(client.researchStorage.getItem(key)).toBeNull()
+    client.researchStorage.setItem(key,JSON.stringify({version:1,rows:[{...row,flow:200,source:'member',revision:2,previous:[{flow:150,source:'earlier',updatedAt:1}]}]}))
+    await client.syncCloud();await client.importGuestResearch()
+    const writes=fetcher.mock.calls.filter(([,init])=>init?.method==='PUT').map(([,init])=>JSON.parse(String(init?.body))).filter(r=>r.key===key)
+    const merged=JSON.parse(writes.at(-1).value)
+    expect(merged.rows).toHaveLength(2)
+    expect(merged.rows.find((r:{asset:string})=>r.asset==='BTC')).toMatchObject({flow:200,source:'member',revision:2,previous:[{flow:150}]})
+    expect(JSON.parse(localStorage.getItem(key)!).rows[0].flow).toBe(100)
+  })
   beforeEach(()=>{vi.resetModules();sessionStorage.clear();localStorage.clear()})
   afterEach(()=>{vi.unstubAllGlobals()})
   async function setup(){

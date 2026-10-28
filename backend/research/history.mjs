@@ -20,34 +20,39 @@ export function tenMinuteBars(bars) {
 }
 export function createHistoryReader({ fetchImpl = fetch, now = Date.now } = {}) {
   const cache = new Map(), pending = new Map()
+  let budgetAt = now(), requests = 0
   return async function history(asset, timeframe, count) {
-    if (!Object.hasOwn(intervals, timeframe) || ![1000, 3000, 5000].includes(count)) throw new Error('invalid_history_query')
+    if (!Object.hasOwn(intervals, timeframe) || ![1000, 3000, 5000, 20000].includes(count)) throw new Error('invalid_history_query')
     const key = `${asset}:${timeframe}:${count}`, cached = cache.get(key)
     if (cached && now() - cached.fetchedAt < 30000) return cached
     if (pending.has(key)) return pending.get(key)
     const work = (async () => {
       const raw = [], native = timeframe === '10m' ? '5m' : timeframe, needed = count * (timeframe === '10m' ? 2 : 1) + 2
-      let endTime, providerNow = now()
-      for (let page = 0; raw.length < needed && page < 11; page++) {
+      let endTime, providerNow = now(), complete = false
+      const deadline = AbortSignal.timeout(80_000)
+      for (let page = 0; raw.length < needed && page < 42; page++) {
+        if (now() - budgetAt >= 60_000) { budgetAt = now(); requests = 0 }
+        if (++requests > 120) throw new Error('history_busy')
         const limit = Math.min(1000, needed - raw.length)
         const query = new URLSearchParams({ symbol: `${asset}USDT`, interval: native, limit: String(limit), ...(endTime === undefined ? {} : { endTime: String(endTime) }) })
-        const response = await fetchImpl(`https://fapi.binance.com/fapi/v1/klines?${query}`, { signal: AbortSignal.timeout(8000), redirect: 'error', headers: { Accept: 'application/json' } })
+        const response = await fetchImpl(`https://fapi.binance.com/fapi/v1/klines?${query}`, { signal: AbortSignal.any([deadline, AbortSignal.timeout(8000)]), redirect: 'error', headers: { Accept: 'application/json' } })
         if (!response.ok) throw new Error('history_unavailable')
         const date = Date.parse(response.headers?.get('date') ?? '')
         const age = Number(response.headers?.get('age') ?? 0)
         if (Number.isFinite(date) && Number.isFinite(age) && age >= 0) providerNow = date + age * 1000
         const rows = await response.json()
         if (!Array.isArray(rows) || rows.length > limit) throw new Error('invalid_history_response')
-        if (!rows.length) break
+        if (!rows.length) { complete = true; break }
         const earliest = Number(rows[0]?.[0])
         if (!Number.isFinite(earliest) || (endTime !== undefined && earliest > endTime)) throw new Error('invalid_history_cursor')
         raw.push(...rows); endTime = earliest - 1
-        if (rows.length < limit) break
+        if (rows.length < limit) { complete = true; break }
       }
+      if (!complete && raw.length < needed) throw new Error('incomplete_history')
       const normalized = normalizeBars(raw, intervals[native], providerNow)
       const candles = (timeframe === '10m' ? tenMinuteBars(normalized) : normalized).slice(-count)
       const result = { version: 1, asset, timeframe, requested: count, fetchedAt: now(), asOf: providerNow, source: 'Binance USDⓈ-M', candles }
-      if (cache.size >= 48) cache.delete(cache.keys().next().value)
+      if (cache.size >= 16) cache.delete(cache.keys().next().value)
       cache.set(key, result)
       return result
     })().finally(() => pending.delete(key))

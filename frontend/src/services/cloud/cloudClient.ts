@@ -1,5 +1,6 @@
 import { researchBase } from '@/services/research/researchClient'
 import { investmentRecordLimits } from '../../../../backend/cloud/recordPolicy.mjs'
+import { ETF_KEY, validEtfLedger, type EtfLedger } from '../../../../backend/research/etfLedger.mjs'
 
 export interface Member { id:string; username:string; email?:string|null; emailVerifiedAt?:number|null }
 export interface CloudRecord { key:string; value:string|null; version:number }
@@ -137,12 +138,21 @@ export const researchStorage:Pick<Storage,'getItem'|'setItem'|'removeItem'>={
 export const memberStorage=researchStorage
 export async function importGuestResearch(){
   if(!state.user)throw new Error('먼저 로그인해주세요.')
-  const keys=['investai.research.observations.v1','investai.signal-presets.v1','investai.research.rules.v1','investai.research.events.v1']
+  const keys=['investai.research.observations.v1','investai.signal-presets.v1','investai.research.rules.v1','investai.research.events.v1',ETF_KEY]
   const copies=new Map<string,string>()
   for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i);if(key?.startsWith('investai.research.draft.v1.'))keys.push(key)}
   for(const key of keys){
     const guest=localStorage.getItem(key);if(!guest)continue
     const member=researchStorage.getItem(key)
+    if(key===ETF_KEY){
+      const old:EtfLedger=JSON.parse(guest),current:EtfLedger=member?JSON.parse(member):{version:1,rows:[]}
+      if(!validEtfLedger(old)||!validEtfLedger(current))throw new Error('ETF 기록 형식을 확인해주세요. 원본은 그대로 두었습니다.')
+      // Existing member values and their revision history win on the same asset/date.
+      const rows=[...new Map([...old.rows,...current.rows].map(r=>[`${r.asset}:${r.date}`,r])).values()]
+      const merged={version:1,rows}
+      if(!validEtfLedger(merged))throw new Error('합친 ETF 기록이 1,000일을 넘습니다. 원본은 그대로 두었습니다.')
+      copies.set(key,JSON.stringify(merged));continue
+    }
     if(!member){copies.set(key,guest);continue}
     if(key.includes('.draft.'))continue // Never overwrite a member's unfinished note with a guest draft.
     const old=JSON.parse(guest),current=JSON.parse(member)
