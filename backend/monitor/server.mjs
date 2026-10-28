@@ -6,7 +6,7 @@ import { openStore } from './store.mjs'
 import { createQuoteReader } from './quotes.mjs'
 import { telegramChannel } from './notifications.mjs'
 import { createHistoryReader } from '../research/history.mjs'
-import { createSignalWatch, normalizeSignalWatch, observeSignalWatch, signalFingerprint, stopSignalWatch, suspendSignalWatch, deferDerivativeWatch } from './signalWatch.mjs'
+import { createSignalWatch, normalizeSignalWatch, observeSignalWatch, signalFingerprint, stopSignalWatch, suspendSignalWatch, deferDerivativeWatch, expireSignalTrial } from './signalWatch.mjs'
 import { hasDerivativeFilters, timeframes, DERIVATIVE_FILTER_VERSION } from '../research/signals.mjs'
 import { createConnection, createPositionReader, normalizeConnection, observeConnection, validPositionSnapshot } from './positions.mjs'
 import { createCredentialVault, normalizeCredentials } from './credentialVault.mjs'
@@ -123,6 +123,7 @@ export function createMonitorHandler({ directory = defaultDirectory, quoteReader
     signalBusy = true
     try {
       await ready; if (fatal || stopped) return
+      if ((state.signals ?? []).some(r => r.active && r.config.purpose === 'validation' && clock() >= r.createdAt + r.config.trialDays * 86400000)) await mutate(next => { for (const r of next.signals ?? []) expireSignalTrial(r, clock()) })
       const signalGroups = new Map((state.signals ?? []).filter(r => r.active).map(r => [`${r.config.asset}:${r.config.config.timeframe}:${r.config.config.bars}`, r.config]))
       for (const [key, config] of signalGroups) {
         if (stopped || fatal) break

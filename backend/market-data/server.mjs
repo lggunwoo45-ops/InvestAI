@@ -72,6 +72,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const handler = createMarketHandler({ origins })
   const news = createNewsHandler({ origins })
   const research = createResearchHandler({ origins })
+  research.start()
   const cloud = createCloudHandler({ origins, derivativeContextReader: research.derivativeContextReader })
   const server = createServer((req, res) => handler(req, res, () => news(req, res, () => research(req, res, () => cloud(req, res)))))
   server.headersTimeout = 10_000; server.requestTimeout = 15_000; server.maxConnections = 256

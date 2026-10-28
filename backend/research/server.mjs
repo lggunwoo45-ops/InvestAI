@@ -78,7 +78,7 @@ export function createResearchClient({ fetchImpl = fetch, now = Date.now } = {})
   }
 }
 
-export function createResearchHandler({ local = false, origins = [], client = createResearchClient(), now = Date.now, historyReader = createHistoryReader(), fundingReader = createFundingReader({ assets: researchAssets, now }), liquidations = createLiquidationCollector({ assets: researchAssets }), calendar = createEconomicCalendar(), derivatives = createDerivativeCollector({ directory: process.env.INVESTAI_RESEARCH_DIRECTORY || (process.env.INVESTAI_CLOUD_DIRECTORY ? join(process.env.INVESTAI_CLOUD_DIRECTORY, 'research-history') : undefined), assets: researchAssets }) } = {}) {
+export function createResearchHandler({ local = false, origins = [], client = createResearchClient(), now = Date.now, historyReader = createHistoryReader(), fundingReader = createFundingReader({ assets: researchAssets, now }), liquidations = createLiquidationCollector({ assets: researchAssets, directory: process.env.INVESTAI_RESEARCH_DIRECTORY || (process.env.INVESTAI_CLOUD_DIRECTORY ? join(process.env.INVESTAI_CLOUD_DIRECTORY, 'research-history') : undefined) }), calendar = createEconomicCalendar(), derivatives = createDerivativeCollector({ directory: process.env.INVESTAI_RESEARCH_DIRECTORY || (process.env.INVESTAI_CLOUD_DIRECTORY ? join(process.env.INVESTAI_CLOUD_DIRECTORY, 'research-history') : undefined), assets: researchAssets }) } = {}) {
   const allowed = new Set(origins)
   let at = now(), requests = 0, active = 0, eventRequests = 0, calendarActive = 0, derivativeRequests = 0, contextRequests = 0
   const handler = async (req, res, next = () => { res.writeHead(404); res.end() }) => {
@@ -124,6 +124,12 @@ export function createResearchHandler({ local = false, origins = [], client = cr
       try { return send(200, derivatives.snapshot(asset, Number(url.searchParams.get('days')))) }
       catch { return send(503, { error: 'history_storage_unavailable' }) }
     }
+    if (url.pathname === '/api/research/liquidations/history') {
+      if (url.searchParams.size !== 2 || !researchAssets.includes(asset) || !['24', '168'].includes(url.searchParams.get('hours'))) return send(400, { error: 'invalid_query' })
+      if (++eventRequests > 900) { headers['Retry-After'] = '60'; return send(429, { error: 'research_busy' }) }
+      try { return send(200, liquidations.history(asset, Number(url.searchParams.get('hours')))) }
+      catch { return send(503, { error: 'liquidation_history_unavailable' }) }
+    }
     const liquidationRoute = url.pathname === '/api/research/liquidations', calendarRoute = url.pathname === '/api/research/calendar'
     if (liquidationRoute || calendarRoute) {
       if (calendarRoute ? url.searchParams.size !== 0 : url.searchParams.size !== 1 || !researchAssets.includes(asset)) return send(400, { error: 'invalid_query' })
@@ -135,7 +141,7 @@ export function createResearchHandler({ local = false, origins = [], client = cr
       finally { if (calendarRoute) calendarActive-- }
     }
     if (!wallet && !history && url.pathname !== '/api/research/snapshot') return send(404, { error: 'not_found' })
-    if (history ? url.searchParams.size !== 3 || !researchAssets.includes(asset) || !Object.hasOwn(intervals, url.searchParams.get('timeframe')) || !['1000', '3000', '5000'].includes(url.searchParams.get('count')) : wallet ? req.method !== 'POST' || url.searchParams.size !== 0 : url.searchParams.size !== 1 || !researchAssets.includes(asset)) return send(400, { error: 'invalid_query' })
+    if (history ? url.searchParams.size !== 3 || !researchAssets.includes(asset) || !Object.hasOwn(intervals, url.searchParams.get('timeframe')) || !['1000', '3000', '5000', '20000'].includes(url.searchParams.get('count')) : wallet ? req.method !== 'POST' || url.searchParams.size !== 0 : url.searchParams.size !== 1 || !researchAssets.includes(asset)) return send(400, { error: 'invalid_query' })
     if (++requests > 30 || active >= 3) { headers['Retry-After'] = '60'; return send(429, { error: 'research_busy' }) }
     active++
     try {
@@ -152,6 +158,7 @@ export function createResearchHandler({ local = false, origins = [], client = cr
       send(200, await client.snapshot(asset))
     } catch { send(503, { error: 'research_unavailable' }) } finally { active-- }
   }
+  handler.start = () => liquidations.start?.()
   handler.derivativeContextReader = typeof derivatives.context === 'function' ? (...args) => derivatives.context(...args) : null
   handler.close = () => { liquidations.close(); calendar.close(); return derivatives.close() }
   return handler
@@ -160,6 +167,7 @@ export function createResearchHandler({ local = false, origins = [], client = cr
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const handler = createResearchHandler({ origins: (process.env.UPBIT_ALLOWED_ORIGINS ?? '').split(',').filter(Boolean) })
   const server = createServer(handler)
+  handler.start()
   server.on('close', handler.close)
   server.headersTimeout = 10_000; server.requestTimeout = 15_000; server.maxConnections = 128
   server.listen(Number(process.env.PORT ?? 8791), process.env.HOST ?? '127.0.0.1')

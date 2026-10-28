@@ -1,3 +1,4 @@
+import { ForwardTrialPanel } from './ForwardTrialPanel'
 import { useEffect, useRef, useState } from 'react'
 import type { ResearchHistory } from '@/services/research/researchClient'
 import { hasDerivativeFilters, type DerivativeContextPoint, type ExplorerConfig } from '@/services/research/signalExplorer'
@@ -92,6 +93,7 @@ export function SignalValidation({ history, config, contexts, simple, loading }:
         <div className={styles.table}><table><caption>뒤 구간 최근 30건</caption><thead><tr><th>신호 발생</th><th>결과</th><th>비용 차감 후</th>{report.input.funding && <th>펀딩비 · 지급 + / 수취 −</th>}</tr></thead><tbody>{report.validation.trades.slice(-30).reverse().map(t => <tr key={t.signalAt}><td>{date(t.signalAt)}</td><td>{{ up: '상단 도달', down: '하단 도달', timeout: '기간 종료', ambiguous: '양쪽·순서 불명' }[t.outcome]}</td><td>{range(t.netLow, t.netHigh)}</td>{report.input.funding && <td>{t.funding ? range(t.funding.debitLow, t.funding.debitHigh, 4) : '—'}</td>}</tr>)}</tbody></table></div>
       </details>
       <div className={styles.export}><button onClick={() => download(report)}>검증 기록 다운로드</button><small>가격·정산 기록·조건·비용·제외 건수·결과를 함께 저장합니다. 개인 계정·보유 정보는 포함하지 않아요.</small></div>
+      <ForwardTrialPanel asset={report.input.history.asset} config={config} />
     </div>}
   </section>
 }

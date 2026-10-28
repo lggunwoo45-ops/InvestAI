@@ -4,6 +4,7 @@ import { SignalValidation } from './SignalValidation'
 import { defaultExplorerConfig } from '@/services/research/signalExplorer'
 import type { ResearchHistory } from '@/services/research/researchClient'
 import * as fundingClient from '@/services/research/fundingSettlements'
+vi.mock('./ForwardTrialPanel', () => ({ ForwardTrialPanel: () => null }))
 const hour = 3_600_000, base = Date.UTC(2026, 0, 1)
 const config = { ...defaultExplorerConfig, signals: ['three-long'], window: 1 as const, horizon: 4 }
 const history: ResearchHistory = { version: 1, asset: 'BTC', timeframe: '1h', requested: 1000, source: 'Binance USDⓈ-M', asOf: base + 400 * hour, fetchedAt: base + 400 * hour,

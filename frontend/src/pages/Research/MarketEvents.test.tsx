@@ -4,6 +4,7 @@ import { EconomicCalendarPanel, LiquidationPanel } from './MarketEvents'
 import { fetchEconomicCalendar, fetchLiquidations, type EconomicCalendar, type Liquidations } from '@/services/research/marketEvents'
 
 let mode = 'simple'
+vi.mock('./LiquidationArchivePanel', () => ({ LiquidationArchivePanel: () => null }))
 vi.mock('@/app/displayMode/useDisplayMode', () => ({ useDisplayMode: () => ({ displayMode: mode }) }))
 vi.mock('@/services/research/marketEvents', async importOriginal => ({ ...await importOriginal<typeof import('@/services/research/marketEvents')>(), fetchLiquidations: vi.fn(), fetchEconomicCalendar: vi.fn() }))
 const at = Date.parse('2026-10-26T00:00:00Z')

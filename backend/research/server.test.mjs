@@ -2,6 +2,20 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { createResearchClient, createResearchHandler } from './server.mjs'
 import { Readable } from 'node:stream'
+test('liquidation archive route validates scope and reports unavailable storage honestly', async () => {
+  let calls = 0, failed = false
+  const handler = createResearchHandler({ local: true, liquidations: { history(asset, hours) { calls++; if (failed) throw new Error('private path'); return { asset, hours } }, close() {} } })
+  const path = '/api/research/liquidations/history?asset=BTC&hours=168'
+  try {
+    assert.deepEqual((await request(handler, path)).body, { asset: 'BTC', hours: 168 })
+    for (const bad of [path + '&extra=1', path.replace('BTC', 'BAD'), path.replace('168', '100'), path + '&asset=ETH']) assert.equal((await request(handler, bad)).status, 400)
+    assert.equal((await request(handler, path, { method: 'POST' })).status, 405)
+    assert.equal((await request(handler, path, { origin: 'https://bad.example' })).status, 403)
+    assert.equal(calls, 1); failed = true
+    const failedResponse = await request(handler, path)
+    assert.equal(failedResponse.status, 503); assert.equal(failedResponse.body.error, 'liquidation_history_unavailable')
+  } finally { handler.close() }
+})
 
 test('fixed endpoints, shared cache and independent failures', async () => {
   let calls = 0, now = 10_000

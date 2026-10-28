@@ -1,3 +1,4 @@
+import { EtfLedger } from './EtfLedger'
 import { SimpleTasks } from '@/components/simple/SimpleWorkspace'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
@@ -164,21 +165,10 @@ function Indicators({ snapshot, candles, now, asset }: { snapshot: ResearchSnaps
     { id: 'history', title: '며칠 동안의 변화', description: '계약과 보유 비용', content: <DerivativeHistory key={`history-${asset}`} asset={asset} /> },
     { id: 'events', title: '다가오는 일정', description: '가격이 흔들릴 수 있는 날', content: <EconomicCalendarPanel /> },
     { id: 'liquidations', title: '강제 정리된 포지션', description: '최근 관측한 청산', content: <LiquidationPanel key={asset} asset={asset} /> },
-    { id: 'etf', title: 'ETF 수급 기록', description: '확정 자료를 직접 합산', content: <section className={styles.panel}><h2>ETF 자금이 얼마나 들어왔나요?</h2><p>자동 수집은 아직 연결되지 않았어요. 확보한 날짜별 확정 자료만 직접 합산할 수 있어요.</p><ResearchHelp topic="etf" /><EtfLedger /></section> },
+    { id: 'etf', title: 'ETF 수급 기록', description: '확정 자료 저장·수정·내보내기', content: <section className={styles.panel}><h2>ETF 자금이 얼마나 들어왔나요?</h2><p>자동 수집은 아직 연결되지 않았어요. 확보한 날짜별 확정 자료를 BTC·ETH별로 저장하고 합산할 수 있어요.</p><ResearchHelp topic="etf" /><EtfLedger /></section> },
   ]} />
 
 
-}
-
-function EtfLedger() {
-  const [text, setText] = useState(''), [error, setError] = useState(''), [rows, setRows] = useState<{ date: string; flow: number; source: string }[]>([])
-  return <div><p>직접 확보한 확정 데이터를 날짜, 순유입액(USD), 출처 순서의 CSV로 입력하면 합산합니다. 서버 수집 자료와 구분되는 수동 기록이며 이 화면을 나가면 초기화됩니다.</p><label>ETF 확정 순유입 CSV<textarea value={text} rows={4} placeholder={'2026-10-20,1000000,발행사 보고서'} maxLength={30000} onChange={e => setText(e.target.value)} /></label><button onClick={() => {
-    try {
-      const parsed = text.trim().split(/\r?\n/).map(line => { const [date, flow, ...source] = line.split(','); const n = numeric(flow); if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(Date.parse(date)) || new Date(date).toISOString().slice(0, 10) !== date || n === null || !source.join(',').trim()) throw new Error(); return { date, flow: n, source: source.join(',').slice(0, 300) } })
-      if (new Set(parsed.map(r => r.date)).size !== parsed.length) throw new Error()
-      setRows(parsed); setError('')
-    } catch { setError('날짜·순유입액·출처를 확인해주세요. 날짜가 중복되면 합산하지 않습니다.'); setRows([]) }
-  }}>기록 합산</button>{error && <p role="alert">{error}</p>}{rows.length > 0 && <><p>직접 입력 {rows.length}일 합계: {format(rows.reduce((sum, row) => sum + row.flow, 0))} USD</p><ul>{rows.map(r => <li key={r.date}>{r.date} · {format(r.flow)} USD · {r.source}</li>)}</ul></>}</div>
 }
 
 function Journal({ asset, snapshot, candles, now }: { asset: string; snapshot: ResearchSnapshot | null; candles: readonly Candle[]; now: number }) {
@@ -238,9 +228,9 @@ function Guide() {
     <dt>마크가격</dt><dd>미실현 손익과 청산 판단 등에 사용하는 거래소 기준 가격입니다. 마지막 체결가와 다를 수 있습니다.</dd>
     <dt>도미넌스</dt><dd>전체 가상자산 시가총액에서 해당 자산이 차지하는 비중입니다.</dd>
     <dt>과거 도달 비율</dt><dd>정해진 과거 표본에서 경계를 먼저 통과한 비율입니다. 앞으로 성공할 확률이나 검증된 매매 우위가 아닙니다.</dd>
-  </dl><h3>공개된 계산 범위</h3><p>자료를 받지 못하면 확인 불가로 표시합니다. 복합 과열 점수와 미래 방향 확률은 만들지 않습니다. 신호 탐색은 30개 조건과 9개 시간봉, 최근 최대 5,000개 완료 봉을 지원합니다. 선택 편향·표본 부족·펀딩 비용의 한계가 있습니다. 포지션 계산은 일정 유지증거금률의 격리 계약 가정입니다.</p>
+  </dl><h3>공개된 계산 범위</h3><p>자료를 받지 못하면 확인 불가로 표시합니다. 복합 과열 점수와 미래 방향 확률은 만들지 않습니다. 신호 탐색은 30개 조건과 9개 시간봉, 최근 최대 20,000개 완료 봉을 지원합니다. 선택 편향·표본 부족·펀딩 비용의 한계가 있습니다. 포지션 계산은 일정 유지증거금률의 격리 계약 가정입니다.</p>
     <h3>신호 탐색과 자료 출처</h3><p>지표 계산은 InvestAI의 관측 기준을 따릅니다. 각 신호의 설명에서 계산 조건과 한계를 확인할 수 있습니다. 저장한 조건을 감시로 연결하면 이후 새로 충족된 봉과 그 뒤의 가격 변화를 기록합니다.</p><ul><li><a href="https://developers.binance.com/en/docs/catalog" target="_blank" rel="noreferrer">Binance 공개 시장 데이터</a></li><li><a href="https://docs.upbit.com/kr" target="_blank" rel="noreferrer">Upbit 공개 시세</a></li><li><a href="https://alternative.me/crypto/fear-and-greed-index/" target="_blank" rel="noreferrer">Alternative.me 공포·탐욕</a></li><li><a href="https://www.coingecko.com/" target="_blank" rel="noreferrer">CoinGecko 시가총액</a></li></ul>
-    <p>PC용 감시는 프로그램이 실행되는 동안 브라우저와 독립적으로 동작하고 등록 근거와 관측 결과를 보관합니다. Telegram은 서버 채널 설정과 등록별 동의가 필요합니다. 회원 서버가 연결된 경우 계정별 저장과 상시 감시를 사용할 수 있습니다. 시장 지표에서 Bybit 청산 관측과 BLS·FOMC 경제 일정을 확인할 수 있습니다. 청산은 연결 이후 최대 15분의 관측값이며 시장 전체 집계가 아닙니다. 결제·구독 권한과 검증된 장기 성과는 아직 제공하지 않습니다. 국내·미국 주식과 원자재의 추가 시세 연결은 이 모드의 범위에 포함되지 않습니다.</p>
+    <p>PC용 감시는 프로그램이 실행되는 동안 브라우저와 독립적으로 동작하고 등록 근거와 관측 결과를 보관합니다. Telegram은 서버 채널 설정과 등록별 동의가 필요합니다. 회원 서버가 연결된 경우 계정별 저장과 상시 감시를 사용할 수 있습니다. 시장 지표에서 Bybit 청산 관측과 BLS·FOMC 경제 일정을 확인할 수 있습니다. 청산은 개별 기록 15분과 시간별 합계 7일을 제공하며 연결 공백을 표시합니다. 시장 전체 집계는 아닙니다. 결제·구독 권한과 검증된 장기 성과는 아직 제공하지 않습니다. 국내·미국 주식과 원자재의 추가 시세 연결은 이 모드의 범위에 포함되지 않습니다.</p>
   </section>
 }
 

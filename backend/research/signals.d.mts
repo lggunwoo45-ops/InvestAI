@@ -52,7 +52,7 @@ export interface ExplorerConfig extends DerivativeFilters {
     cost: number;
     side: 'long' | 'short';
     regime: 'any' | 'above' | 'below' | 'volume';
-    bars: 1000 | 3000 | 5000;
+    bars: 1000 | 3000 | 5000 | 20000;
 }
 export declare const defaultExplorerConfig: ExplorerConfig;
 export declare function validExplorerConfig(c: ExplorerConfig): boolean;
