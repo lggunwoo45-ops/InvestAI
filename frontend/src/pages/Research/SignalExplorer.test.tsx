@@ -153,6 +153,7 @@ it('connects cost validation to the selected signals and preserves the report ac
   renderWithProviders(<SignalExplorer asset="BTC" />)
   await screen.findByRole('img', { name: '최근 가격 흐름과 조건 충족 위치' })
   fireEvent.click(screen.getByRole('button', { name: '비용·구간 검증하기 →' }))
+  fireEvent.click(screen.getByRole('radio', { name: /직접 비용 가정/ }))
   fireEvent.click(screen.getByRole('button', { name: '이 조건으로 구간 검증하기' }))
   expect(screen.getByRole('button', { name: '검증 기록 다운로드' })).toBeTruthy()
   fireEvent.click(screen.getByRole('button', { name: '과거에는 어땠나요' }))

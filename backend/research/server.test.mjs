@@ -46,6 +46,20 @@ test('stored derivatives are read-only, validate scope, isolate quota and do not
   assert.equal((await request(handler, '/api/research/derivatives?asset=BTC&days=7')).status, 429)
   handler.close(); assert.equal(closed, true)
 })
+test('settled funding route enforces read-only scope, time bounds, quotas and explicit failures', async () => {
+  let calls = 0, error
+  const handler = createResearchHandler({ local: true, now: () => 100_000_000, fundingReader: async (asset, from, to) => { calls++; if (error) throw new Error(error); return { asset, from, to } } })
+  const path = '/api/research/funding-settlements?asset=BTC&from=3600000&to=7200000'
+  assert.equal((await request(handler, path)).status, 200)
+  for (const bad of [path + '&extra=1', path.replace('BTC', 'BAD'), path.replace('7200000', '360000000'), path.replace('from=3600000', 'from='), path.replace('from=3600000', 'from=3600000.5')]) assert.equal((await request(handler, bad)).status, 400)
+  assert.equal((await request(handler, path, { origin: 'https://bad.example' })).status, 403)
+  assert.equal((await request(handler, path, { method: 'POST' })).status, 405)
+  assert.equal(calls, 1)
+  for (const [reason, status] of [['funding_range_too_large', 422], ['funding_busy', 429], ['upstream_details', 503]]) {
+    error = reason; const r = await request(handler, path); assert.equal(r.status, status); assert.notEqual(r.body.error, 'upstream_details')
+  }
+  handler.close()
+})
 test('context API validates bounded closed-time grids, origins and read-only scope', async () => {
   let calls = 0
   const handler = createResearchHandler({ local: true, now: () => 100_000_000, derivatives: { context(asset, timeframe, from, to) { calls++; return { asset, timeframe, from, to } }, close() {} } })

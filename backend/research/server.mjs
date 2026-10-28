@@ -2,6 +2,7 @@ import { createServer } from 'node:http'
 import { fileURLToPath } from 'node:url'
 import { resolve, join } from 'node:path'
 import { createHistoryReader, intervals } from './history.mjs'
+import { createFundingReader, validFundingQuery } from './funding.mjs'
 import { createLiquidationCollector } from './liquidations.mjs'
 import { createEconomicCalendar } from './economicCalendar.mjs'
 import { createDerivativeCollector, validContextQuery } from './derivatives.mjs'
@@ -77,7 +78,7 @@ export function createResearchClient({ fetchImpl = fetch, now = Date.now } = {})
   }
 }
 
-export function createResearchHandler({ local = false, origins = [], client = createResearchClient(), now = Date.now, historyReader = createHistoryReader(), liquidations = createLiquidationCollector({ assets: researchAssets }), calendar = createEconomicCalendar(), derivatives = createDerivativeCollector({ directory: process.env.INVESTAI_RESEARCH_DIRECTORY || (process.env.INVESTAI_CLOUD_DIRECTORY ? join(process.env.INVESTAI_CLOUD_DIRECTORY, 'research-history') : undefined), assets: researchAssets }) } = {}) {
+export function createResearchHandler({ local = false, origins = [], client = createResearchClient(), now = Date.now, historyReader = createHistoryReader(), fundingReader = createFundingReader({ assets: researchAssets, now }), liquidations = createLiquidationCollector({ assets: researchAssets }), calendar = createEconomicCalendar(), derivatives = createDerivativeCollector({ directory: process.env.INVESTAI_RESEARCH_DIRECTORY || (process.env.INVESTAI_CLOUD_DIRECTORY ? join(process.env.INVESTAI_CLOUD_DIRECTORY, 'research-history') : undefined), assets: researchAssets }) } = {}) {
   const allowed = new Set(origins)
   let at = now(), requests = 0, active = 0, eventRequests = 0, calendarActive = 0, derivativeRequests = 0, contextRequests = 0
   const handler = async (req, res, next = () => { res.writeHead(404); res.end() }) => {
@@ -98,6 +99,18 @@ export function createResearchHandler({ local = false, origins = [], client = cr
     if (url.pathname === '/api/research/health') return send(200, { service: 'investai-research', version: 1 })
     const asset = url.searchParams.get('asset')
     if (now() - at >= 60_000) { at = now(); requests = 0; eventRequests = 0; derivativeRequests = 0; contextRequests = 0 }
+    if (url.pathname === '/api/research/funding-settlements') {
+      const from = Number(url.searchParams.get('from')), to = Number(url.searchParams.get('to'))
+      if (url.searchParams.size !== 3 || !/^\d+$/.test(url.searchParams.get('from') ?? '') || !/^\d+$/.test(url.searchParams.get('to') ?? '') || !validFundingQuery(asset, from, to, now(), researchAssets)) return send(400, { error: 'invalid_query' })
+      if (++requests > 30 || active >= 3) { headers['Retry-After'] = '60'; return send(429, { error: 'research_busy' }) }
+      active++
+      try { return send(200, await fundingReader(asset, from, to)) }
+      catch (error) {
+        const reason = error?.message
+        if (reason === 'funding_busy') { headers['Retry-After'] = '300'; return send(429, { error: reason }) }
+        return send(reason === 'funding_range_too_large' ? 422 : 503, { error: reason === 'funding_range_too_large' ? reason : 'funding_unavailable' })
+      } finally { active-- }
+    }
     if (url.pathname === '/api/research/derivatives/context') {
       const timeframe = url.searchParams.get('timeframe'), from = Number(url.searchParams.get('from')), to = Number(url.searchParams.get('to'))
       if (url.searchParams.size !== 4 || !validContextQuery(asset, timeframe, from, to, now(), researchAssets)) return send(400, { error: 'invalid_query' })
