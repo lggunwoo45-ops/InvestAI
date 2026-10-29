@@ -2,10 +2,11 @@ import { act, render, screen, cleanup, fireEvent } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { AppShell } from './AppShell'
+vi.mock('@/i18n/useLanguage', () => ({ useLanguage: () => ({ language: 'ko' }) }))
 vi.mock('@/app/displayMode/useDisplayMode', () => ({ useDisplayMode: () => ({ displayMode: 'expert' }) }))
 vi.mock('@/hooks/useUiStore', () => ({ useUiStore: () => ({ isAiCopilotOpen: true, isSidebarPinned: true }) }))
 vi.mock('../Sidebar/Sidebar', () => ({ Sidebar: () => <aside>데스크톱 옆 메뉴</aside> }))
-vi.mock('../Header/Header', () => ({ Header: () => <header>데스크톱 상단 메뉴</header> }))
+vi.mock('../Header/Header', () => ({ Header: ({ onToggleCopilot }: { onToggleCopilot?: () => void }) => <header>데스크톱 상단 메뉴<button onClick={onToggleCopilot}>도움말 열기</button></header> }))
 vi.mock('../Header/SimpleHeader', () => ({ SimpleHeader: ({ onToggleCopilot }: { onToggleCopilot?: () => void }) => <header>좁은 화면 상단 메뉴<button onClick={onToggleCopilot}>도움말 열기</button></header> }))
 vi.mock('../AiCopilot/AiCopilot', () => ({ AiCopilot: ({ onClose }: { onClose?: () => void }) => <aside>AI 도움말<button onClick={onClose}>도움말 닫기</button></aside> }))
 vi.mock('@/components/cloud/MemberAccount', () => ({ MemberAccount: () => null }))
@@ -33,4 +34,21 @@ it('uses the full width on mobile without changing expert mode and restores desk
   expect(screen.getByText('데스크톱 옆 메뉴')).toBeTruthy()
   expect(screen.getByText('전문가 분석 기능')).toBeTruthy()
   view.unmount(); expect(listeners.size).toBe(0)
+})
+
+it('automatically undocks the assistant on smaller monitors and restores the wide-screen preference', () => {
+  vi.stubGlobal('matchMedia', () => ({ matches:false, addEventListener:vi.fn(), removeEventListener:vi.fn() }))
+  let notify: ResizeObserverCallback
+  vi.stubGlobal('ResizeObserver', class { constructor(callback: ResizeObserverCallback) { notify = callback } observe() {} disconnect() {} })
+  render(<MemoryRouter initialEntries={['/market']}><Routes><Route element={<AppShell />}><Route path="/market" element={<div>마켓</div>} /></Route></Routes></MemoryRouter>)
+  const resize = (width: number) => act(() => notify([{contentRect:{width,height:700}} as ResizeObserverEntry], {} as ResizeObserver))
+  resize(1800)
+  expect(screen.getByText('AI 도움말')).toBeTruthy()
+  resize(1100)
+  expect(screen.queryByText('AI 도움말')).toBeNull()
+  fireEvent.click(screen.getByText('도움말 열기'))
+  expect(screen.getByText('AI 도움말')).toBeTruthy()
+  fireEvent.click(screen.getByText('도움말 닫기'))
+  resize(1800)
+  expect(screen.getByText('AI 도움말')).toBeTruthy()
 })

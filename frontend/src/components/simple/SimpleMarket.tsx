@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
+import { MarketPanels } from '@/components/workspace/MarketPanels'
 import { Link } from 'react-router-dom'
 import { useLanguage } from '@/i18n/useLanguage'
 import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
@@ -11,6 +12,7 @@ import { SimpleWorkspace } from './SimpleWorkspace'
 import styles from './SimpleWorkspace.module.css'
 
 interface Props {
+  chart?: ReactNode; activity?: ReactNode;
   catalog: MarketCatalog | null; loading: boolean; error: string | null; venue: MarketVenue; onVenue: (venue: MarketVenue) => void;
   selected: MarketInstrument | null; onSelect: (instrument: MarketInstrument) => void; search: string; onSearch: (value: string) => void;
   favorites: ReadonlySet<string>; favoritesOnly: boolean; onFavoritesOnly: (value: boolean) => void; onFavorite: (id: string) => void; onRetry: () => void;
@@ -27,16 +29,7 @@ export function SimpleMarket(props: Props) {
   const limit = page.key === queryKey ? page.count : 12
   const query = search.trim().toLocaleLowerCase()
   const instruments = (catalog?.instruments ?? []).filter(item => (!favoritesOnly || favorites.has(item.id)) && (!query || [item.symbol, item.name, item.koreanName, item.englishName].some(value => value?.toLocaleLowerCase().includes(query))))
-  return <SimpleWorkspace title={ko ? '궁금한 종목을 찾아보세요' : 'Find an asset you know'} description={ko ? '이름을 찾고, 하나를 골라 지금 확인할 내용을 읽어보세요.' : 'Search by name and select an asset to review.'}>
-    <div className={styles.controls}>
-      <label>{ko ? '시장 선택' : 'Market'}<select value={venue} onChange={event => { onVenue(event.target.value as MarketVenue); setShowDetail(false) }}>{venues.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-      {(!compact || !showDetail) && <><label>{ko ? '종목 이름' : 'Asset name'}<input type="search" value={search} onChange={event => onSearch(event.target.value)} placeholder={ko ? '예: 비트코인, BTC' : 'e.g. Bitcoin, BTC'} /></label><button type="button" aria-pressed={favoritesOnly} onClick={() => onFavoritesOnly(!favoritesOnly)}>{ko ? '관심종목만' : 'Favorites only'}</button></>}
-      <button type="button" disabled={loading} onClick={onRetry}>{ko ? '시세 새로고침' : 'Refresh'}</button>
-    </div>
-    {catalog?.source === 'mock' && <p role="status" className={styles.risk}>{ko ? '예시 시세입니다. 실제 투자 판단에 사용할 수 없어요.' : 'Example quotes. These are not live investment data.'}</p>}
-    {error && <p role="alert">{ko ? '시세를 가져오지 못했어요. 새로고침으로 다시 확인해주세요.' : 'Quotes unavailable. Please refresh.'}</p>}
-    <div className={!compact ? styles.split : undefined}>
-      {(!compact || !showDetail) && <section className={styles.list} aria-label={ko ? '종목 목록' : 'Assets'}>
+  const assetList = <section className={styles.list} aria-label={ko ? '종목 목록' : 'Assets'}>
         <p className={styles.note}>{loading ? (ko ? '목록을 불러오고 있어요…' : 'Loading assets…') : `${instruments.length} ${ko ? '개 종목 · 거래량은 추천 순위가 아니에요' : 'assets · turnover is not a recommendation'}`}</p>
         {instruments.slice(0, limit).map(item => <div key={item.id} className={styles.row}>
           <button type="button" aria-pressed={item.id === selected?.id} onClick={() => { onSelect(item); setShowDetail(true) }}><span><strong>{item.displaySymbol ?? item.symbol}</strong>{' '}<small>{ko ? item.koreanName ?? item.name : item.name}</small></span><span aria-hidden>→</span></button>
@@ -44,12 +37,24 @@ export function SimpleMarket(props: Props) {
         </div>)}
         {!loading && instruments.length === 0 && <p>{ko ? '해당 종목이 없어요. 검색어나 관심종목 필터를 바꿔보세요.' : 'No matching assets. Try another name or filter.'}</p>}
         {limit < instruments.length && <button type="button" onClick={() => setPage({ key: queryKey, count: limit + 12 })}>{ko ? '종목 더 보기' : 'More assets'}</button>}
-      </section>}
-      {selected && (!compact || showDetail) && <section className={styles.tasks}>
-        {compact && <button type="button" onClick={() => setShowDetail(false)}>← {ko ? '다른 종목 찾기' : 'Back to assets'}</button>}
-        <SimpleMarketAsset key={selected.id} instrument={selected} />
-      </section>}
+      </section>
+  const assetDetail = <section className={styles.tasks}>
+    {compact && <button type="button" onClick={() => setShowDetail(false)}>← {ko ? '다른 종목 찾기' : 'Back to assets'}</button>}
+    {props.chart}
+    {selected && <SimpleMarketAsset key={selected.id} instrument={selected} />}
+  </section>
+  return <SimpleWorkspace wide={!!props.chart} title={ko ? '궁금한 종목을 찾아보세요' : 'Find an asset you know'} description={ko ? '이름을 찾고, 하나를 골라 지금 확인할 내용을 읽어보세요.' : 'Search by name and select an asset to review.'}>
+    <div className={styles.controls}>
+      <label>{ko ? '시장 선택' : 'Market'}<select value={venue} onChange={event => { onVenue(event.target.value as MarketVenue); setShowDetail(false) }}>{venues.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+      {(!compact || !showDetail) && <><label>{ko ? '종목 이름' : 'Asset name'}<input type="search" value={search} onChange={event => onSearch(event.target.value)} placeholder={ko ? '예: 비트코인, BTC' : 'e.g. Bitcoin, BTC'} /></label><button type="button" aria-pressed={favoritesOnly} onClick={() => onFavoritesOnly(!favoritesOnly)}>{ko ? '관심종목만' : 'Favorites only'}</button></>}
+      <button type="button" disabled={loading} onClick={onRetry}>{ko ? '시세 새로고침' : 'Refresh'}</button>
     </div>
+    {catalog?.source === 'mock' && <p role="status" className={styles.risk}>{ko ? '예시 시세입니다. 실제 투자 판단에 사용할 수 없어요.' : 'Example quotes. These are not live investment data.'}</p>}
+    {error && <p role="alert">{ko ? '시세를 가져오지 못했어요. 새로고침으로 다시 확인해주세요.' : 'Quotes unavailable. Please refresh.'}</p>}
+    {props.chart && selected && (!compact || showDetail) ? <div className={styles.marketPanels}><MarketPanels navigator={compact ? undefined : assetList} detail={assetDetail} activity={props.activity} /></div> : <div className={!compact ? styles.split : undefined}>
+      {(!compact || !showDetail) && assetList}
+      {selected && (!compact || showDetail) && assetDetail}
+    </div>}
   </SimpleWorkspace>
 }
 

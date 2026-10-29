@@ -47,3 +47,7 @@
   .mobileExplorer[hidden] { display: none; }
   .detailState { padding: 28px 16px; min-height: 160px; font-size: 14px; line-height: 1.7; overflow-wrap: anywhere; }
 }
+
+.pendingWorkspace { grid-template-columns:minmax(240px,300px) minmax(0,1fr); }
+.pendingWorkspaceCollapsed { grid-template-columns:56px minmax(0,1fr); }
+.navigator { height:100%; }

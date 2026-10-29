@@ -12,7 +12,7 @@ import { useLanguage } from '@/i18n/useLanguage'
 import { formatDate, formatTime } from '@/utils/formatDateTime'
 import styles from './Header.module.css'
 
-export function Header({ hideCopilotToggle = false }: { hideCopilotToggle?: boolean }) {
+export function Header({ hideCopilotToggle = false, copilotOpen, onToggleCopilot }: { hideCopilotToggle?: boolean; copilotOpen?: boolean; onToggleCopilot?: () => void }) {
   const navigate = useNavigate()
   const now = useCurrentTime()
   const { isAiCopilotOpen, toggleAiCopilot } = useUiStore()
@@ -48,7 +48,7 @@ export function Header({ hideCopilotToggle = false }: { hideCopilotToggle?: bool
           <strong>{formatTime(now)}</strong>
           <span>{formatDate(now)}</span>
         </div>
-        {!hideCopilotToggle && <button className={styles.iconButton} type="button" onClick={toggleAiCopilot} aria-pressed={isAiCopilotOpen} aria-label="Toggle AI Copilot">
+        {!hideCopilotToggle && <button className={styles.iconButton} type="button" onClick={onToggleCopilot ?? toggleAiCopilot} aria-pressed={copilotOpen ?? isAiCopilotOpen} aria-label="Toggle AI Copilot">
           <Icon name="panel" size={18} />
         </button>}
         <button className={styles.userMenu} type="button" aria-label="Open user menu" onClick={() => navigate('/settings')}>

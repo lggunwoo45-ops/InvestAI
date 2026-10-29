@@ -1,4 +1,7 @@
-import { memo, useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
+import { usePanelSize } from '@/components/workspace/usePanelSize'
+import { ResizeHandle } from '@/components/workspace/ResizeHandle'
 import {
   CandlestickSeries,
   ColorType,
@@ -84,6 +87,14 @@ function chartPricePrecision(price: number, quoteCurrency: string) {
 export const CandlestickChart = memo(function CandlestickChart({ candles, instrument, timeframe, mode, preview = false, technicalAnalysis, technicalLoading = false }: CandlestickChartProps) {
   const { language } = useLanguage()
   const compact = useCompactLayout()
+  const { displayMode } = useDisplayMode()
+  const [height, setHeight] = usePanelSize(`investai.market.panels.${displayMode}.v1.chart-height`, 0, 0, 1200)
+  const [actualHeight, setActualHeight] = useState(360)
+  useEffect(() => {
+    const reset = (e: Event) => { if ((e as CustomEvent).detail === displayMode) setHeight(0) }
+    window.addEventListener('investai-market-layout-reset', reset)
+    return () => window.removeEventListener('investai-market-layout-reset', reset)
+  }, [displayMode, setHeight])
   const containerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
   const candleSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null)
@@ -156,7 +167,10 @@ export const CandlestickChart = memo(function CandlestickChart({ candles, instru
     const activePriceLines = activePriceLinesRef.current
 
     const resizeObserver = new ResizeObserver(([entry]) => {
-      chart.applyOptions({ width: Math.floor(entry.contentRect.width), height: Math.floor(entry.contentRect.height) })
+      if (!entry || entry.contentRect.width < 1 || entry.contentRect.height < 1) return
+      const nextHeight = Math.floor(entry.contentRect.height)
+      chart.applyOptions({ width: Math.floor(entry.contentRect.width), height: nextHeight })
+      setActualHeight(nextHeight)
     })
     resizeObserver.observe(container)
     return () => {
@@ -227,7 +241,7 @@ export const CandlestickChart = memo(function CandlestickChart({ candles, instru
   }, [analysisMode, compact, instrument.id, renderedPriceLines, timeframe])
 
   return (
-    <figure className={styles.chart} data-chart-structure-panel={chartStructurePanelCollapsed ? 'collapsed' : 'expanded'}>
+    <figure style={{ '--chart-height': height ? `min(${Math.max(280, height)}px, max(280px, calc(100dvh - 300px)))` : undefined } as CSSProperties} className={styles.chart} data-chart-structure-panel={chartStructurePanelCollapsed ? 'collapsed' : 'expanded'}>
       <div className={styles.legend}>
         <span>{instrument.symbol}</span><span>{timeframe}</span>
         <span>O {priceLabel.format(latest?.open ?? 0)}</span><span>H {priceLabel.format(latest?.high ?? 0)}</span>
@@ -236,6 +250,12 @@ export const CandlestickChart = memo(function CandlestickChart({ candles, instru
       <div className={styles.chartViewport}>
         <div ref={containerRef} className={styles.canvas} role="img" aria-label={`${instrument.symbol} ${timeframe} TradingView candlestick chart in ${preview ? 'cached preview' : mode} mode`} />
         <div className={styles.watermark}>TRADINGVIEW LIGHTWEIGHT CHARTS · {preview ? 'CACHED PREVIEW' : mode.toUpperCase()}</div>
+      </div>
+      <ResizeHandle axis="height" label={language === 'ko' ? '차트 높이 조절' : 'Resize chart height'} value={actualHeight} min={280} max={1200} onChange={setHeight} onReset={() => setHeight(0)} />
+      <div className={styles.sizeControls}>
+        <label>{language === 'ko' ? '차트 높이' : 'Chart height'} <input aria-label={language === 'ko' ? '차트 높이' : 'Chart height'} type="range" min={280} max={1200} step={10} value={Math.min(1200, Math.max(280, actualHeight))} onChange={e => setHeight(Number(e.target.value))} /></label>
+        <span>{height ? `${actualHeight}px` : language === 'ko' ? '화면에 맞춤' : 'Automatic'}</span>
+        <button type="button" onClick={() => setHeight(0)} disabled={!height}>{language === 'ko' ? '자동 높이' : 'Auto height'}</button>
       </div>
       <ChartAnalysisControls
         language={language}

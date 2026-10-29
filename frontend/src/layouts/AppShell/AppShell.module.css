@@ -33,3 +33,11 @@
   .main { scrollbar-gutter: auto; overscroll-behavior-y: auto; padding-bottom: env(safe-area-inset-bottom, 0px); }
   .body > aside { width: 100%; }
 }
+
+.marketBody { position:relative; }
+.marketBody.dockedCopilot { grid-template-columns:minmax(0,1fr) 10px var(--market-copilot-width); }
+.marketBody.floatingCopilot { grid-template-columns:minmax(0,1fr); }
+.marketBody.floatingCopilot > aside { position:absolute; top:0; right:0; bottom:0; z-index:15; width:var(--market-copilot-width); max-width:100%; box-shadow:-14px 0 32px var(--color-shadow); }
+.copilotDivider { display:flex; min-height:0; }.copilotDivider > div { height:100%; }
+.floatingCopilot .copilotDivider { position:absolute; right:var(--market-copilot-width); top:0; bottom:0; z-index:16; }
+@media(max-width:760px) { .marketBody.floatingCopilot > aside { width:100%; } }

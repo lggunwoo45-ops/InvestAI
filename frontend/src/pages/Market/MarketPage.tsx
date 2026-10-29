@@ -3,6 +3,8 @@ import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
 import { SimpleMarket } from '@/components/simple/SimpleMarket'
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 
+import { MarketDetailPanel } from '@/components/market-detail/MarketDetailPanel/MarketDetailPanel'
+import { TradingInformation } from '@/components/market-detail/TradingInformation/TradingInformation'
 import { MarketDetailWorkspace } from '@/components/market-detail/MarketDetailWorkspace/MarketDetailWorkspace'
 import { MarketAssetSwitcher } from '@/components/market/MarketAssetSwitcher/MarketAssetSwitcher'
 import { MarketExplorer } from '@/components/market/MarketExplorer/MarketExplorer'
@@ -194,7 +196,24 @@ export function MarketPage() {
     })
   }, [])
 
-  if (simple) return <SimpleMarket catalog={catalogState.catalog} loading={catalogState.loading} error={catalogState.error} venue={venue} onVenue={changeVenue} selected={selectedInstrument} onSelect={openInstrument} search={search} onSearch={setSearch} favorites={favoriteIds} favoritesOnly={favoritesOnly} onFavoritesOnly={setFavoritesOnly} onFavorite={changeFavorite} onRetry={() => setRetry(value => value + 1)} />
+  const expandList = () => {
+    setInstrumentListCollapsed(false)
+    try { window.localStorage.setItem(MARKET_LIST_COLLAPSED_KEY, 'false') } catch { /* Optional preference. */ }
+  }
+  useEffect(() => {
+    const reset = (e: Event) => {
+      if ((e as CustomEvent).detail !== 'expert') return
+      setInstrumentListCollapsed(false)
+      try { window.localStorage.setItem(MARKET_LIST_COLLAPSED_KEY, 'false') } catch { /* Optional preference. */ }
+    }
+    window.addEventListener('investai-market-layout-reset', reset)
+    return () => window.removeEventListener('investai-market-layout-reset', reset)
+  }, [])
+  const preview = detailState.preview
+  const snapshot = selectedSnapshot ?? preview?.snapshot
+  const currentSnapshot = selectedInstrument && snapshot?.instrument.id === selectedInstrument.id && snapshot.timeframe === selectedTimeframe
+  const detailConnection = detailState.state?.connection ?? { requestedMode: marketDataMode, effectiveMode: 'live' as const, status: 'connecting' as const, provider: 'Upbit Korea', reconnectAttempt: 0, lastUpdatedAt: null, message: 'Checking latest candle history…' }
+  if (simple) return <SimpleMarket chart={currentSnapshot && snapshot ? <MarketDetailPanel snapshot={snapshot} connection={detailConnection} previewAt={preview?.storedAt} selectedTimeframe={selectedTimeframe} marketDataMode={marketDataMode} onSelectTimeframe={selectTimeframe} onMarketDataModeChange={setMarketDataMode} /> : <p role="status">{language === 'ko' ? '차트를 불러오는 중입니다.' : 'Loading chart…'}</p>} activity={currentSnapshot && snapshot ? <TradingInformation snapshot={snapshot} connection={detailConnection} /> : undefined} catalog={catalogState.catalog} loading={catalogState.loading} error={catalogState.error} venue={venue} onVenue={changeVenue} selected={selectedInstrument} onSelect={openInstrument} search={search} onSearch={setSearch} favorites={favoriteIds} favoritesOnly={favoritesOnly} onFavoritesOnly={setFavoritesOnly} onFavorite={changeFavorite} onRetry={() => setRetry(value => value + 1)} />
 
   const explorerPanel = (
     <MarketExplorer
@@ -254,10 +273,8 @@ export function MarketPage() {
     </div>
   </div>
 
-  const preview = detailState.preview
-  const snapshot = selectedSnapshot ?? preview?.snapshot
-  const currentSnapshot = selectedInstrument && snapshot?.instrument.id === selectedInstrument.id && snapshot.timeframe === selectedTimeframe
   const detailWorkspace = currentSnapshot && snapshot && (detailState.state || preview) ? <MarketDetailWorkspace
+      onOpenList={expandList}
       navigator={compact ? null : explorer}
       instrumentListCollapsed={compact || listIsCollapsed}
       snapshot={snapshot}
