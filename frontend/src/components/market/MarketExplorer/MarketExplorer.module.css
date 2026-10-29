@@ -280,3 +280,23 @@
   .mobilePagination button { min-width: 74px; border: 1px solid var(--color-border); border-radius: 9px; background: var(--color-surface); color: var(--color-text); font: inherit; }
   .mobilePagination button:disabled { opacity: .45; }
 }
+
+/* A resizable list follows its own width, independently of monitor size. */
+@container market-list (max-width:499px) {
+  .compact .header { flex-wrap:wrap; }.compact .count { flex:1 1 auto; justify-content:flex-end; }
+  .compact .tableHead,.compact .row { grid-template-columns:minmax(0,1fr) minmax(78px,1fr) 64px 30px; padding-inline:5px; }
+  .compact .tableHead button:nth-child(4),.compact .row > span:nth-of-type(3) { display:none; }
+  .compact .tableHead button:nth-child(3) { display:flex; }.compact .row > span:nth-of-type(2) { display:block; }
+  .compact .tableHead button { white-space:normal; gap:2px; font-size:9px; }
+  .compact .numeric { min-width:0; padding:0 2px; font-size:11px; }
+  .compact .star { width:28px; }.compact .identityLine strong { font-size:11px; }
+}
+@container market-list (max-width:280px) {
+  .compact .tableHead,.compact .row { grid-template-columns:minmax(0,1fr) 80px 55px 28px; padding-inline:3px; }
+  .compact .numeric { font-size:10px; }.compact .identityLine strong { font-size:10px; }
+  .compact .instrument { padding-right:2px; }
+}
+@container market-list (min-width:500px) {
+  .compact .tableHead,.compact .row { grid-template-columns:minmax(110px,1fr) 105px 78px 100px 34px; }
+  .compact .tableHead button:nth-child(4) { display:flex; }.compact .row > span:nth-of-type(3) { display:block; }
+}

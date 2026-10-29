@@ -21,4 +21,4 @@
 .grid[data-layout=narrow] > .activity[hidden] { display:none; }
 @media(max-width:760px) { .workspace { height:auto; overflow:visible; }.toolbar { padding:10px; }.toolbar button { min-height:44px; }.grid { overflow:visible; } }
 
-.list { display:grid; grid-template-rows:minmax(0,1fr); }.listContent { min-width:0; min-height:0; overflow:auto; }
+.list { display:grid; grid-template-rows:minmax(0,1fr); }.listContent { container-type:inline-size; container-name:market-list; min-width:0; min-height:0; overflow:auto; }
