@@ -4,15 +4,6 @@
 .title strong { color: var(--color-text); font-size: 11px; }
 .stock .title { background: var(--color-surface-raised); }
 .title span { color: var(--color-text-muted); font: 9px ui-monospace, monospace; letter-spacing: .07em; text-transform: uppercase; }
-.content { display: grid; min-height: 0; grid-template-rows: minmax(300px, 3fr) minmax(180px, 2fr); overflow: hidden; }
-@media (max-width: 1550px) {
-  .content { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); }
-  .content > :first-child { border-right: 1px solid var(--color-border); border-bottom: 0; }
-}
-@media (max-width: 760px) {
-  .panel { display: block; border-left: 0; border-top: 1px solid var(--color-border); }
-  .title { min-height: 48px; padding: 10px 12px; gap: 8px; flex-wrap: wrap; }
-  .title strong { font-size: 14px; }
-  .content { grid-template-columns: minmax(0, 1fr); grid-template-rows: 370px 300px; overflow: visible; }
-  .content > :first-child { border-right: 0; border-bottom: 1px solid var(--color-border); }
-}
+.content { display:grid; min-width:0; min-height:0; overflow:hidden; }
+.content > section { min-width:0; min-height:0; overflow:auto; }
+@media(max-width:760px) { .title { min-height:35px; }.title strong { font-size:12px; } }

@@ -4,10 +4,10 @@ import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
 import { useLanguage } from '@/i18n/useLanguage'
 import styles from './SimpleWorkspace.module.css'
 
-export function SimpleWorkspace({ title, description, children, actions, enabled = true }: { title: string; description: string; children: ReactNode; actions?: ReactNode; enabled?: boolean }) {
+export function SimpleWorkspace({ title, description, children, actions, enabled = true, wide = false }: { title: string; description: string; children: ReactNode; actions?: ReactNode; enabled?: boolean; wide?: boolean }) {
   const { setDisplayMode } = useDisplayMode()
   const ko = useLanguage().language === 'ko'
-  return <div className={enabled ? styles.page : undefined} data-simple-workspace={enabled || undefined}>
+  return <div className={enabled ? `${styles.page} ${wide ? styles.wide : ''}` : undefined} data-simple-workspace={enabled || undefined}>
     {enabled && <header className={styles.heading}><div><span className={styles.eyebrow}>{ko ? 'INVESTAI · 쉽게, 하나씩' : 'INVESTAI · ONE STEP AT A TIME'}</span><h1>{title}</h1><p>{description}</p></div>
       <button type="button" onClick={() => setDisplayMode('expert')}>{ko ? '전문가 화면' : 'Expert view'} ↗</button></header>}
     {enabled && actions && <nav className={styles.actions}>{actions}</nav>}

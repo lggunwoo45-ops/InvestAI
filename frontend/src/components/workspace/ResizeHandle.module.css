@@ -1,0 +1,8 @@
+.handle { display: flex; position: relative; z-index: 4; align-items: center; justify-content: center; flex: 0 0 auto; touch-action: none; user-select: none; background: var(--color-surface-raised); outline-offset: -2px; }
+.vertical { width: 10px; min-height: 44px; cursor: col-resize; }
+.horizontal { height: 14px; min-width: 44px; cursor: row-resize; }
+.handle span { border-radius: 3px; background: var(--color-border-strong); }
+.vertical span { width: 3px; height: 36px; }.horizontal span { height: 3px; width: 48px; }
+.handle:hover,.handle:focus-visible { background: var(--color-accent-soft); outline: 2px solid var(--color-accent); }
+.handle:hover span,.handle:focus-visible span { background: var(--color-accent); }
+@media (pointer:coarse) { .handle::after { content:""; position:absolute; inset:-5px; } }

@@ -3,9 +3,10 @@ import type { MarketConnectionState, MarketDataMode } from '@/types/market'
 import type { ChartTimeframe, MarketDetailSnapshot } from '@/types/marketDetail'
 import { MarketDetailPanel } from '../MarketDetailPanel/MarketDetailPanel'
 import { TradingInformation } from '../TradingInformation/TradingInformation'
-import styles from './MarketDetailWorkspace.module.css'
+import { MarketPanels } from '@/components/workspace/MarketPanels'
 
 interface MarketDetailWorkspaceProps {
+  onOpenList?: () => void
   navigator: ReactNode
   instrumentListCollapsed: boolean
   snapshot: MarketDetailSnapshot
@@ -17,13 +18,8 @@ interface MarketDetailWorkspaceProps {
   onMarketDataModeChange: (mode: MarketDataMode) => void
 }
 
-export function MarketDetailWorkspace({ navigator, instrumentListCollapsed, snapshot, connection, previewAt, selectedTimeframe, marketDataMode, onSelectTimeframe, onMarketDataModeChange }: MarketDetailWorkspaceProps) {
-  const isStock = snapshot.instrument.marketId === 'korea-stock' || snapshot.instrument.marketId === 'us-stock'
-  return (
-    <div className={`${styles.workspace} ${isStock ? styles.stock : styles.crypto} ${instrumentListCollapsed ? styles.instrumentListCollapsed : ''}`} data-workspace={isStock ? 'stock' : 'crypto'}>
-      {navigator}
-      <MarketDetailPanel snapshot={snapshot} connection={connection} previewAt={previewAt} selectedTimeframe={selectedTimeframe} marketDataMode={marketDataMode} onSelectTimeframe={onSelectTimeframe} onMarketDataModeChange={onMarketDataModeChange} />
-      <TradingInformation snapshot={snapshot} connection={connection} />
-    </div>
-  )
+export function MarketDetailWorkspace({ navigator, onOpenList, instrumentListCollapsed, snapshot, connection, previewAt, selectedTimeframe, marketDataMode, onSelectTimeframe, onMarketDataModeChange }: MarketDetailWorkspaceProps) {
+  return <MarketPanels onOpenList={onOpenList} navigator={navigator} listCollapsed={instrumentListCollapsed}
+    detail={<MarketDetailPanel snapshot={snapshot} connection={connection} previewAt={previewAt} selectedTimeframe={selectedTimeframe} marketDataMode={marketDataMode} onSelectTimeframe={onSelectTimeframe} onMarketDataModeChange={onMarketDataModeChange} />}
+    activity={<TradingInformation snapshot={snapshot} connection={connection} />} />
 }

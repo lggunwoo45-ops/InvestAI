@@ -56,3 +56,16 @@
   .chartArea { overflow: visible; }
   .signalEntry p { font-size: 13px; }
 }
+
+/* Size against the actual pane, including when the copilot is open. */
+.detail { display:block; overflow:visible; container-type:inline-size; container-name:market-detail; }
+.chartArea { overflow:visible; }
+.signalEntry { padding:12px; margin:10px; gap:12px; background:var(--color-surface-raised); }
+.signalEntry span { display:none; }.signalEntry h3 { margin:0 0 4px; font-size:13px; }
+@container market-detail (max-width:520px) {
+  .header { grid-template-columns:minmax(0,1fr); padding:12px; gap:8px; }
+  .quote { text-align:left; }.quote strong { font-size:22px; }
+  .identity h1 { font-size:20px; }.identity > span { letter-spacing:0; }
+  .stats { grid-template-columns:repeat(2,minmax(0,1fr)); }.stats > div { padding:8px 10px; }
+  .feedControl { gap:8px; }.signalEntry { flex-wrap:wrap; }
+}

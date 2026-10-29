@@ -1,6 +1,8 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { writeDisplayMode } from '@/app/displayMode/displayModeStorage'
+import { DisplayModeProvider } from '@/app/displayMode/DisplayModeProvider'
 import { LanguageProvider } from '@/i18n/LanguageProvider'
 import { USER_CHART_LINE_STORAGE_KEY } from '@/services/chartOverlays/userChartLineStorage'
 import { buildTechnicalLevelAnalysis } from '@/services/technicalLevels/technicalLevelEngine'
@@ -36,7 +38,9 @@ vi.mock('lightweight-charts', () => ({
   createChart: chartMock.createChart,
 }))
 
+let chartResize: ResizeObserverCallback
 class ResizeObserverMock {
+  constructor(callback: ResizeObserverCallback) { chartResize = callback }
   observe() { /* The chart only needs an observable container in this deterministic test. */ }
   disconnect() { /* Nothing to release in the test double. */ }
 }
@@ -53,25 +57,25 @@ const technicalAnalysis = buildTechnicalLevelAnalysis({ instrument, candles, lan
 describe('CandlestickChart chart overlays', () => {
   it('leaves vertical touch scrolling to the page and preserves the phone zoom when history refreshes', () => {
     chartMock.viewport.compact = true
-    const { rerender } = render(<LanguageProvider><CandlestickChart candles={[]} instrument={instrument} timeframe="1H" mode="live" technicalAnalysis={technicalAnalysis} /></LanguageProvider>)
+    const { rerender } = render(<DisplayModeProvider><LanguageProvider><CandlestickChart candles={[]} instrument={instrument} timeframe="1H" mode="live" technicalAnalysis={technicalAnalysis} /></LanguageProvider></DisplayModeProvider>)
     expect(chartMock.setVisibleLogicalRange).not.toHaveBeenCalled()
-    rerender(<LanguageProvider><CandlestickChart candles={candles} instrument={instrument} timeframe="1H" mode="live" technicalAnalysis={technicalAnalysis} /></LanguageProvider>)
+    rerender(<DisplayModeProvider><LanguageProvider><CandlestickChart candles={candles} instrument={instrument} timeframe="1H" mode="live" technicalAnalysis={technicalAnalysis} /></LanguageProvider></DisplayModeProvider>)
     expect(chartMock.createChart.mock.lastCall?.[1]).toMatchObject({ layout: { fontSize: 12 }, handleScroll: { vertTouchDrag: false, horzTouchDrag: true } })
     expect(chartMock.setVisibleLogicalRange).toHaveBeenCalledWith({ from: 15, to: 62 })
-    rerender(<LanguageProvider><CandlestickChart candles={candles.map(c => ({ ...c }))} instrument={instrument} timeframe="1H" mode="live" technicalAnalysis={technicalAnalysis} /></LanguageProvider>)
+    rerender(<DisplayModeProvider><LanguageProvider><CandlestickChart candles={candles.map(c => ({ ...c }))} instrument={instrument} timeframe="1H" mode="live" technicalAnalysis={technicalAnalysis} /></LanguageProvider></DisplayModeProvider>)
     expect(chartMock.setVisibleLogicalRange).toHaveBeenCalledOnce()
   })
   it('replaces all cached bars when refreshed history corrects an older candle', () => {
     chartMock.candleSeries.setData.mockClear()
     chartMock.candleSeries.update.mockClear()
-    const { rerender } = render(<LanguageProvider><CandlestickChart candles={candles} instrument={instrument} timeframe="1H" mode="live" preview technicalAnalysis={technicalAnalysis} /></LanguageProvider>)
+    const { rerender } = render(<DisplayModeProvider><LanguageProvider><CandlestickChart candles={candles} instrument={instrument} timeframe="1H" mode="live" preview technicalAnalysis={technicalAnalysis} /></LanguageProvider></DisplayModeProvider>)
     expect(screen.getByRole('img', { name: /cached preview/ })).toBeTruthy()
     const refreshed = candles.map((candle, index) => index === 0 ? { ...candle, close: 101 } : { ...candle })
-    rerender(<LanguageProvider><CandlestickChart candles={refreshed} instrument={instrument} timeframe="1H" mode="live" technicalAnalysis={technicalAnalysis} /></LanguageProvider>)
+    rerender(<DisplayModeProvider><LanguageProvider><CandlestickChart candles={refreshed} instrument={instrument} timeframe="1H" mode="live" technicalAnalysis={technicalAnalysis} /></LanguageProvider></DisplayModeProvider>)
     expect(chartMock.candleSeries.setData).toHaveBeenCalledTimes(2)
     expect(chartMock.candleSeries.setData.mock.lastCall?.[0][0].close).toBe(101)
     const tick = [...refreshed.slice(0, -1), { ...refreshed.at(-1)!, close: 101 }]
-    rerender(<LanguageProvider><CandlestickChart candles={tick} instrument={instrument} timeframe="1H" mode="live" technicalAnalysis={technicalAnalysis} /></LanguageProvider>)
+    rerender(<DisplayModeProvider><LanguageProvider><CandlestickChart candles={tick} instrument={instrument} timeframe="1H" mode="live" technicalAnalysis={technicalAnalysis} /></LanguageProvider></DisplayModeProvider>)
     expect(chartMock.candleSeries.setData).toHaveBeenCalledTimes(2)
     expect(chartMock.candleSeries.update).toHaveBeenCalledOnce()
   })
@@ -86,7 +90,7 @@ describe('CandlestickChart chart overlays', () => {
   })
 
   it('keeps the compact structure summary after the chart and marks expanded layout state', () => {
-    render(<LanguageProvider><CandlestickChart candles={candles} instrument={instrument} timeframe="1D" mode="mock" technicalAnalysis={technicalAnalysis} /></LanguageProvider>)
+    render(<DisplayModeProvider><LanguageProvider><CandlestickChart candles={candles} instrument={instrument} timeframe="1D" mode="mock" technicalAnalysis={technicalAnalysis} /></LanguageProvider></DisplayModeProvider>)
 
     const chartImage = screen.getByRole('img', { name: /BTC\/KRW 1D TradingView candlestick chart in mock mode/i })
     const chart = chartImage.closest('figure')
@@ -103,7 +107,7 @@ describe('CandlestickChart chart overlays', () => {
   })
 
   it('uses lightweight-charts price lines for automatic groups and a distinct user line', async () => {
-    render(<LanguageProvider><CandlestickChart candles={candles} instrument={instrument} timeframe="1D" mode="mock" technicalAnalysis={technicalAnalysis} /></LanguageProvider>)
+    render(<DisplayModeProvider><LanguageProvider><CandlestickChart candles={candles} instrument={instrument} timeframe="1D" mode="mock" technicalAnalysis={technicalAnalysis} /></LanguageProvider></DisplayModeProvider>)
     fireEvent.click(screen.getByRole('button', { name: 'Analysis mode' }))
 
     await waitFor(() => expect(chartMock.createPriceLine.mock.calls.length).toBeGreaterThan(0))
@@ -135,14 +139,14 @@ describe('CandlestickChart chart overlays', () => {
 
   it('does not create precise automatic lines when candle data is insufficient', async () => {
     const unavailable = buildTechnicalLevelAnalysis({ instrument, candles: [], language: 'en', dataQuality: 'unavailable' })
-    render(<LanguageProvider><CandlestickChart candles={candles.slice(0, 5)} instrument={instrument} timeframe="1D" mode="mock" technicalAnalysis={unavailable} /></LanguageProvider>)
+    render(<DisplayModeProvider><LanguageProvider><CandlestickChart candles={candles.slice(0, 5)} instrument={instrument} timeframe="1D" mode="mock" technicalAnalysis={unavailable} /></LanguageProvider></DisplayModeProvider>)
     fireEvent.click(screen.getByRole('button', { name: 'Analysis mode' }))
     await waitFor(() => expect(screen.getByRole('button', { name: /Support \/ resistance 0/ }).hasAttribute('disabled')).toBe(true))
     expect(chartMock.createPriceLine).not.toHaveBeenCalled()
   })
 
   it('keeps the supplied daily technical levels stable when the display timeframe changes', async () => {
-    const view = render(<LanguageProvider><CandlestickChart candles={candles.slice(-20)} instrument={instrument} timeframe="1m" mode="mock" technicalAnalysis={technicalAnalysis} /></LanguageProvider>)
+    const view = render(<DisplayModeProvider><LanguageProvider><CandlestickChart candles={candles.slice(-20)} instrument={instrument} timeframe="1m" mode="mock" technicalAnalysis={technicalAnalysis} /></LanguageProvider></DisplayModeProvider>)
     await waitFor(() => expect(chartMock.createPriceLine.mock.calls.length).toBeGreaterThan(0))
     const before = new Map(chartMock.createPriceLine.mock.calls.map(([raw]) => {
       const options = raw as { id: string; price: number }
@@ -150,7 +154,7 @@ describe('CandlestickChart chart overlays', () => {
     }))
 
     chartMock.createPriceLine.mockClear()
-    view.rerender(<LanguageProvider><CandlestickChart candles={candles.slice(-10).map((candle) => ({ ...candle, close: candle.close * 2 }))} instrument={instrument} timeframe="1D" mode="mock" technicalAnalysis={technicalAnalysis} /></LanguageProvider>)
+    view.rerender(<DisplayModeProvider><LanguageProvider><CandlestickChart candles={candles.slice(-10).map((candle) => ({ ...candle, close: candle.close * 2 }))} instrument={instrument} timeframe="1D" mode="mock" technicalAnalysis={technicalAnalysis} /></LanguageProvider></DisplayModeProvider>)
     await waitFor(() => expect(chartMock.createPriceLine.mock.calls.length).toBeGreaterThan(0))
     const after = new Map(chartMock.createPriceLine.mock.calls.map(([raw]) => {
       const options = raw as { id: string; price: number }
@@ -158,4 +162,22 @@ describe('CandlestickChart chart overlays', () => {
     }))
     expect(after).toEqual(before)
   })
+  it('resizes the existing chart without resetting its viewed range and remembers manual height until reset', () => {
+    writeDisplayMode('expert')
+    render(<DisplayModeProvider><LanguageProvider><CandlestickChart candles={candles} instrument={instrument} timeframe="1H" mode="mock" technicalAnalysis={technicalAnalysis} /></LanguageProvider></DisplayModeProvider>)
+    const chart = chartMock.createChart.mock.results[0].value
+    const initialRangeCalls = chart.timeScale.mock.calls.length
+    fireEvent.change(screen.getByRole('slider', {name:'Chart height'}), {target:{value:'700'}})
+    expect(localStorage.getItem('investai.market.panels.expert.v1.chart-height')).toBe('700')
+    act(() => chartResize([{ contentRect:{width:810,height:468} } as ResizeObserverEntry], {} as ResizeObserver))
+    expect(chart.applyOptions).toHaveBeenLastCalledWith({width:810,height:468})
+    expect(chartMock.createChart).toHaveBeenCalledTimes(1)
+    expect(chart.timeScale.mock.calls.length).toBe(initialRangeCalls)
+    act(() => chartResize([{ contentRect:{width:0,height:0} } as ResizeObserverEntry], {} as ResizeObserver))
+    expect(chart.applyOptions).toHaveBeenLastCalledWith({width:810,height:468})
+    fireEvent.click(screen.getByText('Auto height'))
+    expect(localStorage.getItem('investai.market.panels.expert.v1.chart-height')).toBe('0')
+    expect(chartMock.createChart).toHaveBeenCalledTimes(1)
+  })
+
 })

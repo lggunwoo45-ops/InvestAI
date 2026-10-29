@@ -65,3 +65,11 @@
   .editor label { grid-template-columns: minmax(0, 1fr); gap: 4px; }.editor input { height: 44px; }
   .safety { line-height: 1.8; }
 }
+
+@container market-detail (max-width:700px) {
+  .summary { display:flex; flex-wrap:wrap; gap:8px; }.summaryTitle { flex-wrap:wrap; min-width:0; }
+  .summaryTitle strong,.summaryStatus { white-space:normal; }.summaryLevels { width:100%; grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .summaryActions { margin-left:auto; }.groups,.actions { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .structure dl { grid-template-columns:minmax(0,1fr); }.structureTitle { flex-wrap:wrap; }
+  .editor label { grid-template-columns:minmax(0,1fr); }
+}
