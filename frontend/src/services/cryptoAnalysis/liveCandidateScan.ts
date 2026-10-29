@@ -1,3 +1,4 @@
+import { baseAsset } from './opportunityEngine'
 import { loadDominance, peekDominance } from './dominanceService'
 import { withMarketContext } from './marketContext'
 import { marketDataService, type MarketStreamOptions } from '@/services/market/marketDataService'
@@ -14,6 +15,7 @@ export interface ScanResult {
   expiresAt: number
   timedOut: boolean
 }
+export type ScanPoolMode = 'liquidity' | 'strength'
 export interface ScanCriteria {
   direction: 'all' | 'buy' | 'sell' | 'neutral'
   minimumVolumeRatio: number
@@ -25,15 +27,20 @@ const empty = (): AnalysisSeries => ({ candles: [], dataQuality: 'unavailable', 
 const positive = (value: number) => Number.isFinite(value) && value > 0
 
 /** Comparable quote turnover within a single venue; never compare KRW and BTC amounts. */
-export function selectScanPool(instruments: readonly MarketInstrument[], venue: MarketVenue): readonly MarketInstrument[] {
+export function selectScanPool(instruments: readonly MarketInstrument[], venue: MarketVenue, mode: ScanPoolMode = 'liquidity'): readonly MarketInstrument[] {
   const unique = new Map<string, MarketInstrument>()
   for (const instrument of instruments) {
     const matches = venue.startsWith('upbit-')
       ? instrument.marketId === 'upbit' && instrument.quoteCurrency === venue.slice(6).toUpperCase()
       : (venue === 'binance-spot' || venue === 'binance-futures') && instrument.marketId === venue && instrument.quoteCurrency === 'USDT'
-    if (matches && positive(instrument.lastPrice) && positive(instrument.volume24h) && Number.isFinite(instrument.change24hPercent)) unique.set(instrument.id, instrument)
+    if (matches && !['USDT','USDC','DAI','FDUSD','TUSD','USDE','PYUSD'].includes(baseAsset(instrument.symbol, instrument.quoteCurrency)) && positive(instrument.lastPrice) && positive(instrument.volume24h) && Number.isFinite(instrument.change24hPercent)) unique.set(instrument.id, instrument)
   }
-  return [...unique.values()].sort((a, b) => b.volume24h - a.volume24h || a.id.localeCompare(b.id)).slice(0, SCAN_LIMIT)
+  const liquid = [...unique.values()].sort((a, b) => b.volume24h - a.volume24h || a.id.localeCompare(b.id))
+  const shortlist = mode === 'strength' ? liquid.slice(0, 48).sort((a, b) => b.change24hPercent - a.change24hPercent || b.volume24h - a.volume24h || a.id.localeCompare(b.id)) : liquid
+  const pool = shortlist.slice(0, SCAN_LIMIT)
+  const benchmark = liquid.find(row => baseAsset(row.symbol, row.quoteCurrency) === 'BTC')
+  if (benchmark && !pool.some(row => row.id === benchmark.id)) pool.splice(Math.min(pool.length, SCAN_LIMIT - 1), 1, benchmark)
+  return pool
 }
 
 export function matchesScan(result: ScanResult, criteria: ScanCriteria, now: number) {
@@ -88,7 +95,7 @@ export function inspectInstrument(instrument: MarketInstrument, signal: AbortSig
         const stop = subscribe({ instrument, timeframe: frame, mode: 'live', priority: 1, onState: state => {
           if (done) return
           series[frame] = asSeries(state)
-          if (frames.every(key => ['live', 'mock', 'unsupported'].includes(series[key].connectionStatus))) finish(false)
+          if (frames.every(key => ['mock', 'unsupported'].includes(series[key].connectionStatus) || (series[key].connectionStatus === 'live' && series[key].candles.length >= 50))) finish(false)
         } })
         if (done) stop()
         else stops.push(stop)

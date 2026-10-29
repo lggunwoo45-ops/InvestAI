@@ -18,6 +18,30 @@ function state(frame: AnalysisFrame, receipt = at): RealtimeMarketState {
 afterEach(() => vi.useRealTimers())
 
 describe('manual candle scanner', () => {
+  it('can prioritize strength within a liquid pool, excluding stablecoins and keeping a BTC benchmark', () => {
+    const rows = Array.from({length:50},(_,i)=>({...coin,id:`asset-${i}`,symbol:`C${i}/KRW`,volume24h:1000-i,change24hPercent:i}))
+    const stable = {...coin,id:'usdt-krw',symbol:'USDT/KRW',volume24h:1e9,change24hPercent:100}
+    const btc = {...coin,volume24h:1}
+    const pool = selectScanPool([...rows,btc,stable],'upbit-krw','strength')
+    expect(pool).toHaveLength(12)
+    expect(pool[0].id).toBe('asset-47')
+    expect(pool.some(row=>row.id===coin.id)).toBe(true)
+    expect(pool.some(row=>row.id===stable.id || row.id==='asset-49')).toBe(false)
+  })
+  it('waits for history after live connections and releases all listeners once it arrives', async () => {
+    const pending:MarketStreamOptions[] = [], stop = vi.fn(), done = vi.fn()
+    const task = inspectInstrument(coin,new AbortController().signal,{now:()=>at,subscribe:options=>{
+      pending.push(options)
+      const live = state(options.timeframe as AnalysisFrame)
+      options.onState({...live,snapshot:{...live.snapshot!,candles:[]}})
+      return stop
+    }}).then(result=>{done();return result})
+    await Promise.resolve()
+    expect(done).not.toHaveBeenCalled()
+    for (const options of pending) options.onState(state(options.timeframe as AnalysisFrame))
+    expect(await task).toMatchObject({timedOut:false,decision:{coverage:3}})
+    expect(stop).toHaveBeenCalledTimes(3)
+  })
   it('compares one quote currency, removes duplicates and limits the candidate pool', () => {
     const rows = Array.from({ length: 20 }, (_, i) => ({ ...coin, id: `coin-${i}`, volume24h: i + 1 }))
     expect(selectScanPool([...rows, rows[19], { ...coin, quoteCurrency: 'BTC', volume24h: 1e12 }], 'upbit-krw')).toHaveLength(12)
