@@ -12,12 +12,12 @@
 .grid[data-layout=below] { grid-template-rows:minmax(550px,1fr) auto; }
 .grid[data-layout=below] > .list { grid-row:1 / 3; }
 .grid[data-layout=below] > [role=separator] { grid-row:1 / 3; }
-.grid[data-layout=below] > .activity { grid-column:-2 / -1; display:grid; grid-template-rows:14px minmax(0,1fr); height:var(--trade-height); }
+.grid[data-layout=below] > .activity { grid-column:-2 / -1; display:grid; grid-template-rows:minmax(0,1fr) 14px; height:var(--trade-height); }
 .grid[data-layout=below] > .activity[hidden] { display:none; }
 .grid[data-layout=narrow] { display:flex; flex-direction:column; overflow:auto; }
 .grid[data-layout=narrow] > .list { height:var(--list-height); flex:none; grid-template-rows:minmax(0,1fr) 14px; }
 .grid[data-layout=narrow] > .center { flex:none; overflow:visible; }
-.grid[data-layout=narrow] > .activity { flex:none; height:var(--trade-height); display:grid; grid-template-rows:14px minmax(0,1fr); }
+.grid[data-layout=narrow] > .activity { flex:none; height:var(--trade-height); display:grid; grid-template-rows:minmax(0,1fr) 14px; }
 .grid[data-layout=narrow] > .activity[hidden] { display:none; }
 @media(max-width:760px) { .workspace { height:auto; overflow:visible; }.toolbar { padding:10px; }.toolbar button { min-height:44px; }.grid { overflow:visible; } }
 

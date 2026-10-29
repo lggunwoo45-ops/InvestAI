@@ -28,7 +28,7 @@ export function MarketPanels({ navigator, detail, activity, listCollapsed = fals
       <button onClick={() => setFocus(v => !v)} aria-pressed={focus}>{ko ? focus ? '전체 배치로 돌아가기' : '차트 집중 보기' : focus ? 'Restore panels' : 'Focus chart'}</button>
       {activity && !focus && <button onClick={() => setHideTrades(v => !v)} aria-expanded={showTrades}>{ko ? showTrades ? '호가·체결 접기' : '호가·체결 보기' : showTrades ? 'Hide activity' : 'Show activity'}</button>}
       <button onClick={reset}>{ko ? '배치 초기화' : 'Reset layout'}</button>
-      <small>{ko ? '경계선을 끌어 조절 · 키보드 방향키도 지원' : 'Drag dividers or use arrow keys'}</small>
+      <small>{showTrades && g.layout !== 'wide' && (ko ? '호가·체결은 차트 아래에 표시됩니다. ' : 'Activity appears below the chart. ')}{ko ? '경계선을 끌어 조절 · 키보드 방향키도 지원' : 'Drag dividers or use arrow keys'}</small>
     </div>
     <div className={styles.grid} style={{ gridTemplateColumns: columns, '--trade-height': `${tradeHeight}px`, '--list-height': `${listHeight}px` } as CSSProperties} data-layout={g.layout} data-trades={showTrades || undefined} data-list={showList || undefined}>
       <div className={styles.list} hidden={!showList}><div className={styles.listContent}>{navigator}</div>{g.layout === 'narrow' && <ResizeHandle axis="height" label={ko ? '종목 목록 높이 조절' : 'Resize asset list height'} value={listHeight} min={200} max={800} onChange={setListHeight} onReset={resetListHeight} />}</div>
@@ -36,8 +36,8 @@ export function MarketPanels({ navigator, detail, activity, listCollapsed = fals
       <div className={styles.center}>{detail}</div>
       {showTrades && g.layout === 'wide' && <ResizeHandle label={ko ? '호가·체결 너비 조절' : 'Resize activity width'} value={g.tradeWidth} min={240} max={g.tradeMax} reverse onChange={setTrades} onReset={resetTrades} />}
       <div className={styles.activity} hidden={!showTrades}>
-        {g.layout !== 'wide' && <ResizeHandle axis="height" label={ko ? '호가·체결 높이 조절' : 'Resize activity height'} value={tradeHeight} min={220} max={800} reverse onChange={setTradeHeight} onReset={resetHeight} />}
         {activity}
+        {g.layout !== 'wide' && <ResizeHandle axis="height" label={ko ? '호가·체결 높이 조절' : 'Resize activity height'} value={tradeHeight} min={220} max={800} onChange={setTradeHeight} onReset={resetHeight} />}
       </div>
     </div>
   </div>

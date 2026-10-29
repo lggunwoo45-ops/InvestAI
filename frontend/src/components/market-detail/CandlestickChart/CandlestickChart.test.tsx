@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { writeDisplayMode } from '@/app/displayMode/displayModeStorage'
 import { DisplayModeProvider } from '@/app/displayMode/DisplayModeProvider'
 import { LanguageProvider } from '@/i18n/LanguageProvider'
 import { USER_CHART_LINE_STORAGE_KEY } from '@/services/chartOverlays/userChartLineStorage'
@@ -162,6 +163,7 @@ describe('CandlestickChart chart overlays', () => {
     expect(after).toEqual(before)
   })
   it('resizes the existing chart without resetting its viewed range and remembers manual height until reset', () => {
+    writeDisplayMode('expert')
     render(<DisplayModeProvider><LanguageProvider><CandlestickChart candles={candles} instrument={instrument} timeframe="1H" mode="mock" technicalAnalysis={technicalAnalysis} /></LanguageProvider></DisplayModeProvider>)
     const chart = chartMock.createChart.mock.results[0].value
     const initialRangeCalls = chart.timeScale.mock.calls.length
