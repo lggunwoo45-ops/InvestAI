@@ -1,3 +1,4 @@
+import { OpportunityReview } from './OpportunityPlans'
 import { CryptoAnalysisHelp } from './CryptoAnalysisHelp'
 import { withMarketContext, contextExplanation } from '@/services/cryptoAnalysis/marketContext'
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
@@ -113,7 +114,9 @@ export function CryptoDecisionPanel({ instrument, daily, language, averagePrice,
       <button type="button" aria-pressed={holding} onClick={() => onHoldingChange(true)}>{ko ? '이미 갖고 있어요' : 'Already holding'}</button>
     </div>}
     <AnalysisPreparation key={`${instrument.id}:${daily.dataQuality === 'mock'}`} decision={decision} series={series} language={language} compactReady onDetails={() => setTab('details')} />
+    {decision.direction !== 'unavailable' && !holding && <OpportunityReview key={instrument.id} instrument={instrument} decision={decision} language={language} />}
     {decision.direction !== 'unavailable' && <div className={styles.verdict}>
+      {!holding && <small>{ko ? '큰 흐름 · 기존 추세 기준' : 'Broader view · original trend criteria'}</small>}
       <span className={styles.direction}>{easyDirection[language][decision.direction]}</span>
       <h3>{guide.title}</h3>
       <p>{guide.reason}</p>
@@ -188,6 +191,6 @@ export function CryptoDecisionPanel({ instrument, daily, language, averagePrice,
       <SaveScenario instrument={instrument} decision={decision} language={language} positionId={positionId} />
       {investmentContent}
     </div>
-    <footer>{ko ? '가격 기록으로 계산한 참고 정보예요. 수익을 보장하지 않으며 거래 비용은 포함하지 않아요.' : 'A reference calculated from price history. Returns are not guaranteed; trading costs are excluded.'}{instrument.marketId === 'binance-futures' && <p>{t.futures}</p>}</footer>
+    <footer>{ko ? '가격 기록으로 계산한 참고 정보예요. 전략별 진입 조건에는 입력한 거래 비용 가정을 반영하며, 기존 추세·가격 구간 계산은 비용을 제외해요.' : 'Reference information from price history. Strategy plans include your assumed costs; the original trend and price-zone calculations exclude costs.'}{instrument.marketId === 'binance-futures' && <p>{t.futures}</p>}</footer>
   </section>
 }
