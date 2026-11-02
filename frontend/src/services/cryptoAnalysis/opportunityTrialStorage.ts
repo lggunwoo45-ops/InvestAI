@@ -5,7 +5,7 @@ import { createOpportunityTrial, evaluateOpportunityTrial, isTrialComplete, MAX_
 export const TRIAL_CHANGED = 'investai:opportunity-trials-changed'
 export const trialStorageKey = () => `investai.opportunity.trials.v1.${encodeURIComponent(cloudSnapshot().user?.id ?? 'guest')}`
 type Store = Pick<Storage,'getItem'|'setItem'>
-export interface OpportunityTrialStore { trials:OpportunityTrial[]; raw:string|null; error:boolean; key:string }
+export interface OpportunityTrialStore { trials:OpportunityTrial[]; raw:string|null; error:boolean; key:string; source?:'server'|'local'; asOf?:number; loading?:boolean; message?:string }
 export function readOpportunityTrials(key=trialStorageKey(),storage:Store=localStorage):OpportunityTrialStore {
   let raw:string|null=null
   try {

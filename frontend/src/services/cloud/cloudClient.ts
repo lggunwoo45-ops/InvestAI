@@ -6,7 +6,7 @@ export interface Member { id:string; username:string; email?:string|null; emailV
 export interface CloudRecord { key:string; value:string|null; version:number }
 export interface TelegramStatus { available:boolean; connected:boolean; issue:string|null; linkedAt:number|null }
 interface Pending { value:string|null; version:number }
-export interface CloudState { enabled:boolean; signup:boolean; emailAvailable?:boolean; loading:boolean; user:Member|null; error:string; syncing:boolean; pending:number; conflicts:string[]; revision:number; recovery:string; expired:boolean }
+export interface CloudState { enabled:boolean; signup:boolean; emailAvailable?:boolean; telegramAvailable?:boolean; opportunityTrialsAvailable?:boolean; signupLimit?:number; loading:boolean; user:Member|null; error:string; syncing:boolean; pending:number; conflicts:string[]; revision:number; recovery:string; expired:boolean }
 let state:CloudState={enabled:false,signup:false,loading:false,user:null,error:'',syncing:false,pending:0,conflicts:[],revision:0,recovery:'',expired:false}
 let token='',generation=0,initialized=false,records=new Map<string,CloudRecord>(),pending=new Map<string,Pending>(),sending=false
 const listeners=new Set<()=>void>()
@@ -14,6 +14,7 @@ let syncTimer:ReturnType<typeof setTimeout>|undefined
 function scheduleSync(){clearTimeout(syncTimer);syncTimer=setTimeout(()=>{void syncCloud()},400)}
 const publish=(patch:Partial<CloudState>)=>{state={...state,...patch,pending:pending.size};listeners.forEach(fn=>fn())}
 export const cloudSnapshot=()=>state
+export const cloudSessionGeneration=()=>generation
 export const subscribeCloud=(fn:()=>void)=>{listeners.add(fn);return()=>{listeners.delete(fn)}}
 // Keep the member context during reauthentication; never switch requests to the PC's separate vault on expiry.
 export const cloudSignedIn=()=>!!state.user
@@ -43,8 +44,8 @@ export async function initializeCloud(){
   if(initialized)return
   initialized=true
   try{
-    const status=await cloudRequest<{enabled:boolean;signup:boolean;emailAvailable?:boolean;error?:string}>('/status')
-    publish({enabled:status.enabled,signup:status.signup,emailAvailable:status.emailAvailable===true})
+    const status=await cloudRequest<{enabled:boolean;signup:boolean;emailAvailable?:boolean;telegramAvailable?:boolean;opportunityTrialsAvailable?:boolean;signupLimit?:number;error?:string}>('/status')
+    publish({enabled:status.enabled,signup:status.signup,emailAvailable:status.enabled&&status.emailAvailable===true,telegramAvailable:status.enabled&&status.telegramAvailable===true,opportunityTrialsAvailable:status.enabled&&status.opportunityTrialsAvailable===true,signupLimit:status.signupLimit})
     const saved=sessionStorage.getItem('investai.cloud.session')
     if(status.enabled&&saved){
       const parsed=JSON.parse(saved);if(typeof parsed.token!=='string')return
