@@ -7,6 +7,7 @@ import { createMonitorHandler } from '../monitor/server.mjs'
 import { createQuoteReader } from '../monitor/quotes.mjs'
 import { createHistoryReader } from '../research/history.mjs'
 import { createEmailDelivery } from './emailDelivery.mjs'
+import { createOpportunities } from './opportunities.mjs'
 
 const principal=Symbol('authenticated cloud owner')
 const headers={ 'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff',Vary:'Origin' }
@@ -28,9 +29,9 @@ function coalesce(reader,ttl,clock){
     cache.set(key,{promise,until:clock()+ttl});return promise
   }
 }
-export function createCloudHandler({ directory=process.env.INVESTAI_CLOUD_DIRECTORY, secret=process.env.INVESTAI_CLOUD_KEY, origins=[], env=process.env, clock=Date.now, quoteReader=createQuoteReader(), historyReader=createHistoryReader(), derivativeContextReader=null, fetcher=fetch, monitorOptions={}, autoStart=true, leaseWaitMs=35_000 }={}) {
+export function createCloudHandler({ directory=process.env.INVESTAI_CLOUD_DIRECTORY, secret=process.env.INVESTAI_CLOUD_KEY, origins=[], env=process.env, clock=Date.now, quoteReader=createQuoteReader(), historyReader=createHistoryReader(), opportunityHistoryReader, derivativeContextReader=null, fetcher=fetch, monitorOptions={}, autoStart=true, leaseWaitMs=35_000 }={}) {
   const enabled=!!directory && isAbsolute(directory) && /^[a-f0-9]{64}$/i.test(secret ?? '')
-  let accounts,telegram,prices,fatal=null,closing=false,ready,maintenanceBusy=false,ownsLease=false
+  let accounts,telegram,prices,opportunities,fatal=null,closing=false,ready,maintenanceBusy=false,ownsLease=false
   const workerId=randomUUID()
   const monitors=new Map(), rates=new Map(), timers=[], mailJobs=new Set()
   const emailDelivery=createEmailDelivery({env,fetcher})
@@ -89,9 +90,10 @@ export function createCloudHandler({ directory=process.env.INVESTAI_CLOUD_DIRECT
     }
     const renew=setInterval(()=>{try{const result=accounts.db.prepare('UPDATE worker SET expires=? WHERE id=1 AND owner=? AND expires>?').run(clock()+30000,workerId,clock());if(!result.changes)fatal='회원 감시 실행 권한이 만료되어 중지했습니다.'}catch{fatal='회원 감시 저장소에 연결하지 못했습니다.'}},5000);renew.unref();timers.push(renew)
     telegram=createMemberTelegram(accounts,{env,fetcher,clock,guard:assertLease});prices=createPriceAlerts(accounts,{quoteReader:quotes,telegram,clock,guard:assertLease})
+    opportunities=createOpportunities(accounts,{clock,guard:assertLease,historyReader:opportunityHistoryReader})
     for(const user of accounts.users())await getMonitor(user.id)
   })().catch(()=>{fatal='회원 저장소를 열지 못했습니다. 저장 공간·암호화 설정·단일 실행 여부를 확인해주세요.'})
-  const tick=async()=>{await ready;if(fatal||closing||!enabled)return;assertLease();await prices.tick()}
+  const tick=async()=>{await ready;if(fatal||closing||!enabled)return;assertLease();await Promise.all([prices.tick(),opportunities.tick()])}
   const dispatch=async()=>{await ready;if(fatal||closing||!enabled||maintenanceBusy)return;assertLease();maintenanceBusy=true;try{await telegram.tick();await prices.dispatch()}finally{maintenanceBusy=false}}
   if(autoStart){const a=setInterval(()=>{void tick().catch(()=>{fatal='감시 기록 저장 오류로 회원 감시를 중지했습니다.'})},15_000),b=setInterval(()=>{void dispatch().catch(()=>{fatal='알림 기록 저장 오류가 발생했습니다.'})},5000);a.unref();b.unref();timers.push(a,b)}
   const handler=async(req,res,next=()=>send(res,404,{error:'없는 경로입니다.'}))=>{
@@ -104,7 +106,7 @@ export function createCloudHandler({ directory=process.env.INVESTAI_CLOUD_DIRECT
     res.setHeader('Access-Control-Allow-Methods','GET, POST, PUT, OPTIONS')
     if(req.method==='OPTIONS'){res.writeHead(204,headers);res.end();return}
     await ready
-    if(path==='/api/cloud/status' && req.method==='GET')return send(res,fatal?503:200,{enabled:enabled&&!fatal,signup:env.INVESTAI_CLOUD_SIGNUP==='true',emailAvailable:enabled&&!fatal&&emailDelivery.available,derivativeSignalsAvailable:enabled&&!fatal&&!!derivativeContexts,error:fatal})
+    if(path==='/api/cloud/status' && req.method==='GET')return send(res,fatal?503:200,{enabled:enabled&&!fatal,signup:env.INVESTAI_CLOUD_SIGNUP==='true',signupLimit:50,emailAvailable:enabled&&!fatal&&emailDelivery.available,telegramAvailable:enabled&&!fatal&&!!telegram?.status('').available,opportunityTrialsAvailable:enabled&&!fatal&&!!opportunities,derivativeSignalsAvailable:enabled&&!fatal&&!!derivativeContexts,error:fatal})
     if(!enabled||fatal||closing)return send(res,503,{error:fatal??'회원 서버가 아직 연결되지 않았습니다.'})
     try{
       rate(`all:${req.socket.remoteAddress}`,2000,60_000)
@@ -139,7 +141,8 @@ export function createCloudHandler({ directory=process.env.INVESTAI_CLOUD_DIRECT
         if(path==='/api/cloud/records')return send(res,200,{records:accounts.records(user.id)})
         if(path==='/api/cloud/telegram')return send(res,200,telegram.status(user.id))
         if(path==='/api/cloud/prices')return send(res,200,{rules:prices.list(user.id)})
-        if(path==='/api/cloud/export')return send(res,200,{version:1,exportedAt:clock(),user,records:accounts.records(user.id),prices:prices.list(user.id)})
+        if(path==='/api/cloud/opportunities')return send(res,200,opportunities.snapshot(user.id))
+        if(path==='/api/cloud/export')return send(res,200,{version:1,exportedAt:clock(),user,records:accounts.records(user.id),prices:prices.list(user.id),opportunities:opportunities.snapshot(user.id)})
       }
       if(!['POST','PUT'].includes(req.method))fail(405,'지원하지 않는 요청입니다.')
       const input=await readBody(req,path==='/api/cloud/records'&&req.method==='PUT'?8_100_000:path.startsWith('/api/cloud/email/')?4096:220_000)
@@ -147,6 +150,7 @@ export function createCloudHandler({ directory=process.env.INVESTAI_CLOUD_DIRECT
       if(path==='/api/cloud/email/link/verify'){requireEmail();accounts.email.verifyLink(user.id,input);return send(res,200,{user:accounts.authenticate(token)})}
       if(path==='/api/cloud/logout'){accounts.logout(token,input.all===true);return send(res,200,{ok:true})}
       if(path==='/api/cloud/records'&&req.method==='PUT')return send(res,200,accounts.putRecord(user.id,input))
+      if(path==='/api/cloud/opportunities'&&req.method==='POST')return send(res,200,opportunities.register(user.id,input))
       if(path==='/api/cloud/prices')return send(res,200,{rules:prices.register(user.id,input)})
       if(path==='/api/cloud/prices/stop')return send(res,200,{rules:prices.stop(user.id,input.id)})
       if(path==='/api/cloud/telegram/pair'){rate(`pair:${user.id}`,5,600_000);return send(res,200,telegram.pair(user.id))}
@@ -156,6 +160,6 @@ export function createCloudHandler({ directory=process.env.INVESTAI_CLOUD_DIRECT
     }catch(e){send(res,e instanceof CloudError?e.status:503,{error:e instanceof CloudError?e.message:'요청을 완료하지 못했습니다. 저장 상태와 서버 연결을 확인해주세요.'})}
   }
   handler.ready=ready;handler.tick=tick;handler.dispatch=dispatch;handler.emailDrain=()=>Promise.all([...mailJobs])
-  handler.close=async()=>{closing=true;await ready;timers.forEach(clearInterval);await prices?.close();await handler.emailDrain();while(maintenanceBusy)await new Promise(r=>setTimeout(r,20));for(const monitor of monitors.values())await monitor.then(m=>m.close()).catch(()=>{});if(accounts){if(ownsLease)accounts.db.prepare('DELETE FROM worker WHERE id=1 AND owner=?').run(workerId);accounts.close()}}
+  handler.close=async()=>{closing=true;await ready;timers.forEach(clearInterval);await opportunities?.close();await prices?.close();await handler.emailDrain();while(maintenanceBusy)await new Promise(r=>setTimeout(r,20));for(const monitor of monitors.values())await monitor.then(m=>m.close()).catch(()=>{});if(accounts){if(ownsLease)accounts.db.prepare('DELETE FROM worker WHERE id=1 AND owner=?').run(workerId);accounts.close()}}
   return handler
 }

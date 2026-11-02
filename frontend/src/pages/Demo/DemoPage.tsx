@@ -105,7 +105,7 @@ export function DemoPage() {
   if (displayMode === 'simple') return <SimpleWorkspace title={language === 'ko' ? '처음이라면 여기서 시작하세요' : 'Start here'} description={language === 'ko' ? '후보를 찾고, 한 종목을 확인하고, 다시 볼 가격을 기록하는 순서예요.' : 'Find a candidate, review one asset, then record a price to revisit.'}>
     <GettingStartedFlow language={language} />
     <SimpleFeatureLinks />
-    <details><summary>{language === 'ko' ? '사용할 수 있는 범위와 제한' : 'Coverage and limitations'}</summary><BetaLimitationsPanel language={language} /></details>
+    <details><summary>{language === 'ko' ? '사용할 수 있는 범위와 제한' : 'Coverage and limitations'}</summary><BetaLimitationsPanel language={language} /><BetaReadinessChecklist language={language} /></details>
   </SimpleWorkspace>
   return <div className={styles.page} data-display-mode={displayMode}>
     <GettingStartedFlow language={language} />
