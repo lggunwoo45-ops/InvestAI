@@ -1,3 +1,4 @@
+import { OpportunityTrialLedger } from '@/components/crypto-analysis/OpportunityTrialLedger'
 import simpleStyles from '@/components/simple/SimpleWorkspace.module.css'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
@@ -68,10 +69,10 @@ function savedSnapshotFilterInput(item: CandidateSnapshotItem, horizon: WatchCan
 export function AiAnalysisPage() {
   const { hash } = useLocation()
   if (hash === '#ai-usage-plans-title') return <Navigate to="/settings" replace />
-  return <ExploreView key={hash} initialView={hash ? 'daily' : 'live'} />
+  return <ExploreView key={hash} initialView={hash === '#opportunity-records' ? 'trials' : hash ? 'daily' : 'live'} />
 }
 
-function ExploreView({ initialView }: { initialView: 'live' | 'daily' }) {
+function ExploreView({ initialView }: { initialView: 'live' | 'daily' | 'trials' }) {
   const { language } = useLanguage()
   const simple = useDisplayMode().displayMode === 'simple'
   const [view, setView] = useState(initialView)
@@ -80,9 +81,11 @@ function ExploreView({ initialView }: { initialView: 'live' | 'daily' }) {
     <nav className={styles.views} aria-label={language === 'ko' ? '탐색 방식' : 'Explore mode'}>
       <button type="button" aria-pressed={view === 'live'} onClick={() => setView('live')}>{language === 'ko' ? '실시간 조건 검색' : 'Live condition search'}</button>
       <button type="button" aria-pressed={view === 'daily'} onClick={() => setView('daily')}>{language === 'ko' ? '일일 후보 기록' : 'Daily candidate records'}</button>
+      <button type="button" aria-pressed={view === 'trials'} onClick={() => setView('trials')}>{language === 'ko' ? '추천 검증 기록' : 'Validation records'}</button>
     </nav>
-    {view === 'live' ? <div className={styles.page}><LiveCandidateSearch /></div> : <DailyCandidatePage />}
+    {view === 'trials' ? <OpportunityTrialLedger /> : view === 'live' ? <div className={styles.page}><LiveCandidateSearch /></div> : <DailyCandidatePage />}
   </>
+  if (view === 'trials') return <div className={simple ? simpleStyles.page : undefined}>{content}</div>
   return <SimpleWorkspace enabled={simple} title={language === 'ko' ? '살펴볼 후보를 찾아볼까요?' : 'Find a few assets to review'} description={language === 'ko' ? '최신 조건을 확인하거나, 지난 후보 기록을 다시 살펴보세요.' : 'Check current criteria or revisit saved daily candidates.'}>{content}</SimpleWorkspace>
 }
 

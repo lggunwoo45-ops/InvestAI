@@ -195,6 +195,17 @@ export class MarketDataService implements MarketOverviewService {
     return mode === 'live' ? this.chartHistory.get(instrument, timeframe) : null
   }
 
+  /** Historical audit requests use a real provider only, without opening a quote stream. */
+  async getLiveCandles(instrument:MarketInstrument,timeframe:ChartTimeframe,signal:AbortSignal) {
+    signal.throwIfAborted()
+    const provider=this.providers.find(p=>p.supports(instrument))
+    if (!provider || provider===this.mockProvider) throw new Error('live-history-unavailable')
+    const snapshot=await provider.loadSnapshot(instrument,timeframe,signal,()=>1)
+    signal.throwIfAborted()
+    if (snapshot.instrument.id!==instrument.id || snapshot.instrument.marketId!==instrument.marketId || snapshot.instrument.symbol!==instrument.symbol || snapshot.instrument.quoteCurrency!==instrument.quoteCurrency || snapshot.timeframe!==timeframe) throw new Error('history-identity-mismatch')
+    return snapshot.candles
+  }
+
   subscribe({ instrument, timeframe, mode, onState, priority = 10 }: MarketStreamOptions): () => void {
     const key = JSON.stringify([mode, instrument.id, instrument.marketId, instrument.providerType, instrument.providerSymbol, instrument.quoteCurrency, timeframe])
     const listener = { onState, priority }
