@@ -75,13 +75,13 @@ export function AiAnalysisPage() {
 function ExploreView({ initialView }: { initialView: 'live' | 'daily' | 'trials' }) {
   const { language } = useLanguage()
   const simple = useDisplayMode().displayMode === 'simple'
-  const [view, setView] = useState(initialView)
+  const view = initialView, navigate = useNavigate()
   useDocumentTitle(language === 'ko' ? '종목 찾기' : 'Find Assets')
   const content = <>
     <nav className={styles.views} aria-label={language === 'ko' ? '탐색 방식' : 'Explore mode'}>
-      <button type="button" aria-pressed={view === 'live'} onClick={() => setView('live')}>{language === 'ko' ? '실시간 조건 검색' : 'Live condition search'}</button>
-      <button type="button" aria-pressed={view === 'daily'} onClick={() => setView('daily')}>{language === 'ko' ? '일일 후보 기록' : 'Daily candidate records'}</button>
-      <button type="button" aria-pressed={view === 'trials'} onClick={() => setView('trials')}>{language === 'ko' ? '추천 검증 기록' : 'Validation records'}</button>
+      <button type="button" aria-pressed={view === 'live'} onClick={() => navigate('/ai-analysis')}>{language === 'ko' ? '실시간 조건 검색' : 'Live condition search'}</button>
+      <button type="button" aria-pressed={view === 'daily'} onClick={() => navigate('/ai-analysis#daily-records')}>{language === 'ko' ? '일일 후보 기록' : 'Daily candidate records'}</button>
+      <button type="button" aria-pressed={view === 'trials'} onClick={() => navigate('/ai-analysis#opportunity-records')}>{language === 'ko' ? '추천 검증 기록' : 'Validation records'}</button>
     </nav>
     {view === 'trials' ? <OpportunityTrialLedger /> : view === 'live' ? <div className={styles.page}><LiveCandidateSearch /></div> : <DailyCandidatePage />}
   </>
