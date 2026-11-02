@@ -24,3 +24,5 @@
 .regime,.strength { padding:10px; border-radius:8px; background:var(--color-surface-raised); }.strength { font-size:12px; }
 .excluded > div { padding:12px; border-top:1px solid var(--color-border); }.sizing label { display:grid; gap:4px; margin-block:8px; }.sizing output { display:grid; gap:5px; margin-block:10px; }
 @media(max-width:600px) { .panel { font-size:14px; }.panel h2 { font-size:18px; }.card,.asset { padding:12px; }.panel input,.panel button { min-height:44px; }.cost { padding:10px; } }
+
+.record { display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; padding:14px; border:1px solid var(--color-border); border-radius:10px; }.record p { flex-basis:100%; font-size:12px; }.record button:disabled { cursor:default; opacity:.55; }

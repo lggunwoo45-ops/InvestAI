@@ -35,6 +35,20 @@ function createProvider(id: string, supports: boolean): RealtimeMarketProvider {
 }
 
 describe('MarketDataService', () => {
+  it('loads raw live history without streams or mock fallback, checking identity and cancellation', async () => {
+    const provider=createProvider('live',true),mock=createProvider('mock',true)
+    const service=new MarketDataService([provider],mock),controller=new AbortController()
+    await expect(service.getLiveCandles(instrument,'1m',controller.signal)).resolves.toEqual(snapshot.candles)
+    expect(provider.subscribe).not.toHaveBeenCalled();expect(mock.loadSnapshot).not.toHaveBeenCalled()
+    vi.mocked(provider.loadSnapshot).mockResolvedValueOnce({...snapshot,timeframe:'1H'})
+    await expect(service.getLiveCandles(instrument,'1m',controller.signal)).rejects.toThrow()
+    vi.mocked(provider.loadSnapshot).mockResolvedValueOnce({...snapshot,instrument:{...instrument,id:'wrong'}})
+    await expect(service.getLiveCandles(instrument,'1m',controller.signal)).rejects.toThrow()
+    controller.abort()
+    await expect(service.getLiveCandles(instrument,'1m',controller.signal)).rejects.toMatchObject({name:'AbortError'})
+    await expect(new MarketDataService([],mock).getLiveCandles(instrument,'1m',new AbortController().signal)).rejects.toThrow()
+    expect(mock.loadSnapshot).not.toHaveBeenCalled()
+  })
   it('retains the quote receipt and exchange clock across book-only updates', async () => {
     const provider = createProvider('live', true)
     let emit: (event: ProviderStreamEvent) => void = () => {}

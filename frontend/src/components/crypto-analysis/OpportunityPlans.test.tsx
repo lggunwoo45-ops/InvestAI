@@ -5,9 +5,21 @@ import { opportunityCoin, opportunityDecision, opportunityNow, opportunityResult
 import { OpportunityBoard, OpportunityReview } from './OpportunityPlans'
 import { buildOpportunityPlans } from '@/services/cryptoAnalysis/opportunityEngine'
 import { readScenarios } from '@/services/scenarios/scenarioStorage'
+import {readOpportunityTrials} from '@/services/cryptoAnalysis/opportunityTrialStorage'
 
 beforeEach(()=>{ localStorage.clear();vi.useFakeTimers();vi.setSystemTime(opportunityNow) })
 afterEach(()=>vi.useRealTimers())
+it('records all qualified candidates including hidden cards, but blocks incomplete scans',()=>{
+  const result=opportunityResult(),results=Array.from({length:5},(_,i)=>({...result,instrument:{...result.instrument,id:`upbit-c${i}`,symbol:`C${i}/KRW`}}))
+  const props={results,now:opportunityNow,language:'en' as const,simple:true}
+  const view=render(<MemoryRouter><OpportunityBoard {...props} canRecord={false}/></MemoryRouter>)
+  expect(screen.getAllByRole('link',{name:/Review current plan/})).toHaveLength(3)
+  expect(screen.getByRole('button',{name:'Record all eligible spot setups (5)'}).hasAttribute('disabled')).toBe(true)
+  view.rerender(<MemoryRouter><OpportunityBoard {...props} canRecord/></MemoryRouter>)
+  fireEvent.click(screen.getByRole('button',{name:'Record all eligible spot setups (5)'}))
+  expect(readOpportunityTrials().trials).toHaveLength(5)
+  expect(screen.getByRole('link',{name:/View validation records/}).getAttribute('href')).toBe('/ai-analysis#opportunity-records')
+})
 it('shows a qualifying rebound, recalculates with costs and removes expired prices',()=>{
   const props = {results:[opportunityResult()],now:opportunityNow,language:'en' as const,simple:true}
   const view = render(<MemoryRouter><OpportunityBoard {...props} /></MemoryRouter>)
