@@ -22,7 +22,7 @@ describe('immutable forward opportunity outcomes',()=>{
     const trial=trialFixture(),bars=trialBars(trial)
     bars[0]={...bars[0],open:trial.entry[1]+2,high:trial.target+1,low:trial.stop-1}
     const result=finish(trial,bars)
-    expect(result).toMatchObject({state:'skipped',entry:null,netLow:null})
+    expect(result).toMatchObject({state:'skipped',entry:null,netLow:null,at:trial.startAt+H})
     const unfinished=mergeTrialEvidence(trial,trialBars(trial),trial.startAt+H-1)
     expect(unfinished.evidence).toHaveLength(0)
     expect(evaluateOpportunityTrial(unfinished,trial.startAt+H-1).state).toBe('pending')

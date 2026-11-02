@@ -37,8 +37,8 @@ export function OpportunityTrialLedgerView({store,language,live}:{store:Opportun
   const summary=summarizeOpportunityTrials(store.trials,clock,kind==='all'?undefined:kind)
   const names=ko?{pullback:'상승 추세 눌림',breakout:'가격 돌파',rebound:'하락 추세 속 반등'}:{pullback:'Trend pullback',breakout:'Price breakout',rebound:'Countertrend rebound'}
   const states:Record<TrialState,string>=ko?{pending:'진입 시가 확인 대기',open:'가상 진입 · 관찰 중',target:'목표 도달',stop:'손절 도달',timeout:'24시간 관찰 종료',ambiguous:'목표·손절 순서 불명',skipped:'진입 구간 이탈 · 미진입',unresolved:'자료 확인 불가 · 집계 제외'}:{pending:'Awaiting entry bar',open:'Simulated entry · open',target:'Target reached',stop:'Stop reached',timeout:'24-hour exit',ambiguous:'Target/stop order unknown',skipped:'Outside entry zone · skipped',unresolved:'Unresolved · excluded'}
-  const percent=(value:number|null)=>value===null?'—':`${value>0?'+':''}${value.toFixed(2)}%`
-  const range=(low:number|null,high:number|null)=>low===high?percent(low):`${percent(low)} ~ ${percent(high)}`
+  const percent=(value:number|null,signed=true)=>value===null?'—':`${signed&&value>0?'+':''}${value.toFixed(2)}%`
+  const range=(low:number|null,high:number|null,signed=true)=>low===high?percent(low,signed):`${percent(low,signed)} ~ ${percent(high,signed)}`
   const stamp=(at:number)=>new Date(at).toLocaleString(ko?'ko-KR':'en-US')
   const selected=store.trials.filter(r=>kind==='all'||r.kind===kind).toReversed()
   const download=()=>{
@@ -54,7 +54,7 @@ export function OpportunityTrialLedgerView({store,language,live}:{store:Opportun
     <div className={styles.metrics}>
       <article><span>{ko?'기록 / 결과 계산':'Recorded / evaluated'}</span><strong>{summary.total} / {summary.completed}</strong></article>
       <article><span>{ko?'비용 차감 후 평균':'Mean change after costs'}</span><strong>{range(summary.meanLow,summary.meanHigh)}</strong></article>
-      <article><span>{ko?'가상 결과 중 순이익 비율':'Positive simulated outcomes'}</span><strong>{range(summary.winsLow,summary.winsHigh)}</strong></article>
+      <article><span>{ko?'가상 결과 중 순이익 비율':'Positive simulated outcomes'}</span><strong>{range(summary.winsLow,summary.winsHigh,false)}</strong></article>
       <article><span>{ko?'진행 / 미진입 / 자료 부족':'Pending / skipped / unresolved'}</span><strong>{summary.pending} / {summary.skipped} / {summary.unresolved}</strong></article>
     </div>
     <p className={styles.assessment}>{ko?summary.completed<30?`완료 표본 ${summary.completed}건으로 아직 판단하기 어렵습니다. 30건 이상이어도 수익성이 입증되는 것은 아닙니다.`:'관측 표본의 결과입니다. 표본이 늘어도 미래 수익이나 계좌 수익률을 뜻하지 않습니다.':`${summary.completed} completed samples. Fewer than 30 is a small sample; reaching 30 does not validate profitability.`} {ko?`같은 봉에서 목표·손절에 모두 닿은 ${summary.ambiguous}건은 손실~이익 범위로 집계합니다.`:`${summary.ambiguous} ambiguous cases are included as loss-to-gain ranges.`}</p>

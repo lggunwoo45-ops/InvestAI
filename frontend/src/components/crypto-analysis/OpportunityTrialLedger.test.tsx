@@ -32,7 +32,7 @@ it('shows ambiguous loss-to-gain ranges, excludes missing evidence and filters s
   expect(screen.getByText('2 / 1')).toBeTruthy()
   expect(screen.getByText('목표·손절 순서 불명')).toBeTruthy()
   expect(screen.getByText('자료 확인 불가 · 집계 제외')).toBeTruthy()
-  expect(screen.getByText('0.00% ~ +100.00%')).toBeTruthy()
+  expect(screen.getByText('0.00% ~ 100.00%')).toBeTruthy()
   fireEvent.change(screen.getByRole('combobox',{name:'검증할 전략'}),{target:{value:'breakout'}})
   expect(screen.getByText('1 / 0')).toBeTruthy()
   expect(screen.queryByText('목표·손절 순서 불명')).toBeNull()

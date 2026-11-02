@@ -64,7 +64,7 @@ export function evaluateOpportunityTrial(trial:OpportunityTrial,now:number):Tria
   const bars = trial.evidence.filter(c=>c.timestamp+TRIAL_HOUR<=now)
   if (!bars.length) return result(now<trial.startAt+TRIAL_HOUR ? 'pending':'unresolved')
   const entry = bars[0].open
-  if (entry<trial.entry[0] || entry>trial.entry[1]) return result('skipped',null,null,trial.startAt)
+  if (entry<trial.entry[0] || entry>trial.entry[1]) return result('skipped',null,null,trial.startAt+TRIAL_HOUR)
   for (const [i,bar] of bars.entries()) {
     const at = bar.timestamp+TRIAL_HOUR
     // Opens precede the unknown intrabar path. Adverse stop gaps fill at the open.
