@@ -50,7 +50,7 @@ export function SimpleHeader({ hideCopilotToggle, copilotOpen, onToggleCopilot }
           <GlobalSearch compact />
           <nav aria-label={ko ? '시장·자료·설정' : 'Markets, resources and settings'}>
             {simple && <><NavLink to="/my-analysis">{ko ? '궁금한 종목 분석' : 'Analyze an asset'}</NavLink><NavLink to="/ai-analysis">{ko ? '후보 찾기·기록' : 'Candidates and records'}</NavLink><NavLink to="/trading">{ko ? '매수 금액 계산' : 'Purchase calculator'}</NavLink><NavLink to="/strategies">{ko ? '과거 전략 시험' : 'Historical test'}</NavLink></>}
-            {[...secondaryNavigation, ...utilityNavigation].map(item => <NavLink key={item.path} to={item.path}>{item.path === '/research' ? (ko ? '시장·기록' : 'Market & Reviews') : uiText[language].navigation[item.icon]}</NavLink>)}
+            {[...secondaryNavigation, ...utilityNavigation].map(item => <NavLink key={item.path} to={item.path}>{item.path==='/plans'?(ko?'이용 플랜':'Plans'):item.path === '/research' ? (ko ? '시장·기록' : 'Market & Reviews') : uiText[language].navigation[item.icon]}</NavLink>)}
           </nav>
           {!hideCopilotToggle && <button className={styles.mobileCopilot} type="button" onClick={event => { toggleAiCopilot(); const details = event.currentTarget.closest('details'); if (details) details.open = false }} aria-pressed={isAiCopilotOpen}>{ko ? '도움말 열기·닫기' : 'Toggle assistant'}</button>}
           <label>{ko ? '언어' : 'Language'}<select aria-label="Language" value={language} onChange={event => setLanguage(event.target.value as Language)}><option value="ko">한국어</option><option value="en">English</option></select></label>

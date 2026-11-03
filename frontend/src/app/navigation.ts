@@ -15,5 +15,6 @@ export const secondaryNavigation: readonly NavigationItem[] = [
 ]
 
 export const utilityNavigation: readonly NavigationItem[] = [
+  { label: 'Plans', path: '/plans', icon: 'settings' },
   { label: 'Settings', path: '/settings', icon: 'settings' },
 ]

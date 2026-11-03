@@ -141,7 +141,7 @@ export function Sidebar() {
 
       <div className={styles.footer}>
         <div className={styles.navigationList}>
-          {utilityNavigation.map((item) => <SidebarNavItem key={item.path} item={item} label={text.navigation[item.icon]} compact={!isExpanded} />)}
+          {utilityNavigation.map((item) => <SidebarNavItem key={item.path} item={item} label={item.path==='/plans'?(language==='ko'?'이용 플랜':'Plans'):text.navigation[item.icon]} compact={!isExpanded} />)}
         </div>
         {isExpanded && (
           <div className={styles.environment}>

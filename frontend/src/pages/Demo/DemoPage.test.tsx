@@ -1,86 +1,35 @@
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { AppProviders } from '@/app/providers/AppProviders'
 import { DemoPage } from './DemoPage'
 
-const renderPage = (language?: 'ko', mode: 'simple' | 'expert' = 'expert') => {
-  window.localStorage.setItem('market-copilot.language', language ?? 'en')
-  window.localStorage.setItem('market-copilot.displayMode.v1', mode)
-  return render(<MemoryRouter><AppProviders><DemoPage /></AppProviders></MemoryRouter>)
-}
-
-describe('DemoPage', () => {
-  beforeEach(() => {
-    window.localStorage.clear()
+describe('Customer guide', () => {
+  beforeEach(() => { localStorage.clear(); localStorage.setItem('market-copilot.language', 'ko'); localStorage.setItem('market-copilot.displayMode.v1', 'simple') })
+  const mount = () => render(<MemoryRouter><AppProviders><DemoPage /></AppProviders></MemoryRouter>)
+  it('opens analysis and changes instructions with the chosen task', () => {
+    mount()
+    expect(screen.getByRole('link', { name: 'BTC 바로 분석하기 →' }).getAttribute('href')).toBe('/my-analysis?instrumentId=upbit-btc')
+    fireEvent.click(screen.getByRole('button', { name: '이미 가진 종목을 봐요' }))
+    expect(screen.getByRole('button', { name: '이미 가진 종목을 봐요' }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByRole('link', { name: '내 종목 관리 →' }).getAttribute('href')).toBe('/portfolio')
+    expect(screen.queryByRole('link', { name: 'BTC 분석 열기 →' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: '후보와 결과를 기록해요' }))
+    expect(screen.getByRole('link', { name: '새 후보 찾기 →' }).getAttribute('href')).toBe('/ai-analysis')
   })
-
-  it('renders readiness, guided demo content, and correct quick-link hrefs', () => {
-    renderPage()
-    expect(screen.getByRole('heading', { name: 'Market Copilot Beta' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'Getting started' })).toBeTruthy()
-    expect(screen.getByRole('link', { name: /Go to AI Analysis/ }).getAttribute('href')).toBe('/ai-analysis')
-    expect(screen.getByRole('link', { name: /My Analysis/ }).getAttribute('href')).toBe('/my-analysis')
-    expect(screen.getByRole('heading', { name: 'Current availability' })).toBeTruthy()
-    const systemStatus = screen.getByRole('region', { name: 'Beta system status' })
-    const apiUsage = screen.getByRole('region', { name: 'API usage status' })
-    expect(within(systemStatus).queryByText('DART proxy')).toBeNull()
-    expect(within(systemStatus).queryByText('DART API key')).toBeNull()
-    expect(within(systemStatus).getByText('DART status can be checked directly in the API Usage Status section below.')).toBeTruthy()
-    expect(within(apiUsage).getByRole('button', { name: 'Check DART connection' })).toBeTruthy()
-    expect(within(apiUsage).getByText('DART connection has not been checked yet.')).toBeTruthy()
-    expect(within(systemStatus).getByText('Real AI').closest('li')?.textContent).toContain('Disabled')
-    expect(screen.getByRole('heading', { name: 'What works now' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: '5-minute investor demo script' })).toBeTruthy()
-    expect(screen.getByText('Limits of this free beta')).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'Investor feedback questions' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'Demo health checklist' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'What not to say' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'Demo flow' })).toBeTruthy()
-    expect(screen.getByRole('link', { name: /Open Market Radar/ }).getAttribute('href')).toBe('/dashboard')
-    expect(screen.getByRole('link', { name: /Open Watch Candidates/ }).getAttribute('href')).toBe('/ai-analysis')
-    expect(screen.getByRole('link', { name: /Open Korea Stock Candidates/ }).getAttribute('href')).toBe('/ai-analysis')
-    expect(screen.getByRole('link', { name: /Open US Stock Candidates/ }).getAttribute('href')).toBe('/ai-analysis')
-    expect(screen.getByRole('link', { name: /Open News Center/ }).getAttribute('href')).toBe('/news')
-    expect(screen.getByRole('link', { name: /Open AI Usage Plans/ }).getAttribute('href')).toBe('/ai-analysis#ai-usage-plans-title')
+  it('switches the shared display preference and explains missing data and price levels', () => {
+    mount()
+    fireEvent.click(screen.getByRole('button', { name: '전문가모드로 보기' }))
+    expect(screen.getByRole('heading', { name: '지금은 전문가모드예요' })).toBeTruthy()
+    expect(localStorage.getItem('market-copilot.displayMode.v1')).toBe('expert')
+    expect(screen.getByText(/하락 판단에서는 저항보다 위에 있을 수 있으며 지지선과 같은 뜻이 아닙니다/)).toBeTruthy()
+    expect(screen.getByText(/자료 없음·갱신 필요가 나오면 어떻게 하나요/)).toBeTruthy()
+    expect(screen.queryByText('5분 투자자 데모 스크립트')).toBeNull()
   })
-  it('renders Korean investor demo labels', () => {
-    renderPage('ko')
-    expect(screen.getByText('투자자 데모')).toBeTruthy()
-    expect(screen.getByRole('heading', { name: '처음 사용 흐름' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: '현재 이용 가능한 범위' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: '베타 시스템 상태' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'API 사용 상태' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: '5분 투자자 데모 스크립트' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: '현재 작동하는 기능' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: '신뢰 경계' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: '데모 상태 체크리스트' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: '말하지 말아야 할 표현' })).toBeTruthy()
-  })
-  it('renders the short bilingual-safe path before detailed content in Simple Mode', () => {
-    renderPage(undefined, 'simple')
-    expect(screen.getByRole('heading', { name: 'Start here' })).toBeTruthy()
-    expect(screen.getByRole('link', { name: /Browse markets/ }).getAttribute('href')).toBe('/market')
-    expect(screen.queryByRole('heading', { name: '5-minute investor demo script' })).toBeNull()
-  })
-
-  it('keeps runtime DART truth out of Beta System Status and idle until a manual check', () => {
-    renderPage('ko')
-    const systemStatus = screen.getByRole('region', { name: '베타 시스템 상태' })
-    const apiUsage = screen.getByRole('region', { name: 'API 사용 상태' })
-    expect(within(systemStatus).queryByText('DART 프록시')).toBeNull()
-    expect(within(systemStatus).queryByText('DART API 키')).toBeNull()
-    expect(within(systemStatus).getByText('DART 상태는 아래 API 사용 상태에서 직접 확인할 수 있습니다.')).toBeTruthy()
-    expect(within(apiUsage).getByText('DART 연결 상태를 아직 확인하지 않았습니다.')).toBeTruthy()
-    expect(within(apiUsage).queryByText('DART 프록시: 연결 실패')).toBeNull()
-  })
-
-  it('contains unsafe claims only as explicit presenter warnings', () => {
-    renderPage()
-    const hero = screen.getByRole('heading', { name: 'Market Copilot Beta' }).closest('header')
-    const warning = screen.getByRole('heading', { name: 'What not to say' }).closest('section')
-    expect(hero?.textContent?.toLowerCase()).not.toMatch(/buy now|sell now|strong buy|guaranteed profit|completed trading platform|ai stock picker|auto-trading system/)
-    expect(warning?.querySelector('[data-guidance="avoid"]')?.textContent?.toLowerCase()).toMatch(/guaranteed profit system/)
-    expect(warning?.querySelector('[data-guidance="present"]')?.textContent).toContain('A decision-support beta')
+  it('offers the same task flow in English', () => {
+    localStorage.setItem('market-copilot.language', 'en'); mount()
+    expect(screen.getByRole('heading', { level: 1, name: /Understand one asset\.\s+Keep a record\./ })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'I already hold an asset' }))
+    expect(screen.getByRole('link', { name: 'Manage holdings →' }).getAttribute('href')).toBe('/portfolio')
   })
 })

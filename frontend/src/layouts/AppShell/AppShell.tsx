@@ -35,7 +35,7 @@ export function AppShell() {
   const [mobileCopilotOpen, setMobileCopilotOpen] = useState(false)
   const isExplore = pathname.replace(/\/$/, '') === '/ai-analysis'
   // Analysis has its own contextual question panel; avoid two competing explanations.
-  const focusedAnalysis = isExplore || ['/my-analysis', '/dashboard', '/portfolio', '/settings', '/trading', '/strategies', '/research'].includes(pathname.replace(/\/$/, ''))
+  const focusedAnalysis = isExplore || ['/my-analysis', '/dashboard', '/portfolio', '/settings', '/trading', '/strategies', '/research', '/demo', '/guide', '/plans'].includes(pathname.replace(/\/$/, ''))
   const showCopilot = (floatingCopilot ? mobileCopilotOpen : isAiCopilotOpen) && !focusedAnalysis
 
   return (

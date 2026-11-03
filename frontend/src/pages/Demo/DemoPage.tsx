@@ -1,133 +1,46 @@
-import { SimpleWorkspace, SimpleFeatureLinks } from '@/components/simple/SimpleWorkspace'
-import { useMemo } from 'react'
-import { Link } from 'react-router-dom'
-
-import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
-import { ApiUsageStatusPanel } from '@/components/demo/ApiUsageStatusPanel/ApiUsageStatusPanel'
-import { BetaLimitationsPanel } from '@/components/demo/BetaLimitationsPanel/BetaLimitationsPanel'
-import { BetaReadinessChecklist } from '@/components/demo/BetaReadinessChecklist/BetaReadinessChecklist'
-import { BetaSystemStatusPanel } from '@/components/demo/BetaSystemStatusPanel/BetaSystemStatusPanel'
-import { DemoHealthChecklist } from '@/components/demo/DemoHealthChecklist/DemoHealthChecklist'
-import { GettingStartedFlow } from '@/components/demo/GettingStartedFlow/GettingStartedFlow'
-import { useDocumentTitle } from '@/hooks/useDocumentTitle'
-import { useMarketWorkspace } from '@/hooks/useMarketWorkspace'
-import { useNewsProviderMode } from '@/hooks/useNewsProviderMode'
-import { useLanguage } from '@/i18n/useLanguage'
-import { getDemoScopeSummary } from '@/services/demo/demoScopeConfig'
-import { buildApiUsageStatus, buildDependencyHealth } from '@/services/health/dependencyHealth'
-import styles from './DemoPage.module.css'
-
-const copy = {
-  en: {
-    eyebrow: 'INVESTOR DEMO', subtitle: 'AI-ready market decision-support platform', rule: 'Rule-based now, AI-ready later', crypto: 'Crypto workflow available', stock: 'Stock workflow early beta', ai: 'Real AI planned, not connected', works: 'What works now', flow: 'Demo flow', show: 'What to show', say: 'What to say', roadmap: 'Product roadmap', trust: 'Trust boundary', quick: 'Demo quick links', next: 'Next milestone', limits: 'Limitations', open: 'Open step',
-    quickLinks: [
-      { label: 'Open Market Radar', route: '/dashboard' },
-      { label: 'Open Watch Candidates', route: '/ai-analysis' },
-      { label: 'Open Korea Stock Candidates', route: '/ai-analysis', hint: 'Select the Korea Stocks tab' },
-      { label: 'Open US Stock Candidates', route: '/ai-analysis', hint: 'Select the US Stocks tab' },
-      { label: 'Open News Center', route: '/news' },
-      { label: 'Open AI Usage Plans', route: '/ai-analysis#ai-usage-plans-title' },
-    ],
-    roadmapItems: ['Beta Preview · Current demo scope', 'Next · Stock data expansion', 'Later · Reviewed AI summary pilot', 'Future · AI-assisted full beta'],
-    statuses: { available: 'Available', beta: 'Beta', limited: 'Limited', planned: 'Planned', locked: 'Locked', notAvailable: 'Not available' },
-  },
-  ko: {
-    eyebrow: '투자자 데모', subtitle: 'AI-ready 시장 의사결정 지원 플랫폼', rule: '현재는 규칙 기반, 향후 AI-ready', crypto: '가상자산 흐름 사용 가능', stock: '주식 흐름 초기 베타', ai: '실제 AI 예정 · 미연결', works: '현재 작동하는 기능', flow: '데모 흐름', show: '보여줄 내용', say: '설명할 내용', roadmap: '제품 로드맵', trust: '신뢰 경계', quick: '데모 빠른 이동', next: '다음 단계', limits: '제한사항', open: '단계 열기',
-    quickLinks: [
-      { label: 'Market Radar 열기', route: '/dashboard' },
-      { label: '관찰 후보 열기', route: '/ai-analysis' },
-      { label: '한국 주식 후보 열기', route: '/ai-analysis', hint: '한국 주식 탭을 선택하세요' },
-      { label: '미국 주식 후보 열기', route: '/ai-analysis', hint: '미국 주식 탭을 선택하세요' },
-      { label: '뉴스 센터 열기', route: '/news' },
-      { label: 'AI 사용량 및 플랜 열기', route: '/ai-analysis#ai-usage-plans-title' },
-    ],
-    roadmapItems: ['Beta Preview · 현재 데모 범위', '다음 · 주식 데이터 확장', '이후 · 검토된 AI 요약 파일럿', '향후 · AI 지원 전체 베타'],
-    statuses: { available: '사용 가능', beta: '베타', limited: '제한', planned: '예정', locked: '잠김', notAvailable: '사용 불가' },
-  },
-} as const
-
-const readinessCopy = {
-  en: {
-    scriptTitle: '5-minute investor demo script', presenterNotes: 'Presenter notes',
-    script: [
-      ['Open Market Radar', 'Start with the daily market-awareness view and explain the deterministic evidence cards.'],
-      ['Choose a market bucket', 'Open Upbit, Binance, KOSPI, KOSDAQ, or US stocks without displaying all daily cards at once.'],
-      ['Review today’s five candidates', 'Show the fixed daily shortlist as research support, never as an instruction.'],
-      ['Review current read and ranges', 'Present the current read and approximate ranges as decision support, never as executable orders.'],
-      ['Connect News Insight', 'Show which normalized evidence supports context while retaining source transparency.'],
-      ['Preview stock candidate beta', 'Open Korea and US tabs and state that stock coverage is intentionally early beta.'],
-      ['Close with AI Usage & Plans', 'Explain that real AI is planned behind explicit usage and cost controls.'],
-    ],
-    notes: ['Market Copilot supports decisions; it does not execute trades.', 'Crypto is the most validated workflow in this beta.', 'Stock coverage is intentionally an early beta.', 'Real AI is planned behind usage and cost controls.'],
-    questionsTitle: 'Investor feedback questions',
-    questions: ['Is the candidate logic understandable?', 'Are the five market buckets intuitive?', 'Are review ranges clear without feeling like order prices?', 'Is Market Radar useful as a first screen?', 'Are News Insight evidence links clear enough to trust?', 'Is the stock early-beta direction valuable?', 'Which AI-assisted features would users pay for?', 'Do the usage and credit assumptions feel understandable?', 'What data quality is required before you would use this regularly?'],
-    guidanceTitle: 'What not to say', avoidTitle: 'Do not present as', presentTitle: 'Present as',
-    avoid: ['A completed trading platform', 'A guaranteed profit system', 'An AI stock picker', 'An auto-trading system'],
-    present: ['A decision-support beta', 'An AI-ready architecture', 'A crypto-first validated workflow', 'An intentionally early stock beta'],
-    noTelemetry: 'No submission, telemetry, or backend',
-  },
-  ko: {
-    scriptTitle: '5분 투자자 데모 스크립트', presenterNotes: '발표자 메모',
-    script: [
-      ['Market Radar 열기', '결정론적 근거 카드로 구성된 일일 시장 인지 화면부터 설명합니다.'],
-      ['시장군 선택', '업비트·바이낸스·코스피·코스닥·미국주식 중 하나를 선택해 모든 카드를 한꺼번에 표시하지 않습니다.'],
-      ['오늘의 후보 5개 검토', '거래 지시가 아닌 고정된 일일 조사 지원 목록이라는 점을 보여줍니다.'],
-      ['지금 판단과 검토 범위 확인', '실행 주문이 아닌 판단 보조 정보와 근사 검토 범위로 소개합니다.'],
-      ['뉴스 인사이트 연결', '출처 투명성을 유지하면서 정규화된 근거가 맥락을 보강하는 방식을 보여줍니다.'],
-      ['주식 후보 베타 미리보기', '한국·미국 탭을 열고 주식 범위가 의도적인 초기 베타임을 밝힙니다.'],
-      ['AI 사용량 및 플랜으로 마무리', '실제 AI는 명확한 사용량·비용 통제 뒤에 연결될 예정임을 설명합니다.'],
-    ],
-    notes: ['Market Copilot은 의사결정을 지원하며 거래를 실행하지 않습니다.', '이번 베타에서 가상자산 흐름이 가장 많이 검증되었습니다.', '주식 범위는 의도적인 초기 베타입니다.', '실제 AI는 사용량·비용 통제 뒤에 연결될 예정입니다.'],
-    questionsTitle: '투자자 피드백 질문',
-    questions: ['후보 로직을 이해할 수 있습니까?', '다섯 시장군 구성이 직관적입니까?', '검토 범위가 주문가처럼 보이지 않으면서 명확합니까?', 'Market Radar가 첫 화면으로 유용합니까?', '뉴스 인사이트의 근거 연결을 신뢰할 만큼 명확합니까?', '주식 초기 베타 방향이 가치 있습니까?', '어떤 AI 지원 기능에 비용을 지불하시겠습니까?', '사용량과 크레딧 가정이 이해하기 쉽습니까?', '정기적으로 사용하려면 어느 수준의 데이터 품질이 필요합니까?'],
-    guidanceTitle: '말하지 말아야 할 표현', avoidTitle: '다음과 같이 소개하지 않기', presentTitle: '다음과 같이 소개하기',
-    avoid: ['완성된 트레이딩 플랫폼', '수익 보장 시스템', 'AI 종목 추천기', '자동매매 시스템'],
-    present: ['의사결정 지원 베타', 'AI-ready 아키텍처', '가상자산 우선 검증 흐름', '의도적인 주식 초기 베타'],
-    noTelemetry: '제출·텔레메트리·백엔드 없음',
-  },
-} as const
+import {useState} from 'react'
+import {Link} from 'react-router-dom'
+import {useLanguage} from '@/i18n/useLanguage'
+import {useDisplayMode} from '@/app/displayMode/useDisplayMode'
+import {useDocumentTitle} from '@/hooks/useDocumentTitle'
+import {ProductStatus} from '@/components/product/ProductStatus'
+import styles from '@/components/product/ProductExperience.module.css'
 
 export function DemoPage() {
-  const { language } = useLanguage()
-  const { displayMode } = useDisplayMode()
-  const scope = getDemoScopeSummary(language)
-  const { marketDataMode } = useMarketWorkspace()
-  const { mode: newsMode, result: newsResult } = useNewsProviderMode()
-  const newsState = newsResult?.state
-  const { dependencyHealth, apiUsage } = useMemo(() => ({
-    dependencyHealth: buildDependencyHealth({ marketDataMode, newsMode, ...(newsState ? { newsState } : {}) }),
-    apiUsage: buildApiUsageStatus({ newsMode, ...(newsState ? { newsState } : {}) }),
-  }), [marketDataMode, newsMode, newsState])
-  const t = copy[language]
-  const p = readinessCopy[language]
-  useDocumentTitle(scope.versionLabel)
-
-  if (displayMode === 'simple') return <SimpleWorkspace title={language === 'ko' ? '처음이라면 여기서 시작하세요' : 'Start here'} description={language === 'ko' ? '후보를 찾고, 한 종목을 확인하고, 다시 볼 가격을 기록하는 순서예요.' : 'Find a candidate, review one asset, then record a price to revisit.'}>
-    <GettingStartedFlow language={language} />
-    <SimpleFeatureLinks />
-    <details><summary>{language === 'ko' ? '사용할 수 있는 범위와 제한' : 'Coverage and limitations'}</summary><BetaLimitationsPanel language={language} /><BetaReadinessChecklist language={language} /></details>
-  </SimpleWorkspace>
-  return <div className={styles.page} data-display-mode={displayMode}>
-    <GettingStartedFlow language={language} />
-    <BetaLimitationsPanel language={language} />
-
-    <header className={styles.hero}><span>{t.eyebrow}</span><h1>{scope.versionLabel}</h1><h2>{t.subtitle}</h2><p>{scope.positioning}</p><div><b>{t.crypto}</b><b>{t.stock}</b><b>{t.ai}</b><b>{t.rule}</b></div></header>
-    <nav className={styles.quick} aria-label={t.quick}><span>{t.quick}</span>{t.quickLinks.map((link) => <Link key={link.label} to={link.route}><strong>{link.label} →</strong>{'hint' in link && <small>{link.hint}</small>}</Link>)}</nav>
-
-    <BetaReadinessChecklist language={language} />
-    <BetaSystemStatusPanel items={dependencyHealth} language={language} />
-    <ApiUsageStatusPanel items={apiUsage} language={language} />
-
-    <section className={styles.section} aria-labelledby="demo-works"><header><span>02</span><h2 id="demo-works">{t.works}</h2></header><div className={styles.capabilities}>{scope.capabilities.map((capability) => <article key={capability.area} data-status={capability.status}><header><h3>{capability.title}</h3><em>{t.statuses[capability.status]}</em></header><p>{capability.summary}</p><ul>{capability.whatWorks.map((item) => <li key={item}>{item}</li>)}</ul><details><summary>{t.limits}</summary><ul>{capability.limitations.map((item) => <li key={item}>{item}</li>)}</ul><small>{t.next}: {capability.nextMilestone}</small></details></article>)}</div></section>
-
-    <section className={styles.section} aria-labelledby="demo-script"><header><span>03</span><h2 id="demo-script">{p.scriptTitle}</h2></header><ol className={styles.script}>{p.script.map(([title, note], index) => <li key={title}><b>{String(index + 1).padStart(2, '0')}</b><div><h3>{title}</h3><p>{note}</p></div></li>)}</ol><aside className={styles.presenter}><h3>{p.presenterNotes}</h3><ul>{p.notes.map((note) => <li key={note}>{note}</li>)}</ul></aside></section>
-
-    <DemoHealthChecklist language={language} />
-
-    <section className={styles.section} aria-labelledby="demo-flow"><header><span>04</span><h2 id="demo-flow">{t.flow}</h2></header><ol className={styles.flow}>{scope.demoFlow.map((step, index) => <li key={step.id}><b>{String(index + 1).padStart(2, '0')}</b><div><header><h3>{step.title}</h3><em>{t.statuses[step.status]}</em></header><p><span>{t.show}</span>{step.summary}</p><p><span>{t.say}</span>{step.talkingPoints.join(' · ')}</p><Link to={step.route}>{t.open} →</Link></div></li>)}</ol></section>
-
-    <section className={styles.split}><article aria-labelledby="demo-roadmap"><span>05</span><h2 id="demo-roadmap">{t.roadmap}</h2><ol>{t.roadmapItems.map((item) => <li key={item}>{item}</li>)}</ol><small>{language === 'ko' ? '표시된 버전은 제품 방향이며 확정 일정이 아닙니다.' : 'Version labels show product direction, not committed dates.'}</small></article><article aria-labelledby="demo-trust"><span>06</span><h2 id="demo-trust">{t.trust}</h2><ul>{scope.trustBoundaries.map((item) => <li key={item}>{item}</li>)}</ul></article><article aria-labelledby="demo-questions"><span>07</span><h2 id="demo-questions">{p.questionsTitle}</h2><ul>{p.questions.map((item) => <li key={item}>□ {item}</li>)}</ul><small>{p.noTelemetry}</small></article></section>
-
-    <section className={`${styles.section} ${styles.guidance}`} aria-labelledby="demo-guidance"><header><span>09</span><h2 id="demo-guidance">{p.guidanceTitle}</h2></header><div><article data-guidance="avoid"><h3>{p.avoidTitle}</h3><ul>{p.avoid.map((item) => <li key={item}>{item}</li>)}</ul></article><article data-guidance="present"><h3>{p.presentTitle}</h3><ul>{p.present.map((item) => <li key={item}>{item}</li>)}</ul></article></div></section>
+  const {language}=useLanguage(),ko=language==='ko',{displayMode,setDisplayMode}=useDisplayMode()
+  const [topic,setTopic]=useState('start')
+  useDocumentTitle(ko?'사용 가이드':'User guide')
+  const questions=ko?[
+    ['후보가 없으면 앱이 작동하지 않는 건가요?','아니요. 완료된 가격 기록과 진입 조건을 충족한 후보만 표시해요. 조건 미충족과 자료 부족은 다릅니다. 조건 미충족이면 카드의 재검토 가격을 확인하고, 자료 부족이면 연결 상태와 봉 누락 사유를 확인하세요.'],
+    ['지지·저항·판단 무효화 가격은 무엇이 다른가요?','지지는 내려갈 때 매수세가 나타났던 가격, 저항은 올라갈 때 매도세가 나타났던 가격입니다. 판단 무효화 가격은 현재 분석의 전제를 다시 확인할 기준이에요. 하락 판단에서는 저항보다 위에 있을 수 있으며 지지선과 같은 뜻이 아닙니다. 어느 가격도 반등이나 체결을 보장하지 않아요.'],
+    ['자료 없음·갱신 필요가 나오면 어떻게 하나요?','먼저 설정에서 실제 시세 모드인지 확인하고 연결 검사를 실행하세요. 조회 시각이 오래됐으면 다시 분석하고, 완료 봉이 부족하거나 원본에 공백이 있으면 다른 종목·시간대를 확인하세요. 자료가 회복되면 다시 분석할 수 있어요.'],
+    ['창을 닫아도 기록과 알림이 동작하나요?','로그인 후 새로 등록한 추천 검증 기록은 서버가 이후 가격을 수집합니다. 비회원·이 기기 이전 기록은 화면을 열 때 갱신합니다. 브라우저 알림은 보이는 탭에서만 동작하고, 서버 감시·텔레그램은 별도로 등록·연결해야 해요. 아래 연결 상태에서 준비 여부를 확인하세요.'],
+    ['가상 결과가 실제 수익률인가요?','아니요. 기록한 조건에 다음 정각의 실제 시가와 완료 시간봉을 적용한 모형입니다. 같은 봉에서 목표와 손절을 모두 만나면 범위로 표시하고, 누락 자료는 성공으로 계산하지 않아요. 실제 주문·체결·계좌 수익률과 다릅니다.'],
+    ['로그인하면 이전 기록도 자동으로 옮겨지나요?','비회원 기록은 자동으로 계정에 합치지 않습니다. 계정 메뉴에서 가져오기를 선택하세요. 추천 검증의 이전 기기 기록은 별도 보기로 보존하고 서버에서 관찰한 이력으로 바꾸지 않아요. 이메일 복구가 준비되기 전까지는 가입 시 복구 코드를 안전하게 보관하세요.'],
+  ]:[
+    ['Does an empty shortlist mean the app is broken?','No. Unmet strategy conditions and insufficient data are different. Review the unmet conditions and reassessment prices, or inspect the connection and candle-gap explanation when evidence is missing.'],
+    ['How do support, resistance and invalidation differ?','Support and resistance describe observed buying and selling areas. Invalidation is the price at which the current analysis needs reassessment. For a bearish view it can be above resistance; it is not another name for support. None guarantees a rebound or execution.'],
+    ['What should I do with missing or stale data?','Check live mode and the connection in Settings. Refresh old analyses. If closed bars are insufficient or missing, inspect another asset or timeframe. You can retry when the source data recovers.'],
+    ['Does monitoring continue when I close the app?','New signed-in opportunity records collect subsequent prices on the server. Guest and earlier device records update on visits. Browser alerts require a visible tab. Server rules and Telegram require separate registration and pairing.'],
+    ['Are simulated results actual investment returns?','No. Frozen conditions are evaluated with the next hourly open and completed candles. Same-bar target/stop ambiguity is a range, and missing data is never counted as a win. This is not order execution or account performance.'],
+    ['Does signing in import earlier records?','No automatic merge takes place. Use the account import action. Earlier device opportunity records remain separate from server observations. Retain your signup recovery code until email recovery is configured.'],
+  ]
+  const tasks=ko?[
+    ['start','처음 시작해요','BTC 분석을 열고 지금 흐름 → 확인할 가격 → 주의할 조건 순서로 보세요. 처음에는 간편모드만으로 충분해요.','/my-analysis?instrumentId=upbit-btc','BTC 분석 열기'],
+    ['record','후보와 결과를 기록해요','종목 찾기를 완료하고 ‘조건 충족 현물 전체 기록’을 누르세요. 로그인하면 서버에, 비회원이면 이 기기에 보관해요.','/ai-analysis','새 후보 찾기'],
+    ['holding','이미 가진 종목을 봐요','평균 매수가와 수량을 입력하고 손익·가격 계획을 확인하세요. 이 입력으로 주문이 실행되지는 않아요.','/portfolio','내 종목 관리'],
+  ]:[
+    ['start','I am getting started','Open Bitcoin analysis. Read the trend, key prices and cautions in order. Simple mode is enough for a first review.','/my-analysis?instrumentId=upbit-btc','Open Bitcoin analysis'],
+    ['record','I want to track outcomes','Complete a scan and record all eligible spot setups. Signed-in records go to the server; guest records stay on this device.','/ai-analysis','Find candidates'],
+    ['holding','I already hold an asset','Enter your average price and quantity to review returns and price plans. Entering a holding does not place orders.','/portfolio','Manage holdings'],
+  ]
+  const task=tasks.find(t=>t[0]===topic)??tasks[0]
+  return <div className={styles.page}>
+    <header className={styles.hero}><div><span className={styles.eyebrow}>INVESTAI / START HERE</span><h1>{ko?'하나의 종목부터,\n이해하고 기록하세요.':'Understand one asset.\nKeep a record.'}</h1><p>{ko?'처음에는 차트 지표를 모두 알 필요 없어요. 지금의 흐름, 판단이 바뀌는 가격, 이후 결과를 순서대로 확인하세요.':'Start with the trend, the prices that change the view, and what happens afterward. You do not need to master every indicator first.'}</p><div className={styles.actions}><Link className={styles.primary} to="/my-analysis?instrumentId=upbit-btc">{ko?'BTC 바로 분석하기':'Review Bitcoin now'} →</Link><Link to="/plans">{ko?'이용 범위·플랜':'Coverage and plans'}</Link></div></div><div className={styles.preview}><span>{ko?'나에게 맞는 화면':'Choose your view'}</span><h2>{ko?displayMode==='simple'?'지금은 간편모드예요':'지금은 전문가모드예요':displayMode==='simple'?'You are in Simple mode':'You are in Expert mode'}</h2><p>{ko?'간편모드는 지금 볼 결론과 가격을 먼저, 전문가모드는 시간대별 근거와 조건을 함께 보여줘요. 저장한 기록은 공통입니다.':'Simple mode leads with the current view and prices. Expert mode adds timeframe evidence and conditions. Both share your saved records.'}</p><button type="button" onClick={()=>setDisplayMode(displayMode==='simple'?'expert':'simple')}>{ko?displayMode==='simple'?'전문가모드로 보기':'간편모드로 보기':displayMode==='simple'?'Use Expert mode':'Use Simple mode'}</button></div></header>
+    <section aria-labelledby="guide-task"><h2 id="guide-task">{ko?'지금 하려는 일부터 고르세요':'Start with your task'}</h2><div className={styles.actions} role="group" aria-label={ko?'사용 목적':'Your task'}>{tasks.map(t=><button type="button" key={t[0]} aria-pressed={t[0]===topic} onClick={()=>setTopic(t[0])}>{t[1]}</button>)}</div><ol className={styles.steps}><li><div><strong>{task[1]}</strong><p>{task[2]}</p><Link to={task[3]}>{task[4]} →</Link></div></li><li><div><strong>{ko?'근거와 자료 시각을 확인해요':'Check the evidence and its timestamp'}</strong><p>{ko?'가격 기준은 거래소·통화마다 달라요. 오래됐거나 빠진 자료가 있으면 먼저 다시 확인하세요.':'Price references differ by exchange and currency. Refresh stale data and check missing evidence before continuing.'}</p></div></li><li><div><strong>{ko?'기록을 남기고 다시 확인해요':'Save a record and revisit it'}</strong><p>{ko?'좋았던 결과뿐 아니라 미진입·손절·자료 부족도 함께 살펴보세요.':'Review skipped entries, stops and unavailable evidence alongside positive outcomes.'}</p><Link to="/ai-analysis#opportunity-records">{ko?'추천 검증 기록':'Forward review records'} →</Link></div></li></ol></section>
+    <section aria-labelledby="guide-faq"><h2 id="guide-faq">{ko?'헷갈리는 부분을 풀어드릴게요':'Answers to common questions'}</h2><div className={styles.faq}>{questions.map(([title,answer])=><details key={title}><summary>{title}</summary><div><p>{answer}</p></div></details>)}</div></section>
+    <ProductStatus language={language}/>
+    <section className={styles.card}><h2>{ko?'연결 문제가 계속되나요?':'Still having connection problems?'}</h2><p>{ko?'설정에서 시세 연결을 검사하고, 기록이 있는 기기에서 먼저 내보내기로 백업하세요. 문의 접수 채널은 현재 준비 중입니다. 비밀번호·복구 코드·거래소 키는 공개 게시물에 넣지 마세요.':'Check market connectivity in Settings and export records from the device that holds them. A support intake channel is still being prepared. Never post passwords, recovery codes or exchange keys publicly.'}</p><div className={styles.actions}><Link to="/settings">{ko?'설정·연결 확인':'Settings and connections'}</Link><Link to="/portfolio">{ko?'내 기록·백업':'Holdings and backup'}</Link></div></section>
+    <footer className={styles.footer}><Link to="/dashboard">{ko?'홈으로':'Home'}</Link><Link to="/plans">{ko?'무료 베타·유료 준비 현황':'Free beta and paid launch status'}</Link><span>{ko?'분석 보조 도구 · 자동 주문 없음':'Analysis support · no automatic orders'}</span></footer>
   </div>
 }
