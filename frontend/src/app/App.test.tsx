@@ -46,7 +46,7 @@ describe('Market Copilot application shell', () => {
     window.localStorage.setItem('market-copilot.displayMode.v1', 'simple')
     window.history.pushState({}, '', '/dashboard')
     render(<App />)
-    await screen.findByRole('heading', { name:'What should I review today?' })
+    await screen.findByRole('heading', { name:'Give your next review a clear basis.' })
     expect(screen.queryByRole('complementary', { name:'Application sidebar' })).toBeNull()
     expect(within(screen.getByRole('navigation', { name:'Primary navigation' })).getAllByRole('link')).toHaveLength(3)
     fireEvent.keyDown(window, { key:'k', ctrlKey:true })
@@ -91,12 +91,12 @@ describe('Market Copilot application shell', () => {
     expect(screen.getByRole('button', { name: 'Toggle AI Copilot' }).getAttribute('aria-pressed')).toBe('false')
   })
 
-  it('replaces illustrative plans with the working connection settings', async () => {
+  it('redirects legacy plan bookmarks to honest plan coverage', async () => {
     window.history.pushState({}, '', '/ai-analysis#ai-usage-plans-title')
     render(<App />)
-    expect(await screen.findByRole('heading', { name: 'Settings and connections' })).toBeTruthy()
-    expect(screen.queryByRole('heading', { name: 'AI Usage & Plans' })).toBeNull()
-    expect(screen.getByRole('button', { name: 'Check Upbit' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Coverage and plans' })).toBeTruthy()
+    expect(window.location.pathname).toBe('/plans')
+    expect(screen.getByText('Not on sale')).toBeTruthy()
     expect(screen.queryByRole('complementary', { name: 'AI Copilot' })).toBeNull()
   })
 
@@ -354,12 +354,12 @@ describe('Market Copilot application shell', () => {
     expect(visibleProductCopy).not.toMatch(/buy candidate|buy signal|top pick|best pick/i)
   }, 15000)
 
-  it('renders the Investor Demo route and keeps internal demo links navigable', async () => {
+  it('renders the user guide and keeps its home link navigable', async () => {
     window.history.pushState({}, '', '/demo')
     render(<App />)
-    expect(await screen.findByRole('heading', { name: 'Market Copilot Beta' })).toBeTruthy()
-    expect(screen.getByRole('link', { name: 'Demo' })).toBeTruthy()
-    fireEvent.click(screen.getByRole('link', { name: /Open Market Radar/ }))
+    expect(await screen.findByRole('heading', { level: 1, name: /Understand one asset\.\s+Keep a record\./ })).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'User guide' })).toBeTruthy()
+    fireEvent.click(screen.getByText('Home', { selector: 'footer a' }))
     expect(await screen.findByRole('heading', { name: 'Home' })).toBeTruthy()
     expect(screen.getByRole('complementary', { name: 'Market Copilot Beta scope' })).toBeTruthy()
   })
@@ -368,7 +368,7 @@ describe('Market Copilot application shell', () => {
     window.localStorage.setItem('market-copilot.displayMode.v1', 'simple')
     window.history.pushState({}, '', '/simple')
     render(<App />)
-    expect(await screen.findByRole('heading', { name: 'What should I review today?' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Give your next review a clear basis.' })).toBeTruthy()
     expect(window.location.pathname).toBe('/dashboard')
     expect(screen.getAllByRole('group', { name: 'Display mode' })).toHaveLength(1)
     openRoute('/ai-analysis#daily')
@@ -383,18 +383,18 @@ describe('Market Copilot application shell', () => {
   })
 
   it.each([
-    ['/dashboard', 'What should I review today?'], ['/market', 'Find an asset you know'],
+    ['/dashboard', 'Give your next review a clear basis.'], ['/market', 'Find an asset you know'],
     ['/my-analysis', 'Instrument Analysis'], ['/portfolio', 'How are my holdings doing?'],
     ['/ai-analysis', 'Find a few assets to review'], ['/news', 'News to understand the market'],
     ['/trading', 'Before buying, what could change?'], ['/strategies', 'How did this rule work in the past?'],
-    ['/settings', 'Make it yours'], ['/demo', 'Start here'],
+    ['/settings', 'Make it yours'], ['/demo', 'Understand one asset. Keep a record.'],
   ])('provides a separate simple workflow on %s', async (path, title) => {
     window.localStorage.setItem('market-copilot.displayMode.v1', 'simple')
     window.history.pushState({}, '', path)
     render(<App />)
-    expect(await screen.findByRole('heading', { level: 1, name: title })).toBeTruthy()
+    expect(await screen.findByRole('heading', { level: 1, name: path === '/demo' ? /Understand one asset\.\s+Keep a record\./ : title })).toBeTruthy()
     expect(screen.queryByRole('complementary', { name: 'AI Copilot' })).toBeNull()
-    expect(document.querySelector('[data-simple-workspace]')).toBeTruthy()
+    if (!['/dashboard', '/demo'].includes(path)) expect(document.querySelector('[data-simple-workspace]')).toBeTruthy()
     expect(window.location.pathname).toBe(path)
   })
 

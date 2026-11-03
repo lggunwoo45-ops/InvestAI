@@ -68,7 +68,7 @@ function savedSnapshotFilterInput(item: CandidateSnapshotItem, horizon: WatchCan
 
 export function AiAnalysisPage() {
   const { hash } = useLocation()
-  if (hash === '#ai-usage-plans-title') return <Navigate to="/settings" replace />
+  if (hash === '#ai-usage-plans-title') return <Navigate to="/plans" replace />
   return <ExploreView key={hash} initialView={hash === '#opportunity-records' ? 'trials' : hash ? 'daily' : 'live'} />
 }
 
