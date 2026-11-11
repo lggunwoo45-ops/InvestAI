@@ -11,6 +11,9 @@ import type { OpportunityKind } from '@/services/cryptoAnalysis/opportunityEngin
 import { formatAnalysisPrice } from '@/utils/formatAnalysisPrice'
 import { cloudSnapshot, subscribeCloud } from '@/services/cloud/cloudClient'
 import { refreshServerTrials } from '@/services/cryptoAnalysis/opportunityTrialCloud'
+import { opportunityReport, opportunityReportCsv, type ReportMarket, type ReportPeriod } from '@/services/cryptoAnalysis/opportunityReport'
+import { OpportunityStrategyReport } from './OpportunityStrategyReport'
+import { OpportunityEvidenceChart } from './OpportunityEvidenceChart'
 import styles from './OpportunityTrialLedger.module.css'
 
 export function OpportunityTrialLedger() {
@@ -21,6 +24,7 @@ export function OpportunityTrialLedgerView({store,language,live}:{store:Opportun
   const ko=language==='ko'
   const [kind,setKind]=useState<'all'|OpportunityKind>('all'),[busy,setBusy]=useState(live && !document.hidden),[error,setError]=useState(''),[clock,setClock]=useState(Date.now)
   const [limit,setLimit]=useState(10),controller=useRef<AbortController|null>(null)
+  const [period,setPeriod]=useState<ReportPeriod>('all'),[market,setMarket]=useState<ReportMarket>('all'),[resultState,setResultState]=useState<'all'|TrialState>('all')
   const key=store.key,remote=store.source==='server',now=remote?(store.asOf??clock):clock
   const loadRecords=(signal:AbortSignal)=>remote?refreshServerTrials(signal):refreshOpportunityTrials(signal)
   const refresh=async()=>{
@@ -37,13 +41,17 @@ export function OpportunityTrialLedgerView({store,language,live}:{store:Opportun
     document.addEventListener('visibilitychange',visibility)
     return ()=>{request.abort();controller.current?.abort();document.removeEventListener('visibilitychange',visibility)}
   },[key,live,remote])
-  const summary=summarizeOpportunityTrials(store.trials,now,kind==='all'?undefined:kind)
+  const filter={kind,period,market},report=opportunityReport(store.trials,now,filter),summary=report.summary
   const names=ko?{pullback:'상승 추세 눌림',breakout:'가격 돌파',rebound:'하락 추세 속 반등'}:{pullback:'Trend pullback',breakout:'Price breakout',rebound:'Countertrend rebound'}
   const states:Record<TrialState,string>=ko?{pending:'진입 시가 확인 대기',open:'가상 진입 · 관찰 중',target:'목표 도달',stop:'손절 도달',timeout:'24시간 관찰 종료',ambiguous:'목표·손절 순서 불명',skipped:'진입 구간 이탈 · 미진입',unresolved:'자료 확인 불가 · 집계 제외'}:{pending:'Awaiting entry bar',open:'Simulated entry · open',target:'Target reached',stop:'Stop reached',timeout:'24-hour exit',ambiguous:'Target/stop order unknown',skipped:'Outside entry zone · skipped',unresolved:'Unresolved · excluded'}
   const percent=(value:number|null,signed=true)=>value===null?'—':`${signed&&value>0?'+':''}${value.toFixed(2)}%`
   const range=(low:number|null,high:number|null,signed=true)=>low===high?percent(low,signed):`${percent(low,signed)} ~ ${percent(high,signed)}`
   const stamp=(at:number)=>new Date(at).toLocaleString(ko?'ko-KR':'en-US')
-  const selected=store.trials.filter(r=>kind==='all'||r.kind===kind).toReversed()
+  const selected=report.rows.filter(r=>resultState==='all'||r.outcome.state===resultState).map(r=>r.trial)
+  const downloadCsv=()=>{
+    const url=URL.createObjectURL(new Blob([opportunityReportCsv(store.trials,now,filter,remote?'server':'local')],{type:'text/csv;charset=utf-8'})),a=document.createElement('a')
+    a.href=url;a.download='investai-forward-review.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)
+  }
   const download=()=>{
     const report={format:'investai-opportunity-report-1',exportedAt:Date.now(),scope:remote?'user-selected plans; server-collected spot observations, simulated outcomes, not account returns':'user-selected scans; device-local simulated outcomes, not account returns',asOf:now,trials:store.trials,summary:summarizeOpportunityTrials(store.trials,now)}
     const url=URL.createObjectURL(new Blob([JSON.stringify(report,null,2)],{type:'application/json'})),a=document.createElement('a')
@@ -52,6 +60,8 @@ export function OpportunityTrialLedgerView({store,language,live}:{store:Opportun
   return <section className={styles.ledger} aria-label={ko?'추천 검증 기록':'Opportunity validation records'}>
     <header><div><span className={styles.eyebrow}>INVESTAI · FORWARD REVIEW</span><h1>{ko?'추천 이후, 실제 가격은 어땠나요?':'What happened after the recommendation?'}</h1><p>{ko?'기록 당시 조건을 고정하고 이후 가격으로 가상 결과를 확인합니다. 과거 결과를 보고 추천 가격을 바꾸지 않습니다.':'Freeze the original conditions and evaluate subsequent prices without changing the plan afterward.'}</p></div><Link to="/ai-analysis">{ko?'새 후보 찾기':'Find new candidates'} →</Link></header>
     <div className={styles.controls}><label>{ko?'검증할 전략':'Strategy'}<select value={kind} onChange={e=>{setKind(e.target.value as typeof kind);setLimit(10)}}><option value="all">{ko?'전체':'All'}</option>{Object.entries(names).map(([value,name])=><option key={value} value={value}>{name}</option>)}</select></label><button type="button" disabled={busy||!live||(!remote&&(store.error||!store.trials.length))} onClick={()=>void refresh()}>{ko?busy?'가격 기록 확인 중…':'이후 가격 확인':busy?'Checking history…':'Check subsequent prices'}</button><button type="button" disabled={store.error||!store.trials.length} onClick={download}>{ko?'검증 기록 내려받기':'Export records'}</button></div>
+    <div className={styles.controls}><label>{ko?'기록한 기간':'Recording period'}<select value={period} onChange={e=>{setPeriod(e.target.value as ReportPeriod);setLimit(10)}}><option value="all">{ko?'전체 기간':'All time'}</option>{['7','30','90'].map(days=><option key={days} value={days}>{ko?`최근 ${days}일`:`Last ${days} days`}</option>)}</select></label><label>{ko?'거래시장':'Market'}<select value={market} onChange={e=>{setMarket(e.target.value as ReportMarket);setLimit(10)}}><option value="all">{ko?'전체 시장':'All markets'}</option><option value="upbit-KRW">Upbit · KRW</option><option value="upbit-BTC">Upbit · BTC</option><option value="upbit-USDT">Upbit · USDT</option><option value="binance-spot">Binance · Spot</option></select></label><button type="button" disabled={store.error||!report.records.length} onClick={downloadCsv}>{ko?'현재 조건 CSV':'Export cohort CSV'}</button></div>
+    <p className={styles.scope}>{ko?`집계 기준 ${stamp(now)} · 기간은 결과 발생일이 아닌 기록 등록일 기준입니다. CSV에는 현재 기간·시장·전략의 모든 결과 상태가 포함됩니다.`:`As of ${stamp(now)}. Periods use the recording date, not the outcome date. CSV includes every outcome state for the selected period, market and strategy.`}</p>
     {remote&&<p role="status">{ko?store.loading?'계정 서버 기록을 불러오는 중입니다.':`앱을 닫아도 서버가 관찰합니다. 마지막 화면 조회: ${store.asOf?stamp(store.asOf):'확인 전'}. 완료된 시간봉 기준으로 결과가 반영됩니다.`:store.loading?'Loading account records…':`Server observation continues with the app closed. Snapshot: ${store.asOf?stamp(store.asOf):'not loaded'}. Outcomes use completed hourly bars.`}</p>}
     {!live&&<p role="status">{ko?'실시간 모드에서만 실제 가격 기록을 조회합니다. 저장된 결과는 계속 볼 수 있습니다.':'Use live mode to retrieve actual history. Saved results remain visible.'}</p>}
     {(store.error||error)&&<p role="alert">{ko?store.error?(store.message??'저장 기록을 읽지 못했습니다. 덮어쓰지 않고 원본을 보존했습니다.'):'가격 조회 또는 저장을 마치지 못했습니다. 이후 가격 확인을 다시 눌러주세요.':'Unable to read or update records. Existing data is preserved; retry the refresh.'}</p>}
@@ -62,12 +72,17 @@ export function OpportunityTrialLedgerView({store,language,live}:{store:Opportun
       <article><span>{ko?'진행 / 미진입 / 자료 부족':'Pending / skipped / unresolved'}</span><strong>{summary.pending} / {summary.skipped} / {summary.unresolved}</strong></article>
     </div>
     <p className={styles.assessment}>{ko?summary.completed<30?`완료 표본 ${summary.completed}건으로 아직 판단하기 어렵습니다. 30건 이상이어도 수익성이 입증되는 것은 아닙니다.`:'관측 표본의 결과입니다. 표본이 늘어도 미래 수익이나 계좌 수익률을 뜻하지 않습니다.':`${summary.completed} completed samples. Fewer than 30 is a small sample; reaching 30 does not validate profitability.`} {ko?`같은 봉에서 목표·손절에 모두 닿은 ${summary.ambiguous}건은 손실~이익 범위로 집계합니다.`:`${summary.ambiguous} ambiguous cases are included as loss-to-gain ranges.`}</p>
+    {!!store.trials.length&&<OpportunityStrategyReport strategies={report.strategies} language={language}/>}
+    {!!store.trials.length&&<div className={styles.controls}><label>{ko?'목록에서 볼 결과':'List outcome'}<select value={resultState} onChange={e=>{setResultState(e.target.value as typeof resultState);setLimit(10)}}><option value="all">{ko?'모든 결과':'All outcomes'}</option>{Object.entries(states).map(([value,label])=><option key={value} value={value}>{label} ({report.counts[value as TrialState]})</option>)}</select></label><p>{ko?`목록 ${selected.length}건 · 이 선택은 위 평균·비율과 CSV의 집계 대상을 바꾸지 않습니다.`:`${selected.length} listed. This selection does not change aggregate metrics or CSV coverage.`}</p></div>}
+    {!store.error&&!store.loading&&!!store.trials.length&&!selected.length&&<p role="status">{ko?'선택한 조건에 맞는 기록이 없습니다. 기간·시장·전략 또는 목록 결과를 바꿔보세요.':'No records match these filters. Adjust period, market, strategy or list outcome.'}</p>}
     {!store.error&&!store.loading&&!store.trials.length&&<div className={styles.empty}><h2>{ko?'앞으로 쌓을 검증 기록입니다':'Start a forward record'}</h2><p>{ko?'종목 찾기에서 검색을 완료하고 ‘조건 충족 현물 전체 기록’을 누르세요. 이전 추천이나 성공 사례를 소급해 채우지 않습니다.':'Finish a scan and record all eligible spot setups. Past recommendations and successful examples are not backfilled.'}</p></div>}
     <div className={styles.rows}>{selected.slice(0,limit).map(trial=>{const outcome=evaluateOpportunityTrial(trial,now),price=(n:number)=>`${formatAnalysisPrice(n,language)} ${trial.instrument.quoteCurrency}`;return <article key={trial.id} className={styles.row} data-state={outcome.state}>
       <header><div><h2>{trial.instrument.displaySymbol??trial.instrument.symbol}</h2><span>{names[trial.kind]}</span></div><strong>{states[outcome.state]}</strong></header>
       <div className={styles.result}><b>{range(outcome.netLow,outcome.netHigh)}</b><span>{ko?'왕복 비용':'Round-trip cost'} {trial.costPercent}% · {ko?'고정 가정':'fixed assumption'}</span></div>
       <p>{ko?'기록':'Recorded'} {stamp(trial.recordedAt)} · {ko?'가상 진입 시각':'Simulated entry time'} {stamp(trial.startAt)}</p>
       <dl><div><dt>{ko?'고정 진입 구간':'Frozen entry zone'}</dt><dd>{price(trial.entry[0])} – {price(trial.entry[1])}</dd></div><div><dt>{ko?'실제 시가로 가정한 진입':'Entry modeled at actual open'}</dt><dd>{outcome.entry===null?'—':price(outcome.entry)}</dd></div><div><dt>{ko?'손절 / 목표':'Stop / target'}</dt><dd>{price(trial.stop)} / {price(trial.target)}</dd></div></dl>
+      <p>{trial.instrument.marketId==='upbit'?'Upbit':'Binance Spot'} · {trial.instrument.quoteCurrency} · <Link to={`/my-analysis?instrumentId=${encodeURIComponent(trial.instrument.id)}`}>{ko?'현재 같은 종목 분석':'Review this asset now'} →</Link></p>
+      <details><summary>{ko?'이후 가격 흐름·시간봉 보기':'View subsequent prices and candles'}</summary><OpportunityEvidenceChart trial={trial} outcome={outcome} asOf={now} language={language}/></details>
       {trial.issue&&<p className={styles.issue}>{ko?trial.issue==='revised'?'이전 확인값과 원본 가격 기록이 달라 판정을 보류했습니다.':trial.issue==='history'?'필요한 시간봉이 빠져 있습니다. 확인된 구간 뒤의 결과를 추측하지 않습니다.':'가격 제공처 연결을 확인하지 못했습니다. 기존 근거만 보관합니다.':`Evidence issue: ${trial.issue}. Missing or conflicting prices are not inferred.`}</p>}
       <details><summary>{ko?'기록 당시 근거·관찰 내역':'Frozen evidence and observations'}</summary><p>{ko?'추천 당시 가격':'Original quote'} {price(trial.signalPrice)} · {ko?'분석 시각':'Analyzed'} {stamp(trial.signalAt)} · {trial.version}</p>{trial.basis.map(b=><p key={b.frame}>{b.frame} · {stamp(b.asOf)} · RSI {b.rsi.toFixed(1)} · {ko?'거래량 배수':'Volume ratio'} {b.volumeRatio?.toFixed(2)??'—'}</p>)}<p>{ko?'확보한 완료 시간봉':'Recorded completed hourly bars'} {trial.evidence.length}/24 · {ko?'마지막 조회':'Last checked'} {trial.checkedAt?stamp(trial.checkedAt):'—'}</p>{outcome.at&&<p>{ko?'판정된 봉의 종료 시각':'Outcome candle close'} {stamp(outcome.at)}{outcome.exit!==null&&` · ${price(outcome.exit)}`}</p>}<p>{ko?'수정할 수 없는 가격·비용 가정입니다. 기록된 시가가 구간 밖이면 그 사례는 진입하지 않습니다.':'Price and cost assumptions are immutable. An opening price outside the entry zone means no entry.'}</p></details>
     </article>})}</div>

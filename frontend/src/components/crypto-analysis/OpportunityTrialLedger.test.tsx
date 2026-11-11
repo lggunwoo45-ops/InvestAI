@@ -1,4 +1,4 @@
-import {fireEvent,render,screen,waitFor} from '@testing-library/react'
+import {fireEvent,render,screen,waitFor,within} from '@testing-library/react'
 import {MemoryRouter} from 'react-router-dom'
 import {afterEach,beforeEach,expect,it,vi} from 'vitest'
 import {trialBars,trialFixture} from '@/test/opportunityTrialFixtures'
@@ -48,4 +48,27 @@ it('does not fetch mock prices or overwrite unreadable records',()=>{
   expect(screen.getByRole('alert').textContent).toContain('원본을 보존')
   expect(localStorage.getItem(trialStorageKey())).toBe('broken')
   expect(screen.getByRole('button',{name:'이후 가격 확인'}).hasAttribute('disabled')).toBe(true)
+})
+it('filters list outcomes without inflating aggregate results and keeps the original market link',async()=>{
+  const t=trialFixture(),bar=trialBars(t)[0],now=t.startAt+H
+  vi.spyOn(Date,'now').mockReturnValue(now)
+  const win=mergeTrialEvidence({...t,id:'win',kind:'breakout'},[{...bar,high:t.target}],now)
+  const loss=mergeTrialEvidence({...t,id:'loss',kind:'pullback'},[{...bar,low:t.stop}],now)
+  localStorage.setItem(trialStorageKey(),JSON.stringify({version:1,trials:[win,loss]}))
+  show()
+  expect(screen.getByText('2 / 2')).toBeTruthy()
+  expect(screen.getByText('50.00%')).toBeTruthy()
+  fireEvent.change(screen.getByRole('combobox',{name:'목록에서 볼 결과'}),{target:{value:'target'}})
+  expect(screen.getByText('2 / 2')).toBeTruthy()
+  expect(screen.getByText('50.00%')).toBeTruthy()
+  expect(screen.queryByText('손절 도달',{selector:'strong'})).toBeNull()
+  expect(screen.getByRole('link',{name:'현재 같은 종목 분석 →'}).getAttribute('href')).toBe('/my-analysis?instrumentId=upbit-sol')
+  fireEvent.click(screen.getByText('전략별 결과 비교',{selector:'summary'}))
+  const table=screen.getByRole('table',{name:/기록한 사례의 가상 결과/})
+  expect(within(table).getByRole('rowheader',{name:'상승 추세 눌림'})).toBeTruthy()
+  fireEvent.change(screen.getByRole('combobox',{name:'거래시장'}),{target:{value:'binance-spot'}})
+  expect(screen.getByText('0 / 0')).toBeTruthy()
+  expect(screen.getByText(/선택한 조건에 맞는 기록이 없습니다/)).toBeTruthy()
+  expect(screen.getByRole('button',{name:'현재 조건 CSV'}).hasAttribute('disabled')).toBe(true)
+  await waitFor(()=>expect(screen.getByRole('button',{name:'이후 가격 확인'}).hasAttribute('disabled')).toBe(false))
 })
