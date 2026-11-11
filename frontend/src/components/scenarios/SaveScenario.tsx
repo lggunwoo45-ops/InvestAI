@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import type { MarketInstrument } from '@/types/market'
 import type { Language } from '@/i18n/translations'
 import type { CryptoDecision } from '@/services/cryptoAnalysis/cryptoDecisionEngine'
@@ -8,10 +9,11 @@ import { ScenarioForm } from './ScenarioForm'
 import { scenarioCopy } from './scenarioCopy'
 import styles from './Scenarios.module.css'
 
-export function SaveScenario({ instrument, decision, language, positionId }: { instrument: MarketInstrument; decision: CryptoDecision; language: Language; positionId?: string }) {
+export function SaveScenario({ instrument, decision, language, positionId, workflow = false }: { instrument: MarketInstrument; decision: CryptoDecision; language: Language; positionId?: string; workflow?: boolean }) {
   const store = useScenarios()
   const [editing, setEditing] = useState<{ value: Scenario; raw: string | null } | null>(null)
   const [saved, setSaved] = useState(false)
+  const [savedId, setSavedId] = useState<string | null>(null)
   const t = scenarioCopy[language]
   const previous = store.scenarios.find(s => s.instrument.id === instrument.id)
   const frame = decision.frames.find(f => f.frame === decision.plan?.frame)
@@ -28,14 +30,15 @@ export function SaveScenario({ instrument, decision, language, positionId }: { i
         enabled: previous?.enabled ?? store.scenarios.filter(s => s.enabled).length < MAX_ACTIVE_SCENARIOS,
         baseline: { at: now, price: decision.price, direction: decision.direction, frame: frame.frame, frameDirection: frame.direction, frameAsOf: frame.asOf },
       } })
-    }}>{previous ? t.replaceAnalysis : t.saveAnalysis}</button>}
+    }}>{workflow ? language === 'ko' ? '분석 가격 불러오기·저장' : 'Review and save analysis prices' : previous ? t.replaceAnalysis : t.saveAnalysis}</button>}
     {editing && <ScenarioForm initial={editing.value} language={language} onCancel={() => setEditing(null)} onSave={value => {
       const scenarios = store.scenarios.some(s => s.id === value.id) ? store.scenarios.map(s => s.id === value.id ? value : s) : [...store.scenarios, value]
       writeScenarios({ version: 1, scenarios, events: store.events.filter(e => e.scenarioId !== value.id) }, editing.raw)
-      setEditing(null); setSaved(true)
+      setEditing(null); setSaved(true); setSavedId(value.id)
     }} />}
     {store.error && <p role="alert">{t.storage}</p>}
     {saved && <p role="status">{t.saved}</p>}
+    {workflow && saved && savedId && <Link to={`/review-alerts?scenario=${encodeURIComponent(savedId)}&instrumentId=${encodeURIComponent(instrument.id)}`}>{language === 'ko' ? '저장한 알림·결과 확인으로 →' : 'Open saved alerts and results →'}</Link>}
     <small>{t.scope}</small>
   </div>
 }

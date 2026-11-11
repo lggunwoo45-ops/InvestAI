@@ -313,7 +313,7 @@ function AnalysisWorkspace() {
           { id: 'holding', title: language === 'ko' ? '내 보유 상황' : 'My holding', content: <>{positionNotice}{personalContext}{positionPlan}<PositionReviewPanel basisPrice={validAveragePrice} currentPrice={currentPrice} dataQuality={analysis.dataQuality} language={language} nextCheck={analysis.reviewChecklist[0] ?? analysis.actionReadiness.nextChecks[0]} quoteCurrency={selected.quoteCurrency} /></> },
           { id: 'evidence', title: language === 'ko' ? '왜 이렇게 보나요?' : 'Why this view?', content: <><ul>{analysis.evidence.slice(0, 3).map(item => <li key={item.id}><b>{item.label}</b><p>{item.reviewMeaning}</p></li>)}</ul>{selected.marketId === 'korea-stock' && <DartDisclosurePanel id="dart-disclosures" compact language={language} result={dartResult} />}<button type="button" onClick={() => setDisplayMode('expert')}>{language === 'ko' ? '전체 근거와 차트 보기' : 'All evidence and charts'}</button></> },
         ]} />}
-      {isCrypto && researchAsset && <nav className={styles.researchJourney} aria-label={language === 'ko' ? '다음에 할 일' : 'Next steps'}><Link to={`/research?asset=${researchAsset}&mode=journal`}>{language === 'ko' ? '지금 생각 기록' : 'Save a note'} →</Link><Link to={`/research?asset=${researchAsset}&mode=alerts`}>{language === 'ko' ? '다시 볼 가격 알림' : 'Set a price alert'} →</Link></nav>}
+      {isCrypto && researchAsset && <nav className={styles.researchJourney} aria-label={language === 'ko' ? '다음에 할 일' : 'Next steps'}><Link to={`/research?asset=${researchAsset}&mode=journal`}>{language === 'ko' ? '지금 생각 기록' : 'Save a note'} →</Link><Link to={`/review-alerts?instrumentId=${encodeURIComponent(selected!.id)}`}>{language === 'ko' ? '저장한 가격 알림 확인' : 'Review saved price alerts'} →</Link></nav>}
     </>}
   </SimpleWorkspace>
 

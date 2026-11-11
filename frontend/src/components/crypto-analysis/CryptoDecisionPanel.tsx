@@ -15,6 +15,7 @@ import type { AnalysisTab } from '@/services/myAnalysis/analysisSession'
 import styles from './CryptoDecisionPanel.module.css'
 import { AnalysisPreparation } from './AnalysisPreparation'
 import { CryptoExpertOverview } from './CryptoExpertOverview'
+import { SimpleDecisionBrief } from './SimpleDecisionBrief'
 
 interface Props { instrument: MarketInstrument; daily: AnalysisSeries; language: Language; averagePrice?: number | null; quantity?: number; expert?: boolean; onExpert?: () => void; holding?: boolean; onHoldingChange?: (holding: boolean) => void; positionId?: string; detailsContent?: ReactNode; investmentContent?: ReactNode; activeTab?: AnalysisTab; onTabChange?: (tab: AnalysisTab) => void }
 const tabs = ['summary', 'details', 'investment'] as const
@@ -101,8 +102,8 @@ export function CryptoDecisionPanel({ instrument, daily, language, averagePrice,
     try { await navigator.clipboard.writeText(lines.join('\n')); setCopyState('copied') } catch { setCopyState('error') }
   }
   return <section className={styles.panel} aria-label={t.title} data-bias={decision.direction} data-display-mode={expert ? 'expert' : 'simple'} data-tab={tab}>
-    <header className={styles.heading}>{expert && <h2>{ko ? '지금 무엇을 보면 될까요?' : 'What should I look at now?'}</h2>}<div className={styles.tools}><button type="button" onClick={copySummary}>{t.copy}</button><small role="status">{copyState === 'copied' ? t.copied : copyState === 'error' ? t.copyError : ''}</small></div></header>
-    <CryptoAnalysisHelp decision={decision} language={language} />
+    {(expert || tab !== 'summary') && <header className={styles.heading}>{expert && <h2>{ko ? '지금 무엇을 보면 될까요?' : 'What should I look at now?'}</h2>}<div className={styles.tools}><button type="button" onClick={copySummary}>{t.copy}</button><small role="status">{copyState === 'copied' ? t.copied : copyState === 'error' ? t.copyError : ''}</small></div></header>}
+    {expert && <CryptoAnalysisHelp decision={decision} language={language} />}
     <div className={styles.tabs} role="tablist" aria-label={t.tabLabel}>{tabs.map((value, index) => <button type="button" role="tab" key={value} id={`${tabId}-${value}`} aria-controls={`${tabId}-${value}-panel`} aria-selected={tab === value} tabIndex={tab === value ? 0 : -1} ref={node => { tabButtons.current[index] = node }} onClick={() => setTab(value)} onKeyDown={event => {
       const next = event.key === 'ArrowRight' ? (index + 1) % tabs.length : event.key === 'ArrowLeft' ? (index + tabs.length - 1) % tabs.length : event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : null
       if (next === null) return
@@ -113,9 +114,11 @@ export function CryptoDecisionPanel({ instrument, daily, language, averagePrice,
       <button type="button" aria-pressed={!holding} onClick={() => onHoldingChange(false)}>{ko ? '새로 살까 해요' : 'Considering a buy'}</button>
       <button type="button" aria-pressed={holding} onClick={() => onHoldingChange(true)}>{ko ? '이미 갖고 있어요' : 'Already holding'}</button>
     </div>}
-    <AnalysisPreparation key={`${instrument.id}:${daily.dataQuality === 'mock'}`} decision={decision} series={series} language={language} compactReady onDetails={() => setTab('details')} />
-    {decision.direction !== 'unavailable' && !holding && <OpportunityReview key={instrument.id} instrument={instrument} decision={decision} language={language} />}
-    {decision.direction !== 'unavailable' && <div className={styles.verdict}>
+    {(expert || decision.direction === 'unavailable') && <AnalysisPreparation key={`${instrument.id}:${daily.dataQuality === 'mock'}`} decision={decision} series={series} language={language} compactReady onDetails={() => setTab('details')} />}
+    {!expert && decision.direction !== 'unavailable' && <SimpleDecisionBrief key={`brief:${instrument.id}`} instrument={instrument} decision={decision} language={language} holding={holding} positionId={positionId} onDetails={() => setTab('details')} />}
+    {!expert && decision.direction !== 'unavailable' && <AnalysisPreparation key={`ready:${instrument.id}`} decision={decision} series={series} language={language} compactReady onDetails={() => setTab('details')} />}
+    {expert && decision.direction !== 'unavailable' && !holding && <OpportunityReview key={`opportunities:${instrument.id}`} instrument={instrument} decision={decision} language={language} />}
+    {expert && decision.direction !== 'unavailable' && <div className={styles.verdict}>
       {!holding && <small>{ko ? '큰 흐름 · 기존 추세 기준' : 'Broader view · original trend criteria'}</small>}
       <span className={styles.direction}>{easyDirection[language][decision.direction]}</span>
       <h3>{guide.title}</h3>
@@ -128,7 +131,8 @@ export function CryptoDecisionPanel({ instrument, daily, language, averagePrice,
         : <span>{ko ? '평단가를 입력하면 내 손익도 함께 볼 수 있어요.' : 'Add your average price to see your return.'}</span>}
       <button type="button" onClick={() => setTab('investment')}>{ko ? '내 평단가 입력·수정' : 'Edit my average price'} →</button>
     </div>}
-    {plan ? <>
+    {!expert && <details className={styles.disclosure}><summary>{ko ? '지지·저항 가격을 읽는 방법' : 'How to read support and resistance'}</summary><CryptoAnalysisHelp decision={decision} language={language} /></details>}
+    {plan ? <details className={styles.disclosure} open={expert || undefined}><summary>{ko ? '전체 지지·저항 구간과 추세 회복 기준' : 'Full price zones and trend recovery criteria'}</summary>
       <div className={styles.prices}>
         <article aria-label={t.entry}><span>{t.entry}</span>
           <strong>{range(plan.entry)}</strong>
@@ -148,7 +152,7 @@ export function CryptoDecisionPanel({ instrument, daily, language, averagePrice,
       </div>
       <p className={styles.caution}>{ko ? '마감 가격(종가)은 해당 시간 구간이 끝났을 때의 가격입니다. 잠깐 닿거나 넘는 것과 구분해서 보세요.' : 'A candle close is the price when that time interval ends, not a brief touch or crossing.'}</p>
       {expert && <p className={styles.nextCheck}><strong>{ko ? '다음에 확인할 것' : 'What to check next'}</strong>{guide.next}</p>}
-    </> : decision.direction !== 'unavailable' ? <p className={styles.nextCheck}>{guide.next}</p> : null}
+    </details> : decision.direction !== 'unavailable' ? <p className={styles.nextCheck}>{guide.next}</p> : null}
     {!expert && decision.direction !== 'unavailable' && <div className={styles.simpleActions}>
       <details className={styles.simpleReasons}><summary>{ko ? '이렇게 보는 이유·다음 확인' : 'Why this view and what to check'}</summary><p>{guide.next}</p><p><strong>{t.riskLabel}</strong> · {caution}</p></details>
       <button className={styles.evidenceLink} type="button" onClick={() => onExpert ? onExpert() : setTab('details')}>{ko ? '차트·계산 근거 보기' : 'View chart and calculations'} →</button>

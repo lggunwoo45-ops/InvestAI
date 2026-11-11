@@ -18,6 +18,7 @@ const SimpleModePage = lazy(() => import('@/pages/SimpleMode/SimpleModePage').th
 const StrategiesPage = lazy(() => import('@/pages/Strategies/StrategiesPage').then((module) => ({ default: module.StrategiesPage })))
 const TradingPage = lazy(() => import('@/pages/Trading/TradingPage').then((module) => ({ default: module.TradingPage })))
 const ResearchPage = lazy(() => import('@/pages/Research/ResearchPage').then((module) => ({ default: module.ResearchPage })))
+const ReviewAlertsPage = lazy(() => import('@/pages/Research/ReviewAlertsPage').then((module) => ({ default: module.ReviewAlertsPage })))
 
 export function AppRoutes() {
   return (
@@ -27,6 +28,7 @@ export function AppRoutes() {
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="market" element={<MarketPage />} />
           <Route path="research" element={<ResearchPage />} />
+          <Route path="review-alerts" element={<ReviewAlertsPage />} />
           <Route path="briefing" element={<Navigate to="/news" replace />} />
           <Route path="markets" element={<Navigate to="/market" replace />} />
           <Route path="dashboard" element={<DashboardPage />} />

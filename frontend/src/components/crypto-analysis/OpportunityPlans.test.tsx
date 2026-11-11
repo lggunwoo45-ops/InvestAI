@@ -26,6 +26,7 @@ it('shows a qualifying rebound, recalculates with costs and removes expired pric
   const ready = screen.getByRole('region',{name:'Entry conditions met'})
   expect(within(ready).getByText('Countertrend rebound')).toBeTruthy()
   expect(within(ready).getByRole('link',{name:/Review current plan/}).getAttribute('href')).toContain(opportunityCoin.id)
+  fireEvent.click(screen.getByText('Adjust cost assumptions'))
   fireEvent.change(screen.getByRole('spinbutton',{name:'Assumed round-trip cost (%)'}),{target:{value:''}})
   expect(screen.getByRole('alert').textContent).toContain('Enter a cost')
   expect(within(ready).queryByRole('link')).toBeNull()
