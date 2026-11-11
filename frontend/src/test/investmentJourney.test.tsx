@@ -19,7 +19,7 @@ const venues: MarketInstrument[] = [opportunityCoin,
   { ...opportunityCoin, id: 'binance-spot-solusdt', marketId: 'binance-spot', symbol: 'SOLUSDT', quoteCurrency: 'USDT' },
 ]
 it.each(venues)('carries $id prices through review, saved alert and result navigation without currency substitution', instrument => {
-  renderWithProviders(<Routes><Route path="/" element={<SimpleDecisionBrief instrument={instrument} decision={opportunityDecision()} language="en" holding={false} onDetails={() => {}} />} /><Route path="/review-alerts" element={<ReviewAlertsPage />} /><Route path="/ai-analysis" element={<h1>Forward record ledger</h1>} /></Routes>)
+  renderWithProviders(<Routes><Route path="/" element={<SimpleDecisionBrief instrument={instrument} decision={opportunityDecision()} language="en" holding={false} onDetails={() => {}} />} /><Route path="/review-alerts" element={<ReviewAlertsPage />} /><Route path="/results" element={<h1>Forward record ledger</h1>} /></Routes>)
   expect(screen.getByRole('heading', { name: 'Conditions match · review the downside too' })).toBeTruthy()
   fireEvent.click(screen.getByText('Set alerts and record these prices'))
   fireEvent.click(screen.getByRole('button', { name: 'Review and save analysis prices' }))

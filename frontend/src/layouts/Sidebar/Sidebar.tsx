@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 
-import { primaryNavigation, secondaryNavigation, utilityNavigation } from '@/app/navigation'
+import { primaryNavigation, secondaryNavigation, utilityNavigation, navigationLabel } from '@/app/navigation'
 import { BrandMark } from '@/components/BrandMark/BrandMark'
 import { Icon } from '@/components/Icon/Icon'
 import { SidebarNavItem } from '@/components/SidebarNavItem/SidebarNavItem'
@@ -35,7 +35,6 @@ export function Sidebar() {
   const { isSidebarPinned, toggleSidebarPin } = useUiStore()
   const { language } = useLanguage()
   const text = uiText[language]
-  const coreLabels = language === 'ko' ? { dashboard: '홈', analyze: '종목 분석', portfolio: '내 투자', ai: '종목 찾기' } : { dashboard: 'Home', analyze: 'Instrument Analysis', portfolio: 'My Investments', ai: 'Find Assets' }
   const isNarrow = useNarrowSidebar()
   const [isHovered, setIsHovered] = useState(false)
   const [hasFocus, setHasFocus] = useState(false)
@@ -128,25 +127,25 @@ export function Sidebar() {
         </button>
       )}
 
-      <nav id="primary-navigation" className={styles.navigation} aria-label="Primary navigation">
-        {isExpanded && <span className={styles.sectionLabel}>{text.workspace}</span>}
-        <div className={styles.navigationList}>
-          {primaryNavigation.map((item) => <SidebarNavItem key={item.path} item={item} label={coreLabels[item.icon as keyof typeof coreLabels] ?? text.navigation[item.icon]} compact={!isExpanded} />)}
-        </div>
-        {isExpanded && <span className={styles.sectionLabel}>{language === 'ko' ? '시장 · 자료' : 'Markets · Resources'}</span>}
-        <div className={styles.navigationList}>
-          {secondaryNavigation.map((item) => <SidebarNavItem key={item.path} item={item} label={item.path === '/research' ? (language === 'ko' ? '시장·리스크 연구실' : 'Market & Risk Lab') : text.navigation[item.icon]} compact={!isExpanded} />)}
-        </div>
-      </nav>
+      <div className={styles.navigation}>
+        <nav id="primary-navigation" aria-label="Primary navigation" className={styles.navigationList}>
+          {isExpanded && <span className={styles.sectionLabel}>{language === 'ko' ? '내 투자 흐름' : 'My workflow'}</span>}
+          {primaryNavigation.map(item => <SidebarNavItem key={item.path} item={item} label={navigationLabel(item, language)} compact={!isExpanded} />)}
+        </nav>
+        <nav aria-label={language === 'ko' ? '도구와 자료' : 'Tools and resources'} className={styles.resources}>
+          {isExpanded && <span className={styles.sectionLabel}>{language === 'ko' ? '도구와 자료' : 'Tools and resources'}</span>}
+          {secondaryNavigation.map(item => <SidebarNavItem key={item.path} item={item} label={navigationLabel(item, language)} compact={!isExpanded} />)}
+        </nav>
+      </div>
 
       <div className={styles.footer}>
         <div className={styles.navigationList}>
-          {utilityNavigation.map((item) => <SidebarNavItem key={item.path} item={item} label={item.path==='/plans'?(language==='ko'?'이용 플랜':'Plans'):text.navigation[item.icon]} compact={!isExpanded} />)}
+          {utilityNavigation.map((item) => <SidebarNavItem key={item.path} item={item} label={navigationLabel(item, language)} compact={!isExpanded} />)}
         </div>
         {isExpanded && (
           <div className={styles.environment}>
             <span className={styles.environmentDot} />
-            <span>{text.localEnvironment}</span>
+            <span>{language === 'ko' ? '내 워크스페이스' : 'My workspace'}</span>
             <span className={styles.version}>Beta Preview</span>
           </div>
         )}

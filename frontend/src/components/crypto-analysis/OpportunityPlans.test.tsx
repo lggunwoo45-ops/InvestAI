@@ -18,7 +18,7 @@ it('records all qualified candidates including hidden cards, but blocks incomple
   view.rerender(<MemoryRouter><OpportunityBoard {...props} canRecord/></MemoryRouter>)
   fireEvent.click(screen.getByRole('button',{name:'Record all eligible spot setups (5)'}))
   expect(readOpportunityTrials().trials).toHaveLength(5)
-  expect(screen.getByRole('link',{name:/View validation records/}).getAttribute('href')).toBe('/ai-analysis#opportunity-records')
+  expect(screen.getByRole('link',{name:/View validation records/}).getAttribute('href')).toBe('/results')
 })
 it('shows a qualifying rebound, recalculates with costs and removes expired prices',()=>{
   const props = {results:[opportunityResult()],now:opportunityNow,language:'en' as const,simple:true}

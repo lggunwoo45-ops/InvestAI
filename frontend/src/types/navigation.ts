@@ -11,9 +11,11 @@ export type NavigationIcon =
   | 'briefing'
   | 'demo'
   | 'settings'
+  | 'alerts'
 
 export interface NavigationItem {
   label: string
+  labelKo?: string
   path: string
   icon: NavigationIcon
 }

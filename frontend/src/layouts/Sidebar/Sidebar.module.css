@@ -37,3 +37,5 @@
   --color-accent-soft: var(--nav-accent-soft);
   color: var(--color-text);
 }
+
+.resources { display: grid; gap: 4px; margin-top: 28px; }

@@ -1,7 +1,6 @@
-import { OpportunityTrialLedger } from '@/components/crypto-analysis/OpportunityTrialLedger'
 import simpleStyles from '@/components/simple/SimpleWorkspace.module.css'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 
 import { CryptoDecisionPanel } from '@/components/crypto-analysis/CryptoDecisionPanel'
 import { LiveCandidateSearch } from '@/components/ai-analysis/LiveCandidateSearch'
@@ -67,12 +66,13 @@ function savedSnapshotFilterInput(item: CandidateSnapshotItem, horizon: WatchCan
 }
 
 export function AiAnalysisPage() {
-  const { hash } = useLocation()
+  const { hash, search } = useLocation()
   if (hash === '#ai-usage-plans-title') return <Navigate to="/plans" replace />
-  return <ExploreView key={hash} initialView={hash === '#opportunity-records' ? 'trials' : hash ? 'daily' : 'live'} />
+  if (hash === '#opportunity-records') return <Navigate to={{ pathname: '/results', search }} replace />
+  return <ExploreView key={hash} initialView={['#daily-records', '#daily'].includes(hash) ? 'daily' : 'live'} />
 }
 
-function ExploreView({ initialView }: { initialView: 'live' | 'daily' | 'trials' }) {
+function ExploreView({ initialView }: { initialView: 'live' | 'daily' }) {
   const { language } = useLanguage()
   const simple = useDisplayMode().displayMode === 'simple'
   const view = initialView, navigate = useNavigate()
@@ -81,11 +81,10 @@ function ExploreView({ initialView }: { initialView: 'live' | 'daily' | 'trials'
     <nav className={styles.views} aria-label={language === 'ko' ? '탐색 방식' : 'Explore mode'}>
       <button type="button" aria-pressed={view === 'live'} onClick={() => navigate('/ai-analysis')}>{language === 'ko' ? '실시간 조건 검색' : 'Live condition search'}</button>
       <button type="button" aria-pressed={view === 'daily'} onClick={() => navigate('/ai-analysis#daily-records')}>{language === 'ko' ? '일일 후보 기록' : 'Daily candidate records'}</button>
-      <button type="button" aria-pressed={view === 'trials'} onClick={() => navigate('/ai-analysis#opportunity-records')}>{language === 'ko' ? '추천 검증 기록' : 'Validation records'}</button>
+      <Link to="/results">{language === 'ko' ? '저장한 후보의 결과 보기' : 'Review recorded outcomes'} →</Link>
     </nav>
-    {view === 'trials' ? <OpportunityTrialLedger /> : view === 'live' ? <div className={styles.page}><LiveCandidateSearch /></div> : <DailyCandidatePage />}
+    {view === 'live' ? <div className={styles.page}><LiveCandidateSearch /></div> : <DailyCandidatePage />}
   </>
-  if (view === 'trials') return <div className={simple ? simpleStyles.page : undefined}>{content}</div>
   return <SimpleWorkspace enabled={simple} title={language === 'ko' ? '살펴볼 후보를 찾아볼까요?' : 'Find a few assets to review'} description={language === 'ko' ? '최신 조건을 확인하거나, 지난 후보 기록을 다시 살펴보세요.' : 'Check current criteria or revisit saved daily candidates.'}>{content}</SimpleWorkspace>
 }
 

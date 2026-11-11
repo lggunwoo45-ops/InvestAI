@@ -4,6 +4,8 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { RouteLoadingFallback } from '@/components/RouteLoadingFallback/RouteLoadingFallback'
 import { AppShell } from '@/layouts/AppShell/AppShell'
 
+const ToolsPage = lazy(() => import('@/pages/Tools/ToolsPage').then(module => ({ default: module.ToolsPage })))
+const ResultsPage = lazy(() => import('@/pages/Results/ResultsPage').then(module => ({ default: module.ResultsPage })))
 const AiAnalysisPage = lazy(() => import('@/pages/AiAnalysis/AiAnalysisPage').then((module) => ({ default: module.AiAnalysisPage })))
 const DashboardPage = lazy(() => import('@/pages/Dashboard/DashboardPage').then((module) => ({ default: module.DashboardPage })))
 const DemoPage = lazy(() => import('@/pages/Demo/DemoPage').then((module) => ({ default: module.DemoPage })))
@@ -26,6 +28,8 @@ export function AppRoutes() {
       <Routes>
         <Route element={<AppShell />}>
           <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route path="tools" element={<ToolsPage />} />
+          <Route path="results" element={<ResultsPage />} />
           <Route path="market" element={<MarketPage />} />
           <Route path="research" element={<ResearchPage />} />
           <Route path="review-alerts" element={<ReviewAlertsPage />} />

@@ -13,6 +13,7 @@ export type IconName =
   | 'briefing'
   | 'demo'
   | 'settings'
+  | 'alerts'
   | 'search'
   | 'menu'
   | 'panel'
@@ -29,6 +30,7 @@ interface IconProps extends Omit<SVGProps<SVGSVGElement>, 'children'> {
 
 export function Icon({ name, size = 20, ...props }: IconProps) {
   const paths: Record<IconName, React.ReactNode> = {
+    alerts: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" /><path d="M10 21h4" /></>,
     dashboard: <><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></>,
     markets: <><path d="M4 18V9" /><path d="M10 18V5" /><path d="M16 18v-7" /><path d="M22 18V3" /><path d="M2 21h20" /></>,
     portfolio: <><rect x="3" y="6" width="18" height="14" rx="2" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><path d="M3 11h18" /><path d="M10 11v2h4v-2" /></>,
