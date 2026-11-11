@@ -18,7 +18,7 @@ function openRoute(path: string) {
   window.dispatchEvent(new PopStateEvent('popstate'))
 }
 
-describe('Market Copilot application shell', () => {
+describe('InvestAI application shell', () => {
   afterEach(() => {
     vi.useRealTimers()
     vi.restoreAllMocks()
@@ -361,7 +361,7 @@ describe('Market Copilot application shell', () => {
     expect(screen.getByRole('link', { name: 'Guide' })).toBeTruthy()
     fireEvent.click(screen.getByText('Home', { selector: 'footer a' }))
     expect(await screen.findByRole('heading', { name: 'Today' })).toBeTruthy()
-    expect(screen.getByRole('complementary', { name: 'Market Copilot Beta scope' })).toBeTruthy()
+    expect(screen.getByRole('complementary', { name: 'InvestAI Beta scope' })).toBeTruthy()
   })
 
   it('opens legacy simple bookmarks on the unified home and preserves a daily route while switching modes', async () => {
