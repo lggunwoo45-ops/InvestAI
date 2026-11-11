@@ -27,15 +27,5 @@ export function SimpleTasks({ label, tasks, all = false, initial }: { label: str
 
 export function SimpleFeatureLinks() {
   const ko = useLanguage().language === 'ko'
-  const tasks = [
-    ['/my-analysis', '궁금한 종목 확인', '지금 살펴볼 가격과 주의할 점', 'Review an asset', 'Price areas and cautions'],
-    ['/market', '코인·주식 찾아보기', '이름으로 찾고 관심종목에 담기', 'Browse markets', 'Search and save an asset'],
-    ['/research?mode=check', '시장·계산 도구', '시장 흐름, 손익, 거래 비용', 'Market tools', 'Context, profit and costs'],
-    ['/research?mode=journal', '내 생각 기록', '지난 판단과 지금을 비교하기', 'My journal', 'Compare past and current views'],
-    ['/news', '뉴스 읽기', '출처와 함께 시장 배경 확인', 'Read news', 'Market context and sources'],
-    ['/trading', '매수 금액 계산', '쓰기 전에 이익과 손실 계산', 'Plan a purchase', 'Estimate cost and outcomes'],
-    ['/strategies', '과거 전략 시험', '같은 규칙을 과거 가격에 적용', 'Test a strategy', 'Apply a rule to history'],
-    ['/demo', '사용법 익히기', '순서대로 기능 둘러보기', 'Get started', 'Explore the app step by step'],
-  ]
-  return <div className={styles.featureGrid}>{tasks.map(([to, title, hint, enTitle, enHint]) => <Link key={to} to={to}><strong>{ko ? title : enTitle}<span aria-hidden>↗</span></strong><p>{ko ? hint : enHint}</p></Link>)}</div>
+  return <div className={styles.featureGrid}><Link to="/tools"><strong>{ko ? '도구함' : 'Tools'}<span aria-hidden>↗</span></strong><p>{ko ? '시장 지표·포지션·비용·신호·기록을 용도별로 찾으세요.' : 'Find indicators, position sizing, costs, signals and records by purpose.'}</p></Link><Link to="/demo"><strong>{ko ? '사용 가이드' : 'Guide'}<span aria-hidden>↗</span></strong><p>{ko ? '종목 선택부터 근거 확인과 기록까지 순서대로 안내해요.' : 'Follow the steps from choosing an asset to evidence and records.'}</p></Link></div>
 }

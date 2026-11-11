@@ -85,7 +85,7 @@ describe('Sidebar pinning', () => {
     fireEvent.pointerEnter(sidebar, { pointerType: 'mouse' })
     expect(sidebar.getAttribute('data-expanded')).toBe('true')
 
-    fireEvent.click(screen.getByRole('link', { name: 'Home' }))
+    fireEvent.click(screen.getByRole('link', { name: 'Today' }))
     expect(sidebar.getAttribute('data-expanded')).toBe('false')
   })
 

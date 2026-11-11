@@ -38,7 +38,7 @@ describe('MyAnalysisReportSummary', () => {
   it('builds safe plain text without personal note, average price, or unsafe labels', () => {
     render(<MyAnalysisReportSummary analysis={analysis()} language="en" mode="simple" symbol="BTC/KRW" name="Bitcoin" candidateReviewScore={reviewScore} />)
     const text = (screen.getByRole('textbox', { name: 'Plain-text summary' }) as HTMLTextAreaElement).value
-    expect(text).toContain('Market Copilot review summary')
+    expect(text).toContain('InvestAI review summary')
     expect(text).toContain('Current read:')
     expect(text).toContain('Next check:')
     expect(text).toContain('Review score: 82/100')

@@ -17,7 +17,7 @@ describe('Available plans', () => {
   it('takes signed-in members directly to their records', () => {
     account.user = { id: 'member' }
     render(<MemoryRouter><AiUsagePlans language="ko" /></MemoryRouter>)
-    expect(screen.getByRole('link', { name: '내 검증 기록 보기 →' }).getAttribute('href')).toBe('/ai-analysis#opportunity-records')
+    expect(screen.getByRole('link', { name: '내 검증 기록 보기 →' }).getAttribute('href')).toBe('/results')
     expect(screen.getByText(/추천 검증 기록 계정별 100건/)).toBeTruthy()
     expect(screen.getByText(/무료 베타가 자동으로 유료 전환되지 않습니다/)).toBeTruthy()
   })

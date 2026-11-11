@@ -18,7 +18,7 @@ function openRoute(path: string) {
   window.dispatchEvent(new PopStateEvent('popstate'))
 }
 
-describe('Market Copilot application shell', () => {
+describe('InvestAI application shell', () => {
   afterEach(() => {
     vi.useRealTimers()
     vi.restoreAllMocks()
@@ -34,7 +34,7 @@ describe('Market Copilot application shell', () => {
   it('opens Home with portfolio actions instead of illustrative market prices', async () => {
     window.history.pushState({}, '', '/')
     render(<App />)
-    expect(await screen.findByRole('heading', { name: 'Home' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Today' })).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Save my first coin →' })).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Explore your first coin →' }).getAttribute('href')).toContain('/research?asset=BTC&mode=overview')
     expect(screen.queryByRole('heading', { name: 'Trending Now' })).toBeNull()
@@ -42,13 +42,13 @@ describe('Market Copilot application shell', () => {
     expect(screen.queryByRole('complementary', { name: 'AI Copilot' })).toBeNull()
   })
 
-  it('keeps four task-based simple navigation links and opens other functions through More', async () => {
+  it('keeps five task-based simple navigation links and opens other functions through More', async () => {
     window.localStorage.setItem('market-copilot.displayMode.v1', 'simple')
     window.history.pushState({}, '', '/dashboard')
     render(<App />)
     await screen.findByRole('heading', { name:'What would you like to review today?' })
     expect(screen.queryByRole('complementary', { name:'Application sidebar' })).toBeNull()
-    expect(within(screen.getByRole('navigation', { name:'Primary navigation' })).getAllByRole('link')).toHaveLength(4)
+    expect(within(screen.getByRole('navigation', { name:'Primary navigation' })).getAllByRole('link')).toHaveLength(5)
     fireEvent.keyDown(window, { key:'k', ctrlKey:true })
     expect(document.activeElement).toBe(screen.getByRole('searchbox', { name:'Global search' }))
     fireEvent.keyDown(document.activeElement!, { key:'Escape' })
@@ -74,7 +74,7 @@ describe('Market Copilot application shell', () => {
   it('keeps the four core pages focused without changing the saved Copilot preference', async () => {
     render(<App />)
     await screen.findByRole('complementary', { name: 'AI Copilot' })
-    for (const [path, heading] of [['/ai-analysis', 'Find coins to review'], ['/dashboard', 'Home'], ['/portfolio', 'My Investments'], ['/my-analysis', 'Instrument Analysis']]) {
+    for (const [path, heading] of [['/ai-analysis', 'Find coins to review'], ['/dashboard', 'Today'], ['/portfolio', 'My Investments'], ['/my-analysis', 'Instrument Analysis']]) {
       openRoute(path)
       expect(await screen.findByRole('heading', { level: 1, name: heading })).toBeTruthy()
       expect(screen.queryByRole('complementary', { name: 'AI Copilot' })).toBeNull()
@@ -84,7 +84,7 @@ describe('Market Copilot application shell', () => {
     expect(await screen.findByRole('complementary', { name: 'AI Copilot' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Close AI Copilot' }))
     openRoute('/dashboard')
-    await screen.findByRole('heading', { name: 'Home' })
+    await screen.findByRole('heading', { name: 'Today' })
     openRoute('/market')
     expect(await screen.findByRole('button', { name: 'Toggle AI Copilot' })).toBeTruthy()
     expect(screen.queryByRole('complementary', { name: 'AI Copilot' })).toBeNull()
@@ -189,7 +189,7 @@ describe('Market Copilot application shell', () => {
     const app = render(<App />)
     const language = screen.getByRole('combobox', { name: 'Language' })
     fireEvent.change(language, { target: { value: 'ko' } })
-    expect(screen.getByRole('link', { name: '홈' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: '오늘' })).toBeTruthy()
     expect(screen.getByRole('region', { name: '마켓 탐색' })).toBeTruthy()
     expect(screen.getByRole('button', { name: /간편모드/ })).toBeTruthy()
     expect(screen.getByRole('button', { name: /전문가모드/ })).toBeTruthy()
@@ -199,7 +199,7 @@ describe('Market Copilot application shell', () => {
 
     render(<App />)
     expect((screen.getByRole('combobox', { name: 'Language' }) as HTMLSelectElement).value).toBe('ko')
-    expect(screen.getByRole('link', { name: '홈' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: '오늘' })).toBeTruthy()
     fireEvent.change(screen.getByRole('combobox', { name: 'Language' }), { target: { value: 'en' } })
     expect(screen.getByRole('region', { name: 'Market Explorer' })).toBeTruthy()
     expect(screen.getByRole('searchbox', { name: 'Search instruments' })).toBeTruthy()
@@ -241,7 +241,7 @@ describe('Market Copilot application shell', () => {
     window.history.pushState({}, '', '/dashboard')
     render(<App />)
 
-    expect(await screen.findByRole('heading', { name: 'Home' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Today' })).toBeTruthy()
     expect(screen.queryByRole('heading', { name: 'Smart Market Dashboard' })).toBeNull()
     fireEvent.click(screen.getByText('My watchlists'))
     await screen.findByRole('heading', { name: 'Watchlist 2.0' })
@@ -358,10 +358,10 @@ describe('Market Copilot application shell', () => {
     window.history.pushState({}, '', '/demo')
     render(<App />)
     expect(await screen.findByRole('heading', { level: 1, name: /Understand one asset\.\s+Keep a record\./ })).toBeTruthy()
-    expect(screen.getByRole('link', { name: 'User guide' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Guide' })).toBeTruthy()
     fireEvent.click(screen.getByText('Home', { selector: 'footer a' }))
-    expect(await screen.findByRole('heading', { name: 'Home' })).toBeTruthy()
-    expect(screen.getByRole('complementary', { name: 'Market Copilot Beta scope' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Today' })).toBeTruthy()
+    expect(screen.getByRole('complementary', { name: 'InvestAI Beta scope' })).toBeTruthy()
   })
 
   it('opens legacy simple bookmarks on the unified home and preserves a daily route while switching modes', async () => {
@@ -590,7 +590,7 @@ describe('Market Copilot application shell', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Open BTC/KRW' }))
     expect(await screen.findByTitle('Market: online')).toBeTruthy()
 
-    fireEvent.click(screen.getByRole('link', { name: 'Home' }))
+    fireEvent.click(screen.getByRole('link', { name: 'Today' }))
     expect(await screen.findByTitle('Market: Not configured')).toBeTruthy()
   })
 })

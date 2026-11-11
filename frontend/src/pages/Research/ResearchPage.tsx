@@ -1,3 +1,4 @@
+import { productTools, toolText } from '@/app/productTools'
 import { EtfLedger } from './EtfLedger'
 import { SimpleTasks } from '@/components/simple/SimpleWorkspace'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
@@ -238,9 +239,11 @@ export function ResearchPage() {
   const { language } = useLanguage()
   const { displayMode, setDisplayMode } = useDisplayMode()
   const simple = displayMode === 'simple'
-  useDocumentTitle(simple ? '시장·기록' : '시장·리스크 연구실')
   const [params, setParams] = useSearchParams()
   const requestedMode = params.get('mode'), mode: Mode = requestedMode === 'check' && simple ? 'check' : modes.some(([key]) => key === requestedMode) ? requestedMode as Mode : 'overview'
+  const tool = productTools.find(item => item.href === `/research?mode=${mode}`)
+  const title = mode === 'alerts' ? (language === 'ko' ? '선물 가격·신호 조건' : 'Futures prices and signals') : tool ? toolText(tool.title, language) : (language === 'ko' ? '도구 선택' : 'Choose a tool')
+  useDocumentTitle(title)
   const requestedAsset = params.get('asset'), asset = researchAssets.some(a => a === requestedAsset) ? requestedAsset! : 'BTC'
   const [revision, setRevision] = useState(0), [clientNow, setNow] = useState(Date.now)
   const [auto, setAuto] = useState(true), [message, setMessage] = useState('')
@@ -267,7 +270,7 @@ export function ResearchPage() {
     addToWatchlist(itemFromInstrument(instrument)); selectInstrument(instrument); setMessage('기존 관심종목에 등록했습니다. 종목 분석에서 차트·뉴스·검토 기록을 이어볼 수 있습니다.')
   }
   return <div className={[styles.page, simple ? styles.simplePage : styles.expertPage].join(' ')} data-research-experience={displayMode}>
-    <header className={styles.workspaceHeader}><div className={styles.heading}><span>{simple ? '한 번에 하나씩, 쉽게 살펴보세요' : 'INVESTAI · RESEARCH WORKSPACE'}</span><h1>{simple ? (language === 'ko' ? '시장·기록' : 'Market & Reviews') : (language === 'ko' ? '시장·리스크 연구실' : 'Market & Risk Lab')}</h1>{!simple && <p>시장 지표와 거래 조건을 분석하고, 검토 근거를 비교합니다.</p>}</div><div className={styles.headerActions}><label>{simple ? '살펴볼 코인' : '검토 종목'}<select aria-label="검토 종목" value={asset} onChange={e => { setParams({ asset: e.target.value, mode }); setMessage('') }}>{researchAssets.map(a => <option key={a}>{a}</option>)}</select></label><button disabled={loading} onClick={() => setRevision(v => v + 1)}>{loading ? '확인 중…' : '↻ 새로고침'}</button></div></header>
+    <header className={styles.workspaceHeader}><div className={styles.heading}><Link to={mode === 'alerts' ? '/review-alerts' : mode === 'journal' ? '/results' : '/tools'}>{mode === 'alerts' ? (language === 'ko' ? '알림' : 'Alerts') : mode === 'journal' ? (language === 'ko' ? '결과' : 'Results') : (language === 'ko' ? '도구함' : 'Tools')} /</Link><h1>{title}</h1><p>{tool ? toolText(tool.purpose, language) : language === 'ko' ? '시장 지표와 거래 조건을 살펴보고 근거를 저장하세요.' : 'Inspect market evidence and save your review.'}</p></div><div className={styles.headerActions}><label>{simple ? '살펴볼 코인' : '검토 종목'}<select aria-label="검토 종목" value={asset} onChange={e => { setParams({ asset: e.target.value, mode }); setMessage('') }}>{researchAssets.map(a => <option key={a}>{a}</option>)}</select></label><button disabled={loading} onClick={() => setRevision(v => v + 1)}>{loading ? '확인 중…' : '↻ 새로고침'}</button></div></header>
     {!simple && <div className={styles.expertControls}><label className={styles.check}><input type="checkbox" checked={auto} onChange={e => setAuto(e.target.checked)} />화면을 보는 동안 1분마다 갱신</label><small>마지막 확인: {time(visible?.fetchedAt)}</small><button onClick={() => setDisplayMode('simple')}>쉬운 설명으로 보기</button></div>}
     {error && !['setups', 'position'].includes(mode) && <p className={styles.notice} role="alert">{simple ? '지금 시장 자료를 불러오지 못했어요. 새로고침으로 다시 확인해주세요. 저장한 기록과 직접 입력 계산은 계속 사용할 수 있어요.' : error}</p>}
     {delayedMark && !['setups', 'position'].includes(mode) && <p className={styles.notice} role="status">{simple ? '가격 자료가 오래되어 비교와 새 기록 저장을 잠시 멈췄어요. 새로고침 후 다시 확인해주세요.' : '마크가격 관측 시각: ' + time(rawMarkAt) + '. 갱신이 필요해 현재가 채우기와 검토 저장을 제한했습니다.'}</p>}

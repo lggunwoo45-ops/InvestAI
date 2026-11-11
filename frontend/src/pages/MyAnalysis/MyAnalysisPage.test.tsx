@@ -210,7 +210,7 @@ describe('MyAnalysisPage', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'My price criteria' }))
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Average price (optional)' }), { target: { value: '90' } })
     fireEvent.change(screen.getByRole('combobox', { name: 'Language' }), { target: { value: 'ko' } })
-    expect(screen.getByRole('link', { name: '궁금한 종목 분석' })).toBeTruthy()
+    expect(within(screen.getByRole('navigation', { name: 'Primary navigation' })).getByRole('link', { name: '종목 찾기' }).getAttribute('href')).toBe('/ai-analysis')
     expect(screen.getByRole('region', { name: '지금의 방향과 가격 계획' })).toBeTruthy()
     expect(screen.queryByRole('region', { name: '액션 준비도' })).toBeNull()
     expect(screen.queryByRole('region', { name: '분석 요약' })).toBeNull()
