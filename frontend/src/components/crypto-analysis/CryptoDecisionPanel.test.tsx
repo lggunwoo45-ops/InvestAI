@@ -1,4 +1,7 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
+import type { ReactElement } from 'react'
+const render = (ui: ReactElement) => rtlRender(ui, { wrapper: MemoryRouter })
+import { act, fireEvent, render as rtlRender, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AnalysisFrame, AnalysisSeries } from '@/services/cryptoAnalysis/cryptoDecisionEngine'
 import type { MarketInstrument } from '@/types/market'
@@ -19,6 +22,13 @@ vi.mock('@/hooks/useTechnicalLevelData', () => ({ useTechnicalLevelData: (_: unk
 vi.mock('@/hooks/useDominance', () => ({ useDominance: () => ({ data: state.dominance, loading: false, error: !state.dominance }) }))
 
 describe('CryptoDecisionPanel', () => {
+  it('keeps exactly one decision brief during repeated live price updates', () => {
+    const { rerender } = render(<CryptoDecisionPanel instrument={instrument} daily={candles('1D')} language="en" />)
+    for (let i = 0; i < 6; i++) {
+      rerender(<CryptoDecisionPanel instrument={{ ...instrument, lastPrice: 279 + i }} daily={{ ...candles('1D'), currentPrice: 279 + i }} language="en" />)
+      expect(screen.getAllByRole('region', { name: 'Decision and next action' })).toHaveLength(1)
+    }
+  })
   it('shows the same conclusion and price plan when switching to the expert chart workspace', () => {
     const props = { instrument, daily: candles('1D'), language: 'en' as const }
     const { rerender } = render(<CryptoDecisionPanel {...props} />)
@@ -96,7 +106,7 @@ describe('CryptoDecisionPanel', () => {
     expect(screen.getByText('상승 쪽이 강해요')).toBeTruthy()
     expect(screen.getByText('지금 따라 사기보다 가격이 내려오길 기다려보세요')).toBeTruthy()
     expect(within(screen.getByRole('tabpanel')).getAllByText('274.5 – 277.5 KRW')[0]).toBeTruthy()
-    expect(within(screen.getByRole('tabpanel')).getByText('270 KRW')).toBeTruthy()
+    expect(within(screen.getByRole('region', { name: '지금 판단과 다음 행동' })).getByText('270 KRW')).toBeTruthy()
     expect(screen.getAllByRole('tabpanel')).toHaveLength(1)
     fireEvent.click(screen.getByRole('tab', { name: '내 평단가·가격 기준' }))
     expect(within(screen.getByRole('tabpanel')).getByText('주의 가격에서 예상 손익: -20 KRW')).toBeTruthy()
@@ -112,7 +122,7 @@ describe('CryptoDecisionPanel', () => {
     state.trend = -1
     render(<CryptoDecisionPanel instrument={instrument} daily={candles('1D')} language="ko" />)
     expect(screen.getByText('하락 쪽이 강해요')).toBeTruthy()
-    expect(screen.getByText('새로 사기보다 하락이 멈추는지 기다려보세요')).toBeTruthy()
+    expect(screen.getByText('하락 우세 · 회복 조건부터 확인하세요')).toBeTruthy()
     expect(within(screen.getByRole('tabpanel')).getByText(/지지 가격에 닿았다는 이유만으로 매수하지 않습니다/)).toBeTruthy()
     expect(screen.getByText(/저항 기준 가격:/)).toBeTruthy()
     fireEvent.click(screen.getByRole('tab', { name: '자세히 보기' }))

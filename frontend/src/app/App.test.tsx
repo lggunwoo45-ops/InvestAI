@@ -42,13 +42,13 @@ describe('Market Copilot application shell', () => {
     expect(screen.queryByRole('complementary', { name: 'AI Copilot' })).toBeNull()
   })
 
-  it('keeps three simple navigation links and opens other functions through More', async () => {
+  it('keeps four task-based simple navigation links and opens other functions through More', async () => {
     window.localStorage.setItem('market-copilot.displayMode.v1', 'simple')
     window.history.pushState({}, '', '/dashboard')
     render(<App />)
-    await screen.findByRole('heading', { name:'Give your next review a clear basis.' })
+    await screen.findByRole('heading', { name:'What would you like to review today?' })
     expect(screen.queryByRole('complementary', { name:'Application sidebar' })).toBeNull()
-    expect(within(screen.getByRole('navigation', { name:'Primary navigation' })).getAllByRole('link')).toHaveLength(3)
+    expect(within(screen.getByRole('navigation', { name:'Primary navigation' })).getAllByRole('link')).toHaveLength(4)
     fireEvent.keyDown(window, { key:'k', ctrlKey:true })
     expect(document.activeElement).toBe(screen.getByRole('searchbox', { name:'Global search' }))
     fireEvent.keyDown(document.activeElement!, { key:'Escape' })
@@ -368,7 +368,7 @@ describe('Market Copilot application shell', () => {
     window.localStorage.setItem('market-copilot.displayMode.v1', 'simple')
     window.history.pushState({}, '', '/simple')
     render(<App />)
-    expect(await screen.findByRole('heading', { name: 'Give your next review a clear basis.' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'What would you like to review today?' })).toBeTruthy()
     expect(window.location.pathname).toBe('/dashboard')
     expect(screen.getAllByRole('group', { name: 'Display mode' })).toHaveLength(1)
     openRoute('/ai-analysis#daily')
@@ -383,7 +383,7 @@ describe('Market Copilot application shell', () => {
   })
 
   it.each([
-    ['/dashboard', 'Give your next review a clear basis.'], ['/market', 'Find an asset you know'],
+    ['/dashboard', 'What would you like to review today?'], ['/market', 'Find an asset you know'],
     ['/my-analysis', 'Instrument Analysis'], ['/portfolio', 'How are my holdings doing?'],
     ['/ai-analysis', 'Find a few assets to review'], ['/news', 'News to understand the market'],
     ['/trading', 'Before buying, what could change?'], ['/strategies', 'How did this rule work in the past?'],

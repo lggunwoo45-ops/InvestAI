@@ -35,7 +35,7 @@ export function SimpleHeader({ hideCopilotToggle, copilotOpen, onToggleCopilot }
   return <header className={styles.header}>
     <Link to="/dashboard" className={styles.brand} aria-label={ko ? 'InvestAI 홈' : 'InvestAI home'}>Invest<span>AI</span></Link>
     <nav className={styles.navigation} aria-label="Primary navigation">
-      {simple ? <><NavLink to="/dashboard">{ko ? '추천' : 'Discover'}</NavLink><NavLink to="/portfolio">{ko ? '내 종목' : 'Holdings'}</NavLink><Link to="/research?mode=alerts" aria-current={location.pathname.replace(/\/$/, '') === '/research' && new URLSearchParams(location.search).get('mode') === 'alerts' ? 'page' : undefined}>{ko ? '알림' : 'Alerts'}</Link></> : primaryNavigation.map((item, index) => <NavLink key={item.path} to={item.path}>{labels[index]}</NavLink>)}
+      {simple ? <><NavLink to="/dashboard">{ko ? '오늘' : 'Today'}</NavLink><NavLink to="/portfolio">{ko ? '내 종목' : 'Holdings'}</NavLink><NavLink to="/review-alerts">{ko ? '알림' : 'Alerts'}</NavLink><Link to="/ai-analysis#opportunity-records" aria-current={location.pathname.replace(/\/$/, '') === '/ai-analysis' && location.hash === '#opportunity-records' ? 'page' : undefined}>{ko ? '결과' : 'Results'}</Link></> : primaryNavigation.map((item, index) => <NavLink key={item.path} to={item.path}>{labels[index]}</NavLink>)}
     </nav>
     <div className={styles.actions}>
       <ModeSwitcher />

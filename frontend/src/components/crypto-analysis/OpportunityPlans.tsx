@@ -1,10 +1,11 @@
+import { useCost, checkText } from './opportunityPresentation'
 import { submitOpportunityBatch } from '@/services/cryptoAnalysis/opportunityTrialCloud'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { Language } from '@/i18n/translations'
 import type { CryptoDecision } from '@/services/cryptoAnalysis/cryptoDecisionEngine'
 import type { ScanResult, ScanPoolMode } from '@/services/cryptoAnalysis/liveCandidateScan'
-import { bestOpportunity, buildOpportunityPlans, freshScanResult, opportunityPositionSize, opportunityShortlist, validOpportunityCost, type CheckKey, type OpportunityPlan } from '@/services/cryptoAnalysis/opportunityEngine'
+import { bestOpportunity, buildOpportunityPlans, freshScanResult, opportunityPositionSize, opportunityShortlist, validOpportunityCost, type OpportunityPlan } from '@/services/cryptoAnalysis/opportunityEngine'
 import { formatAnalysisPrice } from '@/utils/formatAnalysisPrice'
 import type { MarketInstrument } from '@/types/market'
 import { validScenarioInstrument } from '@/services/scenarios/scenarioStorage'
@@ -19,31 +20,9 @@ export function ScanPoolControl({ value, onChange, disabled, language }: { value
   const ko = language === 'ko'
   return <label>{ko ? '먼저 살펴볼 종목' : 'Scan priority'}<select value={value} disabled={disabled} onChange={e=>onChange(e.target.value as ScanPoolMode)}><option value="liquidity">{ko ? '거래대금 우선' : 'Liquidity first'}</option><option value="strength">{ko ? '상대 강세 우선' : 'Relative strength first'}</option></select></label>
 }
-function useCost() {
-  const [value, setValue] = useState(() => { try { const v = localStorage.getItem('investai.opportunity.cost.v1'); if (v !== null && v.trim() && validOpportunityCost(Number(v))) return v } catch { /* Optional preference. */ } return '0.2' })
-  const cost = value.trim() ? Number(value) : NaN
-  const change = (v: string) => { setValue(v); if (v.trim() && validOpportunityCost(Number(v))) try { localStorage.setItem('investai.opportunity.cost.v1',v) } catch { /* Session still works. */ } }
-  return { value, cost, change }
-}
-function CostControl({ language, value, onChange }: { language:Language; value:string; onChange:(value:string)=>void }) {
+export function CostControl({ language, value, onChange }: { language:Language; value:string; onChange:(value:string)=>void }) {
   const valid = !!value.trim() && validOpportunityCost(Number(value))
   return <div className={styles.cost}><label>{copy[language].cost}<input type="number" min="0" max="3" step="0.05" value={value} onChange={e=>onChange(e.target.value)} aria-invalid={!valid} /></label><p>{copy[language].note}</p>{!valid && <p role="alert">{language === 'ko' ? '비용은 0~3% 사이로 입력하세요.' : 'Enter a cost from 0 to 3%.'}</p>}</div>
-}
-function checkText(plan:OpportunityPlan, key:CheckKey, ko:boolean) {
-  const rules:Record<CheckKey,string> = ko ? {
-    regime:plan.kind === 'pullback' ? '큰 흐름이 상승 우세' : plan.kind === 'rebound' ? '상위 시간대 하락 속 반등 전략' : '상위 시간대가 하락 우세가 아님',
-    close:plan.kind === 'pullback' ? '1시간봉이 지지 구간 안에서 전 봉보다 높게 상승 마감' : '1시간봉이 돌파 기준 위에서 상승 마감',
-    volume:`1시간 거래량이 이전 20개 봉 평균의 ${plan.volumeRequired}배 이상`,
-    recovery:'직전 RSI 45 이하에서 2 이상 회복하고 현재 RSI 35~65', price:'현재 가격이 진입 검토 구간 안에 있음',
-    structure:'손절 < 진입 구간 < 실제 고점·이동평균 기반 목표', reward:'거래 비용을 뺀 손익비가 1.5 이상',
-    heat:'단기 과열·급격한 가격 이탈 없음', risk:'현재 가격이 손절 기준보다 높음', context:'확인된 매도 체결·알트 약세 경고 없음',
-  } : {
-    regime:plan.kind === 'pullback' ? 'Higher-timeframe uptrend' : plan.kind === 'rebound' ? 'Countertrend setup within a higher-timeframe decline' : 'Higher timeframe is not bearish',
-    close:plan.kind === 'pullback' ? 'Hourly bullish close inside support, above the previous close' : 'Hourly bullish close above the breakout threshold',
-    volume:`Hourly volume at least ${plan.volumeRequired}× the previous 20-bar average`, recovery:'RSI recovers by 2+ from 45 or less, now between 35 and 65', price:'Current price remains inside the entry zone',
-    structure:'Stop < entry zone < observed swing / moving-average target', reward:'Reward/risk after assumed costs is at least 1.5', heat:'No short-term overheating or sudden price displacement', risk:'Current price is above the stop reference', context:'No observed selling-flow or altcoin-weakness warning',
-  }
-  return rules[key]
 }
 function PlanCard({ plan, instrument, language, decision, sizing = false }: { plan:OpportunityPlan; instrument:MarketInstrument; language:Language; decision?:CryptoDecision; sizing?:boolean }) {
   const ko = language === 'ko', t = copy[language], price = (v:number) => `${formatAnalysisPrice(v,language)} ${instrument.quoteCurrency}`
@@ -73,6 +52,20 @@ function PlanCard({ plan, instrument, language, decision, sizing = false }: { pl
   </article>
 }
 
+function SimplePlanCard({ plan, instrument, language }: { plan: OpportunityPlan; instrument: MarketInstrument; language: Language }) {
+  const ko = language === 'ko', t = copy[language]
+  const missed = plan.checks.filter(c => !c.passed)
+  const price = (v: number) => `${formatAnalysisPrice(v, language)} ${instrument.quoteCurrency}`
+  return <article className={styles.card} data-opportunity={plan.status}>
+    <header><h3>{t.kinds[plan.kind]}</h3><strong className={styles.badge}>{t.states[plan.status]}</strong></header>
+    <p>{ko ? plan.status === 'ready' ? '현재 조건을 충족했어요. 들어가기 전 손실 기준을 확인하세요.' : '조건을 기다리는 후보예요. 아래 조건을 충족해야 다시 검토할 수 있어요.' : plan.status === 'ready' ? 'Current conditions match. Review the downside before proceeding.' : 'A pending candidate. Review again when the conditions below are met.'}</p>
+    {missed.length > 0 && <p><strong>{ko ? '다음 확인' : 'Next check'}</strong> · {checkText(plan, missed[0].key, ko)}{missed.length > 1 && (ko ? ` 외 ${missed.length - 1}개` : ` + ${missed.length - 1} more`)}</p>}
+    {plan.kind === 'rebound' && <p className={styles.caution}>{ko ? '큰 흐름은 하락 · 단기 반등 후보입니다.' : 'The broader trend is down; this is a countertrend rebound.'}</p>}
+    <dl className={styles.prices}><div><dt>{ko ? '관심 가격 구간' : 'Watch zone'}</dt><dd>{plan.entry ? `${formatAnalysisPrice(plan.entry[0], language)} – ${price(plan.entry[1])}` : '—'}</dd></div><div><dt>{ko ? '손절 기준' : 'Stop reference'}</dt><dd>{plan.stop ? price(plan.stop) : '—'}</dd></div></dl>
+    <details><summary>{ko ? '목표·남은 조건·계산 기준' : 'Target, conditions and assumptions'}</summary><p>{ko ? '목표 기준' : 'Target reference'} {plan.target ? price(plan.target) : '—'} · {ko ? '왕복 비용 가정' : 'Round-trip cost'} {plan.costPercent}%</p><ul>{plan.checks.map(c => <li key={c.key}>{c.passed ? '✓' : '○'} {checkText(plan, c.key, ko)}</li>)}</ul></details>
+  </article>
+}
+
 export function OpportunityReview({ instrument, decision, language }: { instrument:MarketInstrument; decision:CryptoDecision; language:Language }) {
   const cost = useCost(), plans = buildOpportunityPlans(decision,cost.cost), best = bestOpportunity(plans)
   const [showAll,setShowAll] = useState(false)
@@ -86,15 +79,17 @@ export function OpportunityBoard({ results, now, language, simple = false, canRe
   const [more,setMore] = useState(false), limit = more ? 12 : simple ? 3 : 4
   const recordable=ready.filter(row=>validScenarioInstrument(row.result.instrument)).length
   const record=async()=>{setRecording(true);try {const saved=await submitOpportunityBatch(results,cost.cost);setRecordMessage(ko?`${saved.source==='server'?'계정 서버':'이 기기'}에 ${saved.added}건 기록 · 중복·겹치는 관찰 ${saved.duplicates}건 제외.`:`${saved.added} recorded ${saved.source==='server'?'on your account server':'on this device'} · ${saved.duplicates} duplicate/overlapping cases skipped.`)} catch(e) {setRecordMessage(ko?e instanceof Error?e.message:'저장하지 못했습니다. 다시 확인해주세요.':'Could not save. Check your session, connection and the 100-record limit. Existing records are preserved.')}finally{setRecording(false)}}
+  const recordControls = <div className={styles.record}><p>{ko?'로그인 후 새로 기록하면 계정 서버가 화면을 닫아도 이후 가격을 수집합니다. 비회원 기록은 이 기기에 저장되고 이 화면을 열 때만 갱신됩니다.':'New member records continue collecting prices on the server after you close the app. Guest records stay on this device and refresh only when viewed.'}</p><button type="button" disabled={recording||!canRecord||!recordable} onClick={()=>void record()}>{ko?`조건 충족 현물 전체 기록 (${recordable}개)`:`Record all eligible spot setups (${recordable})`}</button><Link to="/ai-analysis#opportunity-records">{ko?'추천 검증 기록 보기':'View validation records'} →</Link><p>{ko?'검색 완료 후 유효한 현물 후보 전체를 같은 기준으로 기록합니다. 다음 정각 시가가 진입 구간 안이면 가상 진입하고 24시간 결과를 확인합니다. 실제 주문은 없습니다.':'After scanning, record every currently eligible spot setup. Model entry at the next full hourly open only inside the entry zone, then evaluate 24 hours. No orders are placed.'}</p>{recordMessage&&<p role="status">{recordMessage}</p>}</div>
   const fresh = results.filter(r=>freshScanResult(r,now)), assessed = fresh.filter(r=>r.decision.direction!=='unavailable'), down = assessed.filter(r=>r.decision.direction==='sell').length
   return <section className={styles.panel} aria-label={t.title}><header><div><h2>{t.title}</h2><p>{ko ? '상승 눌림·돌파·하락 속 반등을 따로 검사합니다. 조건을 충족한 종목과 준비 중인 종목을 구분해요.' : 'Evaluate trend pullbacks, breakouts and countertrend rebounds separately. Eligible and pending setups stay distinct.'}</p></div></header>
-    <CostControl language={language} value={cost.value} onChange={cost.change} />
-    <div className={styles.record}><p>{ko?'로그인 후 새로 기록하면 계정 서버가 화면을 닫아도 이후 가격을 수집합니다. 비회원 기록은 이 기기에 저장되고 이 화면을 열 때만 갱신됩니다.':'New member records continue collecting prices on the server after you close the app. Guest records stay on this device and refresh only when viewed.'}</p><button type="button" disabled={recording||!canRecord||!recordable} onClick={()=>void record()}>{ko?`조건 충족 현물 전체 기록 (${recordable}개)`:`Record all eligible spot setups (${recordable})`}</button><Link to="/ai-analysis#opportunity-records">{ko?'추천 검증 기록 보기':'View validation records'} →</Link><p>{ko?'검색 완료 후 유효한 현물 후보 전체를 같은 기준으로 기록합니다. 다음 정각 시가가 진입 구간 안이면 가상 진입하고 24시간 결과를 확인합니다. 실제 주문은 없습니다.':'After scanning, record every currently eligible spot setup. Model entry at the next full hourly open only inside the entry zone, then evaluate 24 hours. No orders are placed.'}</p>{recordMessage&&<p role="status">{recordMessage}</p>}</div>
+    {simple ? <details><summary>{ko ? '거래 비용 가정 바꾸기' : 'Adjust cost assumptions'}</summary><CostControl language={language} value={cost.value} onChange={cost.change} /></details> : <CostControl language={language} value={cost.value} onChange={cost.change} />}
+    {!simple && recordControls}
     {assessed.length > 0 && <p className={styles.regime}>{ko ? `이번 검색 표본 ${assessed.length}개 중 ${down}개가 하락 우세입니다. 시장 전체를 대표하지 않습니다.` : `${down} of ${assessed.length} assessed scan results lean downward. This sample does not represent the entire market.`}</p>}
     {fresh.length < results.length && <p role="status">{t.expired}</p>}
-    {(['ready','watch'] as const).map(status=>{ const group = status==='ready' ? ready : watch; return <section key={status} aria-label={t.states[status]}><h3 className={styles.groupTitle}>{t.states[status]} <span>{group.length}</span></h3>{group.length===0 ? <p>{ko ? status==='ready' ? '현재 모든 진입 조건을 충족한 종목은 없습니다. 아래의 조건 대기·제외 이유를 확인하세요.' : '현재 유효한 조건 대기 계획이 없습니다.' : status==='ready' ? 'No assets currently meet all entry conditions. Review the pending setups and exclusions below.' : 'No valid pending setups at this snapshot.'}</p> : <div className={styles.grid}>{group.slice(0,limit).map(({result,best,relative})=><div key={result.instrument.id} className={styles.asset}><header><h3>{result.instrument.displaySymbol ?? result.instrument.symbol}</h3><small>{new Date(result.analyzedAt).toLocaleTimeString(language)}</small></header>{relative && <p className={styles.strength}>{ko ? `같은 6시간 종가 기준 BTC 대비 ${relative.difference>=0?'+':''}${relative.difference.toFixed(2)}%p · 종목 ${relative.assetReturn.toFixed(2)}% / BTC ${relative.bitcoinReturn.toFixed(2)}%` : `Same six-hour closes: ${relative.difference>=0?'+':''}${relative.difference.toFixed(2)}pp vs BTC · asset ${relative.assetReturn.toFixed(2)}% / BTC ${relative.bitcoinReturn.toFixed(2)}%`}</p>}<PlanCard plan={best} instrument={result.instrument} language={language} /><Link to={`/my-analysis?instrumentId=${encodeURIComponent(result.instrument.id)}`}>{ko ? '현재 가격으로 계획·손실 예산 확인' : 'Review current plan and loss budget'} →</Link></div>)}</div>}</section> })}
+    {(['ready','watch'] as const).map(status=>{ const group = status==='ready' ? ready : watch; return <section key={status} aria-label={t.states[status]}><h3 className={styles.groupTitle}>{t.states[status]} <span>{group.length}</span></h3>{group.length===0 ? <p>{ko ? status==='ready' ? '현재 모든 진입 조건을 충족한 종목은 없습니다. 아래의 조건 대기·제외 이유를 확인하세요.' : '현재 유효한 조건 대기 계획이 없습니다.' : status==='ready' ? 'No assets currently meet all entry conditions. Review the pending setups and exclusions below.' : 'No valid pending setups at this snapshot.'}</p> : <div className={styles.grid}>{group.slice(0,limit).map(({result,best,relative})=><div key={result.instrument.id} className={styles.asset}><header><h3>{result.instrument.displaySymbol ?? result.instrument.symbol}</h3><small>{new Date(result.analyzedAt).toLocaleTimeString(language)}</small></header>{relative && <p className={styles.strength}>{ko ? `같은 6시간 종가 기준 BTC 대비 ${relative.difference>=0?'+':''}${relative.difference.toFixed(2)}%p · 종목 ${relative.assetReturn.toFixed(2)}% / BTC ${relative.bitcoinReturn.toFixed(2)}%` : `Same six-hour closes: ${relative.difference>=0?'+':''}${relative.difference.toFixed(2)}pp vs BTC · asset ${relative.assetReturn.toFixed(2)}% / BTC ${relative.bitcoinReturn.toFixed(2)}%`}</p>}{simple ? <SimplePlanCard plan={best} instrument={result.instrument} language={language} /> : <PlanCard plan={best} instrument={result.instrument} language={language} />}<Link to={`/my-analysis?instrumentId=${encodeURIComponent(result.instrument.id)}`}>{ko ? '현재 가격으로 계획·손실 예산 확인' : 'Review current plan and loss budget'} →</Link></div>)}</div>}</section> })}
     {(ready.length>limit || watch.length>limit) && <button type="button" onClick={()=>setMore(true)}>{ko ? '조건별 후보 더 보기' : 'Show more setups'}</button>}
     {excluded.length>0 && <details className={styles.excluded}><summary>{ko ? `조건 불리·자료 부족 ${excluded.length}개 · 이유 보기` : `${excluded.length} unfavorable / unavailable · reasons`}</summary>{excluded.map(({result,best})=><div key={result.instrument.id}><strong>{result.instrument.symbol} · {t.states[best.status]}</strong><p>{best.issue ? ko ? best.issue==='cost' ? '거래 비용 입력 확인 필요' : '유효한 완료 봉과 시세가 부족합니다.' : 'Valid data and cost assumptions are required.' : best.checks.filter(c=>!c.passed).map(c=>checkText(best,c.key,ko)).join(' · ')}</p><Link to={`/my-analysis?instrumentId=${encodeURIComponent(result.instrument.id)}`}>{ko ? '세 전략의 재검토 가격 보기' : 'Review thresholds for all three strategies'} →</Link></div>)}</details>}
+    {simple && recordControls}
     <details><summary>{ko ? '선정·정렬 기준과 한계' : 'Selection, ordering and limitations'}</summary><p>{ko ? '완료된 1시간봉과 상위 시간대 자료를 사용합니다. 진입 구간 안의 현재 가격 또는 대기 구간 상단에서 비용 차감 손익비 1.5 이상을 요구합니다. 없는 목표 가격을 만들어 채우지 않습니다. 상태별로 묶고 같은 거래소·통화의 BTC와 비교 가능한 6시간 상대 수익률, 거래대금 순으로 정렬합니다. 상대 강세는 함께 하락하는 경우에도 나타납니다. 모든 결과는 수신 후 최대 90초까지 유효합니다.' : 'Uses closed hourly and higher-timeframe bars, requiring net reward/risk ≥1.5 from the current entry-zone price or its upper edge. Missing targets are not invented. Groups sort by aligned six-hour relative returns versus BTC in the same venue/quote, then turnover. Relative strength can occur while both prices fall. Results expire within 90 seconds of receipt.'}</p><p>{ko ? '매수 방향의 전략 가설이며 수익성은 아직 검증 전입니다. 선물 레버리지·펀딩비·세금은 계산에 포함하지 않습니다. 실제 주문은 실행하지 않습니다.' : 'These are long-side strategy hypotheses without validated profitability. Leverage, funding and taxes are excluded. No orders are executed.'}</p></details>
   </section>
 }
