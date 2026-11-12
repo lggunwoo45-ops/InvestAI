@@ -1,3 +1,4 @@
+import { productPageNames } from '@/app/navigation'
 import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
@@ -26,6 +27,6 @@ export function SimpleTasks({ label, tasks, all = false, initial }: { label: str
 }
 
 export function SimpleFeatureLinks() {
-  const ko = useLanguage().language === 'ko'
-  return <div className={styles.featureGrid}><Link to="/tools"><strong>{ko ? '도구함' : 'Tools'}<span aria-hidden>↗</span></strong><p>{ko ? '시장 지표·포지션·비용·신호·기록을 용도별로 찾으세요.' : 'Find indicators, position sizing, costs, signals and records by purpose.'}</p></Link><Link to="/demo"><strong>{ko ? '사용 가이드' : 'Guide'}<span aria-hidden>↗</span></strong><p>{ko ? '종목 선택부터 근거 확인과 기록까지 순서대로 안내해요.' : 'Follow the steps from choosing an asset to evidence and records.'}</p></Link></div>
+  const { language } = useLanguage(), ko = language === 'ko'
+  return <div className={styles.featureGrid}><Link to="/tools"><strong>{productPageNames.tools[language]}<span aria-hidden>↗</span></strong><p>{ko ? '시장 지표·포지션·비용·신호·기록을 용도별로 찾으세요.' : 'Find indicators, position sizing, costs, signals and records by purpose.'}</p></Link><Link to="/demo"><strong>{ko ? '사용 가이드' : 'Guide'}<span aria-hidden>↗</span></strong><p>{ko ? '종목 선택부터 근거 확인과 기록까지 순서대로 안내해요.' : 'Follow the steps from choosing an asset to evidence and records.'}</p></Link></div>
 }

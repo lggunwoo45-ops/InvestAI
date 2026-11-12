@@ -1,16 +1,22 @@
 import type { Language } from '@/i18n/translations'
 import type { NavigationItem } from '@/types/navigation'
 
+export const productPageNames = {
+  home: { ko: '홈', en: 'Home' },
+  tools: { ko: '분석 도구', en: 'Analysis tools' },
+  results: { ko: '검증 기록', en: 'Validation records' },
+} as const
+
 // One product map for desktop, phone and both display modes.
 export const primaryNavigation: readonly NavigationItem[] = [
-  { label: 'Today', labelKo: '오늘', path: '/dashboard', icon: 'dashboard' },
+  { label: productPageNames.home.en, labelKo: productPageNames.home.ko, path: '/dashboard', icon: 'dashboard' },
   { label: 'Discover', labelKo: '종목 찾기', path: '/ai-analysis', icon: 'discover' },
   { label: 'Holdings', labelKo: '내 종목', path: '/portfolio', icon: 'portfolio' },
   { label: 'Alerts', labelKo: '알림', path: '/review-alerts', icon: 'alerts' },
-  { label: 'Results', labelKo: '결과', path: '/results', icon: 'briefing' },
+  { label: productPageNames.results.en, labelKo: productPageNames.results.ko, path: '/results', icon: 'briefing' },
 ]
 export const secondaryNavigation: readonly NavigationItem[] = [
-  { label: 'Tools', labelKo: '도구함', path: '/tools', icon: 'strategies' },
+  { label: productPageNames.tools.en, labelKo: productPageNames.tools.ko, path: '/tools', icon: 'strategies' },
   { label: 'Market', labelKo: '마켓', path: '/market', icon: 'markets' },
   { label: 'News', labelKo: '뉴스', path: '/news', icon: 'news' },
   { label: 'Guide', labelKo: '사용 가이드', path: '/demo', icon: 'demo' },

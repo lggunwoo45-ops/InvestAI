@@ -1,3 +1,4 @@
+import { productPageNames } from '@/app/navigation'
 import { useMemo, useState } from 'react'
 import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
 import { Link } from 'react-router-dom'
@@ -38,7 +39,7 @@ export function DashboardPage() {
 function DashboardOverview() {
   const { language } = useLanguage()
   const ko = language === 'ko'
-  useDocumentTitle(ko ? '오늘' : 'Today')
+  useDocumentTitle(productPageNames.home[language])
   const { marketDataMode } = useMarketWorkspace()
   const { result: newsResult } = useNewsProviderMode()
   const { openInstrument } = useOpenNewsInstrument()
@@ -51,14 +52,14 @@ function DashboardOverview() {
   const candidates = useMemo(() => buildCryptoWatchCandidates({ instruments: catalog.catalog?.instruments ?? [], newsResult, language, limit: 5 }), [catalog.catalog?.instruments, language, newsResult])
   const radar = useMemo(() => buildMarketRadar({ instruments: catalog.catalog?.instruments ?? [], watchCandidates: candidates, newsResult, language, mode: marketDataMode }), [catalog.catalog?.instruments, language, marketDataMode, newsResult, candidates])
   return <div className={styles.page}>
-    <header className={styles.heading}><h1>{ko ? '오늘' : 'Today'}</h1><p>{ko ? '지난 기록을 이어보고, 내 투자와 궁금한 종목을 확인하세요.' : 'Continue your saved research, check your investments, and explore an asset.'}</p></header>
+    <header className={styles.heading}><h1>{productPageNames.home[language]}</h1><p>{ko ? '지난 기록을 이어보고, 내 투자와 궁금한 종목을 확인하세요.' : 'Continue your saved research, check your investments, and explore an asset.'}</p></header>
     <ResearchResume />
     <PortfolioSummaryCard />
     <nav className={styles.shortcuts} aria-label={ko ? '무엇을 확인할까요?' : 'What would you like to review?'}>
       <Link to="/ai-analysis"><span>01</span><strong>{ko ? '종목 찾기' : 'Discover'}</strong><p>{ko ? '새로 살펴볼 후보와 근거 확인' : 'Find candidates and review their evidence'}</p></Link>
       <Link to="/portfolio"><span>02</span><strong>{ko ? '내 종목' : 'Holdings'}</strong><p>{ko ? '보유 종목의 손익과 현재 분석' : 'Returns and current analysis for my holdings'}</p></Link>
       <Link to="/review-alerts"><span>03</span><strong>{ko ? '알림' : 'Alerts'}</strong><p>{ko ? '정해둔 가격과 조건의 변화 확인' : 'Follow changes to saved prices and conditions'}</p></Link>
-      <Link to="/results"><span>04</span><strong>{ko ? '결과' : 'Results'}</strong><p>{ko ? '저장한 후보의 이후 결과 비교' : 'Compare outcomes after recording candidates'}</p></Link>
+      <Link to="/results"><span>04</span><strong>{productPageNames.results[language]}</strong><p>{ko ? '저장한 후보의 이후 결과 비교' : 'Compare outcomes after recording candidates'}</p></Link>
     </nav>
     <details className={styles.section}><summary>{ko ? '저장한 가격 기준에 변화가 있나요?' : 'Changes to my saved price plans'}</summary><ScenarioBoard compact /></details>
     <details className={styles.section} onToggle={event => setWatchlistsOpen(event.currentTarget.open)}><summary>{ko ? '내 관심종목' : 'My watchlists'}</summary>{watchlistsOpen && <SavedWatchlists />}</details>
