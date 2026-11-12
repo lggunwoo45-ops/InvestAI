@@ -25,6 +25,14 @@ describe('major support evidence ranking', () => {
     history.candles = history.candles.map((c, i) => i >= 398 ? { ...c,open:79,close:79,low:78,high:80 } : c)
     expect(buildMajorSupport(supportInstrument, history, quote, now).candidates.some(c => c.center === 82)).toBe(false)
   })
+  it('does not turn a cached forming day into completed evidence when midnight passes', () => {
+    const before=Date.parse('2026-11-12T23:59:00Z'), after=before+120_000
+    const history=supportHistory(before)
+    history.candles=[...history.candles,{timestamp:Date.parse('2026-11-12T00:00:00Z'),open:100,close:100,high:10000,low:1,volume:1e9}]
+    const old=buildMajorSupport(supportInstrument,history,{...quote,updatedAt:before},before)
+    const next=buildMajorSupport(supportInstrument,history,{...quote,updatedAt:after},after)
+    expect(next.days).toBe(old.days); expect(next.asOf).toBe(old.asOf); expect(next.candidates).toEqual(old.candidates)
+  })
   it('does not invent a floor or call a single reaction a major support', () => {
     const history = supportHistory()
     expect(buildMajorSupport(supportInstrument, history, { ...quote,currentPrice:50 }, now).status).toBe('no-confluence')
