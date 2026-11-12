@@ -22,6 +22,26 @@ vi.mock('@/hooks/useTechnicalLevelData', () => ({ useTechnicalLevelData: (_: unk
 vi.mock('@/hooks/useDominance', () => ({ useDominance: () => ({ data: state.dominance, loading: false, error: !state.dominance }) }))
 
 describe('CryptoDecisionPanel', () => {
+  it('opens separate upside and downside scenarios with the same prices across display modes', () => {
+    const props = { instrument, daily: candles('1D'), language: 'en' as const }
+    const { rerender } = render(<CryptoDecisionPanel {...props} />)
+    fireEvent.click(screen.getByRole('tab', { name: 'How far could it rise?' }))
+    const up = screen.getByRole('region', { name: 'How far could it rise?' })
+    expect(within(up).getByText('278.5 – 281.5 KRW')).toBeTruthy()
+    expect(within(up).getByText('Volatility estimate')).toBeTruthy()
+    expect(screen.queryByRole('region', { name: 'How far could it fall?' })).toBeNull()
+    fireEvent.click(screen.getByRole('tab', { name: 'How far could it fall?' }))
+    expect(within(screen.getByRole('tabpanel')).getByText('274.5 – 277.5 KRW')).toBeTruthy()
+    rerender(<CryptoDecisionPanel {...props} expert />)
+    expect(screen.getByRole('tab', { name: 'How far could it fall?' }).getAttribute('aria-selected')).toBe('true')
+    expect(within(screen.getByRole('tabpanel')).getByText('274.5 – 277.5 KRW')).toBeTruthy()
+    expect(within(screen.getByRole('tabpanel')).getByText('Timeframe and calculation').closest('details')?.open).toBe(true)
+    act(() => vi.advanceTimersByTime(100_000))
+    expect(within(screen.getByRole('tabpanel')).queryByText('274.5 – 277.5 KRW')).toBeNull()
+    expect(within(screen.getByRole('tabpanel')).getByText('Price levels are not available yet')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Check timeframe data' }))
+    expect(screen.getByRole('tab', { name: 'Evidence' }).getAttribute('aria-selected')).toBe('true')
+  })
   it('keeps exactly one decision brief during repeated live price updates', () => {
     const { rerender } = render(<CryptoDecisionPanel instrument={instrument} daily={candles('1D')} language="en" />)
     for (let i = 0; i < 6; i++) {
