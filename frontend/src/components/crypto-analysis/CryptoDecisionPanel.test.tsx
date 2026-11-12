@@ -19,10 +19,11 @@ function candles(frame: AnalysisFrame): AnalysisSeries {
   }) }
 }
 vi.mock('@/hooks/useTechnicalLevelData', () => ({ useTechnicalLevelData: (_: unknown, frame: AnalysisFrame) => state.overrides[frame] ?? candles(frame) }))
+vi.mock('@/hooks/useMajorSupportHistory', () => ({ useMajorSupportHistory: () => ({ data:null,loading:false,failed:false,retry:vi.fn() }) }))
 vi.mock('@/hooks/useDominance', () => ({ useDominance: () => ({ data: state.dominance, loading: false, error: !state.dominance }) }))
 
 describe('CryptoDecisionPanel', () => {
-  it('opens separate upside and downside scenarios with the same prices across display modes', () => {
+  it('keeps upside levels and a separate long-term downside view across display modes', () => {
     const props = { instrument, daily: candles('1D'), language: 'en' as const }
     const { rerender } = render(<CryptoDecisionPanel {...props} />)
     fireEvent.click(screen.getByRole('tab', { name: 'How far could it rise?' }))
@@ -31,15 +32,14 @@ describe('CryptoDecisionPanel', () => {
     expect(within(up).getByText('Volatility estimate')).toBeTruthy()
     expect(screen.queryByRole('region', { name: 'How far could it fall?' })).toBeNull()
     fireEvent.click(screen.getByRole('tab', { name: 'How far could it fall?' }))
-    expect(within(screen.getByRole('tabpanel')).getByText('274.5 – 277.5 KRW')).toBeTruthy()
+    expect(within(screen.getByRole('tabpanel')).getByText('The key support zone')).toBeTruthy()
     rerender(<CryptoDecisionPanel {...props} expert />)
     expect(screen.getByRole('tab', { name: 'How far could it fall?' }).getAttribute('aria-selected')).toBe('true')
-    expect(within(screen.getByRole('tabpanel')).getByText('274.5 – 277.5 KRW')).toBeTruthy()
-    expect(within(screen.getByRole('tabpanel')).getByText('Timeframe and calculation').closest('details')?.open).toBe(true)
+    expect(within(screen.getByRole('tabpanel')).queryByText('274.5 – 277.5 KRW')).toBeNull()
     act(() => vi.advanceTimersByTime(100_000))
     expect(within(screen.getByRole('tabpanel')).queryByText('274.5 – 277.5 KRW')).toBeNull()
-    expect(within(screen.getByRole('tabpanel')).getByText('Price levels are not available yet')).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'Check timeframe data' }))
+    expect(within(screen.getByRole('tabpanel')).getByText('Insufficient data for a key support zone')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Check current data' }))
     expect(screen.getByRole('tab', { name: 'Evidence' }).getAttribute('aria-selected')).toBe('true')
   })
   it('keeps exactly one decision brief during repeated live price updates', () => {

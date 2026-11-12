@@ -11,10 +11,12 @@ export function parseRequest(path) {
     return { group: 'ticker', path: `/ticker/all?quote_currencies=${[...new Set(quotes)].sort().join(',')}` }
   }
   if (!/^\/candles\/(days|minutes\/(1|5|15|60|240))$/.test(route)) throw new MarketError(404, 'not_found')
-  if ([...url.searchParams.keys()].some(key => !['market', 'count'].includes(key))) throw new MarketError(400, 'invalid_query')
+  if ([...url.searchParams.keys()].some(key => !['market', 'count', 'to'].includes(key) || url.searchParams.getAll(key).length !== 1)) throw new MarketError(400, 'invalid_query')
   const market = url.searchParams.get('market'), count = Number(url.searchParams.get('count'))
   if (!validMarket(market) || !Number.isInteger(count) || count < 1 || count > 200) throw new MarketError(400, 'invalid_candles')
-  return { group: 'candle', path: `${route}?market=${market}&count=${count}` }
+  const to = url.searchParams.get('to')
+  if (to !== null && (route !== '/candles/days' || !/^20\d{2}-\d{2}-\d{2}T00:00:00Z$/.test(to) || !Number.isFinite(Date.parse(to)) || new Date(to).toISOString().replace('.000Z', 'Z') !== to)) throw new MarketError(400, 'invalid_history_cursor')
+  return { group: 'candle', path: `${route}?market=${market}&count=${count}${to ? `&to=${encodeURIComponent(to)}` : ''}`, historical: to !== null && Date.parse(to) < Date.now() - 2 * 86_400_000 }
 }
 
 async function readJson(response) {
@@ -41,7 +43,7 @@ export function createRest({ fetchImpl = fetch, interval = 125, ttl = 2000 } = {
     const request = parseRequest(path), key = request.path
     if (Date.now() < blockedUntil) return Promise.reject(new MarketError(503, 'upstream_cooldown', Math.ceil((blockedUntil - Date.now()) / 1000)))
     const cached = cache.get(key)
-    if (cached && Date.now() - cached.receivedAt < ttl) return Promise.resolve({ ...cached, cache: 'HIT', queueMs: 0, networkMs: 0 })
+    if (cached && Date.now() - cached.receivedAt < (request.historical ? Math.max(ttl, 3_600_000) : ttl)) return Promise.resolve({ ...cached, cache: 'HIT', queueMs: 0, networkMs: 0 })
     let entry = pending.get(key)
     if (!entry) {
       if (pending.size >= 64) return Promise.reject(new MarketError(503, 'busy', 1))

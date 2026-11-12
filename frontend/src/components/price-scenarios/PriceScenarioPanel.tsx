@@ -53,7 +53,7 @@ export function StockPriceScenarios({ instrument, series, language, expert, acti
   const setSide = (next: ScenarioSide) => { setLocalSide(next); onSideChange?.(next) }
   const id = useId()
   useEffect(() => { const timer = setInterval(() => setClock(Date.now()), 10_000); return () => clearInterval(timer) }, [])
-  const model = buildStockPriceScenarios(instrument, series, Math.max(clock, Date.now()))
+  const model = buildStockPriceScenarios(instrument, series, clock)
   return <div className={styles.stock}>
     <div className={styles.switcher} role="group" aria-label={language === 'ko' ? '상승·하락 시나리오' : 'Price scenarios'}>{(['upside', 'downside'] as const).map(value => <button type="button" key={value} aria-controls={id} aria-pressed={side === value} onClick={() => setSide(value)}>{scenarioTitles[language][value]}</button>)}</div>
     <div id={id}><PriceScenarioPanel model={model} side={side} language={language} expert={expert} stock /></div>

@@ -2,6 +2,7 @@ import type { RealtimeMarketProvider } from '@/services/market/contracts/Realtim
 import type { MarketId } from '@/types/market'
 import type { Candle, MarketDetailSnapshot, RecentTrade } from '@/types/marketDetail'
 import { ReconnectingWebSocket } from '@/services/market/realtime/ReconnectingWebSocket'
+import { loadCryptoDailyHistory } from './dailyHistory'
 import { applyTrade, buildOrderbookLevels, fetchJson, mergeCandle, updateInstrumentPrice } from './providerUtils'
 
 type BinanceKline = readonly [number, string, string, string, string, string, ...unknown[]]
@@ -83,6 +84,7 @@ function createBinanceProvider(config: BinanceProviderConfig): RealtimeMarketPro
   return {
   id: config.name,
   supports: (instrument) => instrument.marketId === config.marketId,
+  loadDailyHistory: loadCryptoDailyHistory,
 
   async loadSnapshot(instrument, timeframe, signal) {
     const symbol = (instrument.providerSymbol ?? instrument.symbol.replace('/', '')).toUpperCase()

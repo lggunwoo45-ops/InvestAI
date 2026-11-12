@@ -14,6 +14,7 @@ import { getRememberedInstrument, rememberInstrument } from './instrumentRegistr
 import { SharedRequests } from './sharedRequests'
 import { ChartHistoryCache } from './chartHistoryCache'
 import { upbitRelayBase } from './providers/upbitRelay'
+import type { DailyHistory } from './providers/dailyHistory'
 
 export interface MarketOverviewService {
   getMarketOverview(): Promise<readonly MarketSectionData[]>
@@ -107,6 +108,8 @@ export class MarketDataService implements MarketOverviewService {
   private readonly streams = new Map<string, StreamSession>()
   private readonly idleStreams = new Map<string, StreamSession>()
   private readonly chartHistory = new ChartHistoryCache()
+  private readonly dailyHistories = new Map<string, DailyHistory>()
+  private readonly dailyPending = new SharedRequests<DailyHistory>()
 
   constructor(
     private readonly providers: readonly RealtimeMarketProvider[] = liveProviders,
@@ -193,6 +196,24 @@ export class MarketDataService implements MarketOverviewService {
 
   getChartPreview(instrument: MarketInstrument, timeframe: ChartTimeframe, mode: MarketDataMode) {
     return mode === 'live' ? this.chartHistory.get(instrument, timeframe) : null
+  }
+
+  getLongTermHistory(instrument: MarketInstrument, signal: AbortSignal): Promise<DailyHistory> {
+    signal.throwIfAborted()
+    const key = JSON.stringify([instrument.id, instrument.marketId, instrument.symbol, instrument.providerSymbol, instrument.quoteCurrency])
+    const cached = this.dailyHistories.get(key)
+    const age = cached ? Date.now() - cached.fetchedAt : Infinity
+    if (cached && age >= 0 && age < 900_000) return Promise.resolve(cached)
+    return this.dailyPending.run(key, async requestSignal => {
+      const provider = this.providers.find(p => p.supports(instrument))
+      if (!provider?.loadDailyHistory || provider === this.mockProvider) throw new Error('history-unsupported')
+      const candles = await provider.loadDailyHistory(instrument, requestSignal)
+      requestSignal.throwIfAborted()
+      const history = { instrumentId: instrument.id, marketId: instrument.marketId, currency: instrument.quoteCurrency, candles, fetchedAt: Date.now() }
+      this.dailyHistories.delete(key); this.dailyHistories.set(key, history)
+      while (this.dailyHistories.size > 16) this.dailyHistories.delete(this.dailyHistories.keys().next().value!)
+      return history
+    }, signal)
   }
 
   /** Historical audit requests use a real provider only, without opening a quote stream. */

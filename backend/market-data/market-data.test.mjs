@@ -17,6 +17,17 @@ test('only fixed public catalog/candle routes and bounded parameters are allowed
   for (const path of ['/api/upbit/orders', '/api/upbit/candles/minutes/60?market=KRW-BTC&count=201', '/api/upbit/candles/minutes/60?market=../../secret&count=1', candle + '&url=http://localhost', '/api/upbit/ticker/all?quote_currencies=EUR']) assert.throws(() => parseRequest(path))
 })
 
+test('daily history allows only canonical UTC cursors and caches closed old pages', async () => {
+  const path = '/api/upbit/candles/days?market=KRW-BTC&count=200&to=2020-01-01T00%3A00%3A00Z'
+  assert.equal(parseRequest(path).path, '/candles/days?market=KRW-BTC&count=200&to=2020-01-01T00%3A00%3A00Z')
+  for (const cursor of ['2020-02-30T00:00:00Z','2020-01-01T01:00:00Z','http://localhost','2020-01-01','2020-01-01T00:00:00Z&to=2021-01-01T00:00:00Z']) assert.throws(() => parseRequest(`/api/upbit/candles/days?market=KRW-BTC&count=200&to=${cursor}`))
+  assert.throws(() => parseRequest(candle + '&to=2020-01-01T00:00:00Z'))
+  let calls = 0
+  const rest = createRest({ interval:0,ttl:1,fetchImpl:async () => { calls++; return json([{old:true}]) } })
+  const first = await rest(path); await wait(10)
+  assert.equal((await rest(path)).receivedAt, first.receivedAt); assert.equal(calls, 1)
+})
+
 test('server gate paces requests and cancels queued consumers without an upstream call', async () => {
   const gate = new Gate(40), starts = []
   await gate.run(() => starts.push(Date.now()))

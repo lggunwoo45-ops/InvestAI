@@ -35,6 +35,23 @@ function createProvider(id: string, supports: boolean): RealtimeMarketProvider {
 }
 
 describe('MarketDataService', () => {
+  it('shares long history requests, preserves receipt age and isolates quote currency without opening streams', async () => {
+    vi.useFakeTimers(); vi.setSystemTime(100_000)
+    const provider=createProvider('live',true), mock=createProvider('mock',true)
+    provider.loadDailyHistory=vi.fn().mockResolvedValue(snapshot.candles)
+    const service=new MarketDataService([provider],mock)
+    const a=new AbortController(), b=new AbortController()
+    const one=service.getLongTermHistory(instrument,a.signal), two=service.getLongTermHistory(instrument,b.signal)
+    const canceled=expect(one).rejects.toMatchObject({name:'AbortError'}); a.abort(); await canceled
+    const history=await two; expect(provider.loadDailyHistory).toHaveBeenCalledTimes(1)
+    vi.setSystemTime(110_000)
+    expect((await service.getLongTermHistory(instrument,b.signal)).fetchedAt).toBe(history.fetchedAt)
+    expect(provider.loadDailyHistory).toHaveBeenCalledTimes(1)
+    await service.getLongTermHistory({...instrument,quoteCurrency:'BTC'},b.signal)
+    expect(provider.loadDailyHistory).toHaveBeenCalledTimes(2)
+    expect(provider.subscribe).not.toHaveBeenCalled()
+    await expect(new MarketDataService([],mock).getLongTermHistory(instrument,b.signal)).rejects.toThrow('history-unsupported')
+  })
   it('loads raw live history without streams or mock fallback, checking identity and cancellation', async () => {
     const provider=createProvider('live',true),mock=createProvider('mock',true)
     const service=new MarketDataService([provider],mock),controller=new AbortController()
