@@ -12,7 +12,7 @@ it('opens historical result bookmarks on the dedicated page, preserves query con
   localStorage.clear()
   renderWithProviders(<><Routes><Route path="/" element={<Navigate to="/ai-analysis?source=saved#opportunity-records" replace />} /><Route path="/ai-analysis" element={<AiAnalysisPage />} /><Route path="/results" element={<ResultsPage />} /></Routes><Location /></>)
   expect(screen.getByTestId('location').textContent).toBe('/results?source=saved')
-  expect(screen.getByRole('heading', { level: 1, name: 'Results' })).toBeTruthy()
+  expect(screen.getByRole('heading', { level: 1, name: 'Validation records' })).toBeTruthy()
   expect(screen.getByRole('heading', { name: 'No candidates recorded yet' })).toBeTruthy()
   fireEvent.click(screen.getByRole('link', { name: 'Find new candidates →' }))
   expect(screen.getByTestId('location').textContent).toBe('/ai-analysis')

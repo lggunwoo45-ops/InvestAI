@@ -34,7 +34,7 @@ describe('InvestAI application shell', () => {
   it('opens Home with portfolio actions instead of illustrative market prices', async () => {
     window.history.pushState({}, '', '/')
     render(<App />)
-    expect(await screen.findByRole('heading', { name: 'Today' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Home' })).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Save my first coin →' })).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Explore your first coin →' }).getAttribute('href')).toContain('/research?asset=BTC&mode=overview')
     expect(screen.queryByRole('heading', { name: 'Trending Now' })).toBeNull()
@@ -74,7 +74,7 @@ describe('InvestAI application shell', () => {
   it('keeps the four core pages focused without changing the saved Copilot preference', async () => {
     render(<App />)
     await screen.findByRole('complementary', { name: 'AI Copilot' })
-    for (const [path, heading] of [['/ai-analysis', 'Find coins to review'], ['/dashboard', 'Today'], ['/portfolio', 'My Investments'], ['/my-analysis', 'Instrument Analysis']]) {
+    for (const [path, heading] of [['/ai-analysis', 'Find coins to review'], ['/dashboard', 'Home'], ['/portfolio', 'My Investments'], ['/my-analysis', 'Instrument Analysis']]) {
       openRoute(path)
       expect(await screen.findByRole('heading', { level: 1, name: heading })).toBeTruthy()
       expect(screen.queryByRole('complementary', { name: 'AI Copilot' })).toBeNull()
@@ -84,7 +84,7 @@ describe('InvestAI application shell', () => {
     expect(await screen.findByRole('complementary', { name: 'AI Copilot' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Close AI Copilot' }))
     openRoute('/dashboard')
-    await screen.findByRole('heading', { name: 'Today' })
+    await screen.findByRole('heading', { name: 'Home' })
     openRoute('/market')
     expect(await screen.findByRole('button', { name: 'Toggle AI Copilot' })).toBeTruthy()
     expect(screen.queryByRole('complementary', { name: 'AI Copilot' })).toBeNull()
@@ -189,7 +189,7 @@ describe('InvestAI application shell', () => {
     const app = render(<App />)
     const language = screen.getByRole('combobox', { name: 'Language' })
     fireEvent.change(language, { target: { value: 'ko' } })
-    expect(screen.getByRole('link', { name: '오늘' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: '홈' })).toBeTruthy()
     expect(screen.getByRole('region', { name: '마켓 탐색' })).toBeTruthy()
     expect(screen.getByRole('button', { name: /간편모드/ })).toBeTruthy()
     expect(screen.getByRole('button', { name: /전문가모드/ })).toBeTruthy()
@@ -199,7 +199,7 @@ describe('InvestAI application shell', () => {
 
     render(<App />)
     expect((screen.getByRole('combobox', { name: 'Language' }) as HTMLSelectElement).value).toBe('ko')
-    expect(screen.getByRole('link', { name: '오늘' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: '홈' })).toBeTruthy()
     fireEvent.change(screen.getByRole('combobox', { name: 'Language' }), { target: { value: 'en' } })
     expect(screen.getByRole('region', { name: 'Market Explorer' })).toBeTruthy()
     expect(screen.getByRole('searchbox', { name: 'Search instruments' })).toBeTruthy()
@@ -241,7 +241,7 @@ describe('InvestAI application shell', () => {
     window.history.pushState({}, '', '/dashboard')
     render(<App />)
 
-    expect(await screen.findByRole('heading', { name: 'Today' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Home' })).toBeTruthy()
     expect(screen.queryByRole('heading', { name: 'Smart Market Dashboard' })).toBeNull()
     fireEvent.click(screen.getByText('My watchlists'))
     await screen.findByRole('heading', { name: 'Watchlist 2.0' })
@@ -360,7 +360,7 @@ describe('InvestAI application shell', () => {
     expect(await screen.findByRole('heading', { level: 1, name: /Understand one asset\.\s+Keep a record\./ })).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Guide' })).toBeTruthy()
     fireEvent.click(screen.getByText('Home', { selector: 'footer a' }))
-    expect(await screen.findByRole('heading', { name: 'Today' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Home' })).toBeTruthy()
     expect(screen.getByRole('complementary', { name: 'InvestAI Beta scope' })).toBeTruthy()
   })
 
@@ -590,7 +590,7 @@ describe('InvestAI application shell', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Open BTC/KRW' }))
     expect(await screen.findByTitle('Market: online')).toBeTruthy()
 
-    fireEvent.click(screen.getByRole('link', { name: 'Today' }))
+    fireEvent.click(screen.getByRole('link', { name: 'Home' }))
     expect(await screen.findByTitle('Market: Not configured')).toBeTruthy()
   })
 })

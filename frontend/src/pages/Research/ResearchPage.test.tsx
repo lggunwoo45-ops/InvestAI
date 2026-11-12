@@ -138,7 +138,7 @@ describe('market research workflows', () => {
     fireEvent.click(summary)
     expect(summary.closest('details')?.open).toBe(true)
     const row = screen.getByText('기준 가격·현재 펀딩').closest('tr')!
-    expect(within(row).getByRole('button', { name: '시장 컨디션 →' })).toBeTruthy()
+    expect(within(row).getByRole('button', { name: '시장 현황 →' })).toBeTruthy()
   })
   it('explains missing data without inventing a price trend or letting stale prices be saved', async () => {
     const stale = response(100)
