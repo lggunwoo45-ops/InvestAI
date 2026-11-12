@@ -1,8 +1,10 @@
+import { StockPriceScenarios } from '@/components/price-scenarios/PriceScenarioPanel'
+import { scenarioTitles } from '@/components/price-scenarios/scenarioCopy'
 import { SimpleWorkspace, SimpleTasks } from '@/components/simple/SimpleWorkspace'
 import { CLOUD_RECORDS_CHANGED } from '@/services/cloud/cloudClient'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, Navigate, useSearchParams } from 'react-router-dom'
-import { analysisContextKey, readAnalysisSession, saveAnalysisSession, type AnalysisTab } from '@/services/myAnalysis/analysisSession'
+import { analysisContextKey, parseAnalysisTab, readAnalysisSession, saveAnalysisSession, type AnalysisTab } from '@/services/myAnalysis/analysisSession'
 
 import { CryptoDecisionPanel } from '@/components/crypto-analysis/CryptoDecisionPanel'
 import { researchAssets } from '@/services/research/researchModel'
@@ -123,7 +125,9 @@ function AnalysisWorkspace() {
   const [intent, setIntent] = useState<AnalysisIntent>(draft?.intent ?? (savedPosition ? 'holding' : 'watching'))
   const [note, setNote] = useState(draft?.note ?? '')
   const [averagePrice, setAveragePrice] = useState(draft?.averagePrice ?? (savedPosition ? String(savedPosition.averagePrice) : ''))
-  const [analysisTab, setAnalysisTab] = useState<AnalysisTab>(draft?.tab ?? 'summary')
+  const [fallbackTab] = useState<AnalysisTab>(draft?.tab ?? 'summary')
+  const analysisTab = parseAnalysisTab(params.get('tab')) ?? fallbackTab
+  const setAnalysisTab = (tab: AnalysisTab) => { const next = new URLSearchParams(params); next.set('tab', tab); setParams(next, { replace: true }) }
   const [reviewMode, setReviewMode] = useState<MyAnalysisReviewMode>(savedPosition ? 'position' : 'interest')
   const [knownPositionBasis, setKnownPositionBasis] = useState(positionBasis)
   if (knownPositionBasis !== positionBasis) {
@@ -231,7 +235,7 @@ function AnalysisWorkspace() {
   const choose = (instrument: MarketInstrument) => {
     if (instrument.id !== selectedId) { setAveragePrice(''); setIntent('watching'); setReviewMode('interest') }
     setSelectedId(instrument.id)
-    setParams({ instrumentId: instrument.id }, { replace: true })
+    setParams({ instrumentId: instrument.id, ...(['upside', 'downside'].includes(analysisTab) ? { tab: analysisTab } : {}) }, { replace: true })
   }
   const openMarket = () => {
     if (selected) selectInstrument(selected)
@@ -294,6 +298,7 @@ function AnalysisWorkspace() {
         {matchingResults.length > 30 && <p className={styles.resultNote}>{t.topResults}</p>}
         {!loading && results.length === 0 && <p>{t.noResults}</p>}
       </div>}
+      {!selected && (analysisTab === 'upside' || analysisTab === 'downside') && <p role="status">{scenarioTitles[language][analysisTab]} · {language === 'ko' ? '종목을 검색해 선택하면 해당 가격 시나리오를 보여드립니다.' : 'Search and select an asset to open this price scenario.'}</p>}
       {!normalized && !selected && <div className={styles.emptyState}>
         <div><h2>{loading ? t.loading : t.emptyTitle}</h2>{!loading && <p>{t.emptyCopy}</p>}</div>
         {!loading && <div className={styles.guidance}>{t.emptySteps.map((step, index) => <article key={step}><span>0{index + 1}</span><strong>{step}</strong></article>)}</div>}
@@ -301,12 +306,14 @@ function AnalysisWorkspace() {
       {selectedId && !selected && !loading && <p className={styles.warning} role="alert">{t.unavailable}</p>}
     </section>
 
+  const stockScenarios = selected && !isCrypto && <StockPriceScenarios key={selected.id} instrument={selected} series={technicalData} language={language} expert={displayMode === 'expert'} activeSide={analysisTab === 'downside' ? 'downside' : 'upside'} onSideChange={setAnalysisTab} />
   const simpleView = Boolean(displayMode === 'simple')
   if (simpleView) return <SimpleWorkspace title={selected ? selected.displaySymbol ?? selected.symbol : t.title} description={language === 'ko' ? '지금의 흐름과 다음에 확인할 가격부터 읽어보세요.' : 'Start with the current view and the next price to review.'}>
     {selected ? <details className={styles.searchDisclosure}><summary>{language === 'ko' ? '종목 변경·검색' : 'Change or search instrument'}</summary>{searchPanel}</details> : searchPanel}
     {selected && analysis && <>
       {!isCrypto && sourceNotices}
       {isCrypto && analysis.dataQuality === 'mock' && <p role="status">{analysis.dataQualityLabel} · {language === 'ko' ? '예시 자료로는 실제 매수·매도 판단을 제공하지 않아요.' : 'Example data does not provide a live buy or sell assessment.'}</p>}
+      {stockScenarios}
       {isCrypto ? <CryptoDecisionPanel key={selected.id} instrument={selected} activeTab={analysisTab} onTabChange={setAnalysisTab} daily={technicalData} language={language} averagePrice={validAveragePrice} quantity={savedPosition?.instrumentId === selected.id ? savedPosition.quantity : undefined} positionId={savedPosition?.instrumentId === selected.id ? savedPosition.id : undefined} detailsContent={<>{cryptoReferences}<details className={styles.referenceDetails}><summary>{language === 'ko' ? '이 분석에 질문하기' : 'Ask about this analysis'}</summary><EvidenceAssistant instrument={selected} live={marketDataMode === 'live'} /></details></>} investmentContent={<>{positionNotice}{positionPlan}{personalContext}<Link to="/portfolio">{language === 'ko' ? '내 종목 기록 관리' : 'Manage my holdings'} →</Link></>} holding={intent === 'holding'} onHoldingChange={value => { setIntent(value ? 'holding' : 'watching'); setReviewMode(value ? 'position' : 'interest') }} expert={false} onExpert={() => setDisplayMode('expert')} />
         : <SimpleTasks label={language === 'ko' ? '이 종목에서 확인할 것' : 'Review this asset'} tasks={[
           { id: 'summary', title: language === 'ko' ? '지금 확인할 것' : 'What to check', content: <>{practicalDecision && <PracticalDecisionCard result={recommendation ? { ...practicalDecision, title: recommendation.title, summary: recommendation.summary, reason: recommendation.why, nextCheck: recommendation.nextCheck } : practicalDecision} language={language} />}<p>{analysis.dataQualityLabel} · {analysis.dataQuality === 'mock' ? (language === 'ko' ? '예시 자료로 매수 판단을 제공하지 않아요.' : 'Example data is not a buy recommendation.') : analysis.reviewChecklist[0]}</p></> },
@@ -333,6 +340,7 @@ function AnalysisWorkspace() {
       </section>
       {isCrypto && researchAsset && <nav className={styles.researchJourney} aria-label="분석 이어가기"><div><span>RESEARCH JOURNEY</span><b>{language === 'ko' ? '지금 본 흐름을 더 살펴보세요' : 'Take this analysis further'}</b><small>{language === 'ko' ? '신호 비교는 Binance USDT 선물 자료를 사용합니다.' : 'Signal comparisons use Binance USDT perpetual data.'}</small></div><Link to={`/research?asset=${researchAsset}&mode=setups`}>{language === 'ko' ? '① 신호·과거 사례 비교' : '① Explore signals'}</Link><Link to={`/research?asset=${researchAsset}&mode=alerts`}>{language === 'ko' ? '② 내 조건·이후 결과' : '② Monitor and review'}</Link></nav>}
       {analysis.assetType === 'crypto' && <CryptoDecisionPanel key={selected.id} instrument={selected} activeTab={analysisTab} onTabChange={setAnalysisTab} daily={technicalData} language={language} averagePrice={validAveragePrice} quantity={savedPosition?.instrumentId === selected.id ? savedPosition.quantity : undefined} positionId={savedPosition?.instrumentId === selected.id ? savedPosition.id : undefined} detailsContent={<>{cryptoReferences}<details key={`questions-${selected.id}`} className={styles.referenceDetails}><summary>{language === 'ko' ? '이 분석에 질문하기' : 'Ask about this analysis'}</summary><EvidenceAssistant instrument={selected} live={marketDataMode === 'live'} /></details></>} investmentContent={<>{positionNotice}{positionPlan}{personalContext}<Link to="/portfolio">{language === 'ko' ? '내 코인·저장한 시나리오 관리 →' : 'Manage my coins and saved scenarios →'}</Link></>} holding={intent === 'holding'} onHoldingChange={value => { setIntent(value ? 'holding' : 'watching'); setReviewMode(value ? 'position' : 'interest') }} expert={displayMode === 'expert'} onExpert={() => setDisplayMode('expert')} />}
+      {stockScenarios}
       {analysis.assetType !== 'crypto' && <>{positionNotice}{positionPlan}</>}
       {analysis.assetType !== 'crypto' && <section>
       <MyAnalysisReportSummary recommendation={recommendation} analysis={analysis} language={language} mode={displayMode} symbol={selected.displaySymbol ?? selected.symbol} name={selected.name} reviewMode={reviewMode} basisPrice={validAveragePrice} currentPrice={currentPrice} quoteCurrency={selected.quoteCurrency} disclosureReview={selected.marketId === 'korea-stock' ? dartReview : null} practicalDecision={practicalDecision ?? undefined} reviewRanges={reviewRanges} candidateReviewScore={candidateReviewScore ?? undefined} technicalAnalysis={technicalData.isLoading ? undefined : technicalAnalysis ?? undefined} aiCopilotFinalRead={aiCopilotFinalRead ?? undefined} />
