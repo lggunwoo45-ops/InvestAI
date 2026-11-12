@@ -25,7 +25,7 @@
   .actions { width: auto; margin-left: auto; gap: 2px; flex-wrap: nowrap; }
   .more > summary { min-height: 44px; padding: 12px 5px; font-size: 12px; }
   .navigation { width: 100%; gap: 0; justify-content: stretch; border-top: 1px solid var(--color-border); }
-  .navigation a { flex: 1; min-width: 0; min-height: 44px; display: grid; place-items: center; padding: 8px 2px; font-size: 12px; text-align: center; white-space: nowrap; line-height: 1.4; }
+  .navigation a { flex: 1; min-width: 0; min-height: 44px; display: grid; place-items: center; padding: 8px 2px; font-size: 12px; text-align: center; white-space: normal; overflow-wrap: anywhere; line-height: 1.4; }
   .navigation a[aria-current="page"] { box-shadow: inset 0 -2px var(--color-accent); }
   .menu { right: 12px; top: 52px; max-height: min(70dvh, 560px); }
   .copilot { display: none; }
