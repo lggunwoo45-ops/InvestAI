@@ -1,8 +1,14 @@
-import { BrowserRouter, HashRouter } from 'react-router-dom'
+import { lazy, Suspense } from 'react'
+import { BrowserRouter, HashRouter, Route, Routes } from 'react-router-dom'
 
 import { AppRoutes } from '@/app/AppRoutes'
 import { AppProviders } from '@/app/providers/AppProviders'
 import { CloudBoundary } from '@/components/cloud/CloudBoundary'
+import { LanguageProvider } from '@/i18n/LanguageProvider'
+import { AppErrorBoundary } from '@/components/AppErrorBoundary/AppErrorBoundary'
+import { RouteLoadingFallback } from '@/components/RouteLoadingFallback/RouteLoadingFallback'
+
+const LaunchPreviewPage = lazy(() => import('@/pages/LaunchPreview/LaunchPreviewPage').then(module => ({ default: module.LaunchPreviewPage })))
 
 export function App() {
   const isFileProtocol = window.location.protocol === 'file:'
@@ -11,7 +17,10 @@ export function App() {
 
   return (
     <Router basename={basename}>
-      <CloudBoundary><AppProviders><AppRoutes /></AppProviders></CloudBoundary>
+      <Routes>
+        <Route path="preview" element={<AppErrorBoundary><LanguageProvider><Suspense fallback={<RouteLoadingFallback />}><LaunchPreviewPage /></Suspense></LanguageProvider></AppErrorBoundary>} />
+        <Route path="*" element={<CloudBoundary><AppProviders><AppRoutes /></AppProviders></CloudBoundary>} />
+      </Routes>
     </Router>
   )
 }
