@@ -1,5 +1,5 @@
 import type { MarketInstrument, MarketConnectionStatus } from '@/types/market'
-import type { ChartTimeframe, MarketDetailSnapshot } from '@/types/marketDetail'
+import type { Candle, ChartTimeframe, MarketDetailSnapshot } from '@/types/marketDetail'
 
 export interface ProviderStreamEvent {
   snapshot?: MarketDetailSnapshot
@@ -14,6 +14,7 @@ export interface ProviderStreamEvent {
 export interface RealtimeMarketProvider {
   readonly id: string
   supports(instrument: MarketInstrument): boolean
+  loadDailyHistory?(instrument: MarketInstrument, signal: AbortSignal): Promise<readonly Candle[]>
   loadSnapshot(instrument: MarketInstrument, timeframe: ChartTimeframe, signal?: AbortSignal, priority?: () => number): Promise<MarketDetailSnapshot>
   subscribe(
     instrument: MarketInstrument,

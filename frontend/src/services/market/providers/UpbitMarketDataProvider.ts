@@ -2,6 +2,7 @@ import type { RealtimeMarketProvider } from '@/services/market/contracts/Realtim
 import type { Candle, MarketDetailSnapshot, RecentTrade } from '@/types/marketDetail'
 import { applyTrade, buildOrderbookLevels, fetchJson, mergeCandle, timeframeMilliseconds, updateInstrumentPrice } from './providerUtils'
 import { subscribeUpbitStream } from './upbitStream'
+import { loadCryptoDailyHistory } from './dailyHistory'
 
 interface UpbitCandle {
   timestamp: number
@@ -67,6 +68,7 @@ function mapOrderbook(instrumentId: string, units: readonly UpbitOrderbookUnit[]
 export const upbitMarketDataProvider: RealtimeMarketProvider = {
   id: 'Upbit Korea',
   supports: (instrument) => instrument.marketId === 'upbit',
+  loadDailyHistory: loadCryptoDailyHistory,
 
   async loadSnapshot(instrument, timeframe, signal, priority) {
     const market = instrument.providerSymbol ?? upbitMarketCode(instrument.symbol)

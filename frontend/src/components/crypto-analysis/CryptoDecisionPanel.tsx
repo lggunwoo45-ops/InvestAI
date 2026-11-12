@@ -1,4 +1,5 @@
 import { PriceScenarioPanel } from '@/components/price-scenarios/PriceScenarioPanel'
+import { MajorSupportPanel } from '@/components/price-scenarios/MajorSupportPanel'
 import { scenarioTitles } from '@/components/price-scenarios/scenarioCopy'
 import { buildCryptoPriceScenarios } from '@/services/myAnalysis/priceScenarios'
 import { OpportunityReview } from './OpportunityPlans'
@@ -194,7 +195,7 @@ export function CryptoDecisionPanel({ instrument, daily, language, averagePrice,
     <p>{t.note}</p>
     </div>
     {(['upside', 'downside'] as const).map(side => <div key={side} className={styles.tabPanel} role="tabpanel" id={`${tabId}-${side}-panel`} aria-labelledby={`${tabId}-${side}`} hidden={tab !== side} tabIndex={0}>
-      {tab === side && <PriceScenarioPanel model={scenarios} side={side} language={language} expert={expert} onEvidence={() => setTab('details')} />}
+      {tab === side && (side === 'downside' ? <MajorSupportPanel instrument={instrument} quote={hourly} now={now} language={language} expert={expert} onEvidence={() => setTab('details')} /> : <PriceScenarioPanel model={scenarios} side={side} language={language} expert={expert} onEvidence={() => setTab('details')} />)}
     </div>)}
     <div className={styles.tabPanel} role="tabpanel" id={`${tabId}-investment-panel`} aria-labelledby={`${tabId}-investment`} hidden={tab !== 'investment'} tabIndex={0}>
       <p>{t.investmentHelp}</p>
