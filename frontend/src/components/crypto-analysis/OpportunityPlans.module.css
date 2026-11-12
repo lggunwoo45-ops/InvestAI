@@ -1,7 +1,8 @@
 .panel { display:grid; gap:16px; min-width:0; margin-block:18px; color:var(--color-text); font:14px/1.6 system-ui,sans-serif; }
 .panel h2 { margin:0; font-size:20px; }.panel p { margin:6px 0; color:var(--color-text-muted); overflow-wrap:anywhere; }
-.cost { display:flex; flex-wrap:wrap; align-items:center; gap:10px 20px; padding:12px; border:1px solid var(--color-border); border-radius:10px; background:var(--color-surface-raised); }
-.cost label { display:flex; flex-wrap:wrap; align-items:center; gap:10px; font-weight:600; }.cost input { width:85px; }.cost p { flex:1 1 240px; font-size:12px; }
+.cost { display:flex; flex-wrap:wrap; align-items:flex-start; gap:10px 20px; padding:12px; border:1px solid var(--color-border); border-radius:10px; background:var(--color-surface-raised); }
+.cost label { display:flex; flex-wrap:wrap; align-items:center; gap:10px; font-weight:600; min-width:0; }.cost input { width:85px; }.cost p { font-size:14px; }
+.costHelp { flex:1 1 320px; min-width:0; }.costHelp summary { color:var(--color-accent); font-size:14px; }.cost > [role=alert] { flex-basis:100%; }
 .panel input { min-width:0; min-height:40px; padding:8px; border:1px solid var(--color-border-strong); border-radius:6px; background:var(--color-surface); color:var(--color-text); font:inherit; }
 .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr)); gap:16px; }
 .asset { min-width:0; border:1px solid var(--color-border); border-radius:14px; padding:16px; background:var(--color-surface); }

@@ -48,7 +48,7 @@ function Registration({ source, ready, channel, onSaved }: { source: MonitorSour
     <details open={!simple || !hours || !cost || Number(hours) < 0.01 || Number(hours) > 720 || Number(cost) < 0 || Number(cost) > 10}><summary>방향·기간·비용 설정 · {side === 'long' ? '롱·매수' : '숏'} · {hours || '미입력'}시간 · 비용 {cost || '미입력'}%</summary><div className={styles.form}>
       <label>감시 방향<select value={side} disabled={source.instrument.venue !== 'binance-futures'} onChange={e => setSide(e.target.value as MonitorConfig['side'])}><option value="long">롱·매수</option><option value="short">숏</option></select></label>
       <label>대기·진입 후 각각 최대 시간<input required type="number" step="any" min="0.01" max="720" value={hours} onChange={e => setHours(e.target.value)} /></label>
-      <label>왕복 수수료·슬리피지 가정 (%)<input required type="number" step="any" min="0" max="10" value={cost} onChange={e => setCost(e.target.value)} /></label>
+      <label>매수·매도 총 예상 비용 (%)<input required type="number" step="any" min="0" max="10" value={cost} onChange={e => setCost(e.target.value)} /></label>
     </div></details>
     <p>가격 단위는 {source.instrument.quote}입니다. 검토 가격은 현재가가 아니므로 진입 범위와 목표·손절을 직접 확인하세요. 비용 기본값 0.1%는 수정 가능한 가정이며 펀딩·레버리지는 반영하지 않습니다.</p>
     <label className={styles.check}><input type="checkbox" checked={notify} disabled={!channel} onChange={e => setNotify(e.target.checked)} />이 감시의 변화를 연결된 Telegram으로 보내기{!channel && ' (채널 미설정)'}</label>

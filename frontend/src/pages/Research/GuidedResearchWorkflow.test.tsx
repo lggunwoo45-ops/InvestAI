@@ -41,7 +41,7 @@ describe('guided research tools share real calculations and drafts', () => {
     const result = within(screen.getByRole('article', { name: '조건 1 비용 결과' }))
     expect(result.getByText('6.4 USDT')).toBeTruthy()
     expert()
-    expect(screen.getByText('왕복 수수료 4 + 펀딩 2.4 = 총 6.4 USDT')).toBeTruthy()
+    expect(screen.getByText('매수·매도 수수료 합계 4 + 펀딩 2.4 = 총 6.4 USDT')).toBeTruthy()
     simple()
     expect((screen.getByLabelText('거래 금액 (USDT)') as HTMLInputElement).value).toBe('2000')
     change('조건 1 정산당 펀딩률 (%)', '-0.1')
