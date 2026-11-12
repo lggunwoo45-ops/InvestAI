@@ -55,7 +55,7 @@ export function buildMajorSupport(instrument: MarketInstrument, history: DailyHi
     || !Number.isFinite(history.fetchedAt) || history.fetchedAt > now + 60_000 || now - history.fetchedAt > 1_800_000) return result
   const marketNow = seriesMarketTime(quote, now)
   if (history.candles.some(c => !validHistoryCandle(c)) || new Set(history.candles.map(c => c.timestamp)).size !== history.candles.length) return result
-  const days = history.candles.filter(c => c.timestamp + DAY <= marketNow).toSorted((a, b) => a.timestamp - b.timestamp).slice(-800)
+  const days = history.candles.filter(c => c.timestamp + DAY <= Math.min(marketNow, history.fetchedAt)).toSorted((a, b) => a.timestamp - b.timestamp).slice(-800)
   const weeks = weeklyBars(days), last = days.at(-1)
   Object.assign(result, { status: 'history', days: days.length, weeks: weeks.length, from: days[0]?.timestamp ?? null, asOf: last ? last.timestamp + DAY : null })
   if (days.length < 180 || weeks.length < 24 || !last || marketNow - (last.timestamp + DAY) > DAY * 1.5) return result

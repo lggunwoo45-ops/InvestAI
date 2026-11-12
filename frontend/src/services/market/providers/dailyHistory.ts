@@ -43,5 +43,8 @@ export async function loadCryptoDailyHistory(instrument: MarketInstrument, signa
     result.push(...rows.map(c => ({ timestamp: Number(c[0]), open: Number(c[1]), high: Number(c[2]), low: Number(c[3]), close: Number(c[4]), volume: Number(c[5]) })))
   } else throw new Error('history-unsupported')
   if (result.some(c => !validHistoryCandle(c)) || new Set(result.map(c => c.timestamp)).size !== result.length) throw new Error('history-invalid')
-  return result.sort((a, b) => a.timestamp - b.timestamp)
+  // Always omit the provider's newest daily bar. It can still be forming, and
+  // must not become "complete" later merely because this cached response ages.
+  // This also avoids relying on a browser clock that may differ from the venue.
+  return result.sort((a, b) => a.timestamp - b.timestamp).slice(0, -1)
 }
