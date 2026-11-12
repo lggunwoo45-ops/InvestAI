@@ -1,6 +1,6 @@
 import { useCost, checkText } from './opportunityPresentation'
 import { submitOpportunityBatch } from '@/services/cryptoAnalysis/opportunityTrialCloud'
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { Language } from '@/i18n/translations'
 import type { CryptoDecision } from '@/services/cryptoAnalysis/cryptoDecisionEngine'
@@ -13,16 +13,28 @@ import { SaveScenario } from '@/components/scenarios/SaveScenario'
 import styles from './OpportunityPlans.module.css'
 
 const copy = {
-  ko: { kinds:{pullback:'상승 추세 눌림',breakout:'가격 돌파',rebound:'하락 추세 속 반등'}, states:{ready:'진입 조건 충족',watch:'조건 도달 대기',avoid:'현재 조건 불리',unavailable:'평가 자료 부족'}, title:'장세별 기회 탐색', cost:'왕복 거래 비용 가정 (%)', note:'수수료·슬리피지를 합친 가정값입니다. 실제 비용에 맞게 바꾸세요. 목표 달성 확률이나 검증된 수익률을 뜻하지 않습니다.', expired:'이전 결과는 유효 시간이 지나 현재 후보에서 제외했습니다. 최신 가격으로 다시 검색하세요.' },
-  en: { kinds:{pullback:'Trend pullback',breakout:'Price breakout',rebound:'Countertrend rebound'}, states:{ready:'Entry conditions met',watch:'Waiting for conditions',avoid:'Unfavorable conditions',unavailable:'Insufficient evidence'}, title:'Opportunities by market regime', cost:'Assumed round-trip cost (%)', note:'Assumed fees plus slippage. Adjust to your actual costs. These are not target probabilities or validated returns.', expired:'Expired results are excluded from current candidates. Scan fresh prices.' },
+  ko: { kinds:{pullback:'상승 추세 눌림',breakout:'가격 돌파',rebound:'하락 추세 속 반등'}, states:{ready:'진입 조건 충족',watch:'조건 도달 대기',avoid:'현재 조건 불리',unavailable:'평가 자료 부족'}, title:'장세별 기회 탐색', cost:'매수·매도 총 예상 비용 (%)', note:'한 번 사고팔 때의 수수료와 예상보다 불리하게 체결되는 가격 차이(슬리피지)를 모두 합친 비율입니다.', expired:'이전 결과는 유효 시간이 지나 현재 후보에서 제외했습니다. 최신 가격으로 다시 검색하세요.' },
+  en: { kinds:{pullback:'Trend pullback',breakout:'Price breakout',rebound:'Countertrend rebound'}, states:{ready:'Entry conditions met',watch:'Waiting for conditions',avoid:'Unfavorable conditions',unavailable:'Insufficient evidence'}, title:'Opportunities by market regime', cost:'Total estimated buy/sell cost (%)', note:'The combined fees for buying and selling, plus an allowance for fills at worse prices than expected (slippage).', expired:'Expired results are excluded from current candidates. Scan fresh prices.' },
 } as const
 export function ScanPoolControl({ value, onChange, disabled, language }: { value:ScanPoolMode; onChange:(mode:ScanPoolMode)=>void; disabled:boolean; language:Language }) {
   const ko = language === 'ko'
   return <label>{ko ? '먼저 살펴볼 종목' : 'Scan priority'}<select value={value} disabled={disabled} onChange={e=>onChange(e.target.value as ScanPoolMode)}><option value="liquidity">{ko ? '거래대금 우선' : 'Liquidity first'}</option><option value="strength">{ko ? '상대 강세 우선' : 'Relative strength first'}</option></select></label>
 }
 export function CostControl({ language, value, onChange }: { language:Language; value:string; onChange:(value:string)=>void }) {
+  const id = useId(), ko = language === 'ko'
   const valid = !!value.trim() && validOpportunityCost(Number(value))
-  return <div className={styles.cost}><label>{copy[language].cost}<input type="number" min="0" max="3" step="0.05" value={value} onChange={e=>onChange(e.target.value)} aria-invalid={!valid} /></label><p>{copy[language].note}</p>{!valid && <p role="alert">{language === 'ko' ? '비용은 0~3% 사이로 입력하세요.' : 'Enter a cost from 0 to 3%.'}</p>}</div>
+  return <div className={styles.cost}>
+    <label htmlFor={id}>{copy[language].cost}<input id={id} type="number" min="0" max="3" step="0.05" value={value} onChange={e=>onChange(e.target.value)} aria-invalid={!valid} aria-describedby={`${id}-help`} /></label>
+    <div id={`${id}-help`} className={styles.costHelp}>
+      <p>{copy[language].note}</p>
+      <p>{ko ? '예: 1%를 입력하면 매수 금액 100만 원당 총 1만 원의 비용을 가정합니다. 살 때와 팔 때 각각 1%씩 빼는 것은 아닙니다.' : 'Example: 1% means a total cost of 10 for every 1,000 invested, not 1% for each side.'}</p>
+      <details><summary>{ko ? '분석에 어떻게 반영되나요?' : 'How does this affect the analysis?'}</summary>
+        <p>{ko ? '가격이 5% 오르고 예상 비용이 1%라면 비용 차감 후 변화는 +4%입니다. 가격이 5% 내리면 비용까지 포함해 −6%로 계산합니다. 이 값으로 손익비를 다시 계산하므로, 비용을 높이면 조건을 충족하는 후보가 줄어들 수 있습니다.' : 'A 5% price gain with 1% costs becomes +4% after costs; a 5% loss becomes −6%. This recalculates reward/risk, so higher costs can reduce the number of qualifying candidates.'}</p>
+        <p>{ko ? '거래소의 실제 수수료를 자동으로 불러온 값이 아닙니다. 본인 요율과 예상 체결 차이에 맞게 바꾸세요. 세금·선물 펀딩비·레버리지는 이 계산에 포함하지 않습니다.' : 'This is an editable assumption, not a fee automatically retrieved from your exchange. Adjust it to your rates and expected fills. Taxes, futures funding and leverage are excluded.'}</p>
+      </details>
+    </div>
+    {!valid && <p role="alert">{ko ? '비용은 0~3% 사이로 입력하세요.' : 'Enter a cost from 0 to 3%.'}</p>}
+  </div>
 }
 function PlanCard({ plan, instrument, language, decision, sizing = false }: { plan:OpportunityPlan; instrument:MarketInstrument; language:Language; decision?:CryptoDecision; sizing?:boolean }) {
   const ko = language === 'ko', t = copy[language], price = (v:number) => `${formatAnalysisPrice(v,language)} ${instrument.quoteCurrency}`
@@ -44,7 +56,7 @@ function PlanCard({ plan, instrument, language, decision, sizing = false }: { pl
         <div><dt>{ko ? '목표 기준' : 'Target reference'}</dt><dd>{plan.target ? price(plan.target) : ko ? '저항 근거 없음' : 'No resistance reference'}</dd></div>
       </dl>
       {plan.trigger !== null && <p>{ko ? plan.kind === 'pullback' ? '1시간봉이 위 구간 안에서 전 봉보다 높게 마감하는지 확인합니다.' : `돌파 확인: 1시간봉이 ${price(plan.trigger)} 위에서 상승 마감해야 합니다.` : plan.kind === 'pullback' ? 'Watch for an hourly close inside the zone and above the prior close.' : `Breakout confirmation: an hourly bullish close above ${price(plan.trigger)}.`}</p>}
-      {plan.netRewardRisk !== null && <div className={styles.payoff}><strong>{ko ? '비용 차감 손익비' : 'Reward/risk after costs'} {plan.netRewardRisk.toFixed(2)} : 1</strong><span>{ko ? '목표 도달 시' : 'At target'} {plan.netUpsidePercent!.toFixed(2)}% · {ko ? '손절 가격 체결 시' : 'If filled at stop'} −{plan.plannedLossPercent!.toFixed(2)}%</span><small>{ko ? `${plan.priceBasis === 'current' ? '확인한 현재 가격' : '조건 대기 구간의 상단'} ${price(plan.referencePrice!)} · 왕복 비용 ${plan.costPercent}% 가정` : `${plan.priceBasis === 'current' ? 'Current quote' : 'Upper edge of the conditional entry zone'} ${price(plan.referencePrice!)} · assumed round-trip cost ${plan.costPercent}%`}</small></div>}
+      {plan.netRewardRisk !== null && <div className={styles.payoff}><strong>{ko ? '비용 차감 손익비' : 'Reward/risk after costs'} {plan.netRewardRisk.toFixed(2)} : 1</strong><span>{ko ? '목표 도달 시' : 'At target'} {plan.netUpsidePercent!.toFixed(2)}% · {ko ? '손절 가격 체결 시' : 'If filled at stop'} −{plan.plannedLossPercent!.toFixed(2)}%</span><small>{ko ? `${plan.priceBasis === 'current' ? '확인한 현재 가격' : '조건 대기 구간의 상단'} ${price(plan.referencePrice!)} · 매수·매도 총 예상 비용 ${plan.costPercent}% 가정` : `${plan.priceBasis === 'current' ? 'Current quote' : 'Upper edge of the conditional entry zone'} ${price(plan.referencePrice!)} · estimated total buy/sell cost ${plan.costPercent}%`}</small></div>}
       <details><summary>{ko ? '충족 조건과 계산 근거' : 'Conditions and calculation'}</summary><ul>{plan.checks.map(c=><li key={c.key}>{c.passed ? '✓' : '○'} {checkText(plan,c.key,ko)}</li>)}</ul><p>{ko ? `${plan.targetBasis ? `목표는 ${plan.targetBasis === 'average' ? '상위 시간대 20봉 이동평균' : '확인된 과거 고점'} 기준입니다.` : '목표로 삼을 저항 근거가 없습니다.'} 과열은 1시간 RSI 70 이상, 가격이 20봉 평균보다 2 ATR 초과, 최근 종가에서 1.5 ATR 초과 이탈한 경우입니다. 지지·저항 돌파와 손절 체결은 보장되지 않으며 실제 손실이 계획보다 커질 수 있습니다.` : `${plan.targetBasis ? `The target uses ${plan.targetBasis === 'average' ? 'the higher-timeframe 20-bar average' : 'a previously observed swing high'}.` : 'No overhead target reference is available.'} Heat checks exclude hourly RSI ≥70, prices over SMA20 + 2 ATR, or displacement over 1.5 ATR from the last close. Stops may fill at worse prices; actual losses can exceed the plan.`}</p></details>
       {sizing && ['ready','watch'].includes(plan.status) && <details className={styles.sizing}><summary>{ko ? '손실 예산으로 매수 규모 계산' : 'Size a purchase from a loss budget'}</summary><label>{ko ? '계획 손실 예산' : 'Planned loss budget'} ({instrument.quoteCurrency})<input type="number" min="0" value={budget} onChange={e=>setBudget(e.target.value)} /></label><label>{ko ? '최대 투입 금액' : 'Capital limit'} ({instrument.quoteCurrency})<input type="number" min="0" value={capital} onChange={e=>setCapital(e.target.value)} /></label>{size ? <output><strong>{ko ? '계산 수량' : 'Calculated quantity'} {size.quantity.toLocaleString(language,{maximumSignificantDigits:6})}</strong><span>{ko ? '투입 금액' : 'Notional'} {price(size.notional)} · {ko ? '계획 손실' : 'Planned loss'} {price(size.plannedLoss)}</span></output> : <p>{ko ? '두 금액을 입력하면 비용을 포함해 계산합니다.' : 'Enter both amounts to calculate with costs.'}</p>}<small>{ko ? '레버리지를 사용하지 않는 계산입니다. 급락·체결 지연 시 이 예산보다 더 잃을 수 있습니다.' : 'No leverage is assumed. Gaps and execution delays can exceed this budget.'}</small></details>}
       {saveDecision && <details><summary>{ko ? '이 가격 조건 기록·감시' : 'Record and monitor these price levels'}</summary><p>{ko ? '진입 구간·목표·손절 가격을 기존 시나리오에 저장합니다. 위의 거래량·RSI 등 모든 전략 조건을 자동 감시하는 기능은 아닙니다.' : 'Saves entry, target and stop prices to scenarios. This monitors price levels, not every volume/RSI strategy condition above.'}</p><SaveScenario instrument={instrument} decision={saveDecision} language={language} /></details>}
@@ -62,7 +74,7 @@ function SimplePlanCard({ plan, instrument, language }: { plan: OpportunityPlan;
     {missed.length > 0 && <p><strong>{ko ? '다음 확인' : 'Next check'}</strong> · {checkText(plan, missed[0].key, ko)}{missed.length > 1 && (ko ? ` 외 ${missed.length - 1}개` : ` + ${missed.length - 1} more`)}</p>}
     {plan.kind === 'rebound' && <p className={styles.caution}>{ko ? '큰 흐름은 하락 · 단기 반등 후보입니다.' : 'The broader trend is down; this is a countertrend rebound.'}</p>}
     <dl className={styles.prices}><div><dt>{ko ? '관심 가격 구간' : 'Watch zone'}</dt><dd>{plan.entry ? `${formatAnalysisPrice(plan.entry[0], language)} – ${price(plan.entry[1])}` : '—'}</dd></div><div><dt>{ko ? '손절 기준' : 'Stop reference'}</dt><dd>{plan.stop ? price(plan.stop) : '—'}</dd></div></dl>
-    <details><summary>{ko ? '목표·남은 조건·계산 기준' : 'Target, conditions and assumptions'}</summary><p>{ko ? '목표 기준' : 'Target reference'} {plan.target ? price(plan.target) : '—'} · {ko ? '왕복 비용 가정' : 'Round-trip cost'} {plan.costPercent}%</p><ul>{plan.checks.map(c => <li key={c.key}>{c.passed ? '✓' : '○'} {checkText(plan, c.key, ko)}</li>)}</ul></details>
+    <details><summary>{ko ? '목표·남은 조건·계산 기준' : 'Target, conditions and assumptions'}</summary><p>{ko ? '목표 기준' : 'Target reference'} {plan.target ? price(plan.target) : '—'} · {ko ? '매수·매도 총 예상 비용' : 'Total buy/sell cost'} {plan.costPercent}%</p><ul>{plan.checks.map(c => <li key={c.key}>{c.passed ? '✓' : '○'} {checkText(plan, c.key, ko)}</li>)}</ul></details>
   </article>
 }
 

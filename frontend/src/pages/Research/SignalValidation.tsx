@@ -65,7 +65,7 @@ export function SignalValidation({ history, config, contexts, simple, loading }:
       <label><input type="radio" name="validation-funding" checked={fundingMode === 'assumed'} onChange={() => setFundingMode('assumed')} /><span><b>직접 비용 가정</b><small>하루에 드는 비용을 입력해 비교</small></span></label>
     </div></fieldset>
     {fundingMode === 'settled' ? <p className={styles.basis}>검증을 실행하면 Binance 정산 기록을 불러와요. 받는 펀딩비는 이익에 더하고, 내는 펀딩비는 빼요. 기록이 부족한 사례는 제외하며, 실제 계좌 내역을 조회하는 기능은 아닙니다.</p> : <details open><summary>추가 보유비용 가정</summary><label className={styles.holding}>하루 보유비용 (%)<input type="number" min="0" max="5" step="0.01" value={dailyHolding} onChange={e => { setDailyHolding(e.target.value); setError('') }} /></label><p>실제 펀딩률이 아닌 보유 시간에 비례한 비용 가정이에요. 0이면 추가 비용을 빼지 않아요.</p></details>}
-    <p className={styles.basis}>수수료와 체결 차이는 진입·청산 양쪽에 적용합니다. 위 숫자는 수정 가능한 예시이며, 기존 탐색의 왕복 비용과 중복 차감하지 않아요. 레버리지·강제 청산은 반영하지 않습니다.</p>
+    <p className={styles.basis}>수수료와 체결 차이는 진입·청산 양쪽에 적용합니다. 위 숫자는 수정 가능한 예시이며, 기존 탐색의 매수·매도 총 예상 비용과 중복 차감하지 않아요. 레버리지·강제 청산은 반영하지 않습니다.</p>
     <button className={styles.run} disabled={!available || busy || !validValidationCosts(costs)} onClick={() => void run()}>{busy ? '정산 기록을 불러와 계산 중…' : '이 조건으로 구간 검증하기'}</button>
     {busy && <p role="status">기간에 따라 최대 90초가 걸릴 수 있어요. 조건을 바꾸면 이 조회는 취소됩니다.</p>}
     {!available && <p role="status">가격 기록과 선택한 추가 지표가 준비되면 실행할 수 있어요.</p>}

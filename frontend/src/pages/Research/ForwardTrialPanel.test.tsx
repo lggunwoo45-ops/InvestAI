@@ -15,7 +15,7 @@ it('registers new immutable trials with explicit cost and duration, never histor
   const button = screen.getByRole('button', { name: '조건 고정하고 미래 검증 시작' })
   await waitFor(() => expect((button as HTMLButtonElement).disabled).toBe(false))
   fireEvent.change(screen.getByLabelText('앞으로 관측할 기간'), { target: { value: '7' } })
-  fireEvent.change(screen.getByLabelText('미래 검증의 고정 왕복 비용 (%)'), { target: { value: '.4' } })
+  fireEvent.change(screen.getByLabelText('미래 검증에 적용할 매수·매도 총 예상 비용 (%)'), { target: { value: '.4' } })
   fireEvent.click(button)
   await waitFor(() => expect(registerSignalWatch).toHaveBeenCalledOnce())
   expect(vi.mocked(registerSignalWatch).mock.calls[0][0]).toMatchObject({ asset: 'BTC', purpose: 'validation', notify: false, trialDays: 7, config: { cost: .4 } })
