@@ -195,7 +195,7 @@ export function MarketExplorer({
                   {showQuoteTag && <span className={styles.identityTag}>{instrument.quoteCurrency}</span>}
                 </span>
                 <small title={[instrument.koreanName, instrument.englishName ?? instrument.name].filter(Boolean).join(' · ')}>
-                  {instrument.koreanName ? `${instrument.koreanName} · ${instrument.englishName ?? instrument.name}` : instrument.englishName ?? instrument.name}
+                  {language === 'ko' ? instrument.koreanName ?? instrument.name : instrument.englishName ?? instrument.name}
                 </small>
                 {favoritesOnly && <span className={styles.reviewReason}><ReviewReasonDisplay item={getWatchlistItem(instrument.id) ?? itemFromInstrument(instrument)} current={activeReview?.instrumentId === instrument.id ? activeReview.snapshot : undefined} reasons={reasonsFor(instrument)} language={language} /></span>}
                 {selectedInstrumentId === instrument.id && <em>{text.selected}</em>}

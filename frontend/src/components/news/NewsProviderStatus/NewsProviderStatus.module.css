@@ -1,4 +1,4 @@
-.panel { margin-bottom: 12px; padding: 10px 12px; border: 1px solid var(--color-border); background: var(--color-surface-raised); color: var(--color-text); font-size: 10px; }
+.panel { margin-bottom: 12px; padding: 10px 12px; border: 1px solid var(--color-border); background: var(--color-surface-raised); color: var(--color-text); font-size: 12px; }
 .top { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
 .top > span { color: var(--color-text-muted); font-weight: 600; }
 .top strong { margin-left: auto; color: var(--color-text); font-weight: 600; }
@@ -9,3 +9,6 @@
 .meta { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 7px; color: var(--color-text-muted); }
 .warning { margin: 9px 0 0; padding: 7px 9px; border-left: 2px solid var(--color-warning); color: var(--color-text); background: var(--color-surface-raised); }
 .success { margin: 9px 0 0; padding: 7px 9px; border-left: 2px solid var(--color-border-strong); color: var(--color-text); background: var(--color-surface-raised); }
+
+.panel { border-radius: 12px; padding: 16px; line-height: 1.7; }
+.modes { flex-wrap:wrap; border-radius:8px; overflow:hidden; }.modes button { min-height:40px; }

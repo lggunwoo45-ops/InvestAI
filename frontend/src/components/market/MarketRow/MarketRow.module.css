@@ -7,9 +7,9 @@
 .favorite { padding: 3px; border: 0; color: var(--color-text-muted); background: transparent; cursor: pointer; font-size: 14px; line-height: 1; }
 .favorite:hover, .favoriteActive { color: var(--color-warning); }
 .symbolButton { display: grid; width: 100%; padding: 5px 0; border: 0; background: transparent; cursor: pointer; text-align: left; }
-.symbolButton strong { color: var(--color-text); font: 600 10px/1.2 ui-monospace, monospace; letter-spacing: .01em; }
+.symbolButton strong { color: var(--color-text); font: 600 10px/1.2 var(--font-sans); letter-spacing: .01em; }
 .symbolButton span { max-width: 140px; margin-top: 3px; overflow: hidden; color: var(--color-text-muted); font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
-.price, .change, .volume { font: 500 9px/1.2 ui-monospace, monospace; }
+.price, .change, .volume { font: 500 9px/1.2 var(--font-sans); }
 .price { color: var(--color-text); }
 .positive { color: var(--color-positive); }
 .negative { color: var(--color-danger); }

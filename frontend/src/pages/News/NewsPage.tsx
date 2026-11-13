@@ -1,8 +1,5 @@
-import { SimpleWorkspace } from '@/components/simple/SimpleWorkspace'
-import simpleStyles from '@/components/simple/SimpleWorkspace.module.css'
-import { safeNewsUrl } from '@/utils/safeNewsUrl'
 import { useMemo, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 
 import { Icon } from '@/components/Icon/Icon'
 import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
@@ -40,12 +37,13 @@ export function NewsPage() {
   const { displayMode } = useDisplayMode()
   const text = uiText[language].news
   const ko = language === 'ko'
-  const [simpleLimit, setSimpleLimit] = useState(6)
+  const [visibleLimit, setVisibleLimit] = useState(12)
+  const simple = displayMode === 'simple'
   const liveSubtitle = language === 'ko' ? '실제 발행된 뉴스의 제목·출처·시각을 확인하고 종목 분석으로 이어갑니다.' : 'Read published headlines, sources and dates, then open related instrument analysis.'
   useDocumentTitle(text.title)
   const location = useLocation()
   const routeState = location.state as NewsRouteState | null
-  const { mode: providerMode, setMode: setProviderMode } = useNewsProviderMode()
+  const { mode: providerMode, setMode: setProviderMode, refresh } = useNewsProviderMode()
   const feed = useNewsFeed(providerMode)
   const { selectedInstrument } = useMarketWorkspace()
   // Route-keyed state makes a new explicit news link visible without an effect or stale filters.
@@ -53,8 +51,8 @@ export function NewsPage() {
   const [savedFilters, setSavedFilters] = useState<NewsPageState>(initial)
   const filters = savedFilters.routeKey === location.key ? savedFilters : initial
   const { category, query, market, sentiment, importance, symbolFilter } = filters
-  const updateFilters = (next: Partial<NewsPageState>) => setSavedFilters({ ...filters, ...next })
-  const articles = useMemo(() => filterNews(feed?.articles ?? [], { query, category, market, sentiment, importance, symbol: symbolFilter ? selectedInstrument?.symbol : null }), [feed?.articles, query, category, market, sentiment, importance, selectedInstrument?.symbol, symbolFilter])
+  const updateFilters = (next: Partial<NewsPageState>) => { setSavedFilters({ ...filters, ...next }); setVisibleLimit(12) }
+  const articles = useMemo(() => filterNews(feed?.articles ?? [], { query, category: simple ? 'all' : category, market, sentiment: simple ? 'all' : sentiment, importance: simple ? 'all' : importance, symbol: symbolFilter ? selectedInstrument?.symbol : null }).filter(article => !simple || providerMode === 'mock' || !article.isMock).sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt)), [feed?.articles, query, category, market, sentiment, importance, selectedInstrument?.symbol, symbolFilter, simple, providerMode])
   const insightInstruments = useMemo(() => {
     const ids = new Set(['upbit-btc', 'upbit-eth'])
     for (const article of feed?.articles ?? []) for (const id of Object.values(article.relatedInstrumentIds ?? {})) ids.add(id)
@@ -63,52 +61,53 @@ export function NewsPage() {
   }, [feed?.articles, selectedInstrument])
   const activeFilters: ActiveNewsFilter[] = []
   if (query.trim()) activeFilters.push({ id: 'query', label: text.filterLabels.search, value: query.trim(), onRemove: () => updateFilters({ query: '' }) })
-  if (category !== 'all') activeFilters.push({ id: 'category', label: text.filterLabels.topic, value: text.categories[category], onRemove: () => updateFilters({ category: 'all' }) })
+  if (!simple && category !== 'all') activeFilters.push({ id: 'category', label: text.filterLabels.topic, value: text.categories[category], onRemove: () => updateFilters({ category: 'all' }) })
   if (market !== 'all') activeFilters.push({ id: 'market', label: text.marketFilter, value: market === 'macro' ? text.categories.macro : uiText[language].sessions[market], onRemove: () => updateFilters({ market: 'all' }) })
-  if (sentiment !== 'all') activeFilters.push({ id: 'sentiment', label: text.sentiment, value: text.sentiments[sentiment], onRemove: () => updateFilters({ sentiment: 'all' }) })
-  if (importance !== 'all') activeFilters.push({ id: 'importance', label: text.importance, value: text.importanceLevels[importance], onRemove: () => updateFilters({ importance: 'all' }) })
+  if (!simple && sentiment !== 'all') activeFilters.push({ id: 'sentiment', label: text.sentiment, value: text.sentiments[sentiment], onRemove: () => updateFilters({ sentiment: 'all' }) })
+  if (!simple && importance !== 'all') activeFilters.push({ id: 'importance', label: text.importance, value: text.importanceLevels[importance], onRemove: () => updateFilters({ importance: 'all' }) })
   if (symbolFilter && selectedInstrument) activeFilters.push({ id: 'symbol', label: text.filterLabels.symbol, value: selectedInstrument.symbol, onRemove: () => updateFilters({ symbolFilter: false }) })
   const clearFilters = () => updateFilters({ category: 'all', query: '', market: 'all', sentiment: 'all', importance: 'all', symbolFilter: false })
 
-  if (displayMode === 'simple') {
-    const simpleArticles = filterNews(feed?.articles ?? [], { query, market, category: 'all', sentiment: 'all', importance: 'all', symbol: symbolFilter ? selectedInstrument?.symbol : null }).filter(article => providerMode === 'mock' || !article.isMock)
-    return <SimpleWorkspace title={ko ? '시장을 이해할 뉴스' : 'News to understand the market'} description={ko ? '기사 제목과 출처부터 읽어보세요. 뉴스 한 건으로 매수·매도를 결정하지 않아요.' : 'Start with the headline and source. A headline alone is not a trade signal.'}>
-      <div className={simpleStyles.controls}><label>{ko ? '궁금한 내용' : 'Search news'}<input type="search" value={query} onChange={event => { updateFilters({ query: event.target.value }); setSimpleLimit(6) }} /></label><label>{ko ? '어느 시장인가요?' : 'Which market?'}<select value={market} onChange={event => { updateFilters({ market: event.target.value as NewsMarket | 'all' }); setSimpleLimit(6) }}><option value="all">{text.allMarkets}</option>{markets.map(item => <option key={item} value={item}>{item === 'macro' ? text.categories.macro : uiText[language].sessions[item]}</option>)}</select></label>
-        {selectedInstrument && <button type="button" aria-pressed={symbolFilter} onClick={() => { updateFilters({ symbolFilter: !symbolFilter }); setSimpleLimit(6) }}>{selectedInstrument.symbol} {ko ? '관련만' : 'related only'}</button>}
-      </div>
-      {providerMode === 'mock' && <p role="status">{ko ? '예시 뉴스입니다. 실제 발행 기사와 다릅니다.' : 'Example news, not published articles.'}</p>}
-      <div className={simpleStyles.list}>{simpleArticles.slice(0, simpleLimit).map(article => <article className={simpleStyles.card} key={article.id}><small>{article.source} · {new Date(article.publishedAt).toLocaleString(language)}</small><h2>{safeNewsUrl(article.url) ? <a href={safeNewsUrl(article.url)!} target="_blank" rel="noreferrer">{article.title} ↗</a> : article.title}</h2>{article.summary && <p>{article.summary}</p>}
-        <footer>{Object.entries(article.relatedInstrumentIds ?? {}).slice(0, 3).map(([symbol, id]) => <Link key={id} to={`/my-analysis?instrumentId=${encodeURIComponent(id)}`}>{symbol} {ko ? '분석' : 'analysis'} →</Link>)}</footer>
-      </article>)}</div>
-      {!feed ? <p role="status">{text.loading}</p> : simpleArticles.length === 0 && <p role="status">{text.noResults}</p>}
-      {simpleLimit < simpleArticles.length && <button type="button" onClick={() => setSimpleLimit(value => value + 6)}>{ko ? '뉴스 더 보기' : 'More news'}</button>}
-      <details><summary>{ko ? '뉴스 연결 상태' : 'News connection'}</summary><NewsProviderStatus mode={providerMode} result={feed} onModeChange={setProviderMode} /></details>
-    </SimpleWorkspace>
-  }
+  const hasFeedIssue = Boolean(feed?.error || feed?.sources?.some(source => source.state !== 'ready'))
+  const isDemo = providerMode === 'mock' || feed?.source === 'mock'
+
   return (
-    <div className={styles.page} data-display-mode={displayMode}>
-      <header className={styles.heading}><div><span>MARKET INTELLIGENCE</span><h1>{text.title}</h1><p>{providerMode === 'live' ? liveSubtitle : text.subtitle}</p>{feed?.source === 'mock' && <strong className={styles.demo}>{text.demo}</strong>}{feed?.source === 'rss' && <strong className={styles.demo}>{text.provider.realRss}</strong>}{feed?.source === 'local-proxy' && <strong className={styles.demo}>{text.provider.localProxyRealRss}</strong>}</div><div className={styles.context}><span>{text.relatedMarket}</span><button type="button" disabled={!selectedInstrument} aria-pressed={symbolFilter} onClick={() => updateFilters({ symbolFilter: !symbolFilter })}>{selectedInstrument ? `${selectedInstrument.symbol} ${symbolFilter ? text.on : text.off}` : text.noSymbol}</button></div></header>
-      <NewsProviderStatus mode={providerMode} result={feed} onModeChange={setProviderMode} />
-      <div className={styles.controls}>
-        <div className={styles.search}><span>{text.filterLabels.search}</span><label><Icon name="search" size={14} /><input type="search" value={query} onChange={(event) => updateFilters({ query: event.target.value })} placeholder={text.search} aria-label="Search news" /></label></div>
-        <div className={styles.topics}><span>{text.filterLabels.topic}</span><div role="tablist" aria-label="News categories"><button type="button" role="tab" aria-selected={category === 'all'} onClick={() => updateFilters({ category: 'all' })}>{text.all}</button>{categories.map((item) => <button key={item} type="button" role="tab" aria-selected={category === item} onClick={() => updateFilters({ category: item })}>{text.categories[item]}</button>)}</div></div>
+    <div className={styles.page} data-display-mode={displayMode} data-simple-workspace={simple || undefined}>
+      <header className={styles.heading}>
+        <div><span className={styles.eyebrow}>INVESTAI / NEWS</span><h1>{simple ? (ko ? '시장 뉴스' : 'News to understand the market') : text.title}</h1><p>{ko ? '시장의 변화를 읽고, 관심 종목으로 이어가세요.' : liveSubtitle}</p></div>
+        <button className={styles.refresh} type="button" onClick={refresh}>{ko ? '새로고침' : 'Refresh news'} ↻</button>
+      </header>
+      <section className={styles.toolbar} aria-label={text.filters}>
+        <div className={styles.controls}>
+          <label className={styles.search}><Icon name="search" size={18} /><input type="search" value={query} onChange={event => updateFilters({ query: event.target.value })} placeholder={text.search} aria-label="Search news" /></label>
+          <label className={styles.marketSelect}><span>{text.marketFilter}</span><select aria-label={text.marketFilter} value={market} onChange={event => updateFilters({ market: event.target.value as NewsMarket | 'all' })}>
+            <option value="all">{text.allMarkets}</option>{markets.map(item => <option key={item} value={item}>{item === 'macro' ? text.categories.macro : uiText[language].sessions[item]}</option>)}
+          </select></label>
+          {selectedInstrument && <button className={styles.related} type="button" aria-pressed={symbolFilter} onClick={() => updateFilters({ symbolFilter: !symbolFilter })}>{selectedInstrument.symbol} {symbolFilter ? text.on : text.off}</button>}
+        </div>
+        {!simple && <details className={styles.advanced}>
+          <summary>{ko ? '상세 필터' : 'More filters'}</summary>
+          <div className={styles.topics} role="tablist" aria-label="News categories"><button type="button" role="tab" aria-selected={category === 'all'} onClick={() => updateFilters({ category: 'all' })}>{text.all}</button>{categories.map(item => <button key={item} type="button" role="tab" aria-selected={category === item} onClick={() => updateFilters({ category: item })}>{text.categories[item]}</button>)}</div>
+          <div className={styles.filterRow}>
+            <label>{text.sentiment}<select aria-label={text.sentiment} value={sentiment} onChange={event => updateFilters({ sentiment: event.target.value as NewsSentiment | 'all' })}><option value="all">{text.allSentiments}</option>{sentiments.map(item => <option key={item} value={item}>{text.sentiments[item]}</option>)}</select></label>
+            <label>{text.importance}<select aria-label={text.importance} value={importance} onChange={event => updateFilters({ importance: event.target.value as NewsImportance | 'all' })}><option value="all">{text.allImportance}</option>{importanceLevels.map(item => <option key={item} value={item}>{text.importanceLevels[item]}</option>)}</select></label>
+          </div>
+        </details>}
+        <NewsFilterSummary filters={activeFilters} title={text.activeFilters} clearAllLabel={text.clearAll} removeLabel={text.removeFilter} onClearAll={clearFilters} />
+      </section>
+      {isDemo && <p className={styles.notice} role="status">{text.demo}</p>}
+      {hasFeedIssue && <p className={styles.notice} role="status">{ko ? '일부 뉴스의 연결이 지연되거나 실패했습니다. 아래 수신 상태에서 출처별 시각을 확인하세요.' : 'Some feeds are delayed or unavailable. Check source times in the feed status below.'}</p>}
+      <div className={styles.resultBar}>
+        <h2>{ko ? '최신 기사' : 'Latest stories'} <span aria-live="polite">{articles.length} {text.articles}</span></h2>
+        <span>{ko ? '발행 시각순' : 'Newest first'} · KST</span>
       </div>
-      <div className={styles.filterRow} aria-label={text.filters}>
-        <label>{text.marketFilter}<select aria-label={text.marketFilter} value={market} onChange={(event) => updateFilters({ market: event.target.value as NewsMarket | 'all' })}>
-          <option value="all">{text.allMarkets}</option>{markets.map((item) => <option key={item} value={item}>{item === 'macro' ? text.categories.macro : uiText[language].sessions[item]}</option>)}
-        </select></label>
-        <label>{text.sentiment}<select aria-label={text.sentiment} value={sentiment} onChange={(event) => updateFilters({ sentiment: event.target.value as NewsSentiment | 'all' })}>
-          <option value="all">{text.allSentiments}</option>{sentiments.map((item) => <option key={item} value={item}>{text.sentiments[item]}</option>)}
-        </select></label>
-        <label>{text.importance}<select aria-label={text.importance} value={importance} onChange={(event) => updateFilters({ importance: event.target.value as NewsImportance | 'all' })}>
-          <option value="all">{text.allImportance}</option>{importanceLevels.map((item) => <option key={item} value={item}>{text.importanceLevels[item]}</option>)}
-        </select></label>
-      </div>
-      <NewsFilterSummary filters={activeFilters} title={text.activeFilters} clearAllLabel={text.clearAll} removeLabel={text.removeFilter} onClearAll={clearFilters} />
-      <p className={styles.trust}>{uiText[language].briefing.trust} {uiText[language].briefing.finalDecision}</p>
-      <div className={styles.resultBar} aria-live="polite"><span>{articles.length} {text.articles}</span><strong>{selectedInstrument && symbolFilter ? `${text.filteredFor} ${selectedInstrument.symbol}` : market !== 'all' ? `${text.filteredFor} ${market === 'macro' ? text.categories.macro : uiText[language].sessions[market]}` : text.allCoverage}</strong></div>
-      <div className={styles.grid}>{articles.map((article) => <NewsCard key={article.id} article={article} availableInstruments={insightInstruments} />)}</div>
-      {!feed ? <div className={styles.empty}>{text.loading}</div> : articles.length === 0 && <div className={styles.empty}>{text.noResults}</div>}
+      <div className={styles.grid}>{articles.slice(0, visibleLimit).map(article => <NewsCard key={article.id} article={article} availableInstruments={insightInstruments} simple={simple} />)}</div>
+      {!feed ? <div className={styles.empty} role="status">{ko ? '뉴스를 불러오는 중…' : 'Loading news…'}</div> : articles.length === 0 && <div className={styles.empty} role="status">{text.noResults}</div>}
+      {visibleLimit < articles.length && <button className={styles.more} type="button" onClick={() => setVisibleLimit(value => value + 12)}>{ko ? '뉴스 더 보기' : 'More news'} <span>{Math.min(visibleLimit, articles.length)} / {articles.length}</span></button>}
+      <footer className={styles.pageFooter}>
+        <p>{ko ? '기사 제목과 출처를 제공하며, 원문은 발행사에서 확인할 수 있습니다.' : 'Headlines are attributed to their publishers. Read the full story at the source.'}</p>
+        <details className={styles.feedDetails}><summary>{ko ? '뉴스 출처 · 수신 상태' : 'Sources & feed status'}</summary><NewsProviderStatus mode={providerMode} result={feed} onModeChange={setProviderMode} /></details>
+      </footer>
     </div>
   )
 }
