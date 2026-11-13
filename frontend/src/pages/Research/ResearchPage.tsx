@@ -28,7 +28,7 @@ import { PositionConnections } from './PositionConnections'
 import { ResearchNews } from './ResearchNews'
 import { MonitorWorkspace } from './MonitorWorkspace'
 import { researchModes as modes, type ResearchMode as Mode } from './researchExperience'
-import { SimpleCoinCheck, SimpleMarketSummary, SimpleResearchNav, SimpleToolIntro } from './SimpleResearch'
+import { SimpleCoinCheck, SimpleMarketSummary, SimpleResearchNav } from './SimpleResearch'
 import { ResearchEvidence } from './ResearchEvidence'
 import { SignalExplorer } from './SignalExplorer'
 import { SignalWatchPanel } from './SignalWatchPanel'
@@ -276,10 +276,9 @@ export function ResearchPage() {
     {error && !['setups', 'position'].includes(mode) && <p className={styles.notice} role="alert">{simple ? '지금 시장 자료를 불러오지 못했어요. 새로고침으로 다시 확인해주세요. 저장한 기록과 직접 입력 계산은 계속 사용할 수 있어요.' : error}</p>}
     {delayedMark && !['setups', 'position'].includes(mode) && <p className={styles.notice} role="status">{simple ? '가격 자료가 오래되어 비교와 새 기록 저장을 잠시 멈췄어요. 새로고침 후 다시 확인해주세요.' : '마크가격 관측 시각: ' + time(rawMarkAt) + '. 갱신이 필요해 현재가 채우기와 검토 저장을 제한했습니다.'}</p>}
     {simple ? <SimpleResearchNav mode={mode} onMode={setMode} /> : <ExpertResearchNav mode={mode} onMode={setMode} />}
-    {simple && <SimpleToolIntro mode={mode} onBack={() => setMode('check')} />}
     {simple && ['journal', 'alerts'].includes(mode) && <nav className={styles.recordNav} aria-label="기록과 가격 알림"><button aria-current={mode === 'journal' ? 'page' : undefined} onClick={() => setMode('journal')}>생각 기록</button><button aria-current={mode === 'alerts' ? 'page' : undefined} onClick={() => setMode('alerts')}>가격 알림</button></nav>}
-    {!['guide', 'check'].includes(mode) && <ResearchHelp key={mode} topic={modeGuides[mode]} intro />}
-    {!['guide', 'check', 'setups'].includes(mode) && <ResearchDataStatus snapshot={visible} now={now} loading={loading} error={error} auto={auto} onAuto={() => setAuto(true)} onRefresh={() => setRevision(v => v + 1)} />}
+    {!simple && !['guide', 'check'].includes(mode) && <ResearchHelp key={mode} topic={modeGuides[mode]} intro />}
+    {!simple && !['guide', 'check', 'setups'].includes(mode) && <ResearchDataStatus snapshot={visible} now={now} loading={loading} error={error} auto={auto} onAuto={() => setAuto(true)} onRefresh={() => setRevision(v => v + 1)} />}
     {mode === 'check' && <SimpleCoinCheck asset={asset} onMode={setMode} />}
     {mode === 'overview' && simple && <SimpleMarketSummary asset={asset} price={mark} at={markAt} candles={candles} loading={loading} onMode={setMode} onWatch={openMarket} watchlisted={isWatchlisted('upbit-' + asset.toLowerCase())} canWatch={!!visible} message={message} />}
     {mode === 'overview' && !simple && <><section className={styles.panel}><div className={styles.actions}><h2>{asset} 현재 시장 현황</h2><button onClick={openMarket} disabled={!visible}>{isWatchlisted(`upbit-${asset.toLowerCase()}`) ? '관심종목·분석 이어가기' : '관심종목 등록'}</button><Link to="/market">차트·뉴스로 이동</Link></div><p role="status">{message}</p><div className={styles.metrics}><Metric title="선물 마크가격" value={mark ? `${format(mark, 6)} USDT` : '확인 불가'} detail={`Binance · ${time(markAt)}`} /><Metric title="다음 정산 예상 펀딩률" value={funding === null ? '확인 불가' : percent(funding * 100)} detail={`정산 예정 ${time(field(markData, 'nextFundingTime'))}`} /><Metric title="최근 실현 시간 변동성" value={percent(vol?.hourly)} detail="최근 24개 시간 수익률 기준" /></div><Chart candles={candles} /><h3>현재 관측된 조건</h3><p>{signals.map(s => signalLabels[s]).join(' · ') || '완결된 시간봉이 부족하거나 해당 조건이 없습니다.'}</p><div className={styles.actions}><button onClick={() => setMode('position')}>내 포지션 위험 계산</button><button onClick={() => setMode('journal')}>검토 저장·이전과 비교</button></div></section></>}
@@ -301,7 +300,8 @@ export function ResearchPage() {
     ]} />}
     {mode === 'guide' && (simple ? <section className={styles.panel}><h2>세 단계로 이어서 확인하세요</h2><ol><li><b>시장 보기</b>에서 지금 가격과 최근 변화를 살펴봐요.</li><li><b>내 종목 확인</b>에서 손익·과거 흐름·가격 비교 중 궁금한 내용을 골라요.</li><li><b>기록·알림</b>에서 생각을 남기고 다시 확인할 가격을 정해요.</li></ol><p>{cloudSignedIn() ? '회원 기록은 기기 간 동기화됩니다. 서버 감시로 등록한 조건은 화면을 닫아도 확인합니다.' : '기록은 이 브라우저에 저장돼요. 브라우저 가격 알림은 해당 화면이 열려 있는 동안만 확인합니다.'}</p><button onClick={() => setMode('check')}>내 종목 확인하기</button><p>신호를 직접 조합하거나 상세 지표를 비교하려면 전문가 모드로 전환하세요. 입력한 계산 조건과 기록은 이어서 사용할 수 있어요.</p></section> : <Guide />)}
     </div>
-    {mode === 'guide' && <ResearchGuideLibrary />}
+    {mode === 'guide' && <ResearchGuideLibrary simple={simple} />}
+    {simple && !['guide', 'check'].includes(mode) && <ResearchHelp key={mode} topic={modeGuides[mode]} />}
     <ResearchEvidence snapshot={visible} now={now} onMode={setMode} />
     {simple && mode !== 'alerts' && <details className={styles.evidence}><summary>가격 새로고침 설정</summary><label className={styles.check}><input type="checkbox" checked={auto} onChange={e => setAuto(e.target.checked)} />이 화면을 보는 동안 1분마다 새 자료 확인</label><p>마지막 확인: {time(visible?.fetchedAt)}</p></details>}
     {simple && <div className={styles.simpleLinks}><button onClick={() => setMode("guide")}>사용 방법</button><button onClick={() => setDisplayMode("expert")}>전체 지표를 한 화면에서 보기 →</button></div>}

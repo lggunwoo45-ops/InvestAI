@@ -74,12 +74,17 @@ describe('guided research tools share real calculations and drafts', () => {
   })
   it('preserves nested tool drafts as well as main calculator inputs', async () => {
     await open('position')
+    fireEvent.click(screen.getByRole('button', { name: /공개 지갑 조회/ }))
     change('공개 지갑 주소', '0x1234')
     expert(); expect((screen.getByLabelText('공개 지갑 주소') as HTMLInputElement).value).toBe('0x1234')
     fireEvent.click(screen.getByRole('button', { name: /^시장 살펴보기/ }))
     fireEvent.click(screen.getByRole('button', { name: '시장 지표' }))
     change('ETF 확정 순유입 CSV', '2026-10-20,1000,수동 확인 자료')
-    simple(); expect((screen.getByLabelText('ETF 확정 순유입 CSV') as HTMLTextAreaElement).value).toBe('2026-10-20,1000,수동 확인 자료')
+    simple(); fireEvent.click(screen.getByRole('button', { name: /ETF 수급 기록/ }))
+    expect(screen.queryByLabelText('ETF 확정 순유입 CSV')).toBeNull()
+    change('자료 출처', '아직 저장하지 않은 출처')
+    expert(); expect((screen.getByLabelText('ETF 확정 순유입 CSV') as HTMLTextAreaElement).value).toBe('2026-10-20,1000,수동 확인 자료')
+    simple(); expect((screen.getByLabelText('자료 출처') as HTMLInputElement).value).toBe('아직 저장하지 않은 출처')
   })
   it('takes a newly saved review through explicit monitor registration with its original source', async () => {
     vi.mocked(registerMonitor).mockImplementation(async config => ({ ...empty(), rules: [{ id: 'monitor-test', config, hash: 'test', createdAt: Date.now(), phase: 'waiting', last: null, entered: null, result: null, events: [], issue: null, gaps: 0 }] }))

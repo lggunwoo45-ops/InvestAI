@@ -38,6 +38,7 @@ it('makes mobile market selection a list-to-analysis journey without chart termi
   expect(onSelect).toHaveBeenCalledWith(coin)
   expect(screen.queryByRole('region', { name: 'Assets' })).toBeNull()
   expect(screen.queryByRole('img', { name: /TradingView/ })).toBeNull()
+  fireEvent.click(screen.getByRole('button', { name: 'Quick review' }))
   expect(screen.getByRole('link', { name: /Review my situation/ }).getAttribute('href')).toContain('instrumentId=upbit-btc')
   fireEvent.click(screen.getByRole('button', { name: /Back to assets/ }))
   expect((screen.getByRole('searchbox', { name: 'Asset name' }) as HTMLInputElement).value).toBe('BTC')

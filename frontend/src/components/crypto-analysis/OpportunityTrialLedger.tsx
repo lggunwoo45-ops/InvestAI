@@ -15,12 +15,15 @@ import { opportunityReport, opportunityReportCsv, type ReportMarket, type Report
 import { OpportunityStrategyReport } from './OpportunityStrategyReport'
 import { OpportunityEvidenceChart } from './OpportunityEvidenceChart'
 import styles from './OpportunityTrialLedger.module.css'
+import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
+import { SimpleTrialResults } from './SimpleTrialResults'
 
 export function OpportunityTrialLedger({ embedded = false }: { embedded?: boolean }) {
+  const simple = useDisplayMode().displayMode === 'simple'
   const {language}=useLanguage(),[legacy,setLegacy]=useState(false),cloud=useSyncExternalStore(subscribeCloud,cloudSnapshot),store=useOpportunityTrials(legacy),{marketDataMode}=useMarketWorkspace()
-  return <>{cloud.user&&<div className={styles.controls} aria-label={language==='ko'?'기록 저장 위치':'Record location'}><button type="button" aria-pressed={!legacy} onClick={()=>setLegacy(false)}>{language==='ko'?'계정 서버 기록':'Account server records'}</button><button type="button" aria-pressed={legacy} onClick={()=>setLegacy(true)}>{language==='ko'?'이 기기 이전 기록':'Earlier device records'}</button></div>}<OpportunityTrialLedgerView key={`${store.key}:${marketDataMode}`} store={store} language={language} embedded={embedded} live={store.source==='server'||marketDataMode==='live'} /></>
+  return <>{cloud.user&&<div className={styles.controls} aria-label={language==='ko'?'기록 저장 위치':'Record location'}><button type="button" aria-pressed={!legacy} onClick={()=>setLegacy(false)}>{language==='ko'?'계정 서버 기록':'Account server records'}</button><button type="button" aria-pressed={legacy} onClick={()=>setLegacy(true)}>{language==='ko'?'이 기기 이전 기록':'Earlier device records'}</button></div>}<OpportunityTrialLedgerView key={`${store.key}:${marketDataMode}`} store={store} language={language} embedded={embedded} simple={simple} live={store.source==='server'||marketDataMode==='live'} /></>
 }
-export function OpportunityTrialLedgerView({store,language,live,embedded=false}:{store:OpportunityTrialStore;language:Language;live:boolean;embedded?:boolean}) {
+export function OpportunityTrialLedgerView({store,language,live,embedded=false,simple=false}:{store:OpportunityTrialStore;language:Language;live:boolean;embedded?:boolean;simple?:boolean}) {
   const ko=language==='ko'
   const [kind,setKind]=useState<'all'|OpportunityKind>('all'),[busy,setBusy]=useState(live && !document.hidden),[error,setError]=useState(''),[clock,setClock]=useState(Date.now)
   const [limit,setLimit]=useState(10),controller=useRef<AbortController|null>(null)
@@ -58,6 +61,7 @@ export function OpportunityTrialLedgerView({store,language,live,embedded=false}:
     a.href=url;a.download='investai-opportunity-records.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)
   }
   const empty = !store.error && !error && !store.loading && !store.trials.length
+  if (simple) return <SimpleTrialResults store={store} language={language} now={now} busy={busy} error={error} live={live} onRefresh={() => void refresh()} />
   return <section className={`${styles.ledger} ${embedded ? styles.embedded : ''}`} aria-label={ko?'추천 검증 기록':'Opportunity validation records'}>
     {!empty && <>
     <header><div><span className={styles.eyebrow}>MARKET COPILOT · FORWARD REVIEW</span><h2>{ko?'추천 이후, 실제 가격은 어땠나요?':'What happened after the recommendation?'}</h2><p>{ko?'기록 당시 조건을 고정하고 이후 가격으로 가상 결과를 확인합니다. 과거 결과를 보고 추천 가격을 바꾸지 않습니다.':'Freeze the original conditions and evaluate subsequent prices without changing the plan afterward.'}</p></div><Link to="/ai-analysis">{ko?'새 후보 찾기':'Find new candidates'} →</Link></header>

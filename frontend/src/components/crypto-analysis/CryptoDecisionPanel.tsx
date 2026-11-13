@@ -179,7 +179,7 @@ export function CryptoDecisionPanel({ instrument, daily, language, averagePrice,
         <div><dt>{t.volume}</dt><dd>{volumeSummary}</dd></div>
         <div><dt>{t.rr}</dt><dd>{plan ? `${plan.rewardRisk.toFixed(2)} : 1` : t.noReward}</dd></div>
       </dl></section>
-    <details className={styles.disclosure}><summary>{t.details}</summary>
+    {expert && <><details className={styles.disclosure}><summary>{t.details}</summary>
       <div className={styles.frames}>{decision.frames.map(r => <article key={r.frame} data-trend={r.issue ? 'unavailable' : r.direction}><span>{t.frame[r.frame]}</span><strong>{r.issue ? issue(r.issue) : t.trend[r.direction]}</strong>{!r.issue && <small>RSI {r.rsi?.toFixed(1)} · {t.volume} {r.volumeRatio === null ? '—' : `${r.volumeRatio.toFixed(2)}×`} · ATR {price(r.atr!)}</small>}<small>{t.close}: {r.asOf === null ? '—' : date(r.asOf)} · {r.count} bars</small>{expert && !r.issue && <small>SMA20 {number(r.sma20!)} / SMA50 {number(r.sma50!)}</small>}</article>)}</div>
       {plan && <div className={styles.referencePrices}><p><strong>{t.resistance}</strong>: {range(plan.resistance)}</p>{decision.direction === 'sell' && <p><strong>{t.sellInvalidation}</strong>: {price(plan.sellInvalidation)} · {t.invalidation}</p>}<p>{t.condition}</p></div>}
       {decision.frames.filter(r => r.gap).map(r => <p key={r.frame}>{t.frame[r.frame]} · {t.gapRange}: {date(r.gap!.from)} – {date(r.gap!.to)} ({r.gap!.missing} {language === 'ko' ? '개 봉' : 'bars'})</p>)}
@@ -192,7 +192,9 @@ export function CryptoDecisionPanel({ instrument, daily, language, averagePrice,
     </div>
     <small>{language === 'ko' ? '대형 체결: 표본 금액 상위 25%이면서 중앙값의 1.5배 이상, 3건 이상일 때 금액 비중으로 우세 표시.' : 'Large trades: top quartile and at least 1.5× median notional; bias requires at least three large executions.'}</small>
     </details>
+    </>}
     {detailsContent}
+    {!expert && <div className={styles.simpleActions}><p>{ko ? '시간대별 지표·거래량·차트와 전체 계산 근거는 전문가모드에서 확인할 수 있어요.' : 'Expert mode includes timeframe indicators, volume, charts and full calculation evidence.'}</p>{onExpert && <button type="button" onClick={onExpert}>{ko ? '전문가모드로 자세히 보기' : 'See more in Expert mode'} →</button>}</div>}
     <p>{t.note}</p>
     </div>
     {(['upside', 'downside'] as const).map(side => <div key={side} className={styles.tabPanel} role="tabpanel" id={`${tabId}-${side}-panel`} aria-labelledby={`${tabId}-${side}`} hidden={tab !== side} tabIndex={0}>

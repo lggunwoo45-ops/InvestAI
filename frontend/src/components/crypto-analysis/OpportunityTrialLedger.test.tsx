@@ -1,3 +1,5 @@
+import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
+import { DisplayModeProvider } from '@/app/displayMode/DisplayModeProvider'
 import {fireEvent,render,screen,waitFor,within} from '@testing-library/react'
 import {MemoryRouter} from 'react-router-dom'
 import {afterEach,beforeEach,expect,it,vi} from 'vitest'
@@ -11,9 +13,9 @@ const mode=vi.hoisted(()=>({value:'live'}))
 vi.mock('@/i18n/useLanguage',()=>({useLanguage:()=>({language:'ko'})}))
 vi.mock('@/hooks/useMarketWorkspace',()=>({useMarketWorkspace:()=>({marketDataMode:mode.value})}))
 vi.mock('@/services/cryptoAnalysis/opportunityTrialRefresh',()=>({refreshOpportunityTrials:vi.fn().mockResolvedValue(undefined)}))
-beforeEach(()=>{localStorage.clear();mode.value='live';vi.clearAllMocks();vi.spyOn(document,'hidden','get').mockReturnValue(false)})
+beforeEach(()=>{localStorage.clear();localStorage.setItem('market-copilot.displayMode.v1','expert');mode.value='live';vi.clearAllMocks();vi.spyOn(document,'hidden','get').mockReturnValue(false)})
 afterEach(()=>vi.restoreAllMocks())
-const show=()=>render(<MemoryRouter><OpportunityTrialLedger/></MemoryRouter>)
+const show=()=>render(<MemoryRouter><DisplayModeProvider><OpportunityTrialLedger/></DisplayModeProvider></MemoryRouter>)
 it('keeps first-use results empty and explains how to start without invented successes',async()=>{
   show()
   expect(screen.getByRole('heading',{name:'아직 기록한 후보가 없어요'})).toBeTruthy()
@@ -72,4 +74,25 @@ it('filters list outcomes without inflating aggregate results and keeps the orig
   expect(screen.getByText(/선택한 조건에 맞는 기록이 없습니다/)).toBeTruthy()
   expect(screen.getByRole('button',{name:'현재 조건 CSV'}).hasAttribute('disabled')).toBe(true)
   await waitFor(()=>expect(screen.getByRole('button',{name:'이후 가격 확인'}).hasAttribute('disabled')).toBe(false))
+})
+
+function ViewControls() { const { setDisplayMode } = useDisplayMode(); return <><button onClick={() => setDisplayMode('simple')}>Simple view</button><button onClick={() => setDisplayMode('expert')}>Expert view</button></> }
+it('shows every outcome in simple mode and restores expert filters without refetching or changing records', async () => {
+  const trial = trialFixture(), bar = trialBars(trial)[0], at = trial.startAt + H
+  vi.spyOn(Date, 'now').mockReturnValue(at)
+  const ambiguous = mergeTrialEvidence(trial, [{ ...bar, low: trial.stop, high: trial.target }], at)
+  const missing = { ...trial, id: 'missing', kind: 'breakout' as const, instrument: { ...trial.instrument, id: 'upbit-eth', symbol: 'ETH/KRW' } }
+  const original = JSON.stringify({ version: 1, trials: [ambiguous, missing] })
+  localStorage.setItem(trialStorageKey(), original)
+  render(<MemoryRouter><DisplayModeProvider><OpportunityTrialLedger /><ViewControls /></DisplayModeProvider></MemoryRouter>)
+  fireEvent.change(screen.getByRole('combobox', { name: '검증할 전략' }), { target: { value: 'breakout' } })
+  fireEvent.click(screen.getByText('Simple view'))
+  expect(screen.queryByRole('combobox', { name: '검증할 전략' })).toBeNull()
+  expect(screen.getByText('목표·손절 도달 순서 불명')).toBeTruthy()
+  expect(screen.getByText('자료가 부족해 결과 확인 불가')).toBeTruthy()
+  expect(screen.getAllByRole('link', { name: '이 종목 다시 분석 →' }).map(link => link.getAttribute('href'))).toEqual(expect.arrayContaining(['/my-analysis?instrumentId=' + trial.instrument.id,'/my-analysis?instrumentId=upbit-eth']))
+  fireEvent.click(screen.getByText('Expert view'))
+  expect((screen.getByRole('combobox', { name: '검증할 전략' }) as HTMLSelectElement).value).toBe('breakout')
+  expect(localStorage.getItem(trialStorageKey())).toBe(original)
+  await waitFor(() => expect(refreshOpportunityTrials).toHaveBeenCalledTimes(1))
 })

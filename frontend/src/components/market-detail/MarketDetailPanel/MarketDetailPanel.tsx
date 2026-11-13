@@ -1,3 +1,4 @@
+import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
 import { memo, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 
@@ -30,6 +31,7 @@ interface MarketDetailPanelProps {
 export const MarketDetailPanel = memo(function MarketDetailPanel({ snapshot, connection, previewAt, selectedTimeframe, marketDataMode, onSelectTimeframe, onMarketDataModeChange }: MarketDetailPanelProps) {
   const { instrument, candles } = snapshot
   const { language } = useLanguage()
+  const simple = useDisplayMode().displayMode === 'simple'
   const labels = uiText[language].detail
   const technicalData = useTechnicalLevelData(instrument, '1D', 0)
   const technicalAnalysis = useMemo(() => buildTechnicalLevelAnalysis({
@@ -68,16 +70,16 @@ export const MarketDetailPanel = memo(function MarketDetailPanel({ snapshot, con
         </div>
         <div className={styles.feedControl}>
           <Link className={styles.analysisLink} to={`/my-analysis?instrumentId=${encodeURIComponent(instrument.id)}`}>{language === 'ko' ? '이 종목 분석' : 'Analyze instrument'} →</Link>
-          <DataModeControl value={marketDataMode} onChange={onMarketDataModeChange} />
+          {!simple && <DataModeControl value={marketDataMode} onChange={onMarketDataModeChange} />}
           <ConnectionIndicator connection={connection} />
         </div>
       </header>
-      <dl className={styles.stats}>
+      {!simple && <dl className={styles.stats}>
         <div><dt>{labels.market}</dt><dd>{venueLabel}</dd></div>
         <div><dt>{labels.high}</dt><dd>{valueAsInstrument(sessionStats.high)}</dd></div>
         <div><dt>{labels.low}</dt><dd>{valueAsInstrument(sessionStats.low)}</dd></div>
         <div><dt>{labels.volume}</dt><dd>{formatMarketVolume(instrument.volume24h, instrument.quoteCurrency)}</dd></div>
-      </dl>
+      </dl>}
       <TimeframeToolbar selected={selectedTimeframe} mode={connection.effectiveMode} onSelect={onSelectTimeframe} />
       <div className={styles.chartArea}>
         {previewAt !== undefined && <p className={styles.previewNotice} role="status">{language === 'ko'
@@ -85,7 +87,7 @@ export const MarketDetailPanel = memo(function MarketDetailPanel({ snapshot, con
           : `Saved chart · received ${new Date(previewAt).toLocaleTimeString('en-US')}. Checking latest bars; not yet used for live analysis.`}</p>}
         <CandlestickChart key={instrument.id} candles={candles} instrument={instrument} timeframe={selectedTimeframe} mode={connection.effectiveMode} preview={previewAt !== undefined} technicalAnalysis={technicalAnalysis} technicalLoading={previewAt !== undefined || technicalData.isLoading} />
       </div>
-      {!isStock && researchAsset && <div className={styles.signalEntry}><div><span>MARKET COPILOT SIGNAL STUDIO</span><h3>{language === 'ko' ? '차트에서 본 흐름, 과거에도 있었을까요?' : 'Explore the patterns behind this chart'}</h3><p>{language === 'ko' ? '30개 신호로 조건을 비교하고, 다시 나타날 때 기록하세요. Binance USDT 선물 자료로 전환합니다.' : 'Explore 30 signals and monitor recurring conditions using Binance USDT perpetual data.'}</p></div><Link to={`/research?asset=${researchAsset}&mode=setups`}>{language === 'ko' ? `${researchAsset} 신호 탐색` : 'Explore signals'} →</Link></div>}
+      {!simple && !isStock && researchAsset && <div className={styles.signalEntry}><div><span>MARKET COPILOT SIGNAL STUDIO</span><h3>{language === 'ko' ? '차트에서 본 흐름, 과거에도 있었을까요?' : 'Explore the patterns behind this chart'}</h3><p>{language === 'ko' ? '30개 신호로 조건을 비교하고, 다시 나타날 때 기록하세요. Binance USDT 선물 자료로 전환합니다.' : 'Explore 30 signals and monitor recurring conditions using Binance USDT perpetual data.'}</p></div><Link to={`/research?asset=${researchAsset}&mode=setups`}>{language === 'ko' ? `${researchAsset} 신호 탐색` : 'Explore signals'} →</Link></div>}
       <AdPlacement compact />
     </section>
   )

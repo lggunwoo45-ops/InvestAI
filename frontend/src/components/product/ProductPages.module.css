@@ -53,3 +53,5 @@
 @media(max-width:1000px) { .grid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
 @media(max-width:600px) { .page { gap: 22px; } .grid { grid-template-columns: 1fr; } .start { flex-direction: column; align-items: flex-start; gap: 16px; padding: 20px; } .card { padding: 20px; } .categories { gap: 6px; } .categories button { flex: 1 1 auto; padding: 9px 11px; } }
 @media(max-width:760px) { .quickLinks { grid-template-columns: 1fr; gap: 8px; } .quickLinks a { padding: 14px 16px; } }
+
+.toolPurpose { margin:10px 0; color:var(--color-text-muted); font-size:14px; line-height:1.65; }

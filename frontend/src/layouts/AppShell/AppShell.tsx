@@ -41,9 +41,9 @@ export function AppShell() {
 
   return (
     <div className={classNames(styles.shell, !isSidebarPinned && styles.sidebarUnpinned)} data-display-mode={displayMode} data-explore={isExplore || undefined}>
-      {!compact && <Sidebar />}
+      {!compact && displayMode === 'expert' && <Sidebar />}
       <div className={styles.workspace}>
-        {compact ? <SimpleHeader hideCopilotToggle={focusedAnalysis} copilotOpen={mobileCopilotOpen} onToggleCopilot={() => setMobileCopilotOpen(open => !open)} /> : <Header hideCopilotToggle={focusedAnalysis} copilotOpen={showCopilot} onToggleCopilot={floatingCopilot ? () => setMobileCopilotOpen(open => !open) : undefined} />}
+        {compact || displayMode === 'simple' ? <SimpleHeader hideCopilotToggle={focusedAnalysis} copilotOpen={mobileCopilotOpen} onToggleCopilot={() => setMobileCopilotOpen(open => !open)} /> : <Header hideCopilotToggle={focusedAnalysis} copilotOpen={showCopilot} onToggleCopilot={floatingCopilot ? () => setMobileCopilotOpen(open => !open) : undefined} />}
         <WorkspaceExperience />
         <div ref={bodyRef} style={market ? { '--market-copilot-width': `${effectiveWidth}px` } as CSSProperties : undefined} className={classNames(styles.body, !showCopilot && styles.aiCopilotClosed, market && styles.marketBody, market && showCopilot && (floatingCopilot ? styles.floatingCopilot : styles.dockedCopilot))}>
           <main className={styles.main}>

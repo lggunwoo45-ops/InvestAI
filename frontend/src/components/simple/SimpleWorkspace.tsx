@@ -4,22 +4,25 @@ import { Link } from 'react-router-dom'
 import { useLanguage } from '@/i18n/useLanguage'
 import styles from './SimpleWorkspace.module.css'
 
-export function SimpleWorkspace({ title, description, children, actions, enabled = true, wide = false }: { title: string; description: string; children: ReactNode; actions?: ReactNode; enabled?: boolean; wide?: boolean }) {
+export function SimpleWorkspace({ title, description, children, actions, enabled = true, wide = false, compactHeading = false }: { title: string; description: string; children: ReactNode; actions?: ReactNode; enabled?: boolean; wide?: boolean; compactHeading?: boolean }) {
   const ko = useLanguage().language === 'ko'
-  return <div className={enabled ? `${styles.page} ${wide ? styles.wide : ''}` : undefined} data-simple-workspace={enabled || undefined}>
+  return <div className={enabled ? `${styles.page} ${wide ? styles.wide : ''}` : undefined} data-simple-workspace={enabled || undefined} data-compact-heading={compactHeading || undefined}>
     {enabled && <header className={styles.heading}><div><span className={styles.eyebrow}>{ko ? 'MARKET COPILOT · 쉽게, 하나씩' : 'MARKET COPILOT · ONE STEP AT A TIME'}</span><h1>{title}</h1><p>{description}</p></div></header>}
     {enabled && actions && <nav className={styles.actions}>{actions}</nav>}
     {children}
   </div>
 }
 
-/** One task at a time, keeping mounted forms alive when changing tasks. */
+/** Open tools on demand, then keep their forms alive across task and mode changes. */
 export function SimpleTasks({ label, tasks, all = false, initial }: { label: string; tasks: readonly { id: string; title: string; description?: string; content: ReactNode }[]; all?: boolean; initial?: string }) {
   const [selected, setSelected] = useState(initial ?? tasks[0]?.id)
   const active = tasks.some(task => task.id === selected) ? selected : tasks[0]?.id
+  const [visited, setVisited] = useState<string[]>([])
+  const needed = all ? tasks.map(task => task.id) : active ? [active] : []
+  if (needed.some(id => !visited.includes(id))) setVisited([...new Set([...visited, ...needed])])
   return <section className={styles.tasks} aria-label={label}>
     {!all && <div className={styles.choices} role="group" aria-label={label}>{tasks.map(task => <button key={task.id} type="button" aria-pressed={active === task.id} onClick={() => setSelected(task.id)}><strong>{task.title}</strong>{task.description && <small>{task.description}</small>}</button>)}</div>}
-    {tasks.map(task => <div key={task.id} hidden={!all && task.id !== active} className={styles.taskContent}>{task.content}</div>)}
+    {tasks.filter(task => visited.includes(task.id) || needed.includes(task.id)).map(task => <div key={task.id} hidden={!all && task.id !== active} className={styles.taskContent}>{task.content}</div>)}
   </section>
 }
 
