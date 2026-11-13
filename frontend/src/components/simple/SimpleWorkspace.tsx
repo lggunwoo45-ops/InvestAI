@@ -7,7 +7,7 @@ import styles from './SimpleWorkspace.module.css'
 export function SimpleWorkspace({ title, description, children, actions, enabled = true, wide = false }: { title: string; description: string; children: ReactNode; actions?: ReactNode; enabled?: boolean; wide?: boolean }) {
   const ko = useLanguage().language === 'ko'
   return <div className={enabled ? `${styles.page} ${wide ? styles.wide : ''}` : undefined} data-simple-workspace={enabled || undefined}>
-    {enabled && <header className={styles.heading}><div><span className={styles.eyebrow}>{ko ? 'INVESTAI · 쉽게, 하나씩' : 'INVESTAI · ONE STEP AT A TIME'}</span><h1>{title}</h1><p>{description}</p></div></header>}
+    {enabled && <header className={styles.heading}><div><span className={styles.eyebrow}>{ko ? 'MARKET COPILOT · 쉽게, 하나씩' : 'MARKET COPILOT · ONE STEP AT A TIME'}</span><h1>{title}</h1><p>{description}</p></div></header>}
     {enabled && actions && <nav className={styles.actions}>{actions}</nav>}
     {children}
   </div>

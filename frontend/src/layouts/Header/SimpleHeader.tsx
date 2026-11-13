@@ -30,7 +30,7 @@ export function SimpleHeader({ hideCopilotToggle, copilotOpen, onToggleCopilot }
   }, [])
 
   return <header className={styles.header}>
-    <Link to="/dashboard" className={styles.brand} aria-label={ko ? 'InvestAI 홈' : 'InvestAI home'}>Invest<span>AI</span></Link>
+    <Link to="/dashboard" className={styles.brand} aria-label={ko ? 'Market Copilot 홈' : 'Market Copilot home'}>Market <span>Copilot</span></Link>
     <nav className={styles.navigation} aria-label="Primary navigation">
       {primaryNavigation.map(item => <Link key={item.path} to={item.path} aria-current={navigationSection(location) === item.path ? 'page' : undefined}>{navigationLabel(item, language)}</Link>)}
     </nav>

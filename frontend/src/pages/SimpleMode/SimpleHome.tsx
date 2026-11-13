@@ -33,7 +33,7 @@ export function SimpleHome() {
   const returning = holdings.length > 0 || watchlistItems.length > 0 || scenarios.scenarios.length > 0
   return <div className={styles.page}>
     <section className={styles.hero} aria-label={ko ? '오늘 시작할 일' : 'Start your review'}>
-      <div><span className={styles.eyebrow}>INVESTAI · DAILY REVIEW</span><h1>{ko ? returning ? '내 종목, 달라진 점부터 확인하세요.' : '오늘, 어떤 종목을 살펴볼까요?' : returning ? 'Pick up where you left off.' : 'What would you like to review today?'}</h1><p>{ko ? '살펴볼 후보를 찾거나 보유 종목을 점검하고, 다시 확인할 가격을 정하세요.' : 'Find candidates or review your holdings, then set the prices you want to revisit.'}</p></div>
+      <div><span className={styles.eyebrow}>MARKET COPILOT · DAILY REVIEW</span><h1>{ko ? returning ? '내 종목, 달라진 점부터 확인하세요.' : '오늘, 어떤 종목을 살펴볼까요?' : returning ? 'Pick up where you left off.' : 'What would you like to review today?'}</h1><p>{ko ? '살펴볼 후보를 찾거나 보유 종목을 점검하고, 다시 확인할 가격을 정하세요.' : 'Find candidates or review your holdings, then set the prices you want to revisit.'}</p></div>
       <div className={styles.choices}>
         <a className={styles.choice} href="#find-candidates"><strong>{ko ? '새 종목 찾기 →' : 'Find candidates →'}</strong><span>{ko ? '현재 조건에 맞는 코인부터' : 'Coins that match current conditions'}</span></a>
         <Link className={styles.choice} to="/portfolio"><strong>{ko ? '보유 종목 점검 →' : 'Review holdings →'}</strong><span>{ko ? holdings.length ? `저장한 ${holdings.length}개 보유 종목 이어보기` : '평단가·수량으로 내 손익 확인' : 'Review your cost basis, quantities and risk'}</span></Link>

@@ -2,7 +2,7 @@
 
 ## Observable completion criteria
 
-- Existing InvestAI routes continue to load, with the publisher verification meta tag in the delivered HTML.
+- Existing Market Copilot routes continue to load, with the publisher verification meta tag in the delivered HTML. The `/InvestAI/` path and storage/provider identifiers are compatibility identifiers, as specified in the project README.
 - The account root `https://lggunwoo45-ops.github.io/` serves a real, useful public entry page, and `/ads.txt` serves the matching publisher record as text.
 - AdSense confirms ownership and shows an explicitly observed review status. A deployed meta tag alone is not approval.
 - Ad requests stay off until review, the service privacy/contact disclosures and consent setup are ready. Existing paid-plan previews remain previews.
@@ -13,6 +13,9 @@
 - The production application is at `/InvestAI/`. The account root returned 404, and no `lggunwoo45-ops.github.io` repository was visible through the connected GitHub account at preparation time.
 - Browser screen capture/control timed out. No site was submitted to AdSense in this session.
 - This change adds only the official ownership meta tag to the app. It makes no ad requests, adds no tracking cookies, and does not enable Auto ads.
+- The user subsequently created the public root repository. Its `main` now contains the reviewed page and ownership files at `3602cbc65ff0e0d507308f3ba7b9272c8d958e9d`. Pages activation remains to be verified.
+- The user reconfirmed **Market Copilot** as the public product name. Restore it in app wordmarks, titles, account copy, reports, notifications and mock-news labels; preserve URLs, member/device record keys and provider IDs.
+- A dedicated public support email is not yet supplied. The user does not want their personal Google-account email disclosed. Never derive or publish that email from the AdSense session.
 
 ## Root publication
 

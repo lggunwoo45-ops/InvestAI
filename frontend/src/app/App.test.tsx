@@ -18,7 +18,7 @@ function openRoute(path: string) {
   window.dispatchEvent(new PopStateEvent('popstate'))
 }
 
-describe('InvestAI application shell', () => {
+describe('Market Copilot application shell', () => {
   afterEach(() => {
     vi.useRealTimers()
     vi.restoreAllMocks()
@@ -47,10 +47,13 @@ describe('InvestAI application shell', () => {
     window.history.pushState({}, '', '/dashboard')
     render(<App />)
     await screen.findByRole('heading', { name:'What would you like to review today?' })
+    expect(screen.getByLabelText('Market Copilot').textContent).toBe('Market Copilot')
+    expect(document.title).toContain(' · Market Copilot')
     const nav = screen.getByRole('navigation', {name:'Primary navigation'})
     expect(within(nav).getAllByRole('link').map(link => link.getAttribute('href'))).toEqual(['/dashboard','/market','/my-analysis','/portfolio','/results'])
     fireEvent.click(screen.getByRole('button', { name:/Expert mode/i }))
     await screen.findByRole('heading', {name:'Home'})
+    expect(document.title).toBe('Home · Market Copilot')
     expect(within(nav).getAllByRole('link')).toHaveLength(5)
     fireEvent.click(screen.getByRole('link', { name:'Settings' }))
     expect(await screen.findByRole('heading', { name:'Settings and connections' })).toBeTruthy()
@@ -358,7 +361,7 @@ describe('InvestAI application shell', () => {
     expect(screen.getByRole('link', { name: 'Guide' })).toBeTruthy()
     fireEvent.click(screen.getByText('Home', { selector: 'footer a' }))
     expect(await screen.findByRole('heading', { name: 'Home' })).toBeTruthy()
-    expect(screen.getByRole('complementary', { name: 'InvestAI Beta scope' })).toBeTruthy()
+    expect(screen.getByRole('complementary', { name: 'Market Copilot Beta scope' })).toBeTruthy()
   })
 
   it('opens legacy simple bookmarks on the unified home and preserves a daily route while switching modes', async () => {

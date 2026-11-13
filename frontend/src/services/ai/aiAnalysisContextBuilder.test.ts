@@ -11,7 +11,7 @@ const crypto: MarketInstrument = {
   id: 'upbit-xrp', marketId: 'upbit', symbol: 'XRP/KRW', name: 'XRP', marketType: 'upbit-krw', providerType: 'upbit',
   quoteCurrency: 'KRW', lastPrice: 4_126, change24hPercent: -0.72, volume24h: 68_330_000_000,
 }
-const mockNews: NewsLoadResult = { requestedMode: 'mock', state: 'mock', source: 'mock', providerLabel: 'InvestAI Demo Desk', articles: newsArticles, lastUpdatedAt: null, error: null, fallback: false }
+const mockNews: NewsLoadResult = { requestedMode: 'mock', state: 'mock', source: 'mock', providerLabel: 'Market Copilot Demo Desk', articles: newsArticles, lastUpdatedAt: null, error: null, fallback: false }
 const macroRssArticle: NewsArticle = { id: 'rss-fed-macro', title: 'Federal Reserve issues FOMC statement', summary: 'Official macro policy context.', source: 'Federal Reserve Board', publishedAt: '2026-09-19T00:00:00.000Z', category: 'macro', relatedMarkets: ['macro'], relatedSymbols: [], sentiment: 'unassessed', importance: 'unassessed', isMock: false }
 const localProxyNews: NewsLoadResult = { requestedMode: 'local-proxy', state: 'local-proxy-ready', source: 'local-proxy', providerLabel: 'Federal Reserve Board · Local Proxy', articles: [macroRssArticle], lastUpdatedAt: '2026-09-19T00:00:00.000Z', error: null, fallback: false }
 

@@ -27,7 +27,7 @@ export function Header({ hideCopilotToggle = false, copilotOpen, onToggleCopilot
           <Icon name="panel" size={18} />
         </button>}
         <button className={styles.userMenu} type="button" aria-label="Open user menu" onClick={() => navigate('/settings')}>
-          <span className={styles.avatar}>IA</span>
+          <span className={styles.avatar}>MC</span>
           <span className={styles.userText}><strong>{language === 'ko' ? '계정·설정' : 'Account & settings'}</strong></span>
           <Icon name="chevronDown" size={14} />
         </button>

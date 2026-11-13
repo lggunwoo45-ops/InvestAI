@@ -9,11 +9,11 @@ import { BetaRouteBanner } from './BetaRouteBanner'
 describe('BetaRouteBanner', () => {
   it.each(betaBannerRoutes)('renders on the key route %s', (route) => {
     render(<MemoryRouter initialEntries={[route]}><AppProviders><BetaRouteBanner /></AppProviders></MemoryRouter>)
-    expect(screen.getByRole('complementary', { name: 'InvestAI Beta scope' })).toBeTruthy()
+    expect(screen.getByRole('complementary', { name: 'Market Copilot Beta scope' })).toBeTruthy()
   })
 
   it('stays out of secondary routes', () => {
     render(<MemoryRouter initialEntries={['/settings']}><AppProviders><BetaRouteBanner /></AppProviders></MemoryRouter>)
-    expect(screen.queryByText('InvestAI Beta')).toBeNull()
+    expect(screen.queryByText('Market Copilot Beta')).toBeNull()
   })
 })

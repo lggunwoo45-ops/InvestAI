@@ -35,6 +35,6 @@ it.each([
 it('rejects direct monitor requests before sending any credentials on the public site', async () => {
   vi.spyOn(availability, 'localMonitorAvailable').mockReturnValue(false)
   const fetchMock = vi.fn(); vi.stubGlobal('fetch', fetchMock)
-  await expect(monitor.setupCredentialVault('test-only-password')).rejects.toThrow('PC용 InvestAI')
+  await expect(monitor.setupCredentialVault('test-only-password')).rejects.toThrow('PC용 Market Copilot')
   expect(fetchMock).not.toHaveBeenCalled()
 })

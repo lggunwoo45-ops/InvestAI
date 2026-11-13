@@ -74,7 +74,7 @@ export function NewsPage() {
   return (
     <div className={styles.page} data-display-mode={displayMode} data-simple-workspace={simple || undefined}>
       <header className={styles.heading}>
-        <div><span className={styles.eyebrow}>INVESTAI / NEWS</span><h1>{simple ? (ko ? '시장 뉴스' : 'News to understand the market') : text.title}</h1><p>{ko ? '시장의 변화를 읽고, 관심 종목으로 이어가세요.' : liveSubtitle}</p></div>
+        <div><span className={styles.eyebrow}>MARKET COPILOT / NEWS</span><h1>{simple ? (ko ? '시장 뉴스' : 'News to understand the market') : text.title}</h1><p>{ko ? '시장의 변화를 읽고, 관심 종목으로 이어가세요.' : liveSubtitle}</p></div>
         <button className={styles.refresh} type="button" onClick={refresh}>{ko ? '새로고침' : 'Refresh news'} ↻</button>
       </header>
       <section className={styles.toolbar} aria-label={text.filters}>

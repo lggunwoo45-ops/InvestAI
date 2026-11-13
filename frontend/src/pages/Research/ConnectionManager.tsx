@@ -52,7 +52,7 @@ export function ConnectionManager({ connection: c, disabled, unlocked, channelCo
       <label>새 API 키<input required type="password" autoComplete="off" minLength={16} maxLength={256} value={apiKey} onChange={e => setApiKey(e.target.value)} /></label>
       <label>새 API 비밀 키<input required type="password" autoComplete="off" minLength={16} maxLength={256} value={apiSecret} onChange={e => setApiSecret(e.target.value)} /></label>
       <label className={styles.check}><input required type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} />새 키를 {cloudSignedIn() ? '내 계정의 서버에' : '이 PC에'} 암호화해 보관하고 거래소 조회에 사용하는 데 동의합니다.</label>
-      <small>InvestAI의 키 교체·삭제는 거래소에서 발급한 키 자체를 폐기하지 않습니다. 이전 키가 필요 없으면 거래소에서도 직접 삭제하세요.</small>
+      <small>Market Copilot의 키 교체·삭제는 거래소에서 발급한 키 자체를 폐기하지 않습니다. 이전 키가 필요 없으면 거래소에서도 직접 삭제하세요.</small>
       <div className={styles.manageActions}><button type="submit" disabled={disabled || !unlocked || !consent || changed}>확인 후 키 교체</button><button type="button" disabled={disabled} onClick={() => { clearKeys(); setRotation(null) }}>교체 취소</button></div>
     </form>}
   </section>

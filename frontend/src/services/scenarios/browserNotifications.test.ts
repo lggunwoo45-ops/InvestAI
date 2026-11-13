@@ -17,7 +17,7 @@ describe('opt-in foreground notifications', () => {
   })
   it('requires saved opt-in, permission and a visible document', () => {
     setNotificationPreference(true); notifyScenario('BTC', ['Target reached'], 'one')
-    expect(created).toHaveBeenCalledWith('InvestAI · BTC', { body: 'Target reached', tag: 'one' })
+    expect(created).toHaveBeenCalledWith('Market Copilot · BTC', { body: 'Target reached', tag: 'one' })
     vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden')
     notifyScenario('BTC', ['Changed'], 'two'); expect(created).toHaveBeenCalledTimes(1)
   })
