@@ -81,3 +81,7 @@
 @media(max-width:650px) { .panel { padding:16px; gap:14px; } }
 @container(max-width:400px) { .tabs button,.panel[data-display-mode="simple"] .tabs button { flex-basis:calc(50% - 6px); } }
 @container(max-width:600px) { .prices,.context,.frames { grid-template-columns:1fr; } .prices article { padding:12px; } .prices article > strong { margin:6px 0; } .evidence dl > div { grid-template-columns:1fr; gap:2px; } .frames article { padding:12px; } .verdict { padding:16px; grid-template-columns:1fr; } .verdict > strong { font-size:24px; } }
+.simpleOverview{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:20px;align-items:start;min-width:0}
+.panel[data-display-mode=simple]{padding:clamp(14px,2vw,24px);border-radius:20px;gap:20px}
+@container(max-width:820px){.simpleOverview{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:760px){.panel[data-display-mode=simple]{padding:0}.tabs,.panel[data-display-mode=simple] .tabs{flex-wrap:nowrap;gap:6px;overflow-x:auto;scrollbar-width:thin}.tabs button,.panel[data-display-mode=simple] .tabs button{flex:0 0 auto;white-space:nowrap;padding:9px 12px}.panel[data-display-mode=simple] .tabs button[aria-selected=true]{border-bottom:2px solid var(--color-accent)}}

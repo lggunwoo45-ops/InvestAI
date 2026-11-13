@@ -20,6 +20,7 @@ import styles from './CryptoDecisionPanel.module.css'
 import { AnalysisPreparation } from './AnalysisPreparation'
 import { CryptoExpertOverview } from './CryptoExpertOverview'
 import { SimpleDecisionBrief } from './SimpleDecisionBrief'
+import { SimplePriceOverview } from './SimplePriceOverview'
 
 interface Props { instrument: MarketInstrument; daily: AnalysisSeries; language: Language; averagePrice?: number | null; quantity?: number; expert?: boolean; onExpert?: () => void; holding?: boolean; onHoldingChange?: (holding: boolean) => void; positionId?: string; detailsContent?: ReactNode; investmentContent?: ReactNode; activeTab?: AnalysisTab; onTabChange?: (tab: AnalysisTab) => void }
 const tabs = analysisTabs
@@ -120,7 +121,7 @@ export function CryptoDecisionPanel({ instrument, daily, language, averagePrice,
       <button type="button" aria-pressed={holding} onClick={() => onHoldingChange(true)}>{ko ? '이미 갖고 있어요' : 'Already holding'}</button>
     </div>}
     {(expert || decision.direction === 'unavailable') && <AnalysisPreparation key={`${instrument.id}:${daily.dataQuality === 'mock'}`} decision={decision} series={series} language={language} compactReady onDetails={() => setTab('details')} />}
-    {!expert && decision.direction !== 'unavailable' && <SimpleDecisionBrief key={`brief:${instrument.id}`} instrument={instrument} decision={decision} language={language} holding={holding} positionId={positionId} onDetails={() => setTab('details')} />}
+    {!expert && decision.direction !== 'unavailable' && <div className={styles.simpleOverview}><SimplePriceOverview decision={decision} instrument={instrument} language={language} /><SimpleDecisionBrief key={`brief:${instrument.id}`} instrument={instrument} decision={decision} language={language} holding={holding} positionId={positionId} onDetails={() => setTab('details')} /></div>}
     {!expert && decision.direction !== 'unavailable' && <AnalysisPreparation key={`ready:${instrument.id}`} decision={decision} series={series} language={language} compactReady onDetails={() => setTab('details')} />}
     {expert && decision.direction !== 'unavailable' && !holding && <OpportunityReview key={`opportunities:${instrument.id}`} instrument={instrument} decision={decision} language={language} />}
     {expert && decision.direction !== 'unavailable' && <div className={styles.verdict}>

@@ -42,21 +42,18 @@ describe('InvestAI application shell', () => {
     expect(screen.queryByRole('complementary', { name: 'AI Copilot' })).toBeNull()
   })
 
-  it('keeps five task-based simple navigation links and opens other functions through More', async () => {
+  it('keeps the same five primary destinations in both desktop display modes', async () => {
     window.localStorage.setItem('market-copilot.displayMode.v1', 'simple')
     window.history.pushState({}, '', '/dashboard')
     render(<App />)
     await screen.findByRole('heading', { name:'What would you like to review today?' })
-    expect(screen.queryByRole('complementary', { name:'Application sidebar' })).toBeNull()
-    expect(within(screen.getByRole('navigation', { name:'Primary navigation' })).getAllByRole('link')).toHaveLength(5)
-    fireEvent.keyDown(window, { key:'k', ctrlKey:true })
-    expect(document.activeElement).toBe(screen.getByRole('searchbox', { name:'Global search' }))
-    fireEvent.keyDown(document.activeElement!, { key:'Escape' })
-    expect(screen.getByText('More').closest('details')?.open).toBe(false)
-    fireEvent.click(screen.getByText('More', { selector:'summary' }))
+    const nav = screen.getByRole('navigation', {name:'Primary navigation'})
+    expect(within(nav).getAllByRole('link').map(link => link.getAttribute('href'))).toEqual(['/dashboard','/market','/my-analysis','/portfolio','/results'])
+    fireEvent.click(screen.getByRole('button', { name:/Expert mode/i }))
+    await screen.findByRole('heading', {name:'Home'})
+    expect(within(nav).getAllByRole('link')).toHaveLength(5)
     fireEvent.click(screen.getByRole('link', { name:'Settings' }))
-    expect(await screen.findByRole('heading', { name:'Make it yours' })).toBeTruthy()
-    expect(screen.getByText('More').closest('details')?.open).toBe(false)
+    expect(await screen.findByRole('heading', { name:'Settings and connections' })).toBeTruthy()
   })
 
   it('keeps the AI Copilot close and reopen controls reachable', async () => {
@@ -583,14 +580,16 @@ describe('InvestAI application shell', () => {
     expect(screen.getByRole('complementary', { name: 'AI Copilot' }).textContent).toContain('binance-futures')
   })
 
-  it('clears the Header market status after leaving Market', async () => {
+  it('keeps quote status inside the market rather than showing unrelated global connection badges', async () => {
     window.localStorage.setItem('market-copilot.displayMode.v1', 'expert')
     render(<App />)
     fireEvent.click(screen.getByRole('button', { name: 'MOCK' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Open BTC/KRW' }))
-    expect(await screen.findByTitle('Market: online')).toBeTruthy()
+    expect(await screen.findByRole('img', {name:/BTC\/KRW 1H TradingView candlestick chart in mock mode/i})).toBeTruthy()
+    expect(screen.queryByTitle('Market: online')).toBeNull()
 
     fireEvent.click(screen.getByRole('link', { name: 'Home' }))
-    expect(await screen.findByTitle('Market: Not configured')).toBeTruthy()
+    expect(await screen.findByRole('heading', {name:'Home'})).toBeTruthy()
+    expect(screen.queryByTitle('Market: Not configured')).toBeNull()
   })
 })

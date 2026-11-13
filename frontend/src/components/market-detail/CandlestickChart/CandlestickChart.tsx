@@ -7,6 +7,7 @@ import {
   ColorType,
   createChart,
   HistogramSeries,
+  LineSeries,
   LineStyle,
   type CandlestickData,
   type HistogramData,
@@ -19,13 +20,17 @@ import {
 import { useUserChartLines } from '@/hooks/useUserChartLines'
 import { useCompactLayout } from '@/hooks/useCompactLayout'
 import { useLanguage } from '@/i18n/useLanguage'
-import type { ChartOverlayGroup, ChartOverlayVisibility } from '@/types/chartOverlays'
+import type { ChartOverlayGroup } from '@/types/chartOverlays'
 import type { MarketDataMode, MarketInstrument } from '@/types/market'
 import type { Candle, ChartTimeframe } from '@/types/marketDetail'
 import type { ChartOverlayLine, TechnicalLevelAnalysis } from '@/types/technicalLevels'
 import { ChartAnalysisControls } from '../ChartAnalysisControls/ChartAnalysisControls'
 import { loadChartStructurePanelCollapsed } from '../ChartAnalysisControls/chartStructurePanelPreference'
 import styles from './CandlestickChart.module.css'
+import { useExperience } from '@/app/experience/experienceContext'
+import { movingAverageSeries, movingAveragePeriods } from '@/services/chartOverlays/movingAverageSeries'
+import { readChartPreferences, saveChartPreferences, type ChartPreferences } from '@/services/chartOverlays/chartPreferences'
+import { PremiumChartTools } from '../ChartAnalysisControls/PremiumChartTools'
 
 interface CandlestickChartProps {
   candles: readonly Candle[]
@@ -44,13 +49,6 @@ interface RenderedPriceLine {
   color: string
   style: LineStyle
   width: 1 | 2
-}
-
-const initialVisibility: ChartOverlayVisibility = {
-  supportResistance: true,
-  movingAverage: true,
-  fibonacci: false,
-  user: true,
 }
 
 function overlayGroup(line: ChartOverlayLine): ChartOverlayGroup | null {
@@ -86,6 +84,16 @@ function chartPricePrecision(price: number, quoteCurrency: string) {
 
 export const CandlestickChart = memo(function CandlestickChart({ candles, instrument, timeframe, mode, preview = false, technicalAnalysis, technicalLoading = false }: CandlestickChartProps) {
   const { language } = useLanguage()
+  const experience = useExperience()
+  const preferenceKey = `investai.chart.preferences.v1.${experience.preview ? 'preview' : 'member'}.${instrument.id}.${timeframe}`
+  const [savedPreferences, setSavedPreferences] = useState(() => ({ key: preferenceKey, value: readChartPreferences(preferenceKey) }))
+  if (savedPreferences.key !== preferenceKey) setSavedPreferences({ key: preferenceKey, value: readChartPreferences(preferenceKey) })
+  const preferences = savedPreferences.key === preferenceKey ? savedPreferences.value : readChartPreferences(preferenceKey)
+  const visibility = preferences.visibility
+  const changePreferences = (next: ChartPreferences) => {
+    if (!experience.chartTools) return
+    setSavedPreferences({ key: preferenceKey, value: next }); saveChartPreferences(preferenceKey, next)
+  }
   const compact = useCompactLayout()
   const { displayMode } = useDisplayMode()
   const [height, setHeight] = usePanelSize(`investai.market.panels.${displayMode}.v1.chart-height`, 0, 0, 1200)
@@ -99,37 +107,40 @@ export const CandlestickChart = memo(function CandlestickChart({ candles, instru
   const chartRef = useRef<IChartApi | null>(null)
   const candleSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null)
   const volumeSeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null)
+  const averageSeriesRef = useRef(new Map<number, ISeriesApi<'Line'>>())
   const dataKeyRef = useRef<string | null>(null)
   const previousCandlesRef = useRef<readonly Candle[]>([])
   const activePriceLinesRef = useRef<Map<string, IPriceLine>>(new Map())
   const initialPriceRef = useRef(instrument.lastPrice)
   const [analysisMode, setAnalysisMode] = useState(false)
   const [chartStructurePanelCollapsed, setChartStructurePanelCollapsed] = useState(loadChartStructurePanelCollapsed)
-  const [visibility, setVisibility] = useState<ChartOverlayVisibility>(initialVisibility)
-  const { lines: userLines, addLine, updateLine, deleteLine, setLineVisible } = useUserChartLines(instrument.id)
+  const { lines: userLines, addLine, updateLine, deleteLine, setLineVisible } = useUserChartLines(instrument.id, experience.preview)
   const latest = candles.at(-1)
   const pricePrecision = chartPricePrecision(instrument.lastPrice, instrument.quoteCurrency)
   const priceLabel = useMemo(() => new Intl.NumberFormat('en-US', {
     maximumFractionDigits: pricePrecision,
   }), [pricePrecision])
   const technicalLines = useMemo(() => technicalAnalysis.levelSet.status === 'ready' ? technicalAnalysis.overlayLines : [], [technicalAnalysis])
+  const averageData = useMemo(() => Object.fromEntries(movingAveragePeriods.map(period => [period, !preview ? movingAverageSeries(candles, period, timeframe) : []])), [candles, timeframe, preview])
+  const averageCounts = Object.fromEntries(movingAveragePeriods.map(period => [period, averageData[period].filter(point => point.value !== undefined).length]))
   const availableCounts = useMemo<Record<ChartOverlayGroup, number>>(() => ({
     supportResistance: technicalLines.filter((line) => overlayGroup(line) === 'supportResistance').length,
-    movingAverage: technicalLines.filter((line) => overlayGroup(line) === 'movingAverage').length,
+    movingAverage: movingAveragePeriods.filter(period => averageData[period].filter(point => point.value !== undefined).length > 0).length,
     fibonacci: technicalLines.filter((line) => overlayGroup(line) === 'fibonacci').length,
     user: userLines.length,
-  }), [technicalLines, userLines.length])
+  }), [technicalLines, userLines.length, averageData])
   const renderedPriceLines = useMemo<readonly RenderedPriceLine[]>(() => {
+    if (!experience.chartTools) return []
     const automatic = technicalLines.flatMap((line): readonly RenderedPriceLine[] => {
       const group = overlayGroup(line)
-      if (!group || !visibility[group] || !Number.isFinite(line.price) || line.price <= 0) return []
+      if (group === 'movingAverage' || !group || !visibility[group] || !Number.isFinite(line.price) || line.price <= 0) return []
       return [{ id: `automatic:${line.id}`, label: line.label, price: line.price, color: overlayColor(line), style: overlayStyle(line), width: 1 }]
     })
     const manual = visibility.user ? userLines.flatMap((line): readonly RenderedPriceLine[] => line.visible
       ? [{ id: `user:${line.id}`, label: line.label, price: line.price, color: chartColor('--color-purple', '#7051b3'), style: LineStyle.LargeDashed, width: 2 }]
       : []) : []
     return [...automatic, ...manual]
-  }, [technicalLines, userLines, visibility])
+  }, [technicalLines, userLines, visibility, experience.chartTools])
 
   useEffect(() => {
     const container = containerRef.current
@@ -161,6 +172,8 @@ export const CandlestickChart = memo(function CandlestickChart({ candles, instru
       priceFormat: { type: 'volume' }, priceScaleId: '', lastValueVisible: false, priceLineVisible: false,
     })
     volumeSeries.priceScale().applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } })
+    const averages = averageSeriesRef.current
+    for (const period of movingAveragePeriods) averages.set(period, chart.addSeries(LineSeries, { color: ({ 5: '#9a650d', 20: '#3762bb', 60: '#8d50a0' })[period], lineWidth: 2, title: `MA ${period}`, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false }))
     chartRef.current = chart
     candleSeriesRef.current = candleSeries
     volumeSeriesRef.current = volumeSeries
@@ -181,6 +194,7 @@ export const CandlestickChart = memo(function CandlestickChart({ candles, instru
       volumeSeriesRef.current = null
       dataKeyRef.current = null
       activePriceLines.clear()
+      averages.clear()
     }
   }, [compact, instrument.id, instrument.quoteCurrency, timeframe])
 
@@ -222,6 +236,10 @@ export const CandlestickChart = memo(function CandlestickChart({ candles, instru
   }, [candles, compact, instrument.id, timeframe])
 
   useEffect(() => {
+    for (const period of movingAveragePeriods) averageSeriesRef.current.get(period)?.setData(experience.chartTools && visibility.movingAverage && preferences.averages[period] ? averageData[period].map(point => ({ ...point, time: point.time as UTCTimestamp })) : [])
+  }, [averageData, experience.chartTools, visibility.movingAverage, preferences.averages, compact, instrument.id, timeframe])
+
+  useEffect(() => {
     const series = candleSeriesRef.current
     if (!series) return undefined
     const nextIds = new Set(renderedPriceLines.map((line) => line.id))
@@ -241,7 +259,7 @@ export const CandlestickChart = memo(function CandlestickChart({ candles, instru
   }, [analysisMode, compact, instrument.id, renderedPriceLines, timeframe])
 
   return (
-    <figure style={{ '--chart-height': height ? `min(${Math.max(280, height)}px, max(280px, calc(100dvh - 300px)))` : undefined } as CSSProperties} className={styles.chart} data-chart-structure-panel={chartStructurePanelCollapsed ? 'collapsed' : 'expanded'}>
+    <figure style={{ '--chart-height': height ? `min(${Math.max(280, height)}px, max(280px, calc(100dvh - 300px)))` : undefined } as CSSProperties} className={styles.chart} data-chart-tools={experience.chartTools ? 'enabled' : 'locked'} data-chart-structure-panel={!experience.chartTools || chartStructurePanelCollapsed ? 'collapsed' : 'expanded'}>
       <div className={styles.legend}>
         <span>{instrument.symbol}</span><span>{timeframe}</span>
         <span>O {priceLabel.format(latest?.open ?? 0)}</span><span>H {priceLabel.format(latest?.high ?? 0)}</span>
@@ -257,7 +275,8 @@ export const CandlestickChart = memo(function CandlestickChart({ candles, instru
         <span>{height ? `${actualHeight}px` : language === 'ko' ? '화면에 맞춤' : 'Automatic'}</span>
         <button type="button" onClick={() => setHeight(0)} disabled={!height}>{language === 'ko' ? '자동 높이' : 'Auto height'}</button>
       </div>
-      <ChartAnalysisControls
+      <PremiumChartTools preferences={preferences} change={changePreferences} averageCounts={averageCounts} counts={availableCounts} timeframe={timeframe} />
+      {experience.chartTools && <ChartAnalysisControls
         language={language}
         analysisMode={analysisMode}
         visibility={visibility}
@@ -267,13 +286,13 @@ export const CandlestickChart = memo(function CandlestickChart({ candles, instru
         technicalLoading={technicalLoading}
         currentPrice={latest?.close ?? instrument.lastPrice}
         onToggleAnalysisMode={() => setAnalysisMode((current) => !current)}
-        onToggleGroup={(group) => setVisibility((current) => ({ ...current, [group]: !current[group] }))}
+        onToggleGroup={(group) => changePreferences({ ...preferences, visibility: { ...visibility, [group]: !visibility[group] } })}
         onAddLine={addLine}
         onUpdateLine={updateLine}
         onDeleteLine={deleteLine}
         onSetLineVisible={setLineVisible}
         onPanelStateChange={setChartStructurePanelCollapsed}
-      />
+      />}
     </figure>
   )
 })
