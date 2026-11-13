@@ -12,6 +12,8 @@ import { CandlestickChart } from './CandlestickChart'
 
 const chartMock = vi.hoisted(() => {
   const viewport = { compact: false }
+  const experience = { chartTools: true, preview: false, tier: 'premium', setTier: vi.fn() }
+  const averageSeries = Array.from({length: 3}, () => ({setData: vi.fn()}))
   const setVisibleLogicalRange = vi.fn()
   const createPriceLine = vi.fn((options: unknown) => ({ options, applyOptions: vi.fn() }))
   const removePriceLine = vi.fn()
@@ -20,17 +22,20 @@ const chartMock = vi.hoisted(() => {
   const createChart = vi.fn((_container: unknown, _options: unknown) => {
     let seriesIndex = 0
     return {
-      addSeries: vi.fn(() => seriesIndex++ === 0 ? candleSeries : volumeSeries),
+      addSeries: vi.fn(() => [candleSeries, volumeSeries, ...averageSeries][seriesIndex++]),
       applyOptions: vi.fn(),
       timeScale: vi.fn(() => ({ fitContent: vi.fn(), setVisibleLogicalRange })),
       remove: vi.fn(),
     }
   })
-  return { createChart, createPriceLine, removePriceLine, candleSeries, volumeSeries, viewport, setVisibleLogicalRange }
+  return { experience, averageSeries, createChart, createPriceLine, removePriceLine, candleSeries, volumeSeries, viewport, setVisibleLogicalRange }
 })
 vi.mock('@/hooks/useCompactLayout', () => ({ useCompactLayout: () => chartMock.viewport.compact }))
 
+vi.mock('@/app/experience/experienceContext', () => ({ useExperience: () => chartMock.experience }))
+
 vi.mock('lightweight-charts', () => ({
+  LineSeries: 'LineSeries',
   CandlestickSeries: 'CandlestickSeries',
   HistogramSeries: 'HistogramSeries',
   ColorType: { Solid: 'solid' },
@@ -55,6 +60,31 @@ const candles: readonly Candle[] = Array.from({ length: 60 }, (_, index) => {
 const technicalAnalysis = buildTechnicalLevelAnalysis({ instrument, candles, language: 'en', dataQuality: 'mock' })
 
 describe('CandlestickChart chart overlays', () => {
+  it('hides all overlays for free and ad-free previews, removes them on downgrade without recreating candles, and remembers premium toggles', () => {
+    chartMock.experience.chartTools = false
+    chartMock.experience.preview = true
+    const chart = () => <DisplayModeProvider><LanguageProvider><CandlestickChart candles={[...candles]} instrument={instrument} timeframe="1D" mode="mock" technicalAnalysis={technicalAnalysis} /></LanguageProvider></DisplayModeProvider>
+    const view = render(chart())
+    expect(screen.getByRole('region', { name: 'Premium chart tools' })).toBeTruthy()
+    expect(chartMock.createPriceLine).not.toHaveBeenCalled()
+    expect(chartMock.averageSeries.every(s => s.setData.mock.lastCall?.[0].length === 0)).toBe(true)
+    chartMock.experience.chartTools = true
+    view.rerender(chart())
+    expect(chartMock.createPriceLine).toHaveBeenCalled()
+    expect(chartMock.averageSeries[0].setData.mock.lastCall?.[0].length).toBe(56)
+    fireEvent.click(screen.getByRole('checkbox', { name: '5' }))
+    expect(chartMock.averageSeries[0].setData.mock.lastCall?.[0]).toEqual([])
+    chartMock.experience.chartTools = false
+    view.rerender(chart())
+    expect(chartMock.averageSeries.every(s => s.setData.mock.lastCall?.[0].length === 0)).toBe(true)
+    expect(chartMock.removePriceLine).toHaveBeenCalled()
+    expect(chartMock.createChart).toHaveBeenCalledOnce()
+    chartMock.experience.chartTools = true
+    view.rerender(chart())
+    expect((screen.getByRole('checkbox', { name: '5' }) as HTMLInputElement).checked).toBe(false)
+    expect(chartMock.averageSeries[1].setData.mock.lastCall?.[0].length).toBe(41)
+    expect(localStorage.getItem(USER_CHART_LINE_STORAGE_KEY)).toBeNull()
+  })
   it('leaves vertical touch scrolling to the page and preserves the phone zoom when history refreshes', () => {
     chartMock.viewport.compact = true
     const { rerender } = render(<DisplayModeProvider><LanguageProvider><CandlestickChart candles={[]} instrument={instrument} timeframe="1H" mode="live" technicalAnalysis={technicalAnalysis} /></LanguageProvider></DisplayModeProvider>)
@@ -80,6 +110,9 @@ describe('CandlestickChart chart overlays', () => {
     expect(chartMock.candleSeries.update).toHaveBeenCalledOnce()
   })
   beforeEach(() => {
+    chartMock.experience.chartTools = true
+    chartMock.experience.preview = false
+    chartMock.averageSeries.forEach(series => series.setData.mockClear())
     chartMock.viewport.compact = false
     chartMock.setVisibleLogicalRange.mockClear()
     localStorage.clear()
@@ -114,7 +147,8 @@ describe('CandlestickChart chart overlays', () => {
     const automaticOptions = chartMock.createPriceLine.mock.calls.map(([options]) => options as { id: string; title: string })
     expect(automaticOptions.some((options) => options.id.startsWith('automatic:support-'))).toBe(true)
     expect(automaticOptions.some((options) => options.id.startsWith('automatic:resistance-'))).toBe(true)
-    expect(automaticOptions.some((options) => options.id.startsWith('automatic:moving-average-'))).toBe(true)
+    expect(automaticOptions.some((options) => options.id.startsWith('automatic:moving-average-'))).toBe(false)
+    expect(chartMock.averageSeries[0].setData.mock.lastCall?.[0].length).toBe(56)
     expect(localStorage.getItem(USER_CHART_LINE_STORAGE_KEY)).toBeNull()
 
     chartMock.removePriceLine.mockClear()

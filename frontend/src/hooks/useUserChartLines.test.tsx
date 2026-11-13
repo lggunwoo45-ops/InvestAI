@@ -7,6 +7,19 @@ import { useUserChartLines } from './useUserChartLines'
 describe('useUserChartLines', () => {
   beforeEach(() => localStorage.clear())
 
+  it('keeps preview lines in memory without changing pre-existing member lines', () => {
+    const { result, rerender } = renderHook(({ preview }) => useUserChartLines('btc', preview), { initialProps: { preview: false } })
+    act(() => { result.current.addLine({ label: 'Saved member line', price: 100 }) })
+    const saved = loadUserChartLines('btc')
+    rerender({ preview: true })
+    expect(result.current.lines).toEqual([])
+    act(() => { result.current.addLine({ label: 'Preview only', price: 110 }) })
+    expect(result.current.lines[0]?.label).toBe('Preview only')
+    expect(loadUserChartLines('btc')).toEqual(saved)
+    rerender({ preview: false })
+    expect(result.current.lines).toEqual(saved)
+  })
+
   it('persists add, edit, visibility, and delete operations for one instrument', () => {
     const { result } = renderHook(() => useUserChartLines('btc'))
     let id = ''

@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, HashRouter, Route, Routes } from 'react-router-dom'
 
+import { ExperienceProvider } from '@/app/experience/ExperienceProvider'
 import { AppRoutes } from '@/app/AppRoutes'
 import { AppProviders } from '@/app/providers/AppProviders'
 import { CloudBoundary } from '@/components/cloud/CloudBoundary'
@@ -19,7 +20,7 @@ export function App() {
     <Router basename={basename}>
       <Routes>
         <Route path="preview" element={<AppErrorBoundary><LanguageProvider><Suspense fallback={<RouteLoadingFallback />}><LaunchPreviewPage /></Suspense></LanguageProvider></AppErrorBoundary>} />
-        <Route path="*" element={<CloudBoundary><AppProviders><AppRoutes /></AppProviders></CloudBoundary>} />
+        <Route path="*" element={<CloudBoundary><AppProviders><ExperienceProvider><AppRoutes /></ExperienceProvider></AppProviders></CloudBoundary>} />
       </Routes>
     </Router>
   )

@@ -2,18 +2,18 @@
    without changing page components or the user's stored investment data. */
 :root {
   color-scheme: light;
-  --color-bg: #f4f7fb;
-  --color-sidebar: #0f172a;
+  --color-bg: #f3f7f7;
+  --color-sidebar: #ffffff;
   --color-surface: #ffffff;
-  --color-surface-raised: #f8faff;
-  --color-surface-hover: #eef3fc;
-  --color-border: #e2e8f1;
-  --color-border-strong: #cbd5e4;
-  --color-text: #18243b;
-  --color-text-muted: #52637b;
-  --color-text-subtle: #5f6f86;
-  --color-accent: #315eea;
-  --color-accent-soft: #eaf0ff;
+  --color-surface-raised: #f7faf9;
+  --color-surface-hover: #edf4f1;
+  --color-border: #dfe7e5;
+  --color-border-strong: #c5d6cf;
+  --color-text: #203139;
+  --color-text-muted: #526966;
+  --color-text-subtle: #5f726f;
+  --color-accent: #176c63;
+  --color-accent-soft: #e7f2ee;
   --color-on-accent: #ffffff;
   --color-positive: #087b5e;
   --color-positive-soft: #e5f5ee;
@@ -36,11 +36,11 @@
   --color-text-primary: var(--color-text);
   --color-text-secondary: var(--color-text-muted);
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
-  --nav-surface: #152137;
-  --nav-surface-hover: #20314e;
-  --nav-border: #273650;
-  --nav-text: #f1f5fc;
-  --nav-text-muted: #a6b4cb;
-  --nav-accent: #9bb5ff;
-  --nav-accent-soft: #23385f;
+  --nav-surface: #ffffff;
+  --nav-surface-hover: #f3f7f5;
+  --nav-border: #dfe7e5;
+  --nav-text: #203139;
+  --nav-text-muted: #526966;
+  --nav-accent: #176c63;
+  --nav-accent-soft: #e7f2ee;
 }

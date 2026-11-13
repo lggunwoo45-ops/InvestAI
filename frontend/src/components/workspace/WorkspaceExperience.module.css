@@ -1,0 +1,17 @@
+.workspaceTools { min-width:0; background:var(--color-surface); border-bottom:1px solid var(--color-border); }
+.planPicker { padding:8px 24px; color:var(--color-text-muted); font-size:12px; }
+.planPicker summary { cursor:pointer; display:flex; align-items:center; gap:9px; list-style:none; min-height:28px; flex-wrap:wrap; }
+.planPicker summary > span:last-child { margin-left:auto; text-decoration:underline; text-underline-offset:3px; }
+.badge { color:var(--color-accent); background:var(--color-accent-soft); padding:4px 7px; border-radius:5px; font-size:10px; letter-spacing:.08em; font-weight:700; }
+.planBody { display:flex; gap:10px 18px; align-items:center; flex-wrap:wrap; padding:10px 0 4px; }
+.planBody > div { display:flex; gap:6px; flex-wrap:wrap; }
+.planBody button { padding:8px 11px; border-radius:8px; border:1px solid var(--color-border); background:var(--color-surface); color:var(--color-text); cursor:pointer; font:inherit; }
+.planBody button[aria-pressed=true] { color:white; background:var(--color-accent); border-color:var(--color-accent); }
+.planBody p { flex:1 1 280px; margin:0; line-height:1.6; }
+.sections { padding:0 24px; display:flex; gap:6px; flex-wrap:wrap; }
+.sections a { padding:10px 13px; font-size:13px; color:var(--color-text-muted); text-decoration:none; border-bottom:2px solid transparent; }
+.sections a[aria-current=page] { color:var(--color-accent); border-color:var(--color-accent); font-weight:700; }
+.ad { margin:28px auto; max-width:1060px; padding:22px 26px; border:1px dashed var(--color-border-strong); border-radius:16px; background:var(--color-surface-raised); display:grid; gap:8px; color:var(--color-text-muted); }
+.ad > span { font-size:10px; letter-spacing:.08em; }.ad strong { color:var(--color-text); font-size:15px; }.ad p { margin:0; font-size:12px; line-height:1.6; }
+.compactAd { margin:24px 16px; }
+@media(max-width:760px) { .planPicker { padding:6px 12px; }.sections { padding:0 6px; gap:0; }.sections a { padding:10px; font-size:12px; }.planBody button { min-height:40px; }.ad { margin:22px 12px; padding:18px; } }

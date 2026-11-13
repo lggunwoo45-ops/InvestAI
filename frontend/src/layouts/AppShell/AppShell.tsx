@@ -15,6 +15,7 @@ import { Sidebar } from '../Sidebar/Sidebar'
 import styles from './AppShell.module.css'
 import { useCompactLayout } from '@/hooks/useCompactLayout'
 import { MemberAccount } from '@/components/cloud/MemberAccount'
+import { WorkspaceExperience, AdPlacement } from '@/components/workspace/WorkspaceExperience'
 
 export function AppShell() {
   const { isAiCopilotOpen, isSidebarPinned } = useUiStore()
@@ -40,14 +41,16 @@ export function AppShell() {
 
   return (
     <div className={classNames(styles.shell, !isSidebarPinned && styles.sidebarUnpinned)} data-display-mode={displayMode} data-explore={isExplore || undefined}>
-      {displayMode === 'expert' && !compact && <Sidebar />}
+      {!compact && <Sidebar />}
       <div className={styles.workspace}>
-        {displayMode === 'simple' || compact ? <SimpleHeader hideCopilotToggle={focusedAnalysis} copilotOpen={mobileCopilotOpen} onToggleCopilot={() => setMobileCopilotOpen(open => !open)} /> : <Header hideCopilotToggle={focusedAnalysis} copilotOpen={showCopilot} onToggleCopilot={floatingCopilot ? () => setMobileCopilotOpen(open => !open) : undefined} />}
+        {compact ? <SimpleHeader hideCopilotToggle={focusedAnalysis} copilotOpen={mobileCopilotOpen} onToggleCopilot={() => setMobileCopilotOpen(open => !open)} /> : <Header hideCopilotToggle={focusedAnalysis} copilotOpen={showCopilot} onToggleCopilot={floatingCopilot ? () => setMobileCopilotOpen(open => !open) : undefined} />}
+        <WorkspaceExperience />
         <div ref={bodyRef} style={market ? { '--market-copilot-width': `${effectiveWidth}px` } as CSSProperties : undefined} className={classNames(styles.body, !showCopilot && styles.aiCopilotClosed, market && styles.marketBody, market && showCopilot && (floatingCopilot ? styles.floatingCopilot : styles.dockedCopilot))}>
           <main className={styles.main}>
             <BetaRouteBanner />
             <MemberAccount compact={displayMode === 'simple'} />
             <Outlet />
+            {['/dashboard', '/my-analysis', '/news', '/tools'].includes(pathname.replace(/\/$/, '')) && <AdPlacement />}
           </main>
           {market && showCopilot && !compact && <div className={styles.copilotDivider}><ResizeHandle label={ko ? '보조 창 너비 조절' : 'Resize copilot'} value={effectiveWidth} min={280} max={Math.min(480, size.width || 480)} reverse onChange={setCopilotWidth} onReset={() => setCopilotWidth(340)} /></div>}
           {showCopilot && <AiCopilot onClose={floatingCopilot ? () => setMobileCopilotOpen(false) : undefined} />}

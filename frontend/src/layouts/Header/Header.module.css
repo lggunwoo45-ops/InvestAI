@@ -24,3 +24,4 @@
   .header .actions [role='group'] { flex: 1; width: auto; min-width: 0; }
   .header .clock, .header .userMenu { display: none; }
 }
+.header{min-height:64px}.userText{min-width:72px}.userText strong{font-size:12px}.languageSelect{border-radius:7px;padding:8px 6px;font-size:12px;max-width:90px}

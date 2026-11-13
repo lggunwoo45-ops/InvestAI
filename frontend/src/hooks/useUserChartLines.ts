@@ -3,15 +3,16 @@ import { useCallback, useMemo, useState } from 'react'
 import { createUserChartLine, loadUserChartLines, saveUserChartLines } from '@/services/chartOverlays/userChartLineStorage'
 import type { UserChartLine, UserChartLineInput } from '@/types/chartOverlays'
 
-export function useUserChartLines(instrumentId: string) {
-  const storedLines = useMemo(() => loadUserChartLines(instrumentId), [instrumentId])
+export function useUserChartLines(instrumentId: string, ephemeral = false) {
+  const key = `${ephemeral ? 'preview' : 'account'}:${instrumentId}`
+  const storedLines = useMemo(() => ephemeral ? [] : loadUserChartLines(instrumentId), [instrumentId, ephemeral])
   const [sessionLines, setSessionLines] = useState<Readonly<Record<string, readonly UserChartLine[]>>>({})
-  const lines = sessionLines[instrumentId] ?? storedLines
+  const lines = sessionLines[key] ?? storedLines
 
   const commit = useCallback((next: readonly UserChartLine[]) => {
-    setSessionLines((current) => ({ ...current, [instrumentId]: next }))
-    saveUserChartLines(instrumentId, next)
-  }, [instrumentId])
+    setSessionLines((current) => ({ ...current, [key]: next }))
+    if (!ephemeral) saveUserChartLines(instrumentId, next)
+  }, [instrumentId, key, ephemeral])
 
   const addLine = useCallback((input: UserChartLineInput) => {
     const line = createUserChartLine(instrumentId, input)

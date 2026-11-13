@@ -7,9 +7,9 @@ describe('navigation context', () => {
     ['/ai-analysis', '', '#daily-records', '/ai-analysis'],
     ['/ai-analysis', '', '#ai-usage-plans-title', '/plans'],
     ['/research/', '?mode=journal&asset=ETH', '', '/results'],
-    ['/research', '?mode=alerts&asset=ETH', '', '/review-alerts'],
-    ['/research', '?mode=position&asset=ETH', '', '/tools'],
-    ['/my-analysis', '?instrumentId=upbit-btc', '', '/tools'],
+    ['/research', '?mode=alerts&asset=ETH', '', '/results'],
+    ['/research', '?mode=position&asset=ETH', '', '/my-analysis'],
+    ['/my-analysis', '?instrumentId=upbit-btc', '', '/my-analysis'],
     ['/discover', '', '', '/ai-analysis'],
     ['/not-a-route', '', '', '/not-a-route'],
   ])('places %s %s %s in one product destination', (pathname, search, hash, section) => {
