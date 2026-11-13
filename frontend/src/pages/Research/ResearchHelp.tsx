@@ -20,8 +20,8 @@ export function ResearchHelp({ topic, intro = false }: { topic: ResearchGuideId;
   </div>
 }
 
-export function ResearchGuideLibrary() {
+export function ResearchGuideLibrary({ simple = false }: { simple?: boolean }) {
   const [query, setQuery] = useState('')
   const matches = (Object.keys(researchGuides) as ResearchGuideId[]).filter(key => key !== 'guide' && Object.values(researchGuides[key]).join(' ').toLowerCase().includes(query.trim().toLowerCase()))
-  return <section className={styles.library} aria-label="기능별 설명서"><h2>궁금한 기능부터 찾아보세요</h2><p>기능의 목적, 해석 예시, 계산 범위와 자료가 없을 때 할 일을 모았습니다.</p><label>기능·용어 찾기<input type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder="예: 펀딩, 미결제약정, 알림" /></label><div className={styles.libraryGrid}>{matches.map(key => <article key={key}><h3>{researchGuides[key].title}</h3><ResearchHelp topic={key} intro /></article>)}</div>{!matches.length && <p>검색어와 맞는 설명이 없습니다. 다른 용어로 찾아보세요.</p>}</section>
+  return <section className={styles.library} aria-label="기능별 설명서"><h2>궁금한 기능부터 찾아보세요</h2><p>기능의 목적, 해석 예시, 계산 범위와 자료가 없을 때 할 일을 모았습니다.</p><label>기능·용어 찾기<input type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder="예: 펀딩, 미결제약정, 알림" /></label><div className={styles.libraryGrid}>{(simple && !query.trim() ? matches.filter(key => ['overview', 'position', 'alerts'].includes(key)) : matches).map(key => <article key={key}><h3>{researchGuides[key].title}</h3><ResearchHelp topic={key} intro /></article>)}</div>{!matches.length && <p>검색어와 맞는 설명이 없습니다. 다른 용어로 찾아보세요.</p>}</section>
 }

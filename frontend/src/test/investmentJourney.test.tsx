@@ -34,7 +34,7 @@ it.each(venues)('carries $id prices through review, saved alert and result navig
   const plan = screen.getByRole('region', { name: 'Price plan from analysis' })
   expect(within(plan).getByRole('heading', { name: instrument.symbol })).toBeTruthy()
   expect(within(plan).getByRole('link', { name: /Recheck/ }).getAttribute('href')).toBe(`/my-analysis?instrumentId=${instrument.id}`)
-  expect(screen.getByText(/Device monitoring stops/)).toBeTruthy()
+  expect(screen.getByText(/Device monitoring runs while the app is open/)).toBeTruthy()
   expect(readScenarios().scenarios[0]).toEqual(saved)
   fireEvent.click(screen.getByRole('link', { name: 'Open forward review results →' }))
   expect(screen.getByRole('heading', { name: 'Forward record ledger' })).toBeTruthy()

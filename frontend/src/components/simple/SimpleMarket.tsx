@@ -8,6 +8,7 @@ import { useTechnicalLevelData } from '@/hooks/useTechnicalLevelData'
 import { CryptoDecisionPanel } from '@/components/crypto-analysis/CryptoDecisionPanel'
 import type { MarketCatalog, MarketInstrument, MarketVenue } from '@/types/market'
 import { formatAnalysisPrice } from '@/utils/formatAnalysisPrice'
+import { ModeGuide } from './ModeGuide'
 import { SimpleWorkspace } from './SimpleWorkspace'
 import styles from './SimpleWorkspace.module.css'
 
@@ -23,6 +24,7 @@ export function SimpleMarket(props: Props) {
   const { catalog, loading, error, venue, onVenue, selected, onSelect, search, onSearch, favorites, favoritesOnly, onFavoritesOnly, onFavorite, onRetry } = props
   const { language } = useLanguage(), ko = language === 'ko'
   const compact = useCompactLayout()
+  const [detailView, setDetailView] = useState<'chart' | 'review'>('chart')
   const [showDetail, setShowDetail] = useState(false)
   const [page, setPage] = useState({ key: '', count: 12 })
   const queryKey = `${venue}:${search}:${favoritesOnly}`
@@ -40,10 +42,12 @@ export function SimpleMarket(props: Props) {
       </section>
   const assetDetail = <section className={styles.tasks}>
     {compact && <button type="button" onClick={() => setShowDetail(false)}>← {ko ? '다른 종목 찾기' : 'Back to assets'}</button>}
-    {props.chart}
-    {selected && <SimpleMarketAsset key={selected.id} instrument={selected} />}
+    <div className={styles.choices} role="group" aria-label={ko ? '종목에서 볼 내용' : 'Asset view'}><button type="button" aria-pressed={detailView === 'chart'} onClick={() => setDetailView('chart')}>{ko ? '가격 차트' : 'Price chart'}</button><button type="button" aria-pressed={detailView === 'review'} onClick={() => setDetailView('review')}>{ko ? '흐름 요약' : 'Quick review'}</button></div>
+    <div hidden={detailView !== 'chart'}>{props.chart}</div>
+    {selected && <div hidden={detailView !== 'review'}><SimpleMarketAsset key={selected.id} instrument={selected} /></div>}
+    <ModeGuide expert={{ ko: '호가·체결 내역과 상세 시세는 전문가모드에서 함께 볼 수 있어요.', en: 'Expert mode adds the order book, trades and detailed market statistics.' }} />
   </section>
-  return <SimpleWorkspace wide={!!props.chart} title={ko ? '궁금한 종목을 찾아보세요' : 'Find an asset you know'} description={ko ? '이름을 찾고, 하나를 골라 지금 확인할 내용을 읽어보세요.' : 'Search by name and select an asset to review.'}>
+  return <SimpleWorkspace compactHeading wide={!!props.chart} title={ko ? '궁금한 종목을 찾아보세요' : 'Find an asset you know'} description={ko ? '이름을 찾고, 하나를 골라 지금 확인할 내용을 읽어보세요.' : 'Search by name and select an asset to review.'}>
     <div className={styles.controls}>
       <label>{ko ? '시장 선택' : 'Market'}<select value={venue} onChange={event => { onVenue(event.target.value as MarketVenue); setShowDetail(false) }}>{venues.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
       {(!compact || !showDetail) && <><label>{ko ? '종목 이름' : 'Asset name'}<input type="search" value={search} onChange={event => onSearch(event.target.value)} placeholder={ko ? '예: 비트코인, BTC' : 'e.g. Bitcoin, BTC'} /></label><button type="button" aria-pressed={favoritesOnly} onClick={() => onFavoritesOnly(!favoritesOnly)}>{ko ? '관심종목만' : 'Favorites only'}</button></>}
@@ -51,7 +55,7 @@ export function SimpleMarket(props: Props) {
     </div>
     {catalog?.source === 'mock' && <p role="status" className={styles.risk}>{ko ? '예시 시세입니다. 실제 투자 판단에 사용할 수 없어요.' : 'Example quotes. These are not live investment data.'}</p>}
     {error && <p role="alert">{ko ? '시세를 가져오지 못했어요. 새로고침으로 다시 확인해주세요.' : 'Quotes unavailable. Please refresh.'}</p>}
-    {props.chart && selected && (!compact || showDetail) ? <div className={styles.marketPanels}><MarketPanels navigator={compact ? undefined : assetList} detail={assetDetail} activity={props.activity} /></div> : <div className={!compact ? styles.split : undefined}>
+    {props.chart && selected && (!compact || showDetail) ? <div className={styles.marketPanels}><MarketPanels navigator={compact ? undefined : assetList} detail={assetDetail} activity={undefined} /></div> : <div className={!compact ? styles.split : undefined}>
       {(!compact || !showDetail) && assetList}
       {selected && (!compact || showDetail) && assetDetail}
     </div>}

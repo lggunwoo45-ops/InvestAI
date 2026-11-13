@@ -252,7 +252,7 @@ function AnalysisWorkspace() {
   const cryptoReferences = selected && analysis?.assetType === 'crypto' && <details key={`references:${selected.id}`} className={styles.referenceDetails}>
         <summary>{language === 'ko' ? '기준 기록·추가 참고 자료' : 'Baseline records and further references'}</summary>
         <p>{language === 'ko' ? '후보 기록과 일봉 차트의 참고 자료입니다. 지금 확인할 가격은 ‘한눈에 보기’에서 볼 수 있어요.' : 'Candidate records and daily-chart context. Use the price plan in the Summary tab for the current read and price criteria.'}</p>
-        {sourceNotices}
+        {displayMode === 'expert' && sourceNotices}
         <AnalysisBaselinePanel key={`${selected.id}:${snapshotItem?.instrumentId ?? 'current'}`} actionStatus={analysis.actionReadiness.status} currentPrice={currentPrice} instrumentId={selected.id} interestStage={interestStage} language={language} quoteCurrency={selected.quoteCurrency} initialSnapshot={snapshotItem ? { actionStatus: snapshotItem.actionStatus, capturedAt: snapshotRecord?.generatedAt ?? openedAt, interestStage: snapshotItem.interestStage, price: snapshotItem.basisPrice } : null} />
         {technicalAnalysis && <details><summary>{language === 'ko' ? '일봉 차트 구조 (참고)' : 'Daily chart structure (reference)'}</summary>
           <p>{language === 'ko' ? '일봉 기준이며 상단 가격 계획의 기준 시간대와 다를 수 있습니다.' : 'Daily-chart references may use a different timeframe from the price plan above.'}</p>
@@ -311,7 +311,7 @@ function AnalysisWorkspace() {
   if (simpleView) return <SimpleWorkspace title={selected ? selected.displaySymbol ?? selected.symbol : t.title} description={language === 'ko' ? '지금의 흐름과 다음에 확인할 가격부터 읽어보세요.' : 'Start with the current view and the next price to review.'}>
     {selected ? <details className={styles.searchDisclosure}><summary>{language === 'ko' ? '종목 변경·검색' : 'Change or search instrument'}</summary>{searchPanel}</details> : searchPanel}
     {selected && analysis && <>
-      {!isCrypto && sourceNotices}
+      {sourceNotices}
       {isCrypto && analysis.dataQuality === 'mock' && <p role="status">{analysis.dataQualityLabel} · {language === 'ko' ? '예시 자료로는 실제 매수·매도 판단을 제공하지 않아요.' : 'Example data does not provide a live buy or sell assessment.'}</p>}
       {stockScenarios}
       {isCrypto ? <CryptoDecisionPanel key={selected.id} instrument={selected} activeTab={analysisTab} onTabChange={setAnalysisTab} daily={technicalData} language={language} averagePrice={validAveragePrice} quantity={savedPosition?.instrumentId === selected.id ? savedPosition.quantity : undefined} positionId={savedPosition?.instrumentId === selected.id ? savedPosition.id : undefined} detailsContent={<>{cryptoReferences}<details className={styles.referenceDetails}><summary>{language === 'ko' ? '이 분석에 질문하기' : 'Ask about this analysis'}</summary><EvidenceAssistant instrument={selected} live={marketDataMode === 'live'} /></details></>} investmentContent={<>{positionNotice}{positionPlan}{personalContext}<Link to="/portfolio">{language === 'ko' ? '내 종목 기록 관리' : 'Manage my holdings'} →</Link></>} holding={intent === 'holding'} onHoldingChange={value => { setIntent(value ? 'holding' : 'watching'); setReviewMode(value ? 'position' : 'interest') }} expert={false} onExpert={() => setDisplayMode('expert')} />
