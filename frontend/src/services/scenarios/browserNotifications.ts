@@ -19,7 +19,7 @@ export function notificationPermission(): NotificationPermission | 'unsupported'
 export function notifyScenario(symbol: string, eventLabels: readonly string[], tag: string): void {
   if (document.visibilityState === 'hidden' || !notificationPreference().enabled || notificationPermission() !== 'granted') return
   try {
-    const notification = new Notification(`InvestAI · ${symbol}`, { body: eventLabels.join(' · '), tag })
+    const notification = new Notification(`Market Copilot · ${symbol}`, { body: eventLabels.join(' · '), tag })
     // A system notification is a timestamped event, never a persistent live verdict.
     const timer = window.setTimeout(() => notification.close(), 15_000)
     notification.onclose = () => window.clearTimeout(timer)

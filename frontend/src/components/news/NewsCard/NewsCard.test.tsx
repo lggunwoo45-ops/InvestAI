@@ -26,7 +26,7 @@ describe('NewsCard external links', () => {
   it('reveals source, time, category, sentiment, importance, markets and symbols on expansion', () => {
     renderArticle('javascript:alert(1)')
     expect(screen.getByText(newsArticles[0].title)).toBeTruthy()
-    expect(screen.getAllByText('InvestAI Demo Desk').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Market Copilot Demo Desk').length).toBeGreaterThan(0)
     expect(screen.getByText('Sentiment')).toBeTruthy()
     expect(screen.getByText('Importance')).toBeTruthy()
     expect(screen.getByText('Related Markets')).toBeTruthy()

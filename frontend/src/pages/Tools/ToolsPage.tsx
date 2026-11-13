@@ -35,7 +35,7 @@ export function ToolsPage() {
 
   return <div className={styles.page}>
     <header className={styles.heading}>
-      <span className={styles.eyebrow}>INVESTAI · ANALYSIS</span>
+      <span className={styles.eyebrow}>MARKET COPILOT · ANALYSIS</span>
       <h1>{title}</h1>
       <p>{ko ? '종목 분석부터 손익 계산까지, 필요한 기능을 찾아보세요.' : 'Find the right feature, from asset research to risk calculations.'}</p>
     </header>

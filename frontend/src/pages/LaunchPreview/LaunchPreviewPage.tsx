@@ -79,7 +79,7 @@ function PreviewWorkspace() {
     { id: 'plans', icon: '▦', label: t('이용 플랜', 'Plans') },
   ]
   const aiCard = <section className={`${styles.aiCard} ${premium ? styles.premiumCard : ''}`} aria-label={t('AI 분석 이용 안내', 'AI analysis access')}>
-    <div className={styles.cardTop}><span className={styles.eyebrow}>INVESTAI AI</span><span className={styles.badge}>{premium ? t('프리미엄 화면', 'Premium preview') : t('프리미엄 기능', 'Premium feature')}</span></div>
+    <div className={styles.cardTop}><span className={styles.eyebrow}>MARKET COPILOT AI</span><span className={styles.badge}>{premium ? t('프리미엄 화면', 'Premium preview') : t('프리미엄 기능', 'Premium feature')}</span></div>
     <h2>{t('숫자 다음에는,\n이해할 수 있는 설명.', 'Beyond the numbers,\nan explanation you can use.')}</h2>
     <p>{t('흐름의 이유, 반대 근거, 다시 확인할 조건을 한 편의 리포트로 읽는 화면입니다.', 'Preview a report that brings the trend, opposing evidence and review conditions together.')}</p>
     <ul><li>{t('현재 흐름을 쉬운 문장으로', 'The current trend in plain language')}</li><li>{t('지지·저항을 살펴볼 이유', 'Reasons to review support and resistance')}</li><li>{t('놓치기 쉬운 위험과 부족한 자료', 'Risks and missing evidence')}</li></ul>
@@ -103,13 +103,13 @@ function PreviewWorkspace() {
     </div>
     <div className={styles.shell}>
       <aside className={styles.sidebar}>
-        <Link to={`/preview?${new URLSearchParams({ plan, asset: selectedId, lang: language })}`} className={styles.brand}><span>iA</span> InvestAI</Link>
+        <Link to={`/preview?${new URLSearchParams({ plan, asset: selectedId, lang: language })}`} className={styles.brand}><span>MC</span> Market Copilot</Link>
         <span className={styles.workspaceLabel}>{t('나의 투자 공간', 'YOUR WORKSPACE')}</span>
         <nav aria-label={t('미리보기 메뉴', 'Preview navigation')}>{views.map(item => <button type="button" key={item.id} aria-current={view === item.id ? 'page' : undefined} onClick={() => changeParams({ view: item.id })}><span aria-hidden="true">{item.icon}</span>{item.label}{item.id === 'report' && <small>AI</small>}</button>)}</nav>
         <div className={styles.sidebarBottom}><span className={styles.avatar}>ME</span><div><strong>{t('체험 중인 회원', 'Preview member')}</strong><span>{title} {t('화면', 'view')}</span></div></div>
       </aside>
       <div className={styles.workspace}>
-        <header className={styles.header}><div><span className={styles.mobileBrand}>InvestAI</span><span className={`${styles.membership} ${premium ? styles.paid : ''}`}>{premium ? 'PREMIUM' : 'FREE'}</span><span className={styles.headerHint}>{premium ? t('광고 없이, 분석에 집중하세요', 'More room for your research') : t('기본 분석을 무료로 시작하세요', 'Start with free core analysis')}</span></div><div className={styles.modeSwitch} role="group" aria-label={t('분석 화면 상세도', 'Analysis detail')}><button type="button" aria-pressed={!expert} onClick={() => setExpert(false)}>{t('간편', 'Simple')}</button><button type="button" aria-pressed={expert} onClick={() => setExpert(true)}>{t('전문가', 'Expert')}</button></div></header>
+        <header className={styles.header}><div><span className={styles.mobileBrand}>Market Copilot</span><span className={`${styles.membership} ${premium ? styles.paid : ''}`}>{premium ? 'PREMIUM' : 'FREE'}</span><span className={styles.headerHint}>{premium ? t('광고 없이, 분석에 집중하세요', 'More room for your research') : t('기본 분석을 무료로 시작하세요', 'Start with free core analysis')}</span></div><div className={styles.modeSwitch} role="group" aria-label={t('분석 화면 상세도', 'Analysis detail')}><button type="button" aria-pressed={!expert} onClick={() => setExpert(false)}>{t('간편', 'Simple')}</button><button type="button" aria-pressed={expert} onClick={() => setExpert(true)}>{t('전문가', 'Expert')}</button></div></header>
         <main className={styles.main}>
           <div className={styles.intro}><div><span className={styles.eyebrow}>{t('가격을 보고, 근거를 이해하고', 'PRICE. EVIDENCE. CONTEXT.')}</span><h1>{view === 'analysis' ? t('내 코인, 지금 무엇을 볼까요?', 'What matters for your asset?') : views.find(item => item.id === view)?.label}</h1><p>{t('현재의 흐름과 다음에 확인할 가격을 한곳에서 살펴보세요.', 'Review the current trend and the price levels to revisit in one place.')}</p></div><span className={styles.betaBadge}>BETA PREVIEW</span></div>
           {view !== 'plans' && <section className={styles.assetBar} aria-label={t('분석할 코인 선택', 'Select a coin')}>
@@ -144,7 +144,7 @@ function PreviewWorkspace() {
 
           {view === 'report' && <div className={styles.columns}><section className={styles.reportSheet} aria-label={t('리포트 미리보기', 'Report preview')}>
             {!premium ? <div className={styles.empty}><span>✧</span><h2>{t('AI 리포트는 프리미엄에서', 'AI reports with Premium')}</h2><p>{t('기본 종목 분석은 무료로 이용하고, AI 설명이 추가된 화면을 여기서 비교할 수 있어요.', 'Core analysis is free. Compare the presentation of an added AI report here.')}</p><button className={styles.primary} type="button" onClick={() => changeParams({ plan: 'premium' })}>{t('프리미엄 화면 체험하기', 'Try the Premium view')} →</button></div> : currentReport ? <>
-              <div className={styles.cardTop}><span className={styles.eyebrow}>INVESTAI / RESEARCH NOTE</span><span className={styles.badge}>{t('AI 미연결 · 규칙 기반 예시', 'AI disconnected · Rule-based example')}</span></div>
+              <div className={styles.cardTop}><span className={styles.eyebrow}>MARKET COPILOT / RESEARCH NOTE</span><span className={styles.badge}>{t('AI 미연결 · 규칙 기반 예시', 'AI disconnected · Rule-based example')}</span></div>
               <h2>{currentReport.symbol}<br />{t('흐름과 가격 기준 리포트', 'Trend and price-level report')}</h2><p>{currentReport.venue} · {currentReport.currency} · {t('예시를 연 시각', 'Preview opened')} {new Date(currentReport.openedAt).toLocaleString(language)}</p>
               <p className={styles.exampleNote}>{t('현재 계산된 근거를 리포트 형식으로 배치한 화면 예시입니다. 실제 AI 분석이나 새로운 추천은 아닙니다. 새 시세가 들어와도 이 예시는 자동으로 바뀌지 않습니다.', 'A report layout populated from existing calculated evidence, not a real AI analysis or a new recommendation. This snapshot does not update with new quotes.')}</p>
               <article><span>01</span><div><h3>{t('한 문장으로 보는 흐름', 'The trend in one sentence')}</h3><strong>{currentReport.title}</strong><p>{currentReport.reason}</p></div></article>
@@ -159,7 +159,7 @@ function PreviewWorkspace() {
             { name: t('광고 제거', 'Ad-free'), amount: '4,900', description: t('익숙한 기능을 광고 없이', 'The same core tools, without ads'), features: [t('무료의 기본 분석 기능', 'The same free core analysis'), t('광고 제거', 'No advertising'), t('유료 AI 분석 미포함', 'Paid AI analysis excluded')], action: null },
             { name: t('프리미엄', 'Premium'), amount: '14,900', description: t('광고 제거 + AI 설명', 'Ad-free plus AI explanations'), features: [t('기본 분석 기능과 광고 제거', 'Core analysis without ads'), t('AI 분석 월 100회 예정', '100 AI analyses per month planned'), t('리포트 사용 흐름 미리보기', 'Preview the report workflow')], action: 'premium' },
           ].map(item => <article key={item.amount} className={item.action === 'premium' ? styles.featuredPlan : ''}><span className={styles.eyebrow}>{item.name}</span><h2>{item.description}</h2><p className={styles.price}><strong>{item.amount}</strong>{t('원 / 월', 'KRW / month')}</p><ul>{item.features.map(feature => <li key={feature}>{feature}</li>)}</ul>{item.action ? <button type="button" onClick={() => changeParams({ plan: item.action!, view: 'analysis' })}>{t('이 화면 체험하기', 'Preview this plan')} →</button> : <span className={styles.small}>{t('무료 기능에서 광고만 빠지는 구성입니다.', 'Same free features with ads removed.')}</span>}</article>)}</div></section>}
-          <footer className={styles.pageFooter}><span>InvestAI · {t('무료 / 프리미엄 출시 미리보기', 'Free / Premium launch preview')}</span><span>{t('시세·기본 분석: 실제 자료 / 광고·AI·사용량: 화면 예시', 'Quotes and core analysis: live data / Ads, AI and quota: UI examples')}</span><Link to="/plans">{t('현재 베타 이용 범위', 'Current beta coverage')} ↗</Link></footer>
+          <footer className={styles.pageFooter}><span>Market Copilot · {t('무료 / 프리미엄 출시 미리보기', 'Free / Premium launch preview')}</span><span>{t('시세·기본 분석: 실제 자료 / 광고·AI·사용량: 화면 예시', 'Quotes and core analysis: live data / Ads, AI and quota: UI examples')}</span><Link to="/plans">{t('현재 베타 이용 범위', 'Current beta coverage')} ↗</Link></footer>
         </main>
       </div>
     </div>

@@ -26,8 +26,8 @@ export function MemberAccount({compact=false}:{compact?:boolean}){
     {(cloud.error||error)&&<p role="alert">{error||cloud.error}</p>}
     {open&&<div className={styles.content}>
       {!cloud.user||cloud.expired?mode==='emailRecover'?<EmailPasswordRecovery onLogin={()=>{setMode('login');setError('')}} onRecoveryCode={()=>{setMode('recover');setError('')}} />:<form onSubmit={submit} className={styles.form}>
-        <h2>{mode==='register'?'InvestAI 계정 만들기':mode==='recover'?'복구 코드로 비밀번호 재설정':'내 기록으로 로그인'}</h2>
-        <p>{cloud.emailAvailable?'InvestAI 전용 아이디를 사용합니다. 가입 시 이메일을 인증하며, 기존 회원은 로그인 후 이메일을 연결할 수 있어요.':'인증메일 발송은 준비 중입니다. 지금은 InvestAI 아이디와 비밀번호로 가입하고, 비밀번호를 잊으면 가입 시 받은 복구 코드를 사용하세요.'}</p>
+        <h2>{mode==='register'?'Market Copilot 계정 만들기':mode==='recover'?'복구 코드로 비밀번호 재설정':'내 기록으로 로그인'}</h2>
+        <p>{cloud.emailAvailable?'Market Copilot 전용 아이디를 사용합니다. 가입 시 이메일을 인증하며, 기존 회원은 로그인 후 이메일을 연결할 수 있어요.':'인증메일 발송은 준비 중입니다. 지금은 Market Copilot 아이디와 비밀번호로 가입하고, 비밀번호를 잊으면 가입 시 받은 복구 코드를 사용하세요.'}</p>
         <label>아이디<input autoComplete="username" required pattern="[a-zA-Z0-9_-]{4,32}" minLength={4} maxLength={32} value={username} onChange={e=>{setUsername(e.target.value);setEmailTicket('')}}/></label>
         {mode==='register'&&cloud.emailAvailable&&<SignupEmail username={username} onTicket={setEmailTicket}/>}
         <label>{mode==='recover'?'새 비밀번호':'비밀번호'}<input type="password" autoComplete={mode==='login'?'current-password':'new-password'} required minLength={mode==='login'?1:8} maxLength={128} value={password} onChange={e=>setPassword(e.target.value)}/><small>{mode==='login'?'기존에 사용하던 비밀번호로 로그인하세요.':passwordHint}</small></label>

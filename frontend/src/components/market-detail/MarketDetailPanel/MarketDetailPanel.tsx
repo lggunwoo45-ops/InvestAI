@@ -85,7 +85,7 @@ export const MarketDetailPanel = memo(function MarketDetailPanel({ snapshot, con
           : `Saved chart · received ${new Date(previewAt).toLocaleTimeString('en-US')}. Checking latest bars; not yet used for live analysis.`}</p>}
         <CandlestickChart key={instrument.id} candles={candles} instrument={instrument} timeframe={selectedTimeframe} mode={connection.effectiveMode} preview={previewAt !== undefined} technicalAnalysis={technicalAnalysis} technicalLoading={previewAt !== undefined || technicalData.isLoading} />
       </div>
-      {!isStock && researchAsset && <div className={styles.signalEntry}><div><span>INVESTAI SIGNAL STUDIO</span><h3>{language === 'ko' ? '차트에서 본 흐름, 과거에도 있었을까요?' : 'Explore the patterns behind this chart'}</h3><p>{language === 'ko' ? '30개 신호로 조건을 비교하고, 다시 나타날 때 기록하세요. Binance USDT 선물 자료로 전환합니다.' : 'Explore 30 signals and monitor recurring conditions using Binance USDT perpetual data.'}</p></div><Link to={`/research?asset=${researchAsset}&mode=setups`}>{language === 'ko' ? `${researchAsset} 신호 탐색` : 'Explore signals'} →</Link></div>}
+      {!isStock && researchAsset && <div className={styles.signalEntry}><div><span>MARKET COPILOT SIGNAL STUDIO</span><h3>{language === 'ko' ? '차트에서 본 흐름, 과거에도 있었을까요?' : 'Explore the patterns behind this chart'}</h3><p>{language === 'ko' ? '30개 신호로 조건을 비교하고, 다시 나타날 때 기록하세요. Binance USDT 선물 자료로 전환합니다.' : 'Explore 30 signals and monitor recurring conditions using Binance USDT perpetual data.'}</p></div><Link to={`/research?asset=${researchAsset}&mode=setups`}>{language === 'ko' ? `${researchAsset} 신호 탐색` : 'Explore signals'} →</Link></div>}
       <AdPlacement compact />
     </section>
   )

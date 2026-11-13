@@ -8,7 +8,7 @@ import '@/assets/styles/globals.css'
 const rootElement = document.getElementById('root')
 
 if (!rootElement) {
-  throw new Error('InvestAI root element was not found.')
+  throw new Error('Market Copilot root element was not found.')
 }
 
 const root = createRoot(rootElement)
