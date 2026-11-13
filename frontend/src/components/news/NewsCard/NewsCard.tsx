@@ -11,9 +11,9 @@ import { uiText } from '@/i18n/translations'
 import { safeNewsUrl } from '@/utils/safeNewsUrl'
 import styles from './NewsCard.module.css'
 
-interface NewsCardProps { article: NewsArticle; availableInstruments?: readonly NewsInsightAvailableInstrument[] }
+interface NewsCardProps { article: NewsArticle; availableInstruments?: readonly NewsInsightAvailableInstrument[]; simple?: boolean }
 
-export const NewsCard = memo(function NewsCard({ article, availableInstruments = [] }: NewsCardProps) {
+export const NewsCard = memo(function NewsCard({ article, availableInstruments = [], simple = false }: NewsCardProps) {
   const [expanded, setExpanded] = useState(false)
   const [insightOpen, setInsightOpen] = useState(false)
   const { openInstrument, canOpenInstrument } = useOpenNewsInstrument()
@@ -24,27 +24,30 @@ export const NewsCard = memo(function NewsCard({ article, availableInstruments =
   const insight = useMemo(() => buildNewsInsight({ article, availableInstruments, language }), [article, availableInstruments, language])
   return (
     <article className={styles.article} data-has-thumbnail={Boolean(article.thumbnailTone)}>
-      {article.thumbnailTone && <div className={styles.thumbnail} data-tone={article.thumbnailTone}><span>{article.category.slice(0, 2).toUpperCase()}</span></div>}
       <div className={styles.content}>
-        <span className={styles.category}>{text.categories[article.category]} · {article.isMock ? text.demo : text.provider.realRss}</span>
-        <h2>{article.title}</h2>
+        <div className={styles.meta}><strong>{article.source}</strong><span className={styles.category}>{text.categories[article.category]}</span><time dateTime={article.publishedAt}>{published} KST</time>{article.isMock && <span className={styles.demo}>{text.demo}</span>}</div>
+        <h2>{!article.isMock && href ? <a href={href} target="_blank" rel="noopener noreferrer">{article.title}</a> : article.title}</h2>
         {article.summary && <p className={styles.summary}>{article.summary}</p>}
-        <footer><strong>{article.source}</strong><time dateTime={article.publishedAt}>{published}</time></footer>
-        {!article.isMock && href && <a href={href} target="_blank" rel="noopener noreferrer">{text.externalSource} ↗</a>}
-        <div className={styles.symbols} aria-label={text.relatedSymbols}>
-          {article.relatedSymbols.length === 0 && <span>{text.provider.relatedUnavailable}</span>}
+        <footer className={styles.actions}>
+        {article.relatedSymbols.length > 0 && <div className={styles.symbols} aria-label={text.relatedSymbols}>
           {article.relatedSymbols.map((symbol) => {
             const id = article.relatedInstrumentIds?.[symbol]
-            return id && canOpenInstrument(id)
+            return simple && id
+              ? <Link key={symbol} to={`/my-analysis?instrumentId=${encodeURIComponent(id)}`}>{symbol} {language === 'ko' ? '분석' : 'analysis'} →</Link>
+              : id && canOpenInstrument(id)
               ? <button key={symbol} type="button" onClick={() => openInstrument(id)} aria-label={`${text.openInMarket}: ${symbol}`} title={text.viewSymbol}>{symbol} ↗</button>
               : !article.isMock && ['BTC', 'ETH', 'XRP', 'SOL', 'ADA', 'DOGE', 'LINK', 'AVAX', 'DOT'].includes(symbol)
                 ? <Link key={symbol} to={`/my-analysis?instrumentId=upbit-${symbol.toLowerCase()}`} aria-label={`${symbol} ${language === 'ko' ? '종목 분석' : 'analysis'}`}>{symbol} ↗</Link>
                 : <span key={symbol}>{symbol}</span>
           })}
+        </div>}
+        <div className={styles.links}>
+          {!article.isMock && href && <a href={href} target="_blank" rel="noopener noreferrer">{text.externalSource} ↗</a>}
+          {!simple && <button className={styles.detailsToggle} type="button" aria-expanded={expanded} onClick={() => setExpanded((value) => !value)}>{expanded ? text.hideDetails : text.details}</button>}
+          {!simple && <button className={styles.insightToggle} type="button" aria-expanded={insightOpen} onClick={() => setInsightOpen((value) => !value)}>{language === 'ko' ? insightOpen ? '인사이트 닫기' : '인사이트 보기' : insightOpen ? 'Hide insight' : 'View insight'}</button>}
         </div>
-        <button className={styles.detailsToggle} type="button" aria-expanded={expanded} onClick={() => setExpanded((value) => !value)}>{expanded ? text.hideDetails : text.details}</button>
-        <button className={styles.insightToggle} type="button" aria-expanded={insightOpen} onClick={() => setInsightOpen((value) => !value)}>{language === 'ko' ? insightOpen ? '인사이트 닫기' : '인사이트 보기' : insightOpen ? 'Hide insight' : 'View insight'}</button>
-        {expanded && <div className={styles.details}>
+        </footer>
+        {!simple && expanded && <div className={styles.details}>
           <dl>
             <div><dt>{text.provider.source}</dt><dd>{article.source}</dd></div>
             <div><dt>{text.provider.publishedTime}</dt><dd>{published}</dd></div>
@@ -54,9 +57,9 @@ export const NewsCard = memo(function NewsCard({ article, availableInstruments =
           </dl>
           {article.summary && <p>{text.summary}: {article.summary}</p>}
           <p>{article.isMock && `${text.demo} · `}{uiText[language].briefing.trust} {uiText[language].briefing.finalDecision}</p>
-          {href && <a href={href} target="_blank" rel="noopener noreferrer">{text.externalSource} ↗</a>}
+          {article.isMock && href && <a href={href} target="_blank" rel="noopener noreferrer">{text.externalSource} ↗</a>}
         </div>}
-        {insightOpen && <NewsInsightPanel insight={insight} language={language} />}
+        {!simple && insightOpen && <NewsInsightPanel insight={insight} language={language} />}
       </div>
     </article>
   )

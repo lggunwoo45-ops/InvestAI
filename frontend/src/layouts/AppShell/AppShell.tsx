@@ -36,7 +36,7 @@ export function AppShell() {
   const [mobileCopilotOpen, setMobileCopilotOpen] = useState(false)
   const isExplore = pathname.replace(/\/$/, '') === '/ai-analysis'
   // Analysis has its own contextual question panel; avoid two competing explanations.
-  const focusedAnalysis = isExplore || ['/tools', '/results', '/my-analysis', '/review-alerts', '/dashboard', '/portfolio', '/settings', '/trading', '/strategies', '/research', '/demo', '/guide', '/plans'].includes(pathname.replace(/\/$/, ''))
+  const focusedAnalysis = isExplore || ['/news', '/tools', '/results', '/my-analysis', '/review-alerts', '/dashboard', '/portfolio', '/settings', '/trading', '/strategies', '/research', '/demo', '/guide', '/plans'].includes(pathname.replace(/\/$/, ''))
   const showCopilot = (floatingCopilot ? mobileCopilotOpen : isAiCopilotOpen) && !focusedAnalysis
 
   return (
@@ -48,7 +48,7 @@ export function AppShell() {
         <div ref={bodyRef} style={market ? { '--market-copilot-width': `${effectiveWidth}px` } as CSSProperties : undefined} className={classNames(styles.body, !showCopilot && styles.aiCopilotClosed, market && styles.marketBody, market && showCopilot && (floatingCopilot ? styles.floatingCopilot : styles.dockedCopilot))}>
           <main className={styles.main}>
             <BetaRouteBanner />
-            <MemberAccount compact={displayMode === 'simple'} />
+            <MemberAccount compact={displayMode === 'simple' || pathname.replace(/\/$/, '') === '/news'} />
             <Outlet />
             {['/dashboard', '/my-analysis', '/news', '/tools'].includes(pathname.replace(/\/$/, '')) && <AdPlacement />}
           </main>

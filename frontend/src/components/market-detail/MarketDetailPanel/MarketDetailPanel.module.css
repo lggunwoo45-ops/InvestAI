@@ -5,23 +5,23 @@
 .stock .header { background: var(--color-surface-raised); }
 .identity { min-width: 0; }
 .identity > span { display: block; color: var(--color-text); font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
-.identity h1 { display: block; margin: 5px 0 0; color: var(--color-text); font: 700 22px ui-monospace, monospace; }
-.stock .identity h1 { overflow: hidden; font: 680 21px ui-sans-serif, system-ui, sans-serif; text-overflow: ellipsis; white-space: nowrap; }
+.identity h1 { display: block; margin: 5px 0 0; color: var(--color-text); font: 700 22px var(--font-sans); }
+.stock .identity h1 { overflow: hidden; font: 680 21px var(--font-sans); text-overflow: ellipsis; white-space: nowrap; }
 .identity p { margin: 4px 0 0; overflow: hidden; color: var(--color-text); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
 .quote { display: grid; text-align: right; }
-.quote strong { color: var(--color-text); font: 700 21px/1.1 ui-monospace, monospace; }
-.quote span { margin-top: 5px; font: 700 11px ui-monospace, monospace; }
+.quote strong { color: var(--color-text); font: 700 21px/1.1 var(--font-sans); }
+.quote span { margin-top: 5px; font: 700 11px var(--font-sans); }
 .positive { color: var(--color-positive); }
 .negative { color: var(--color-danger); }
 .feedControl { display: flex; min-width: 0; grid-column: 1 / -1; align-items: center; justify-content: space-between; gap: 10px; }
-.analysisLink { color: var(--color-text); font: 700 10px ui-monospace, monospace; letter-spacing: .04em; text-decoration: none; white-space: nowrap; }
+.analysisLink { color: var(--color-text); font: 700 10px var(--font-sans); letter-spacing: .04em; text-decoration: none; white-space: nowrap; }
 .analysisLink:hover { color: var(--color-text); }
 .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0; border-bottom: 1px solid var(--color-border); background: var(--color-surface); }
 .stock .stats { background: var(--color-surface-raised); }
 .stats > div { display: grid; align-content: center; gap: 5px; padding: 0 12px; border-right: 1px solid var(--color-border); }
 .stats > div:last-child { border-right: 0; }
 .stats dt { color: var(--color-text-muted); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
-.stats dd { margin: 0; overflow: hidden; color: var(--color-text); font: 600 11px ui-monospace, monospace; text-overflow: ellipsis; text-transform: capitalize; white-space: nowrap; }
+.stats dd { margin: 0; overflow: hidden; color: var(--color-text); font: 600 11px var(--font-sans); text-overflow: ellipsis; text-transform: capitalize; white-space: nowrap; }
 .chartArea { min-height: 0; overflow: auto; }
 .previewNotice { position: sticky; top: 0; z-index: 3; margin: 0; padding: 8px 10px; border-bottom: 1px solid var(--color-border); background: var(--color-surface-raised); color: var(--color-text-muted); font-size: 11px; line-height: 1.5; }
 .stock .chartArea { border-top: 1px solid var(--color-border-strong); }
@@ -69,3 +69,8 @@
   .stats { grid-template-columns:repeat(2,minmax(0,1fr)); }.stats > div { padding:8px 10px; }
   .feedControl { gap:8px; }.signalEntry { flex-wrap:wrap; }
 }
+
+.identity h1, .stock .identity h1 { font-weight: 650; letter-spacing: -.025em; }
+.quote strong { font-weight: 600; letter-spacing: -.03em; font-variant-numeric: tabular-nums lining-nums; }
+.quote span, .stats dd { font-variant-numeric: tabular-nums lining-nums; }
+.identity p { color: var(--color-text-muted); }

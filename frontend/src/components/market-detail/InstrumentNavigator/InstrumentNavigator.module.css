@@ -1,7 +1,7 @@
 .navigator { display: grid; min-width: 0; min-height: 0; grid-template-rows: 35px auto minmax(0, 1fr); border-right: 1px solid var(--color-border); background: var(--color-surface); }
 .topbar { display: flex; align-items: center; justify-content: space-between; padding: 0 11px; border-bottom: 1px solid var(--color-border); }
 .topbar button { padding: 0; border: 0; color: var(--color-text-muted); background: transparent; cursor: pointer; font-size: 8px; }
-.topbar span { color: var(--color-text-muted); font: 7px ui-monospace, monospace; text-transform: uppercase; }
+.topbar span { color: var(--color-text-muted); font: 7px var(--font-sans); text-transform: uppercase; }
 .filters { display: grid; gap: 7px; padding: 10px; border-bottom: 1px solid var(--color-border); }
 .filters label { display: flex; height: 29px; align-items: center; gap: 7px; padding: 0 8px; border: 1px solid var(--color-border); color: var(--color-text-muted); background: var(--color-surface); }
 .filters input { width: 100%; border: 0; outline: 0; color: var(--color-text); background: transparent; font-size: 8px; }
@@ -10,7 +10,7 @@
 .list { min-height: 0; overflow: auto; }
 .group { border-bottom: 1px solid var(--color-border); }
 .group h2 { display: flex; height: 28px; align-items: center; justify-content: space-between; margin: 0; padding: 0 11px; color: var(--color-text-muted); background: var(--color-surface); font-size: 7px; font-weight: 650; letter-spacing: .09em; text-transform: uppercase; }
-.group h2 span { font: 7px ui-monospace, monospace; }
+.group h2 span { font: 7px var(--font-sans); }
 .instrument { display: grid; height: 44px; grid-template-columns: 25px minmax(0, 1fr); border-top: 1px solid var(--color-border); }
 .instrument:hover, .instrument.selected { background: var(--color-surface-raised); }
 .instrument.selected { box-shadow: inset 2px 0 var(--color-accent); }
@@ -19,7 +19,7 @@
 .instrumentButton { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 7px; padding: 0 9px 0 2px; border: 0; background: transparent; cursor: pointer; text-align: left; }
 .instrumentButton > span { display: grid; min-width: 0; }
 .instrumentButton > span:last-child { text-align: right; }
-.instrumentButton strong { overflow: hidden; color: var(--color-text); font: 600 8px/1.2 ui-monospace, monospace; text-overflow: ellipsis; white-space: nowrap; }
+.instrumentButton strong { overflow: hidden; color: var(--color-text); font: 600 8px/1.2 var(--font-sans); text-overflow: ellipsis; white-space: nowrap; }
 .instrumentButton small { margin-top: 3px; overflow: hidden; color: var(--color-text-muted); font-size: 7px; text-overflow: ellipsis; white-space: nowrap; }
 .instrumentButton small.positive { color: var(--color-positive); }
 .instrumentButton small.negative { color: var(--color-danger); }

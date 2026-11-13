@@ -12,6 +12,17 @@ function renderArticle(url: string) {
 }
 
 describe('NewsCard external links', () => {
+  it('keeps simple news focused on reading and links the exact instrument to analysis', () => {
+    const article = { ...newsArticles[0], relatedSymbols: ['BTC/KRW'], relatedInstrumentIds: { 'BTC/KRW': 'upbit-btc' } }
+    const view = (simple: boolean) => <MemoryRouter><AppProviders><NewsCard article={article} simple={simple} /></AppProviders></MemoryRouter>
+    const { rerender } = render(view(false))
+    fireEvent.click(screen.getByRole('button', { name: 'Read details' }))
+    expect(screen.getByText('Sentiment')).toBeTruthy()
+    rerender(view(true))
+    expect(screen.queryByText('Sentiment')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'View insight' })).toBeNull()
+    expect(screen.getByRole('link', { name: /BTC\/KRW analysis/ }).getAttribute('href')).toBe('/my-analysis?instrumentId=upbit-btc')
+  })
   it('reveals source, time, category, sentiment, importance, markets and symbols on expansion', () => {
     renderArticle('javascript:alert(1)')
     expect(screen.getByText(newsArticles[0].title)).toBeTruthy()
