@@ -38,3 +38,11 @@ Simple mode is a presentation choice, separate from Free/Ad-free/Premium members
 Automated regression coverage includes lazy mounting and draft preservation, ETF validation and revision safety, loss/missing/ambiguous result display, original instrument links, preserved Expert filters, navigation, tools search/IME, research calculations, and market layouts. Existing CI also checks proxy/backend/gateway/Pages packaging, types, lint, the full frontend suite and the production build.
 
 Browser checks use the actual app and read-only market feeds, separate from mocked tests. Desktop and 390px phone views cover the Market list/chart/summary journey, Expert order book and preserved asset identity, guided ETF inputs through mode changes, results and alert entry routes. No production financial records or alerts are created for verification.
+
+## Simple Market coin navigation
+
+- Start with BTC, ETH, XRP, SOL, DOGE, ADA and LINK in that fixed order, limited to assets actually present in the selected market. This is a navigation shortlist, not a live market-cap ranking or investment recommendation.
+- “View all coins” opens the entire selected market catalog without repeated load-more actions. The `coins=all` URL state survives display-mode changes; “Core coins” returns to the shortlist.
+- Search (including Korean core-coin aliases) and favorites always reach the full catalog. Stock markets retain their complete catalog.
+- Where one base coin has multiple quote pairs, prefer USDT, then USDC, then the first listed pair in the shortlist. Return the original instrument unchanged; all pairs remain available in the full catalog.
+- Focused regression checks cover ordering, full-list navigation, search beyond the shortlist, favorites, missing listings, original instrument identity and stock markets. Browser checks separately verify real market data and phone list-to-detail navigation.

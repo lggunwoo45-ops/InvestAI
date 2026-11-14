@@ -77,3 +77,7 @@
 
 .page[data-compact-heading] .eyebrow, .page[data-compact-heading] .heading p { display:none; }
 .page[data-compact-heading] .heading h1 { margin:0; font-size:22px; }
+.coinMenu { display:flex; flex-wrap:wrap; gap:8px; }
+.coinMenu button { font-size:14px; font-weight:650; }
+.coinMenu button[aria-pressed='true'] { color:var(--color-accent); border-color:var(--color-accent); background:var(--color-accent-soft); }
+.list[data-list-mode='all'] .row { content-visibility:auto; contain-intrinsic-size:auto 68px; }

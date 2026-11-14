@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { MarketPanels } from '@/components/workspace/MarketPanels'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useLanguage } from '@/i18n/useLanguage'
 import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
 import { useCompactLayout } from '@/hooks/useCompactLayout'
@@ -10,6 +10,7 @@ import type { MarketCatalog, MarketInstrument, MarketVenue } from '@/types/marke
 import { formatAnalysisPrice } from '@/utils/formatAnalysisPrice'
 import { ModeGuide } from './ModeGuide'
 import { SimpleWorkspace } from './SimpleWorkspace'
+import { coreCoinName, coreMarketCoins } from './coreMarketCoins'
 import styles from './SimpleWorkspace.module.css'
 
 interface Props {
@@ -26,19 +27,28 @@ export function SimpleMarket(props: Props) {
   const compact = useCompactLayout()
   const [detailView, setDetailView] = useState<'chart' | 'review'>('chart')
   const [showDetail, setShowDetail] = useState(false)
-  const [page, setPage] = useState({ key: '', count: 12 })
-  const queryKey = `${venue}:${search}:${favoritesOnly}`
-  const limit = page.key === queryKey ? page.count : 12
+  const [params, setParams] = useSearchParams()
+  const crypto = venue.startsWith('upbit-') || venue.startsWith('binance-')
+  const allCoins = params.get('coins') === 'all'
   const query = search.trim().toLocaleLowerCase()
-  const instruments = (catalog?.instruments ?? []).filter(item => (!favoritesOnly || favorites.has(item.id)) && (!query || [item.symbol, item.name, item.koreanName, item.englishName].some(value => value?.toLocaleLowerCase().includes(query))))
-  const assetList = <section className={styles.list} aria-label={ko ? '종목 목록' : 'Assets'}>
-        <p className={styles.note}>{loading ? (ko ? '목록을 불러오고 있어요…' : 'Loading assets…') : `${instruments.length} ${ko ? '개 종목 · 거래량은 추천 순위가 아니에요' : 'assets · turnover is not a recommendation'}`}</p>
-        {instruments.slice(0, limit).map(item => <div key={item.id} className={styles.row}>
-          <button type="button" aria-pressed={item.id === selected?.id} onClick={() => { onSelect(item); setShowDetail(true) }}><span><strong>{item.displaySymbol ?? item.symbol}</strong>{' '}<small>{ko ? item.koreanName ?? item.name : item.name}</small></span><span aria-hidden>→</span></button>
+  const catalogItems = catalog?.venue === venue ? catalog.instruments : []
+  const instruments = catalogItems.filter(item => (!favoritesOnly || favorites.has(item.id)) && (!query || [item.symbol, item.displaySymbol, item.name, item.koreanName, item.englishName, crypto ? coreCoinName(item, 'ko') : '', crypto ? coreCoinName(item, 'en') : ''].some(value => value?.toLocaleLowerCase().includes(query))))
+  const core = crypto && !allCoins && !query && !favoritesOnly
+  const shown = core ? coreMarketCoins(instruments) : instruments
+  const listView = (all: boolean) => {
+    const next = new URLSearchParams(params)
+    if (all) next.set('coins', 'all'); else next.delete('coins')
+    setParams(next)
+    onSearch(''); onFavoritesOnly(false); setShowDetail(false)
+  }
+  const assetList = <section className={styles.list} data-list-mode={core ? 'core' : 'all'} aria-label={ko ? '종목 목록' : 'Assets'}>
+        <p className={styles.note} role="status">{loading ? (ko ? '목록을 불러오고 있어요…' : 'Loading assets…') : core ? (ko ? `대표 코인 ${shown.length}개 · 고정 목록` : `${shown.length} core coins · fixed shortlist`) : `${shown.length} ${ko ? '개 종목' : 'assets'}`}</p>
+        {core && <p className={styles.note}>{ko ? '쉽게 찾도록 고른 코인입니다. 시가총액 순위는 아니며, 선택한 시장에 있는 종목만 표시해요.' : 'A fixed navigation shortlist, not a market-cap ranking. Only assets listed in this market are shown.'}</p>}
+        {shown.map(item => <div key={item.id} className={styles.row}>
+          <button type="button" aria-pressed={item.id === selected?.id} onClick={() => { onSelect(item); setShowDetail(true) }}><span><strong>{item.displaySymbol ?? item.symbol}</strong>{' '}<small>{(crypto ? coreCoinName(item, language) : undefined) ?? (ko ? item.koreanName ?? item.name : item.name)}</small></span><span aria-hidden>→</span></button>
           <button type="button" aria-label={`${item.symbol} ${ko ? '관심종목' : 'favorite'}`} aria-pressed={favorites.has(item.id)} onClick={() => onFavorite(item.id)}>{favorites.has(item.id) ? '★' : '☆'}</button>
         </div>)}
-        {!loading && instruments.length === 0 && <p>{ko ? '해당 종목이 없어요. 검색어나 관심종목 필터를 바꿔보세요.' : 'No matching assets. Try another name or filter.'}</p>}
-        {limit < instruments.length && <button type="button" onClick={() => setPage({ key: queryKey, count: limit + 12 })}>{ko ? '종목 더 보기' : 'More assets'}</button>}
+        {!loading && !error && shown.length === 0 && <p>{core ? (ko ? '이 시장에는 대표 목록에 해당하는 코인이 없어요. 전체 코인 보기를 이용하세요.' : 'No core coins are listed in this market. Open all coins instead.') : ko ? '해당 종목이 없어요. 검색어나 관심종목 필터를 바꿔보세요.' : 'No matching assets. Try another name or filter.'}</p>}
       </section>
   const assetDetail = <section className={styles.tasks}>
     {compact && <button type="button" onClick={() => setShowDetail(false)}>← {ko ? '다른 종목 찾기' : 'Back to assets'}</button>}
@@ -48,6 +58,7 @@ export function SimpleMarket(props: Props) {
     <ModeGuide expert={{ ko: '호가·체결 내역과 상세 시세는 전문가모드에서 함께 볼 수 있어요.', en: 'Expert mode adds the order book, trades and detailed market statistics.' }} />
   </section>
   return <SimpleWorkspace compactHeading wide={!!props.chart} title={ko ? '궁금한 종목을 찾아보세요' : 'Find an asset you know'} description={ko ? '이름을 찾고, 하나를 골라 지금 확인할 내용을 읽어보세요.' : 'Search by name and select an asset to review.'}>
+    {crypto && <div className={styles.coinMenu} role="group" aria-label={ko ? '코인 목록 선택' : 'Coin list'}><button type="button" aria-pressed={core} onClick={() => listView(false)}>{ko ? '대표 코인' : 'Core coins'}</button><button type="button" aria-pressed={!core} onClick={() => listView(true)}>{ko ? '전체 코인 보기' : 'View all coins'}</button></div>}
     <div className={styles.controls}>
       <label>{ko ? '시장 선택' : 'Market'}<select value={venue} onChange={event => { onVenue(event.target.value as MarketVenue); setShowDetail(false) }}>{venues.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
       {(!compact || !showDetail) && <><label>{ko ? '종목 이름' : 'Asset name'}<input type="search" value={search} onChange={event => onSearch(event.target.value)} placeholder={ko ? '예: 비트코인, BTC' : 'e.g. Bitcoin, BTC'} /></label><button type="button" aria-pressed={favoritesOnly} onClick={() => onFavoritesOnly(!favoritesOnly)}>{ko ? '관심종목만' : 'Favorites only'}</button></>}
