@@ -16,13 +16,26 @@
 - The public root repository was published at `3602cbc65ff0e0d507308f3ba7b9272c8d958e9d` before this contact update. It is a separate Pages site from the application deployment.
 - The user reconfirmed **Market Copilot** as the public product name. Restore it in app wordmarks, titles, account copy, reports, notifications and mock-news labels; preserve URLs, member/device record keys and provider IDs.
 - The user supplied the dedicated public support address `info.marketcop@gmail.com`. This update places it on the root page, app guide and plans page. It is independent of the existing AdSense login; never derive or publish the personal login address from that session.
+- On November 15 the user requested approval preparation and answered that the public operator/business name is undecided. Do not invent an operator identity, named privacy officer or business registration.
+
+## Public reading and disclosure preparation
+
+- Six additional static pages: `/about/`, `/privacy/`, `/guides/` and three substantive guides covering price levels, missing data and records/costs. These are user-facing instructions, delivered as HTML without an app login or JavaScript dependency.
+- The app's simple/mobile menu, expanded expert sidebar, user guide and login/signup form link to the public information. External guides open separately so typed account details stay in the app.
+- Root navigation, canonical links, `robots.txt` and `sitemap.xml` cover the reading pages. Public-page tests check destinations, anchors, unique IDs, route existence, publisher identity and absence of ad scripts.
+- Source audit: account IDs and credential/recovery hashes; 12-hour bearer sessions and pending edits in session storage; guest data/preferences in local storage; member records and monitoring in SQLite; optional email/Telegram tables. Current public email and Telegram delivery are not configured. Full-account erasure is not exposed by the current server API. Do not claim an automatic account deletion button or a verified retention schedule.
+- Optional position connections also process public wallet/account identifiers or exchange API credentials in an encrypted vault, together with position/risk observations. The current Railway member server and attached volume were verified in Singapore (`asia-southeast1-eqsg3a`) on November 15; this does not establish every provider's processing location or log/backup retention.
+- `/privacy/` is an honest current data-processing guide, including the Google cookie disclosures and opt-out links that would apply when ads are enabled. It explicitly does not claim to replace a completed service privacy policy. Operator identity/responsible contact, retention/erasure operations (including support mail and backups), provider roles and international-transfer details remain to be factually finalized. Ads remain disabled until this and applicable consent setup are ready.
+- Browser audit of the current public app: Upbit BTC live market chart; market-to-analysis preserved `upbit-btc`/KRW, with three available timeframes and actual calculation output; news displayed 45 source-linked items. This verifies these journeys, not every indicator, all providers, account delivery or commercial readiness.
+
+Rebuild static pages with `node tools/build-public-pages.mjs` after editing their source; run `node --test tools/public-pages.test.mjs`. Publish all generated public files together to avoid temporary broken links. Keep code, internal readiness notes and private operator details out of the root site's publication manifest.
 
 ## Root publication
 
 The root repository and Pages configuration already exist. For future updates:
 
 1. Check the current `lggunwoo45-ops/lggunwoo45-ops.github.io` revision before updating it. Do not publish any personal documents or credentials.
-2. Copy the contents of this repository's `site-root/` directory into that repository's root. These are the three files `index.html`, `ads.txt`, and `.nojekyll`; no application build or personal records are included.
+2. Copy the public contents of this repository's `site-root/` directory into that repository's root: HTML pages, `robots.txt`, `sitemap.xml`, `ads.txt` and `.nojekyll`. No application build, source tools or personal records are included. Preserve unrelated existing root-repository files.
 3. Preserve its existing Settings → Pages configuration: Deploy from a branch → `main` → `/ (root)`.
 4. Verify the root and `/ads.txt` return 200. Follow the page links into the existing application and inspect both narrow and desktop widths. The existing `/InvestAI/` deployment remains independent.
 
