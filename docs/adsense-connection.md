@@ -11,7 +11,7 @@
 
 - The logged-in AdSense onboarding screen exposes publisher ID `pub-6900369987335133` and says payment information was confirmed. No additional personal verification or ad approval is inferred.
 - The production application is at `/InvestAI/`. The account root and `/ads.txt` now return 200. Both root and app contain the matching ownership meta tag.
-- The user's AdSense screenshot shows the root domain registered, the meta-tag method selected and review still needed. The user subsequently reported clicking Verify; no successful verification result, review submission or approval has yet been observed.
+- The user's November 15 AdSense screenshot confirms the site connection and review submission: it says all steps are completed and the site's advertising eligibility is under review. No advertising approval has been observed. Privacy disclosures remain an outstanding preparation item despite the submitted review.
 - This change adds only the official ownership meta tag to the app. It makes no ad requests, adds no tracking cookies, and does not enable Auto ads.
 - The public root repository was published at `3602cbc65ff0e0d507308f3ba7b9272c8d958e9d` before this contact update. It is a separate Pages site from the application deployment.
 - The user reconfirmed **Market Copilot** as the public product name. Restore it in app wordmarks, titles, account copy, reports, notifications and mock-news labels; preserve URLs, member/device record keys and provider IDs.
