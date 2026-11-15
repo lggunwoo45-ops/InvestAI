@@ -44,6 +44,9 @@ jobs:
       - name: Verify Pages entry-route packaging
         run: node --test tools/prepare-pages.test.mjs
 
+      - name: Verify public reading pages and navigation
+        run: node --test ../tools/public-pages.test.mjs
+
       - name: Run lint
         run: npm run lint
 

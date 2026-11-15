@@ -8,6 +8,7 @@ import { useUiStore } from '@/hooks/useUiStore'
 import { useLanguage } from '@/i18n/useLanguage'
 import { uiText } from '@/i18n/translations'
 import styles from './Sidebar.module.css'
+import { PublicServiceLinks } from '@/components/product/PublicServiceLinks'
 
 const narrowSidebarQuery = '(max-width: 1024px)'
 
@@ -139,6 +140,7 @@ export function Sidebar() {
       </div>
 
       <div className={styles.footer}>
+        {isExpanded && <PublicServiceLinks />}
         <div className={styles.navigationList}>
           {utilityNavigation.map((item) => <SidebarNavItem key={item.path} item={item} label={navigationLabel(item, language)} compact={!isExpanded} />)}
         </div>
