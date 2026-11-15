@@ -1,4 +1,4 @@
-# AdSense connection — 2026-11-13
+# AdSense connection — 2026-11-15
 
 ## Observable completion criteria
 
@@ -10,20 +10,20 @@
 ## Verified state
 
 - The logged-in AdSense onboarding screen exposes publisher ID `pub-6900369987335133` and says payment information was confirmed. No additional personal verification or ad approval is inferred.
-- The production application is at `/InvestAI/`. The account root returned 404, and no `lggunwoo45-ops.github.io` repository was visible through the connected GitHub account at preparation time.
-- Browser screen capture/control timed out. No site was submitted to AdSense in this session.
+- The production application is at `/InvestAI/`. The account root and `/ads.txt` now return 200. Both root and app contain the matching ownership meta tag.
+- The user's AdSense screenshot shows the root domain registered, the meta-tag method selected and review still needed. The user subsequently reported clicking Verify; no successful verification result, review submission or approval has yet been observed.
 - This change adds only the official ownership meta tag to the app. It makes no ad requests, adds no tracking cookies, and does not enable Auto ads.
-- The user subsequently created the public root repository. Its `main` now contains the reviewed page and ownership files at `3602cbc65ff0e0d507308f3ba7b9272c8d958e9d`. Pages activation remains to be verified.
+- The public root repository was published at `3602cbc65ff0e0d507308f3ba7b9272c8d958e9d` before this contact update. It is a separate Pages site from the application deployment.
 - The user reconfirmed **Market Copilot** as the public product name. Restore it in app wordmarks, titles, account copy, reports, notifications and mock-news labels; preserve URLs, member/device record keys and provider IDs.
-- A dedicated public support email is not yet supplied. The user does not want their personal Google-account email disclosed. Never derive or publish that email from the AdSense session.
+- The user supplied the dedicated public support address `info.marketcop@gmail.com`. This update places it on the root page, app guide and plans page. It is independent of the existing AdSense login; never derive or publish the personal login address from that session.
 
 ## Root publication
 
-GitHub's connected tools can edit the existing repository but do not expose repository creation or Pages configuration. If the root repository is still absent:
+The root repository and Pages configuration already exist. For future updates:
 
-1. Create a **public** repository named exactly `lggunwoo45-ops.github.io` under `lggunwoo45-ops`. Do not publish any personal documents or credentials.
+1. Check the current `lggunwoo45-ops/lggunwoo45-ops.github.io` revision before updating it. Do not publish any personal documents or credentials.
 2. Copy the contents of this repository's `site-root/` directory into that repository's root. These are the three files `index.html`, `ads.txt`, and `.nojekyll`; no application build or personal records are included.
-3. In its Settings → Pages, use Deploy from a branch → `main` → `/ (root)`.
+3. Preserve its existing Settings → Pages configuration: Deploy from a branch → `main` → `/ (root)`.
 4. Verify the root and `/ads.txt` return 200. Follow the page links into the existing application and inspect both narrow and desktop widths. The existing `/InvestAI/` deployment remains independent.
 
 The copy in `frontend/public/ads.txt` serves `/InvestAI/ads.txt`; **it does not satisfy domain-root ads.txt discovery by itself**.
@@ -32,11 +32,11 @@ The copy in `frontend/public/ads.txt` serves `/InvestAI/ads.txt`; **it does not 
 
 1. Add `lggunwoo45-ops.github.io` as the site, without `/InvestAI/`.
 2. Select the meta-tag verification method and confirm the published tag matches this account.
-3. Complete the publisher's privacy/contact disclosures before requesting review; this preparation page's data explanation is not represented as a complete service privacy policy. The currently published app still says its support intake channel is in preparation.
+3. Complete the publisher's privacy disclosures before requesting review; this preparation page's data explanation is not represented as a complete service privacy policy. The dedicated support address is now provided, but operator identity and service privacy disclosures still require factual confirmation.
 4. Request review only after the public root and the policy pages are ready. Record Google's actual status and any reason returned.
 5. Before enabling ads, configure applicable consent messages and deliberate placements. Do not automatically enable site-wide Auto ads: application views, preview tiers, eventual verified paid entitlements and sensitive account/record screens need separate placement rules. Never refresh ads on chart ticks or solicit clicks.
 
-The root HTML is a useful service introduction and original reading guide, not a forwarding-only page. It links to current app features and accurately distinguishes unpaid beta/plan preview from a paid service. It intentionally contains no invented business registration, support email, privacy officer, testimonials or performance claims.
+The root HTML is a useful service introduction and original reading guide, not a forwarding-only page. It links to current app features and accurately distinguishes unpaid beta/plan preview from a paid service. It contains the user-provided support email, without invented business registration, privacy officer, testimonials or performance claims.
 
 ## Official references
 
