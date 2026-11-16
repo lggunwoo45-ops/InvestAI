@@ -28,7 +28,7 @@ export function MemberAccount({compact=false}:{compact?:boolean}){
     {open&&<div className={styles.content}>
       {!cloud.user||cloud.expired?mode==='emailRecover'?<EmailPasswordRecovery onLogin={()=>{setMode('login');setError('')}} onRecoveryCode={()=>{setMode('recover');setError('')}} />:<form onSubmit={submit} className={styles.form}>
         <h2>{mode==='register'?'Market Copilot 계정 만들기':mode==='recover'?'복구 코드로 비밀번호 재설정':'내 기록으로 로그인'}</h2>
-        <p><a href={`${publicServiceOrigin}/privacy/#member`} target="_blank" rel="noopener noreferrer">계정에 저장되는 정보와 삭제·문의 방법</a>을 확인하세요. 안내는 새 창에서 열리며 입력 중인 내용은 이 화면에 남습니다.</p>
+        <p><a href={`${publicServiceOrigin}/privacy/#member`} target="_blank" rel="noopener noreferrer">개인정보처리방침: 저장 정보와 삭제·문의 방법</a>을 확인하세요. 안내는 새 창에서 열리며 입력 중인 내용은 이 화면에 남습니다.</p>
         <p>{cloud.emailAvailable?'Market Copilot 전용 아이디를 사용합니다. 가입 시 이메일을 인증하며, 기존 회원은 로그인 후 이메일을 연결할 수 있어요.':'인증메일 발송은 준비 중입니다. 지금은 Market Copilot 아이디와 비밀번호로 가입하고, 비밀번호를 잊으면 가입 시 받은 복구 코드를 사용하세요.'}</p>
         <label>아이디<input autoComplete="username" required pattern="[a-zA-Z0-9_-]{4,32}" minLength={4} maxLength={32} value={username} onChange={e=>{setUsername(e.target.value);setEmailTicket('')}}/></label>
         {mode==='register'&&cloud.emailAvailable&&<SignupEmail username={username} onTicket={setEmailTicket}/>}

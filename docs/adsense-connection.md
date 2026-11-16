@@ -1,4 +1,4 @@
-# AdSense connection — 2026-11-15
+# AdSense connection — 2026-11-16
 
 ## Observable completion criteria
 
@@ -11,21 +11,22 @@
 
 - The logged-in AdSense onboarding screen exposes publisher ID `pub-6900369987335133` and says payment information was confirmed. No additional personal verification or ad approval is inferred.
 - The production application is at `/InvestAI/`. The account root and `/ads.txt` now return 200. Both root and app contain the matching ownership meta tag.
-- The user's November 15 AdSense screenshot confirms the site connection and review submission: it says all steps are completed and the site's advertising eligibility is under review. No advertising approval has been observed. Privacy disclosures remain an outstanding preparation item despite the submitted review.
+- The user's November 15 AdSense screenshot confirms the site connection and review submission: it says all steps are completed and the site's advertising eligibility is under review. No advertising approval has been observed. November 16 adds the current-beta privacy policy and its operating procedure; it does not change the review status.
 - This change adds only the official ownership meta tag to the app. It makes no ad requests, adds no tracking cookies, and does not enable Auto ads.
 - The public root repository was published at `3602cbc65ff0e0d507308f3ba7b9272c8d958e9d` before this contact update. It is a separate Pages site from the application deployment.
 - The user reconfirmed **Market Copilot** as the public product name. Restore it in app wordmarks, titles, account copy, reports, notifications and mock-news labels; preserve URLs, member/device record keys and provider IDs.
 - The user supplied the dedicated public support address `info.marketcop@gmail.com`. This update places it on the root page, app guide and plans page. It is independent of the existing AdSense login; never derive or publish the personal login address from that session.
-- On November 15 the user requested approval preparation and answered that the public operator/business name is undecided. Do not invent an operator identity, named privacy officer or business registration.
+- On November 16 the user approved **마켓코파일럿** as the public operating name and authorized choosing retention/deletion criteria. Privacy and grievance support is the operator directly, at the dedicated public address. This is a service name, not evidence of a registered legal entity or a separate staff member.
 
 ## Public reading and disclosure preparation
 
 - Six additional static pages: `/about/`, `/privacy/`, `/guides/` and three substantive guides covering price levels, missing data and records/costs. These are user-facing instructions, delivered as HTML without an app login or JavaScript dependency.
 - The app's simple/mobile menu, expanded expert sidebar, user guide and login/signup form link to the public information. External guides open separately so typed account details stay in the app.
 - Root navigation, canonical links, `robots.txt` and `sitemap.xml` cover the reading pages. Public-page tests check destinations, anchors, unique IDs, route existence, publisher identity and absence of ad scripts.
-- Source audit: account IDs and credential/recovery hashes; 12-hour bearer sessions and pending edits in session storage; guest data/preferences in local storage; member records and monitoring in SQLite; optional email/Telegram tables. Current public email and Telegram delivery are not configured. Full-account erasure is not exposed by the current server API. Do not claim an automatic account deletion button or a verified retention schedule.
+- Source audit: account IDs and credential/recovery hashes; 12-hour bearer sessions and pending edits in session storage; guest data/preferences in local storage; member records and monitoring in SQLite; optional email/Telegram tables. Current public email and Telegram delivery are not configured. Full-account erasure is handled through verified support requests and an offline operator CLI, not a self-service HTTP endpoint. Expired authentication records are cleaned at startup and every 30 minutes while running.
 - Optional position connections also process public wallet/account identifiers or exchange API credentials in an encrypted vault, together with position/risk observations. The current Railway member server and attached volume were verified in Singapore (`asia-southeast1-eqsg3a`) on November 15; this does not establish every provider's processing location or log/backup retention.
-- `/privacy/` is an honest current data-processing guide, including the Google cookie disclosures and opt-out links that would apply when ads are enabled. It explicitly does not claim to replace a completed service privacy policy. Operator identity/responsible contact, retention/erasure operations (including support mail and backups), provider roles and international-transfer details remain to be factually finalized. Ads remain disabled until this and applicable consent setup are ready.
+- `/privacy/` now contains the current-beta privacy policy, version 1.0 effective November 16. It gives the approved operating name, responsible support contact, item/purpose/retention table, rights and deletion procedure, Railway/GitHub/Gmail processing and international locations, browser storage, and future advertising cookie choices. Member records remain until account/record deletion is processed; resolved support mail is permanently deleted by the operator within 90 days. This is not automatic Gmail deletion. The operations runbook is `docs/privacy-operations.md`.
+- Provider log/backup physical erasure and signed processing agreements are not assumed. Railway backup configuration and DPA execution remain operator checks in that runbook. The policy explains provider criteria instead of claiming an unverified fixed purge period. New ads, consent messages, billing and third-party AI remain disabled until their actual processing is configured and disclosed.
 - Browser audit of the current public app: Upbit BTC live market chart; market-to-analysis preserved `upbit-btc`/KRW, with three available timeframes and actual calculation output; news displayed 45 source-linked items. This verifies these journeys, not every indicator, all providers, account delivery or commercial readiness.
 
 Rebuild static pages with `node tools/build-public-pages.mjs` after editing their source; run `node --test tools/public-pages.test.mjs`. Publish all generated public files together to avoid temporary broken links. Keep code, internal readiness notes and private operator details out of the root site's publication manifest.
@@ -45,7 +46,7 @@ The copy in `frontend/public/ads.txt` serves `/InvestAI/ads.txt`; **it does not 
 
 1. Add `lggunwoo45-ops.github.io` as the site, without `/InvestAI/`.
 2. Select the meta-tag verification method and confirm the published tag matches this account.
-3. Complete the publisher's privacy disclosures before requesting review; this preparation page's data explanation is not represented as a complete service privacy policy. The dedicated support address is now provided, but operator identity and service privacy disclosures still require factual confirmation.
+3. Keep the current privacy policy and support address publicly accessible and operate the stated deletion/retention procedure. Review was already requested on November 15; do not resubmit merely because the policy is updated.
 4. Request review only after the public root and the policy pages are ready. Record Google's actual status and any reason returned.
 5. Before enabling ads, configure applicable consent messages and deliberate placements. Do not automatically enable site-wide Auto ads: application views, preview tiers, eventual verified paid entitlements and sensitive account/record screens need separate placement rules. Never refresh ads on chart ticks or solicit clicks.
 

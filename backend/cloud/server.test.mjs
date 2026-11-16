@@ -19,6 +19,25 @@ async function serve(directory,options={}){
   return {handler,async request(path,data,token,method=data===undefined?'GET':'POST',headers={}){const response=await fetch(base+path,{method,headers:{origin:'https://app.example','content-type':'application/json','x-investai-cloud':'1','x-investai-monitor':'1',...(token?{authorization:`Bearer ${token}`} : {}),...headers},body:data===undefined?undefined:JSON.stringify(data)});return {status:response.status,body:await response.json(),headers:response.headers}},async close(){await handler.close();server.closeAllConnections();await new Promise(r=>server.close(r))}}
 }
 
+test('server startup cleans expired authentication while preserving usable sessions and saved records',async()=>{
+  const dir=await mkdtemp(join(tmpdir(),'market-copilot-startup-privacy-')), now=Date.now()
+  let app
+  try{
+    const accounts=openAccounts(dir,()=>now)
+    const member=await accounts.register({username:'privacy_startup',password})
+    accounts.putRecord(member.user.id,{key:'investai.research.draft.v1.BTC',value:'preserved',version:0})
+    accounts.db.prepare('INSERT INTO sessions VALUES(?,?,?)').run('expired-session',member.user.id,now-1)
+    accounts.close()
+    app=await serve(dir,{clock:()=>now})
+    const records=await app.request('/records',undefined,member.token)
+    assert.equal(records.status,200)
+    assert.equal(records.body.records[0].value,'preserved')
+    await app.close();app=null
+    const inspect=openAccounts(dir,()=>now)
+    try{assert.equal(inspect.db.prepare('SELECT COUNT(*) AS count FROM sessions WHERE expires<=?').get(now).count,0)}finally{inspect.close()}
+  }finally{if(app)await app.close();await rm(dir,{recursive:true,force:true})}
+})
+
 test('member holdings, watchlist bundles and scenarios persist with owner isolation and version conflicts',async()=>{
   const dir=await mkdtemp(join(tmpdir(),'investai-investments-'));let app=await serve(dir)
   try{

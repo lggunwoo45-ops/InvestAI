@@ -8,6 +8,7 @@ import { createQuoteReader } from '../monitor/quotes.mjs'
 import { createHistoryReader } from '../research/history.mjs'
 import { createEmailDelivery } from './emailDelivery.mjs'
 import { createOpportunities } from './opportunities.mjs'
+import { purgeExpiredAuthentication } from './privacyRetention.mjs'
 
 const principal=Symbol('authenticated cloud owner')
 const headers={ 'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff',Vary:'Origin' }
@@ -91,6 +92,9 @@ export function createCloudHandler({ directory=process.env.INVESTAI_CLOUD_DIRECT
     const renew=setInterval(()=>{try{const result=accounts.db.prepare('UPDATE worker SET expires=? WHERE id=1 AND owner=? AND expires>?').run(clock()+30000,workerId,clock());if(!result.changes)fatal='회원 감시 실행 권한이 만료되어 중지했습니다.'}catch{fatal='회원 감시 저장소에 연결하지 못했습니다.'}},5000);renew.unref();timers.push(renew)
     telegram=createMemberTelegram(accounts,{env,fetcher,clock,guard:assertLease});prices=createPriceAlerts(accounts,{quoteReader:quotes,telegram,clock,guard:assertLease})
     opportunities=createOpportunities(accounts,{clock,guard:assertLease,historyReader:opportunityHistoryReader})
+    const cleanup=()=>{assertLease();purgeExpiredAuthentication(accounts.db,clock())}
+    cleanup()
+    if(autoStart){const retention=setInterval(()=>{if(closing||fatal)return;try{cleanup()}catch{console.warn('[member-privacy] cleanup_failed')}},30*60_000);retention.unref();timers.push(retention)}
     for(const user of accounts.users())await getMonitor(user.id)
   })().catch(()=>{fatal='회원 저장소를 열지 못했습니다. 저장 공간·암호화 설정·단일 실행 여부를 확인해주세요.'})
   const tick=async()=>{await ready;if(fatal||closing||!enabled)return;assertLease();await Promise.all([prices.tick(),opportunities.tick()])}
