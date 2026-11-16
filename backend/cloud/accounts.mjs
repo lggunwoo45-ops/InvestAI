@@ -23,7 +23,7 @@ async function verify(password, encoded) {
 export function openAccounts(directory, clock = Date.now, { emailSecret = randomBytes(32) } = {}) {
   mkdirSync(directory, { recursive: true, mode: 0o700 })
   const db = new DatabaseSync(join(directory, 'accounts.sqlite'))
-  db.exec(`PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000;
+  db.exec(`PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000; PRAGMA secure_delete=ON;
     CREATE TABLE IF NOT EXISTS users(id TEXT PRIMARY KEY, username TEXT UNIQUE NOT NULL, password TEXT NOT NULL, recovery TEXT NOT NULL, created INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS sessions(hash TEXT PRIMARY KEY, owner TEXT NOT NULL REFERENCES users(id), expires INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS records(owner TEXT NOT NULL REFERENCES users(id), key TEXT NOT NULL, value TEXT, version INTEGER NOT NULL, PRIMARY KEY(owner,key));
