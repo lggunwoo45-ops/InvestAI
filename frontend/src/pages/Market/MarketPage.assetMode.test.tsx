@@ -1,99 +1,43 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
 import { App } from '@/app/App'
 import { LAST_MARKET_INSTRUMENT_STORAGE_KEY, MARKET_ASSET_MODE_STORAGE_KEY } from './marketAssetMode'
 
-describe('Market asset separation', () => {
+describe('public crypto product', () => {
   beforeEach(() => {
     window.localStorage.clear(); window.localStorage.setItem('market-copilot.displayMode.v1', 'expert')
     window.history.pushState({}, '', '/market')
     vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('Network disabled in deterministic Market tests'))
   })
-
   afterEach(() => vi.restoreAllMocks())
-
-  it('defaults to Crypto and selects BTC/KRW as soon as a catalog is available', async () => {
+  it('selects BTC/KRW and exposes only crypto in expert mode', async () => {
     render(<App />)
-
-    expect(await screen.findByRole('region', { name: 'Market Explorer' })).toBeTruthy()
-    expect(screen.queryByText('Review crypto movement from Upbit and Binance markets.')).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: 'MOCK' }))
-
+    fireEvent.click(await screen.findByRole('button', { name: 'MOCK' }))
     expect(await screen.findByRole('img', { name: /BTC\/KRW 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
-    const cryptoTab = screen.getByRole('tab', { name: 'Crypto' })
-    expect(cryptoTab.getAttribute('aria-selected')).toBe('true')
-    expect(cryptoTab.closest('[data-market-workspace-switcher]')).toBeTruthy()
-    expect(screen.getAllByRole('tab', { name: 'Crypto' })).toHaveLength(1)
-    expect(screen.queryByRole('button', { name: 'Open 005930' })).toBeNull()
-    expect(window.localStorage.getItem(MARKET_ASSET_MODE_STORAGE_KEY)).toBe('crypto')
+    expect(screen.getByRole('tab', { name: 'Crypto' }).getAttribute('aria-selected')).toBe('true')
+    expect(screen.queryByRole('tab', { name: 'Korea Stocks' })).toBeNull()
+    expect(screen.queryByRole('tab', { name: 'US Stocks' })).toBeNull()
   })
-
-  it('switches to the Korea stock boundary, selects Samsung, and preserves list collapse', async () => {
-    render(<App />)
-    fireEvent.click(screen.getByRole('button', { name: 'MOCK' }))
-    await screen.findByRole('img', { name: /BTC\/KRW 1H TradingView candlestick chart in mock mode/i })
-
-    fireEvent.click(screen.getByRole('tab', { name: 'Korea Stocks' }))
-    expect(await screen.findByRole('region', { name: 'Market Explorer' })).toBeTruthy()
-    expect(screen.queryByText('KOSPI / KOSDAQ instruments are shown with beta data. A live stock provider is not connected yet.')).toBeNull()
-    expect(await screen.findByRole('img', { name: /005930 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
-    expect(screen.getByRole('tab', { name: 'KOSPI' }).getAttribute('aria-selected')).toBe('true')
-    expect(screen.getByRole('tab', { name: 'KOSDAQ' })).toBeTruthy()
-    expect(screen.queryByRole('button', { name: 'Open BTC/KRW' })).toBeNull()
-    expect(window.localStorage.getItem(MARKET_ASSET_MODE_STORAGE_KEY)).toBe('korea')
-
-    fireEvent.click(screen.getByRole('button', { name: 'Hide instruments' }))
-    expect(screen.getByRole('button', { name: 'Show instruments' })).toBeTruthy()
-    expect(screen.getByRole('img', { name: /005930 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
-  })
-
-  it('switches to the US stock boundary, selects Apple, and limits search to that mode', async () => {
-    render(<App />)
-    fireEvent.click(await screen.findByRole('tab', { name: 'US Stocks' }))
-
-    expect(await screen.findByRole('region', { name: 'Market Explorer' })).toBeTruthy()
-    expect(screen.queryByText('US stock instruments are shown with beta data. A live stock provider is not connected yet.')).toBeNull()
-    expect(await screen.findByRole('img', { name: /AAPL 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
-    expect(screen.getByRole('tab', { name: 'NASDAQ' }).getAttribute('aria-selected')).toBe('true')
-    expect(screen.getByRole('tab', { name: 'NYSE' })).toBeTruthy()
-
-    const search = screen.getByRole('searchbox', { name: 'Search instruments' })
-    fireEvent.change(search, { target: { value: 'XRP/KRW' } })
-    expect(await screen.findByText('No instruments match this market search.')).toBeTruthy()
-    expect(screen.queryByRole('button', { name: 'Open BTC/KRW' })).toBeNull()
-  })
-
-  it('restores a valid previous selection and falls back when a stored id is unavailable', async () => {
+  it('does not resurrect the old stock workspace or remove its saved instrument', async () => {
     window.localStorage.setItem(MARKET_ASSET_MODE_STORAGE_KEY, 'korea')
     window.localStorage.setItem(LAST_MARKET_INSTRUMENT_STORAGE_KEY, JSON.stringify({ schemaVersion: 1, instrumentIds: { korea: 'krx-000660' } }))
-    const first = render(<App />)
-    expect(await screen.findByRole('img', { name: /000660 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
-    first.unmount()
-
-    window.localStorage.setItem(LAST_MARKET_INSTRUMENT_STORAGE_KEY, JSON.stringify({ schemaVersion: 1, instrumentIds: { korea: 'krx-missing' } }))
     render(<App />)
-    expect(await screen.findByRole('img', { name: /005930 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
-    await waitFor(() => expect(window.localStorage.getItem(LAST_MARKET_INSTRUMENT_STORAGE_KEY)).toContain('krx-005930'))
+    fireEvent.click(await screen.findByRole('button', { name: 'MOCK' }))
+    expect(await screen.findByRole('img', { name: /BTC\/KRW 1H TradingView candlestick chart in mock mode/i })).toBeTruthy()
+    expect(window.localStorage.getItem(LAST_MARKET_INSTRUMENT_STORAGE_KEY)).toContain('krx-000660')
   })
-
-  it('renders the separated asset modes and beta boundary copy in Korean', async () => {
+  it('has no stock venue in simple mode', async () => {
+    window.localStorage.setItem('market-copilot.displayMode.v1', 'simple')
     render(<App />)
-    fireEvent.change(screen.getByRole('combobox', { name: 'Language' }), { target: { value: 'ko' } })
-
-    expect(await screen.findByRole('tab', { name: '코인' })).toBeTruthy()
-    expect(screen.getByRole('tab', { name: '한국 주식' })).toBeTruthy()
-    expect(screen.getByRole('tab', { name: '미국 주식' })).toBeTruthy()
-    expect(screen.getByRole('region', { name: '마켓 탐색' })).toBeTruthy()
-    expect(screen.queryByText('업비트와 바이낸스 기준으로 코인 흐름을 확인합니다.')).toBeNull()
-    expect(screen.getByRole('tab', { name: '코인' }).closest('[data-market-workspace-switcher]')).toBeTruthy()
-    expect(screen.getAllByRole('tab', { name: '코인' })).toHaveLength(1)
-
-    fireEvent.click(screen.getByRole('tab', { name: '한국 주식' }))
-    expect(await screen.findByRole('region', { name: '마켓 탐색' })).toBeTruthy()
-    expect(screen.queryByText('KOSPI / KOSDAQ 종목은 베타 데이터로 표시됩니다. 실시간 주식 공급자는 아직 연결되지 않았습니다.')).toBeNull()
-    fireEvent.click(screen.getByRole('tab', { name: '미국 주식' }))
-    expect(await screen.findByRole('region', { name: '마켓 탐색' })).toBeTruthy()
-    expect(screen.queryByText('미국 주식은 베타 데이터로 표시됩니다. 실시간 주식 공급자는 아직 연결되지 않았습니다.')).toBeNull()
+    const venues = await screen.findByRole('combobox', { name: 'Market' })
+    expect([...venues.querySelectorAll('option')].map(o => o.value)).toEqual(['upbit-krw', 'upbit-btc', 'upbit-usdt', 'binance-spot', 'binance-futures'])
+  })
+  it.each(['/my-analysis?instrumentId=krx-005930', '/market?venue=nasdaq', '/my-analysis?instrumentId=us-aapl&product=stocks-preview'])('blocks direct stock entry: %s', async path => {
+    window.history.pushState({}, '', path)
+    render(<App />)
+    expect(await screen.findByRole('heading', { name: 'This market is not available here' })).toBeTruthy()
+    expect(screen.queryByRole('region', { name: 'Market Explorer' })).toBeNull()
+    fireEvent.click(screen.getByRole('link', { name: 'Open market' }))
+    expect(await screen.findByRole('region', { name: 'Market Explorer' })).toBeTruthy()
   })
 })

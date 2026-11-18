@@ -1,5 +1,6 @@
 import { venueForStockId } from '@/services/market/explorer/StockCatalogProvider'
 import type { MarketGroup, MarketInstrument, MarketVenue } from '@/types/market'
+import { productScope } from '@/app/productScope'
 
 export type MarketAssetMode = MarketGroup
 
@@ -34,16 +35,16 @@ function storageOrUndefined(): Storage | undefined {
 }
 
 export function loadMarketAssetMode(storage = storageOrUndefined()): MarketAssetMode {
-  if (!storage) return 'crypto'
+  if (!storage) return productScope.defaultGroup
   try {
     const value = storage.getItem(MARKET_ASSET_MODE_STORAGE_KEY)
-    if (value === null) return 'crypto'
-    if (isAssetMode(value)) return value
+    if (value === null) return productScope.defaultGroup
+    if (isAssetMode(value)) return productScope.groups.includes(value) ? value : productScope.defaultGroup
     storage.removeItem(MARKET_ASSET_MODE_STORAGE_KEY)
   } catch {
     // Storage failures must not stop the Market workspace from rendering.
   }
-  return 'crypto'
+  return productScope.defaultGroup
 }
 
 export function saveMarketAssetMode(mode: MarketAssetMode, storage = storageOrUndefined()) {

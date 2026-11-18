@@ -1,4 +1,5 @@
 import { memo, useMemo, useState } from 'react'
+import { productScope } from '@/app/productScope'
 import { Link } from 'react-router-dom'
 
 import { NewsInsightPanel } from '@/components/news/NewsInsightPanel/NewsInsightPanel'
@@ -36,7 +37,7 @@ export const NewsCard = memo(function NewsCard({ article, availableInstruments =
               ? <Link key={symbol} to={`/my-analysis?instrumentId=${encodeURIComponent(id)}`}>{symbol} {language === 'ko' ? '분석' : 'analysis'} →</Link>
               : id && canOpenInstrument(id)
               ? <button key={symbol} type="button" onClick={() => openInstrument(id)} aria-label={`${text.openInMarket}: ${symbol}`} title={text.viewSymbol}>{symbol} ↗</button>
-              : !article.isMock && ['BTC', 'ETH', 'XRP', 'SOL', 'ADA', 'DOGE', 'LINK', 'AVAX', 'DOT'].includes(symbol)
+              : productScope.kind === 'crypto' && !article.isMock && ['BTC', 'ETH', 'XRP', 'SOL', 'ADA', 'DOGE', 'LINK', 'AVAX', 'DOT'].includes(symbol)
                 ? <Link key={symbol} to={`/my-analysis?instrumentId=upbit-${symbol.toLowerCase()}`} aria-label={`${symbol} ${language === 'ko' ? '종목 분석' : 'analysis'}`}>{symbol} ↗</Link>
                 : <span key={symbol}>{symbol}</span>
           })}

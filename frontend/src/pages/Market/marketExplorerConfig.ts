@@ -5,7 +5,7 @@ export const marketExplorerText = {
   en: {
     title: 'Market Explorer',
     eyebrow: 'MARKET COPILOT / MARKET DATA',
-    subtitle: 'Discover every available crypto pair and explore stock universes.',
+    subtitle: 'Explore the instruments available in this market.',
     workspace: {
       crypto: {
         title: 'Crypto Market',
@@ -86,7 +86,7 @@ export const marketExplorerText = {
   ko: {
     title: '마켓 탐색',
     eyebrow: 'MARKET COPILOT / 마켓 데이터',
-    subtitle: '거래 가능한 암호화폐와 주식 종목을 탐색합니다.',
+    subtitle: '선택한 시장의 종목과 시세를 확인합니다.',
     workspace: {
       crypto: {
         title: '코인 마켓',

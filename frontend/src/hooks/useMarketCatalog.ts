@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { productScope } from '@/app/productScope'
 
 import { marketDataService } from '@/services/market/marketDataService'
 import type { MarketCatalog, MarketDataMode, MarketVenue } from '@/types/market'
@@ -12,6 +13,7 @@ interface CatalogState {
 }
 
 export function useMarketCatalog(venue: MarketVenue, mode: MarketDataMode, retry: number, enabled = true): CatalogState {
+  enabled = enabled && productScope.allowsVenue(venue)
   const key = `${venue}:${mode}:${retry}`
   const [result, setResult] = useState<CatalogState & { key: string; enabled: boolean }>({
     key: '', enabled, catalog: null, loading: true, error: null, loadingMilliseconds: null,

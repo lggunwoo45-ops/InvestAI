@@ -44,7 +44,7 @@ describe('Market instrument-list layout', () => {
     expect((screen.getByRole('searchbox', { name: 'Search instruments' }) as HTMLInputElement).value).toBe('XRP')
     expect((screen.getByRole('combobox', { name: 'Sort' }) as HTMLSelectElement).value).toBe('price')
     expect(screen.getByRole('button', { name: 'Remove from watchlist XRP/KRW' }).getAttribute('aria-pressed')).toBe('true')
-    fireEvent.click(screen.getByRole('tab', { name: 'US Stocks' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Binance' }))
     expect(screen.getByRole('button', { name: 'Instrument list' }).getAttribute('aria-pressed')).toBe('true')
     expect((screen.getByRole('searchbox', { name: 'Search instruments' }) as HTMLInputElement).value).toBe('')
   })

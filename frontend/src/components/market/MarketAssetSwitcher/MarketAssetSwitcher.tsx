@@ -2,13 +2,14 @@ import { useLanguage } from '@/i18n/useLanguage'
 import { marketExplorerText } from '@/pages/Market/marketExplorerConfig'
 import type { MarketAssetMode } from '@/pages/Market/marketAssetMode'
 import styles from './MarketAssetSwitcher.module.css'
+import { productScope } from '@/app/productScope'
 
 interface MarketAssetSwitcherProps {
   activeMode: MarketAssetMode
   onChange: (mode: MarketAssetMode) => void
 }
 
-const modes: readonly MarketAssetMode[] = ['crypto', 'korea', 'us']
+const modes: readonly MarketAssetMode[] = productScope.groups
 
 export function MarketAssetSwitcher({ activeMode, onChange }: MarketAssetSwitcherProps) {
   const { language } = useLanguage()

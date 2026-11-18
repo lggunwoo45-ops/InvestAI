@@ -15,6 +15,7 @@ import { SharedRequests } from './sharedRequests'
 import { ChartHistoryCache } from './chartHistoryCache'
 import { upbitRelayBase } from './providers/upbitRelay'
 import type { DailyHistory } from './providers/dailyHistory'
+import { productScope } from '@/app/productScope'
 
 export interface MarketOverviewService {
   getMarketOverview(): Promise<readonly MarketSectionData[]>
@@ -115,10 +116,11 @@ export class MarketDataService implements MarketOverviewService {
     private readonly providers: readonly RealtimeMarketProvider[] = liveProviders,
     private readonly mockProvider: RealtimeMarketProvider = mockMarketDataProvider,
     private readonly explorerProviders: readonly MarketCatalogProvider[] = catalogProviders,
+    private readonly scope: typeof productScope | null = null,
   ) {}
 
   async getMarketOverview() {
-    return Promise.resolve(mockMarketSections)
+    return Promise.resolve(mockMarketSections.filter(section => !this.scope || this.scope.allowsMarketId(section.id)))
   }
 
   /** Fast path for navigation and offline use; selected identities survive reload. */
@@ -134,7 +136,7 @@ export class MarketDataService implements MarketOverviewService {
       const indexed = this.instrumentIndex.get(id)
       if (indexed) result.set(id, indexed)
     }
-    return result
+    return new Map([...result].filter(([, item]) => !this.scope || this.scope.allowsInstrument(item)))
   }
 
   /** Resolve persisted IDs through the same provider catalogs used by Explorer. */
@@ -161,6 +163,7 @@ export class MarketDataService implements MarketOverviewService {
 
   /** The only entry point for catalog APIs; UI never addresses an exchange directly. */
   getMarketCatalog(venue: MarketVenue, mode: MarketDataMode, force = false, signal?: AbortSignal): Promise<MarketCatalog> {
+    if (this.scope && !this.scope.allowsVenue(venue)) return Promise.reject(new Error('This market is not available in this product'))
     if (signal?.aborted) return Promise.reject(new DOMException('Catalog request aborted', 'AbortError'))
     const key = `${mode}:${venue}`
     const cached = this.catalogCache.get(key)
@@ -189,16 +192,19 @@ export class MarketDataService implements MarketOverviewService {
 
   /** Display-only recovery data. Never returned as a successful fresh catalog. */
   getRecentCatalog(venue: MarketVenue, mode: MarketDataMode): MarketCatalog | null {
+    if (this.scope && !this.scope.allowsVenue(venue)) return null
     const cached = this.catalogCache.get(`${mode}:${venue}`)?.value
     const age = cached ? Date.now() - cached.fetchedAt : Infinity
     return cached && age >= 0 && age <= 300_000 ? cached : null
   }
 
   getChartPreview(instrument: MarketInstrument, timeframe: ChartTimeframe, mode: MarketDataMode) {
+    if (this.scope && !this.scope.allowsInstrument(instrument)) return null
     return mode === 'live' ? this.chartHistory.get(instrument, timeframe) : null
   }
 
   getLongTermHistory(instrument: MarketInstrument, signal: AbortSignal): Promise<DailyHistory> {
+    if (this.scope && !this.scope.allowsInstrument(instrument)) return Promise.reject(new Error('This market is not available in this product'))
     signal.throwIfAborted()
     const key = JSON.stringify([instrument.id, instrument.marketId, instrument.symbol, instrument.providerSymbol, instrument.quoteCurrency])
     const cached = this.dailyHistories.get(key)
@@ -218,6 +224,7 @@ export class MarketDataService implements MarketOverviewService {
 
   /** Historical audit requests use a real provider only, without opening a quote stream. */
   async getLiveCandles(instrument:MarketInstrument,timeframe:ChartTimeframe,signal:AbortSignal) {
+    if (this.scope && !this.scope.allowsInstrument(instrument)) throw new Error('This market is not available in this product')
     signal.throwIfAborted()
     const provider=this.providers.find(p=>p.supports(instrument))
     if (!provider || provider===this.mockProvider) throw new Error('live-history-unavailable')
@@ -228,6 +235,10 @@ export class MarketDataService implements MarketOverviewService {
   }
 
   subscribe({ instrument, timeframe, mode, onState, priority = 10 }: MarketStreamOptions): () => void {
+    if (this.scope && !this.scope.allowsInstrument(instrument)) {
+      onState({ snapshot: null, connection: { requestedMode: mode, effectiveMode: 'live', status: 'disconnected', provider: 'Unavailable market', reconnectAttempt: 0, lastUpdatedAt: null, message: 'This market is not available in this product' } })
+      return () => {}
+    }
     const key = JSON.stringify([mode, instrument.id, instrument.marketId, instrument.providerType, instrument.providerSymbol, instrument.quoteCurrency, timeframe])
     const listener = { onState, priority }
     let session = this.streams.get(key)
@@ -393,4 +404,4 @@ export class MarketDataService implements MarketOverviewService {
   }
 }
 
-export const marketDataService = new MarketDataService()
+export const marketDataService = new MarketDataService(undefined, undefined, undefined, productScope)

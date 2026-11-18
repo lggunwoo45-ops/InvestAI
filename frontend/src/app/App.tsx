@@ -8,6 +8,7 @@ import { CloudBoundary } from '@/components/cloud/CloudBoundary'
 import { LanguageProvider } from '@/i18n/LanguageProvider'
 import { AppErrorBoundary } from '@/components/AppErrorBoundary/AppErrorBoundary'
 import { RouteLoadingFallback } from '@/components/RouteLoadingFallback/RouteLoadingFallback'
+import { productScope } from './productScope'
 
 const LaunchPreviewPage = lazy(() => import('@/pages/LaunchPreview/LaunchPreviewPage').then(module => ({ default: module.LaunchPreviewPage })))
 
@@ -15,12 +16,13 @@ export function App() {
   const isFileProtocol = window.location.protocol === 'file:'
   const Router = isFileProtocol ? HashRouter : BrowserRouter
   const basename = !isFileProtocol && window.location.hostname.endsWith('github.io') ? '/InvestAI' : undefined
+  const workspace = <AppProviders><ExperienceProvider><AppRoutes /></ExperienceProvider></AppProviders>
 
   return (
     <Router basename={basename}>
       <Routes>
         <Route path="preview" element={<AppErrorBoundary><LanguageProvider><Suspense fallback={<RouteLoadingFallback />}><LaunchPreviewPage /></Suspense></LanguageProvider></AppErrorBoundary>} />
-        <Route path="*" element={<CloudBoundary><AppProviders><ExperienceProvider><AppRoutes /></ExperienceProvider></AppProviders></CloudBoundary>} />
+        <Route path="*" element={productScope.kind === 'stocks' ? workspace : <CloudBoundary>{workspace}</CloudBoundary>} />
       </Routes>
     </Router>
   )

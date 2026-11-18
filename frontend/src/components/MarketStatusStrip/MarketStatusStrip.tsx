@@ -3,8 +3,9 @@ import { uiText } from '@/i18n/translations'
 import { useLanguage } from '@/i18n/useLanguage'
 import { getMarketSessionStatus } from '@/utils/marketSessions'
 import styles from './MarketStatusStrip.module.css'
+import { productScope } from '@/app/productScope'
 
-const markets: readonly MarketRegion[] = ['crypto', 'korea', 'us']
+const markets: readonly MarketRegion[] = productScope.groups
 
 interface MarketStatusStripProps { now: Date }
 

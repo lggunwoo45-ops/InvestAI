@@ -16,9 +16,10 @@ import { filterNews } from '@/services/news/newsSelectors'
 import { marketDataService } from '@/services/market/marketDataService'
 import type { NewsCategory, NewsImportance, NewsMarket, NewsSentiment } from '@/types/dashboard'
 import styles from './NewsPage.module.css'
+import { productScope } from '@/app/productScope'
 
-const categories: readonly NewsCategory[] = ['crypto', 'korea-stock', 'us-stock', 'macro', 'technology', 'ai', 'earnings', 'regulation']
-const markets: readonly NewsMarket[] = ['crypto', 'korea', 'us', 'macro']
+const categories: readonly NewsCategory[] = productScope.kind === 'crypto' ? ['crypto', 'macro', 'technology', 'ai', 'regulation'] : ['korea-stock', 'us-stock', 'macro', 'technology', 'ai', 'earnings', 'regulation']
+const markets: readonly NewsMarket[] = [...productScope.groups, 'macro']
 const sentiments: readonly NewsSentiment[] = ['positive', 'neutral', 'negative', 'unassessed']
 const importanceLevels: readonly NewsImportance[] = ['high', 'medium', 'low', 'unassessed']
 interface NewsRouteState { query?: string; market?: NewsMarket }

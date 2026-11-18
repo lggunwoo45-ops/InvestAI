@@ -12,6 +12,7 @@ import { ModeGuide } from './ModeGuide'
 import { SimpleWorkspace } from './SimpleWorkspace'
 import { coreCoinName, coreMarketCoins } from './coreMarketCoins'
 import styles from './SimpleWorkspace.module.css'
+import { productScope } from '@/app/productScope'
 
 interface Props {
   chart?: ReactNode; activity?: ReactNode;
@@ -60,8 +61,8 @@ export function SimpleMarket(props: Props) {
   return <SimpleWorkspace compactHeading wide={!!props.chart} title={ko ? '궁금한 종목을 찾아보세요' : 'Find an asset you know'} description={ko ? '이름을 찾고, 하나를 골라 지금 확인할 내용을 읽어보세요.' : 'Search by name and select an asset to review.'}>
     {crypto && <div className={styles.coinMenu} role="group" aria-label={ko ? '코인 목록 선택' : 'Coin list'}><button type="button" aria-pressed={core} onClick={() => listView(false)}>{ko ? '대표 코인' : 'Core coins'}</button><button type="button" aria-pressed={!core} onClick={() => listView(true)}>{ko ? '전체 코인 보기' : 'View all coins'}</button></div>}
     <div className={styles.controls}>
-      <label>{ko ? '시장 선택' : 'Market'}<select value={venue} onChange={event => { onVenue(event.target.value as MarketVenue); setShowDetail(false) }}>{venues.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-      {(!compact || !showDetail) && <><label>{ko ? '종목 이름' : 'Asset name'}<input type="search" value={search} onChange={event => onSearch(event.target.value)} placeholder={ko ? '예: 비트코인, BTC' : 'e.g. Bitcoin, BTC'} /></label><button type="button" aria-pressed={favoritesOnly} onClick={() => onFavoritesOnly(!favoritesOnly)}>{ko ? '관심종목만' : 'Favorites only'}</button></>}
+      <label>{ko ? '시장 선택' : 'Market'}<select value={venue} onChange={event => { onVenue(event.target.value as MarketVenue); setShowDetail(false) }}>{venues.filter(([value]) => productScope.allowsVenue(value)).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+      {(!compact || !showDetail) && <><label>{ko ? '종목 이름' : 'Asset name'}<input type="search" value={search} onChange={event => onSearch(event.target.value)} placeholder={crypto ? (ko ? '예: 비트코인, BTC' : 'e.g. Bitcoin, BTC') : (ko ? '예: 삼성전자, AAPL' : 'e.g. Samsung, AAPL')} /></label><button type="button" aria-pressed={favoritesOnly} onClick={() => onFavoritesOnly(!favoritesOnly)}>{ko ? '관심종목만' : 'Favorites only'}</button></>}
       <button type="button" disabled={loading} onClick={onRetry}>{ko ? '시세 새로고침' : 'Refresh'}</button>
     </div>
     {catalog?.source === 'mock' && <p role="status" className={styles.risk}>{ko ? '예시 시세입니다. 실제 투자 판단에 사용할 수 없어요.' : 'Example quotes. These are not live investment data.'}</p>}

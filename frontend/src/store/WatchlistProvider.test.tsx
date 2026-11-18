@@ -17,6 +17,26 @@ function wrapper({ children }: PropsWithChildren) {
 describe('WatchlistProvider storage safety', () => {
   beforeEach(() => window.localStorage.clear())
 
+  it('hides existing stock entries but preserves them through crypto edits, reorder and list removal', () => {
+    const saved = [
+      { id: 'crypto', name: 'Crypto', instrumentIds: ['upbit-btc'], isDefault: true },
+      { id: 'korea', name: 'Korea', instrumentIds: ['krx-005930'], isDefault: true },
+      { id: 'mixed', name: 'Mixed', instrumentIds: ['upbit-btc', 'us-aapl', 'upbit-eth'], isDefault: false },
+    ]
+    window.localStorage.setItem(WATCHLIST_KEY, JSON.stringify({ schemaVersion: WATCHLIST_SCHEMA_VERSION, watchlists: saved }))
+    const { result } = renderHook(() => useWatchlists(), { wrapper })
+    expect(result.current.watchlists.some(list => list.id === 'korea')).toBe(false)
+    expect(result.current.favoriteIds.has('us-aapl')).toBe(false)
+    expect(result.current.watchlists.find(list => list.id === 'mixed')?.instrumentIds).toEqual(['upbit-btc', 'upbit-eth'])
+    act(() => result.current.reorderWatchlist('mixed', 0, 1))
+    expect(loadStoredWatchlists().find(list => list.id === 'mixed')?.instrumentIds).toEqual(['upbit-eth', 'us-aapl', 'upbit-btc'])
+    act(() => result.current.toggleFavorite('upbit-xrp'))
+    expect(loadStoredWatchlists().find(list => list.id === 'korea')?.instrumentIds).toEqual(['krx-005930'])
+    act(() => result.current.deleteWatchlist('mixed'))
+    expect(result.current.watchlists.some(list => list.id === 'mixed')).toBe(false)
+    expect(loadStoredWatchlists().find(list => list.id === 'mixed')?.instrumentIds).toEqual(['us-aapl'])
+  })
+
   it.each([
     '{"corrupted":true}',
     '"hello"',

@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:stocks": "vite --mode stocks-preview --host 127.0.0.1 --port 4198 --strictPort",
+    "build:stocks": "vite build --mode stocks-preview --outDir dist-stocks",
     "build": "vite build",
     "lint": "oxlint",
     "typecheck": "tsc --build --force",
