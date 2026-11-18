@@ -13,6 +13,7 @@ export function MemberAccount({compact=false}:{compact?:boolean}){
   const [username,setUsername]=useState(''),[password,setPassword]=useState(''),[recovery,setRecovery]=useState(''),[error,setError]=useState(''),[busy,setBusy]=useState(false),[message,setMessage]=useState('')
   const [telegram,setTelegram]=useState<TelegramStatus|null>(null),[pair,setPair]=useState(''),[importing,setImporting]=useState(false)
   const [emailTicket,setEmailTicket]=useState('')
+  const [passwordConfirmation,setPasswordConfirmation]=useState(''),[showPassword,setShowPassword]=useState(false)
   useEffect(()=>{
     if(!cloud.user||!open)return
     let alive=true
@@ -21,22 +22,26 @@ export function MemberAccount({compact=false}:{compact?:boolean}){
   },[cloud.user,open])
   if(!cloud.enabled)return null
   const act=async(work:()=>Promise<unknown>,success='')=>{setBusy(true);setError('');setMessage('');try{await work();setMessage(success)}catch(e){setError(e instanceof Error?e.message:'요청을 완료하지 못했습니다.')}finally{setBusy(false)}}
-  const submit=(event:FormEvent)=>{event.preventDefault();if(mode==='emailRecover')return;if(mode!=='login'&&!validNewPassword(password)){setError(passwordHint);return}if(mode==='register'&&cloud.emailAvailable&&!emailTicket){setError('이메일 인증을 먼저 완료해주세요.');return}void act(async()=>{await signIn(mode,{username,password,...(mode==='recover'?{recovery}:{}),...(mode==='register'&&emailTicket?{emailTicket}:{})});setPassword('');setRecovery('');setEmailTicket('')})}
+  const submit=(event:FormEvent)=>{event.preventDefault();if(busy||mode==='emailRecover')return;if(mode!=='login'&&!validNewPassword(password)){setError(passwordHint);return}if(mode==='register'&&password!==passwordConfirmation){setError('비밀번호가 서로 다릅니다. 같은 비밀번호를 두 번 입력해주세요.');return}if(mode==='register'&&cloud.emailAvailable&&!emailTicket){setError('이메일 인증을 먼저 완료해주세요.');return}void act(async()=>{await signIn(mode,{username,password,...(mode==='recover'?{recovery}:{}),...(mode==='register'&&emailTicket?{emailTicket}:{})});setPassword('');setPasswordConfirmation('');setShowPassword(false);setRecovery('');setEmailTicket('')})}
   return <section className={styles.member} aria-label="회원 기록과 알림" data-compact={compact || undefined}>
-    <div className={styles.bar}><div><b>{cloud.user?`${cloud.user.username}의 기록`:compact?'기록 저장·동기화':'다른 기기에서도 기록을 이어보세요'}</b>{(!compact||cloud.user)&&<span>{cloud.user?(cloud.expired?'다시 로그인 필요':cloud.conflicts.length?'기록 충돌 확인 필요':cloud.pending?`전송 대기 ${cloud.pending}건`:cloud.syncing?'기록 동기화 중':'회원 기록 연결됨'):'계정으로 저장하고, 화면을 닫아도 가격 감시를 이어갑니다.'}</span>}</div><button onClick={()=>setOpen(!open)} aria-expanded={open}>{cloud.user?'계정·알림 설정':'로그인·가입'}</button></div>
-    {(cloud.error||error)&&<p role="alert">{error||cloud.error}</p>}
+    <div className={styles.bar}><div><b>{cloud.user?`${cloud.user.username}의 기록`:compact?'기록 저장·동기화':'다른 기기에서도 기록을 이어보세요'}</b>{(!compact||cloud.user)&&<span>{cloud.user?(cloud.expired?'다시 로그인 필요':cloud.conflicts.length?'기록 충돌 확인 필요':cloud.pending?`전송 대기 ${cloud.pending}건`:cloud.syncing?'기록 동기화 중':'로그인됨 · 회원 기록 연결됨'):'계정으로 저장하고, 화면을 닫아도 가격 감시를 이어갑니다.'}</span>}</div><button onClick={()=>setOpen(!open)} aria-expanded={open}>{cloud.user?'계정·알림 설정':'로그인·가입'}</button></div>
+    {(cloud.error||error)&&(!open||(cloud.user&&!cloud.expired)||mode==='emailRecover')&&<p role="alert">{error||cloud.error}</p>}
     {open&&<div className={styles.content}>
       {!cloud.user||cloud.expired?mode==='emailRecover'?<EmailPasswordRecovery onLogin={()=>{setMode('login');setError('')}} onRecoveryCode={()=>{setMode('recover');setError('')}} />:<form onSubmit={submit} className={styles.form}>
         <h2>{mode==='register'?'Market Copilot 계정 만들기':mode==='recover'?'복구 코드로 비밀번호 재설정':'내 기록으로 로그인'}</h2>
         <p><a href={`${publicServiceOrigin}/privacy/#member`} target="_blank" rel="noopener noreferrer">개인정보처리방침: 저장 정보와 삭제·문의 방법</a>을 확인하세요. 안내는 새 창에서 열리며 입력 중인 내용은 이 화면에 남습니다.</p>
         <p>{cloud.emailAvailable?'Market Copilot 전용 아이디를 사용합니다. 가입 시 이메일을 인증하며, 기존 회원은 로그인 후 이메일을 연결할 수 있어요.':'인증메일 발송은 준비 중입니다. 지금은 Market Copilot 아이디와 비밀번호로 가입하고, 비밀번호를 잊으면 가입 시 받은 복구 코드를 사용하세요.'}</p>
-        <label>아이디<input autoComplete="username" required pattern="[a-zA-Z0-9_-]{4,32}" minLength={4} maxLength={32} value={username} onChange={e=>{setUsername(e.target.value);setEmailTicket('')}}/></label>
+        <label>아이디<input name="username" autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck={false} required pattern="[a-zA-Z0-9_\-]{4,32}" minLength={4} maxLength={32} value={username} onChange={e=>{setUsername(e.target.value);setEmailTicket('')}}/></label>
+        <small>{mode==='register'?'영문·숫자·밑줄·하이픈 4~32자로 정해주세요. 가입 후 이 아이디로 로그인합니다.':'가입할 때 정한 아이디를 입력하세요. 이메일 주소가 아닙니다.'}</small>
         {mode==='register'&&cloud.emailAvailable&&<SignupEmail username={username} onTicket={setEmailTicket}/>}
-        <label>{mode==='recover'?'새 비밀번호':'비밀번호'}<input type="password" autoComplete={mode==='login'?'current-password':'new-password'} required minLength={mode==='login'?1:8} maxLength={128} value={password} onChange={e=>setPassword(e.target.value)}/><small>{mode==='login'?'기존에 사용하던 비밀번호로 로그인하세요.':passwordHint}</small></label>
+        <label>{mode==='recover'?'새 비밀번호':'비밀번호'}<input name="password" type={showPassword?'text':'password'} autoComplete={mode==='login'?'current-password':'new-password'} required minLength={mode==='login'?1:8} maxLength={128} value={password} onChange={e=>setPassword(e.target.value)}/><small>{mode==='login'?'기존에 사용하던 비밀번호로 로그인하세요.':passwordHint}</small></label>
+        {mode==='register'&&<label>비밀번호 다시 입력<input name="passwordConfirmation" type={showPassword?'text':'password'} autoComplete="new-password" required minLength={8} maxLength={128} value={passwordConfirmation} onChange={e=>setPasswordConfirmation(e.target.value)}/></label>}
+        <label className={styles.passwordVisibility}><input type="checkbox" checked={showPassword} onChange={e=>setShowPassword(e.target.checked)}/>비밀번호 표시</label>
         {mode!=='login'&&<PasswordRules password={password}/>}
         {mode==='recover'&&<label>가입할 때 받은 복구 코드<input required autoComplete="off" value={recovery} onChange={e=>setRecovery(e.target.value)}/></label>}
-        <button disabled={busy} type="submit">{busy?'확인 중…':mode==='register'?'계정 만들기':mode==='recover'?'비밀번호 재설정':'로그인'}</button>
-        <div className={styles.actions}><button type="button" onClick={()=>{setMode('login');setError('')}}>로그인</button>{cloud.signup&&<button type="button" onClick={()=>{setMode('register');setError('')}}>처음 가입하기</button>}<button type="button" onClick={()=>{setMode(cloud.emailAvailable?'emailRecover':'recover');setPassword('');setError('')}}>비밀번호를 잊었어요</button>{cloud.emailAvailable&&mode==='recover'&&<button type="button" onClick={()=>setMode('emailRecover')}>이메일로 복구하기</button>}</div>
+        {(cloud.error||error)&&<p className={styles.formError} role="alert">{error||cloud.error}</p>}
+        <button className={styles.submit} disabled={busy} type="submit">{busy?'확인 중…':mode==='register'?'계정 만들기':mode==='recover'?'비밀번호 재설정':'로그인'}</button>
+        <div className={styles.actions}>{mode!=='login'&&<button type="button" disabled={busy} onClick={()=>{setMode('login');setError('')}}>로그인 화면으로 돌아가기</button>}{cloud.signup&&mode!=='register'&&<button type="button" disabled={busy} onClick={()=>{setMode('register');setError('')}}>처음 가입하기</button>}<button type="button" disabled={busy} onClick={()=>{setMode(cloud.emailAvailable?'emailRecover':'recover');setPassword('');setError('')}}>비밀번호를 잊었어요</button>{cloud.emailAvailable&&mode==='recover'&&<button type="button" disabled={busy} onClick={()=>setMode('emailRecover')}>이메일로 복구하기</button>}</div>
         {cloud.expired&&<button type="button" disabled={busy} onClick={()=>void act(()=>signOut())}>이 탭 로그아웃</button>}
       </form>:<>
         {cloud.recovery&&<aside className={styles.recovery} role="status"><h3>복구 코드를 안전한 곳에 보관하세요</h3><p>비밀번호를 잊었을 때 필요합니다. 닫으면 다시 표시되지 않으며, 비밀번호를 재설정하면 새 코드로 바뀝니다.</p><code>{cloud.recovery}</code><button onClick={()=>download('investai-recovery-code.json',{username:cloud.user!.username,recovery:cloud.recovery})}>복구 코드 내려받기</button><button onClick={acknowledgeRecovery}>보관했어요</button></aside>}

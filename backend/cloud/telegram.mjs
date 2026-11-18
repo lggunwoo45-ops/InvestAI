@@ -35,7 +35,7 @@ export function createMemberTelegram(accounts, { env = process.env, fetcher = fe
       return { url:`https://t.me/${bot}?start=${code}`, expires:clock()+600_000 }
     },
     disconnect(owner) { db.prepare('DELETE FROM telegram WHERE owner=?').run(owner) },
-    async test(owner) { await channel(owner).send({config:{instrument:{venue:'InvestAI',symbol:'연결 테스트',quote:''},side:''}},{id:randomBytes(8).toString('hex'),kind:'signal',price:null,at:clock()}) },
+    async test(owner) { await channel(owner).send({config:{instrument:{venue:'InvestAI',symbol:'연결 테스트',quote:''},side:''}},{id:randomBytes(8).toString('hex'),kind:'test',price:null,at:clock()}) },
     async tick() {
       if (!available || busy) return
       busy=true
