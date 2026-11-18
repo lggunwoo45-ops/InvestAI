@@ -13,7 +13,9 @@ export function telegramChannel(env = process.env, fetcher = fetch) {
       ...(event.derivatives.openInterest ? [`미결제약정 24시간 변화: ${event.derivatives.openInterest.change24h.toFixed(2)}%`] : []),
       `판정 기준: ${new Date(event.derivatives.at).toISOString()} 봉 종료 전 저장 자료`,
     ] : []
-    const message = ['Market Copilot · ' + (labels[event.kind] ?? positionEventLabels[event.kind.replace('position-', '')]), `${rule.config.instrument.venue} ${rule.config.instrument.symbol} · ${rule.config.side}`, `가격: ${event.price ?? '판정 불가'} ${rule.config.instrument.quote}`, `시각: ${new Date(event.at).toISOString()}`, ...evidence, ...(event.kind.startsWith('price-') ? [`설정 가격: ${event.threshold} ${rule.config.instrument.quote}`, '가격 통과 알림입니다. 봉 마감·거래량 조건 충족이나 매매 신호를 뜻하지 않습니다.'] : []), ...(event.kind.startsWith('position-') ? [event.detail] : []), '주기적으로 수집한 관측이며 실제 주문·체결이 아닙니다.', `기록: ${event.id}`].join('\n')
+    const message = event.kind === 'test'
+      ? ['Market Copilot · 텔레그램 연결 테스트', '이 메시지가 보이면 휴대폰 알림 수신이 확인됐습니다.', '연결 확인용 테스트입니다. 실제 가격 도달이나 매매 신호가 아닙니다.', `시각: ${new Date(event.at).toISOString()}`].join('\n')
+      : ['Market Copilot · ' + (labels[event.kind] ?? positionEventLabels[event.kind.replace('position-', '')]), `${rule.config.instrument.venue} ${rule.config.instrument.symbol} · ${rule.config.side}`, `가격: ${event.price ?? '판정 불가'} ${rule.config.instrument.quote}`, `시각: ${new Date(event.at).toISOString()}`, ...evidence, ...(event.kind.startsWith('price-') ? [`설정 가격: ${event.threshold} ${rule.config.instrument.quote}`, '가격 통과 알림입니다. 봉 마감·거래량 조건 충족이나 매매 신호를 뜻하지 않습니다.'] : []), ...(event.kind.startsWith('position-') ? [event.detail] : []), '주기적으로 수집한 관측이며 실제 주문·체결이 아닙니다.', `기록: ${event.id}`].join('\n')
     // Explicitly opted-in risk observations only; no user notes, labels, keys or account identifiers.
     try {
       const response = await fetcher(`https://api.telegram.org/bot${token}/sendMessage`, { method: 'POST', redirect: 'error', signal: AbortSignal.timeout(8000), headers: { 'content-type': 'application/json' }, body: JSON.stringify({ chat_id: chat, text: message }) })

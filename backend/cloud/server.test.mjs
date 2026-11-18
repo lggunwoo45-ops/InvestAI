@@ -19,6 +19,26 @@ async function serve(directory,options={}){
   return {handler,async request(path,data,token,method=data===undefined?'GET':'POST',headers={}){const response=await fetch(base+path,{method,headers:{origin:'https://app.example','content-type':'application/json','x-investai-cloud':'1','x-investai-monitor':'1',...(token?{authorization:`Bearer ${token}`} : {}),...headers},body:data===undefined?undefined:JSON.stringify(data)});return {status:response.status,body:await response.json(),headers:response.headers}},async close(){await handler.close();server.closeAllConnections();await new Promise(r=>server.close(r))}}
 }
 
+test('a registered account can log in again after logout and server restart without losing its records',async()=>{
+  const dir=await mkdtemp(join(tmpdir(),'market-copilot-login-'))
+  let app=await serve(dir)
+  try{
+    const created=await app.request('/register',{username:'Returning_User',password:'Abcdef1!'})
+    assert.equal(created.status,200)
+    const key='investai.research.draft.v1.BTC'
+    assert.equal((await app.request('/records',{key,value:'saved member note',version:0},created.body.token,'PUT')).status,200)
+    assert.equal((await app.request('/logout',{},created.body.token)).status,200)
+    await app.close();app=await serve(dir)
+    assert.equal((await app.request('/login',{username:'returning_user',password:'Abcdef2!'})).status,401)
+    const login=await app.request('/login',{username:'RETURNING_USER',password:'Abcdef1!'})
+    assert.equal(login.status,200)
+    const me=await app.request('/me',undefined,login.body.token)
+    assert.equal(me.body.user.id,created.body.user.id)
+    assert.equal(me.body.records.find(record=>record.key===key).value,'saved member note')
+    assert.equal((await app.request('/me',undefined,created.body.token)).status,401)
+  }finally{await app.close();await rm(dir,{recursive:true,force:true})}
+})
+
 test('server startup cleans expired authentication while preserving usable sessions and saved records',async()=>{
   const dir=await mkdtemp(join(tmpdir(),'market-copilot-startup-privacy-')), now=Date.now()
   let app
@@ -128,6 +148,9 @@ test('member Telegram pairs only an unexpired private chat, separates destinatio
     updates=[{update_id:1,message:{text:`/start ${code}`,date:Math.floor(Date.now()/1000),chat:{id:1,type:'group'},from:{id:1}}}];await tg.tick();assert.equal(tg.status(a.user.id).connected,false)
     updates=[{update_id:2,message:{text:`/start ${code}`,date:Math.floor(Date.now()/1000),chat:{id:42,type:'private'},from:{id:42}}}];await tg.tick();assert.equal(tg.status(a.user.id).connected,true);assert.equal(tg.status(b.user.id).connected,false)
     await tg.test(a.user.id);assert.equal(calls.at(-1).body.chat_id,'42')
+    assert.match(calls.at(-1).body.text,/Market Copilot · 텔레그램 연결 테스트/)
+    assert.match(calls.at(-1).body.text,/실제 가격 도달이나 매매 신호가 아닙니다/)
+    assert.doesNotMatch(calls.at(-1).body.text,/선택한 신호 조합 충족|판정 불가|가격:/)
     await assert.rejects(()=>tg.test(b.user.id));tg.disconnect(a.user.id);await assert.rejects(()=>tg.test(a.user.id))
     assert.ok(!JSON.stringify(tg.status(a.user.id)).includes('test_token'))
   }finally{accounts.close();await rm(dir,{recursive:true,force:true})}
