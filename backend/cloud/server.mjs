@@ -156,6 +156,7 @@ export function createCloudHandler({ directory=process.env.INVESTAI_CLOUD_DIRECT
       if(path==='/api/cloud/records'&&req.method==='PUT')return send(res,200,accounts.putRecord(user.id,input))
       if(path==='/api/cloud/opportunities'&&req.method==='POST')return send(res,200,opportunities.register(user.id,input))
       if(path==='/api/cloud/prices')return send(res,200,{rules:prices.register(user.id,input)})
+      if(path==='/api/cloud/prices/notification')return send(res,200,{rules:prices.notification(user.id,input)})
       if(path==='/api/cloud/prices/stop')return send(res,200,{rules:prices.stop(user.id,input.id)})
       if(path==='/api/cloud/telegram/pair'){rate(`pair:${user.id}`,5,600_000);return send(res,200,telegram.pair(user.id))}
       if(path==='/api/cloud/telegram/disconnect'){telegram.disconnect(user.id);return send(res,200,telegram.status(user.id))}

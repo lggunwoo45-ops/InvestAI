@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { fail } from './accounts.mjs'
 import { researchAssets as assets } from '../research/server.mjs'
+import { priceInstrument, priceInstrumentKey } from './priceInstrument.mjs'
 
 export function createPriceAlerts(accounts, { quoteReader, telegram, clock=Date.now,guard=()=>{} }) {
   const db=accounts.db
@@ -10,40 +11,51 @@ export function createPriceAlerts(accounts, { quoteReader, telegram, clock=Date.
   // Restart is a gap, not evidence that a threshold was crossed.
   for(const row of db.prepare('SELECT value FROM prices').all()) { const r=JSON.parse(row.value); r.last=null; for(const e of r.events) if(e.delivery==='sending') e.delivery='uncertain'; save(r) }
   return {
-    list:owner=>list(owner).map(({owner:_,...r})=>r),
+    list:owner=>list(owner).map(({owner:_,...r})=>({...r,instrument:priceInstrument(r)})),
     register(owner,input) {
       guard()
-      const asset=input.asset, above=input.above, below=input.below
-      if (!assets.includes(asset) || ![above,below].every(n=>n===null || typeof n==='number' && Number.isFinite(n) && n>0) || above===null && below===null || above!==null && below!==null && above<=below || typeof input.notify!=='boolean') fail(400,'가격 조건을 확인해주세요.')
-      if (input.notify && !telegram.channel(owner).configured) fail(400,'먼저 Telegram을 연결해주세요.')
+      const instrument=priceInstrument(input),asset=instrument.asset,above=input.above,below=input.below,key=priceInstrumentKey({instrument})
+      if ((!input.instrument && !assets.includes(asset)) || ![above,below].every(n=>n===null || typeof n==='number' && Number.isFinite(n) && n>0) || above===null && below===null || above!==null && below!==null && above<=below || typeof input.notify!=='boolean') fail(400,'가격 조건을 확인해주세요.')
+      if(input.requestId!==undefined && (typeof input.requestId!=='string'||!/^[\w-]{1,100}$/.test(input.requestId)))fail(400,'등록 식별자를 확인해주세요.')
       const previous=list(owner)
+      const duplicate=input.requestId && previous.find(r=>r.requestId===input.requestId)
+      if(duplicate){if(priceInstrumentKey(duplicate)!==key||duplicate.above!==above||duplicate.below!==below||duplicate.notify!==input.notify)fail(409,'같은 요청의 가격 조건이 달라졌습니다.');return this.list(owner)}
+      if (input.notify && !telegram.channel(owner).configured) fail(400,'먼저 Telegram을 연결해주세요.')
       if(previous.length>=100) fail(400,'감시 기록 100건에 도달했습니다. 기록을 내보내고 운영자에게 문의해주세요.')
-      if(previous.filter(r=>r.active && r.asset!==asset).length>=10) fail(400,'동시에 10개 종목까지 감시할 수 있습니다.')
+      if(previous.filter(r=>r.active && priceInstrumentKey(r)!==key).length>=10) fail(400,'동시에 10개 거래쌍까지 감시할 수 있습니다.')
       let review=null
       if(input.reviewId) {
+        if(instrument.venue!=='binance-futures')fail(400,'기존 선물 검토를 현물 가격에 연결할 수 없습니다.')
         const rows=JSON.parse(db.prepare('SELECT value FROM records WHERE owner=? AND key=?').get(owner,'investai.research.observations.v1')?.value ?? '[]')
         review=rows.find(r=>r.id===input.reviewId && r.asset===asset)
         if(!review) fail(400,'저장한 검토 기록을 먼저 동기화해주세요.')
       }
-      const rule={id:randomUUID(),owner,asset,above,below,notify:input.notify,review,createdAt:clock(),active:true,last:null,checkedAt:null,issue:null,events:[]}
+      const rule={id:randomUUID(),owner,asset,instrument,requestId:input.requestId??null,above,below,notify:input.notify,review,createdAt:clock(),active:true,last:null,checkedAt:null,issue:null,events:[]}
       db.exec('BEGIN IMMEDIATE')
-      try { for(const r of previous.filter(r=>r.active && r.asset===asset)){r.active=false; r.stoppedAt=clock(); save(r)} db.prepare('INSERT INTO prices VALUES(?,?,?)').run(rule.id,owner,JSON.stringify(rule)); db.exec('COMMIT') } catch(e){db.exec('ROLLBACK');throw e}
+      try { for(const r of previous.filter(r=>r.active && priceInstrumentKey(r)===key)){r.active=false; r.stoppedAt=clock(); save(r)} db.prepare('INSERT INTO prices VALUES(?,?,?)').run(rule.id,owner,JSON.stringify(rule)); db.exec('COMMIT') } catch(e){db.exec('ROLLBACK');throw e}
       return this.list(owner)
     },
     stop(owner,id) { const rule=list(owner).find(r=>r.id===id); if(!rule) fail(404,'가격 감시를 찾지 못했습니다.'); rule.active=false; rule.stoppedAt=clock(); save(rule); return this.list(owner) },
+    notification(owner,input) {
+      const rule=list(owner).find(r=>r.id===input.id)
+      if(!rule)fail(404,'가격 감시를 찾지 못했습니다.')
+      if(typeof input.notify!=='boolean'||!rule.active)fail(400,'진행 중인 알림의 발송 설정을 확인해주세요.')
+      if(input.notify&&!telegram.channel(owner).configured)fail(400,'먼저 Telegram을 연결해주세요.')
+      rule.notify=input.notify;save(rule);return this.list(owner)
+    },
     async tick() {
       if(busy || closed) return
       busy=true
       try {
-        const symbols=[...new Set(db.prepare('SELECT value FROM prices').all().map(r=>JSON.parse(r.value)).filter(r=>r.active).map(r=>r.asset))]
-        for(const asset of symbols) {
+        const instruments=new Map(db.prepare('SELECT value FROM prices').all().map(r=>JSON.parse(r.value)).filter(r=>r.active).map(r=>[priceInstrumentKey(r),priceInstrument(r)]))
+        for(const [key,instrument] of instruments) {
           if(closed) break
           let quote=null
-          try { quote=await quoteReader({venue:'binance-futures',asset,quote:'USDT',symbol:`${asset}USDT`}) } catch { /* Reset the baseline after unavailable quotes. */ }
+          try { quote=await quoteReader(instrument) } catch { /* Reset the baseline after unavailable quotes. */ }
           if(closed) break
           for(const row of db.prepare('SELECT value FROM prices').all()) {
             const r=JSON.parse(row.value)
-            if(!r.active || r.asset!==asset) continue
+            if(!r.active || priceInstrumentKey(r)!==key) continue
             const old=r.last
             if(!quote || !Number.isFinite(quote.price) || quote.price<=0 || !Number.isFinite(quote.at) || !Number.isFinite(quote.receivedAt) || clock()-quote.receivedAt>90000 || quote.receivedAt>clock()+5000) {r.last=null;r.issue='시세를 확인하지 못해 판정을 보류합니다.';save(r);continue}
             r.checkedAt=clock();r.issue=null
@@ -71,10 +83,10 @@ export function createPriceAlerts(accounts, { quoteReader, telegram, clock=Date.
           const r=list(owner).find(rule=>rule.id===ruleId),e=r?.events.find(event=>event.id===eventId)
           if(!e||e.delivery!=='pending')continue
           const channel=telegram.channel(r.owner)
-          if(!channel.configured) {e.delivery='off';save(r);continue}
+          if(!channel.configured || !r.notify) {e.delivery='off';save(r);continue}
           e.delivery='sending';save(r)
           let delivery='uncertain'
-          try {await channel.send({config:{instrument:{venue:'binance-futures',symbol:`${r.asset}USDT`,quote:'USDT'},side:e.kind==='above'?'위쪽 가격 통과':'아래쪽 가격 통과'}},{...e,kind:'signal'});delivery='sent'} catch { /* Ambiguous network failure must not duplicate messages. */ }
+          try {await channel.send({config:{instrument:priceInstrument(r),side:e.kind==='above'?'위쪽 가격 통과':'아래쪽 가격 통과'}},{...e,kind:'price-'+e.kind});delivery='sent'} catch { /* Ambiguous network failure must not duplicate messages. */ }
           const current=list(r.owner).find(x=>x.id===r.id), event=current?.events.find(x=>x.id===e.id)
           if(event){event.delivery=delivery;save(current)}
         }

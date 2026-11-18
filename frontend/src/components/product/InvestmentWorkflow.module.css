@@ -8,3 +8,5 @@
 @media(max-width:380px){.choices{grid-template-columns:1fr}.page{padding:12px}.brief .prices div{display:block}.prices dd{text-align:left}}
 
 .brief.brief h3{font-size:clamp(21px,2.3vw,28px);line-height:1.35;letter-spacing:-.035em}.brief.brief p{margin:0}.brief.brief .note{font-size:12px}.brief.brief .next p{margin-top:8px}
+
+.alertList{display:grid;gap:14px;margin-top:16px}.legacyAlerts{padding:16px;border:1px solid var(--color-border);border-radius:14px}.legacyAlerts>summary{font-size:15px}
