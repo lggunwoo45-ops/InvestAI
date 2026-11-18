@@ -1,3 +1,4 @@
+import { QuickPriceAlert } from './QuickPriceAlert'
 import { Link } from 'react-router-dom'
 import type { CryptoDecision } from '@/services/cryptoAnalysis/cryptoDecisionEngine'
 import { bestOpportunity, buildOpportunityPlans, validOpportunityCost } from '@/services/cryptoAnalysis/opportunityEngine'
@@ -30,7 +31,9 @@ export function SimpleDecisionBrief({ instrument, decision, language, holding, p
   } : decision
   const plan = sourceDecision.plan
   const canSave = available && (holding || validOpportunityCost(cost.cost)) && validScenarioInstrument(instrument) && plan && plan.stop < plan.entry[0] && plan.entry[1] < plan.target
-  const price = (n: number) => `${formatAnalysisPrice(n, language)} ${instrument.quoteCurrency}`
+  const price = (n: number) => ko && instrument.quoteCurrency === 'KRW' && n >= 1_000_000 ? `약 ${(n / 10_000).toLocaleString('ko-KR', { maximumFractionDigits: 0 })}만 원` : `${formatAnalysisPrice(n, language)} ${instrument.quoteCurrency}`
+  const threshold = plan ? strategy && best.trigger !== null ? best.kind === 'pullback' ? plan.entry[1] : best.trigger : decision.direction === 'sell' && !holding ? plan.sellInvalidation : plan.stop : null
+  const alertDirection = strategy ? best.kind === 'pullback' ? 'below' : 'above' : decision.direction === 'sell' && !holding ? 'above' : 'below'
   const candleTimes = decision.frames.filter(f => !f.issue && f.asOf !== null).map(f => `${f.frame} ${new Date(f.asOf!).toLocaleString(language)}`)
   return <section className={styles.brief} data-status={holding ? 'watch' : best.status} aria-label={ko ? '지금 판단과 다음 행동' : 'Decision and next action'}>
     <div className={styles.headline}><span className={styles.eyebrow}>{ko ? '지금 판단' : 'CURRENT VIEW'}</span><span className={styles.tag}>{easyDirection[language][decision.direction]}</span></div>
@@ -40,12 +43,13 @@ export function SimpleDecisionBrief({ instrument, decision, language, holding, p
       {strategy && <p className={styles.note}>{ko ? '아래 가격 알림은 다시 분석할 계기입니다. 거래량·봉 마감 등 이 전략의 전체 조건 충족을 알려주는 알림은 아닙니다.' : 'A price alert is a prompt to review again, not confirmation of every strategy condition.'}</p>}
     </div>}
     {available && plan && <dl className={styles.prices}>
-      <div><dt>{ko ? strategy ? '진입 검토 구간' : '지지 구간' : strategy ? 'Entry review zone' : 'Support zone'}</dt><dd>{formatAnalysisPrice(plan.entry[0], language)} – {price(plan.entry[1])}</dd></div>
-      <div><dt>{ko ? strategy ? '목표 기준' : '저항 기준' : strategy ? 'Target reference' : 'Resistance reference'}</dt><dd>{price(plan.target)}</dd></div>
+      <div><dt>{ko ? strategy ? '진입 검토 구간' : '지지 구간' : strategy ? 'Entry review zone' : 'Support zone'}</dt><dd>{ko && instrument.quoteCurrency === 'KRW' && plan.entry[0] >= 1_000_000 ? price(plan.entry[0]) : formatAnalysisPrice(plan.entry[0], language)} – {price(plan.entry[1])}</dd></div>
+      <div><dt>{ko ? strategy ? '목표 기준' : '반등 시 저항' : strategy ? 'Target reference' : 'Resistance reference'}</dt><dd>{price(plan.target)}</dd></div>
       <div><dt>{ko ? '하락 위험 기준' : 'Downside risk threshold'}</dt><dd>{price(plan.stop)}</dd></div>
     </dl>}
+    {available && threshold !== null && <QuickPriceAlert key={`${instrument.id}:${holding}`} instrument={instrument} threshold={threshold} direction={alertDirection} language={language} valid={available} />}
     <div className={styles.actions}><button type="button" onClick={onDetails}>{ko ? available ? '차트·근거 확인' : '연결·자료 상태 확인' : available ? 'Review chart and evidence' : 'Check data and connection'}</button><Link to="/dashboard#find-candidates">{ko ? '다른 후보 찾기' : 'Find other candidates'} →</Link></div>
-    {canSave && <details><summary>{ko ? '이 가격으로 알림 설정·기록' : 'Set alerts and record these prices'}</summary><p className={styles.note}>{instrument.marketId === 'upbit' ? 'Upbit' : 'Binance Spot'} · {instrument.symbol} · {instrument.quoteCurrency}. {ko ? '분석 가격을 아래에 채웠습니다. 저장 전 수정할 수 있습니다. 매수 주문은 실행하지 않습니다.' : 'Analysis prices are prefilled for review. You can edit them before saving. No order is placed.'}</p><SaveScenario key={`${instrument.id}:${strategy ? best.kind : 'trend'}`} instrument={instrument} decision={sourceDecision} language={language} positionId={positionId} workflow /></details>}
+    {canSave && <details><summary>{ko ? '구간·목표·손절을 함께 기록' : 'Save the zone, target and stop together'}</summary><p className={styles.note}>{instrument.marketId === 'upbit' ? 'Upbit' : 'Binance Spot'} · {instrument.symbol} · {instrument.quoteCurrency}. {ko ? '분석 가격을 아래에 채웠습니다. 저장 전 수정할 수 있습니다. 매수 주문은 실행하지 않습니다.' : 'Analysis prices are prefilled for review. You can edit them before saving. No order is placed.'}</p><SaveScenario key={`${instrument.id}:${strategy ? best.kind : 'trend'}`} instrument={instrument} decision={sourceDecision} language={language} positionId={positionId} workflow /></details>}
     {available && !canSave && <p className={styles.note}>{ko ? '이 종목·가격 구조는 현물 가격 알림 저장을 지원하지 않습니다. 근거 확인과 기존 분석 기능은 계속 이용할 수 있습니다.' : 'This instrument or price structure does not support spot price-plan alerts. Analysis remains available.'}</p>}
     {!holding && <details><summary>{ko ? '전략 조건·거래 비용 확인' : 'Strategy conditions and costs'}</summary><CostControl language={language} value={cost.value} onChange={cost.change} /><p>{names[best.kind]}</p><ul>{best.checks.map(c => <li key={c.key}>{c.passed ? '✓' : '○'} {checkText(best, c.key, ko)}</li>)}</ul>{best.netRewardRisk !== null && <p>{ko ? '비용 차감 손익비' : 'Reward/risk after costs'} {best.netRewardRisk.toFixed(2)} : 1</p>}</details>}
     <p className={styles.note}>{instrument.marketId} · {instrument.quoteCurrency} · {ko ? `${decision.coverage}/3개 시간대 확인` : `${decision.coverage}/3 timeframes checked`}</p>

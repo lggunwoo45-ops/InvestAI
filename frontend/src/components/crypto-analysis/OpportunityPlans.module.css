@@ -27,3 +27,5 @@
 @media(max-width:600px) { .panel { font-size:14px; }.panel h2 { font-size:18px; }.card,.asset { padding:12px; }.panel input,.panel button { min-height:44px; }.cost { padding:10px; } }
 
 .record { display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; padding:14px; border:1px solid var(--color-border); border-radius:10px; }.record p { flex-basis:100%; font-size:12px; }.record button:disabled { cursor:default; opacity:.55; }
+
+.dataWarning{padding:16px;border:1px solid var(--color-border);border-radius:12px;background:var(--color-surface-raised)}.dataWarning h3{margin:0}.dataWarning details>div{padding:10px 0;border-top:1px solid var(--color-border)}

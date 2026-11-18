@@ -5,12 +5,13 @@ import type { MarketVenue } from '@/types/market'
 import styles from './SimpleWorkspace.module.css'
 
 interface Props {
+  refreshing?: boolean;
   results: readonly ScanResult[]; now: number; venue: MarketVenue; onVenue: (venue: MarketVenue) => void;
   status: 'idle' | 'loading' | 'scanning' | 'done' | 'cancelled' | 'error'; progress: { completed: number; total: number };
   poolMode: ScanPoolMode; onPoolMode: (mode: ScanPoolMode) => void;
   disabled: boolean; onStart: () => void; onCancel: () => void;
 }
-export function SimpleScanResults({ results, now, venue, onVenue, poolMode, onPoolMode, status, progress, disabled, onStart, onCancel }: Props) {
+export function SimpleScanResults({ results, now, venue, onVenue, poolMode, onPoolMode, status, progress, disabled, onStart, onCancel, refreshing }: Props) {
   const { language } = useLanguage(), ko = language === 'ko'
   const running = status === 'loading' || status === 'scanning'
   return <section className={styles.tasks} aria-label={ko ? '추천 후보' : 'Review candidates'}>
@@ -21,11 +22,11 @@ export function SimpleScanResults({ results, now, venue, onVenue, poolMode, onPo
       <ScanPoolControl value={poolMode} onChange={onPoolMode} disabled={running} language={language} />
       <button type="button" className={styles.primary} disabled={!running && disabled} onClick={running ? onCancel : onStart}>{ko ? running ? '찾기 중지' : status === 'idle' ? '지금 살펴볼 코인 찾기' : '최신 가격으로 다시 찾기' : running ? 'Stop' : status === 'idle' ? 'Find coins to review' : 'Scan fresh prices'}</button>
     </div>
-    <p className={styles.note}>{ko ? '최대 12개를 검사해 상승 눌림·돌파·하락 속 반등 후보를 구분합니다. 각 그룹에서 최대 3개를 먼저 보여드려요.' : 'Scan up to 12 assets for pullbacks, breakouts and countertrend rebounds. Each group starts with up to three results.'}</p>
+    <p className={styles.note}>{ko ? '최대 12개를 검사해 상승 눌림·돌파·하락 속 반등 후보를 구분합니다. 매수 조건이 맞지 않으면 관찰 후보와 부족한 조건을 보여드려요.' : 'Scan up to 12 assets for pullbacks, breakouts and countertrend rebounds. Each group starts with up to three results.'}</p>
     {venue === 'binance-futures' && <p className={styles.risk}>{ko ? '선물 가격의 흐름만 확인해요. 실제 포지션의 레버리지·청산 위험은 내 포지션에서 따로 확인하세요.' : 'These are futures price trends. Review leverage and liquidation risk separately.'}</p>}
     <div role="status" aria-live="polite">
       {disabled ? (ko ? '실제 시세 연결이 필요해요. 설정에서 데이터 연결을 확인해주세요.' : 'Live data is required. Check the connection in settings.')
-        : running ? <>{ko ? '가격 기록을 확인하고 있어요' : 'Checking price history'} · {progress.completed}/{progress.total || 12}<br /><progress max={progress.total || 12} value={progress.completed} /></>
+        : running ? <>{ko ? refreshing ? '지연되거나 오래된 자료를 한 번 더 확인하고 있어요' : '가격 기록을 확인하고 있어요' : 'Checking price history'} · {progress.completed}/{progress.total || 12}<br /><progress max={progress.total || 12} value={progress.completed} /></>
           : status === 'error' ? (ko ? '시세 목록을 가져오지 못했어요. 다시 찾기를 눌러주세요.' : 'Quotes could not be loaded. Try again.')
             : status === 'cancelled' ? (ko ? `찾기를 멈췄어요. ${progress.completed}개만 확인한 부분 결과입니다.` : `Stopped after ${progress.completed} assets. These are partial results.`)
               : status === 'done' ? (ko ? `${progress.completed}개 검사 완료 · 아래에서 조건을 확인하세요` : `${progress.completed} reviewed · check conditions below`) : null}

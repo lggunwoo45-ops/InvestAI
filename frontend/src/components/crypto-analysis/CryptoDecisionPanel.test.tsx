@@ -70,7 +70,7 @@ describe('CryptoDecisionPanel', () => {
     const props = { instrument, daily: candles('1D'), language:'en' as const, holding:true, averagePrice:280, quantity:2, onExpert }
     const { rerender } = render(<CryptoDecisionPanel {...props} />)
     expect(within(screen.getByRole('tabpanel')).getByText('-2 KRW')).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name:'View chart and calculations →' }))
+    fireEvent.click(screen.getByRole('button', { name:'Review chart and evidence' }))
     expect(onExpert).toHaveBeenCalledOnce()
     rerender(<CryptoDecisionPanel {...props} quantity={undefined} />)
     expect(within(screen.getByRole('tabpanel')).queryByText('-2 KRW')).toBeNull()
@@ -147,9 +147,9 @@ describe('CryptoDecisionPanel', () => {
     const { rerender } = render(<CryptoDecisionPanel instrument={instrument} daily={candles('1D')} language="ko" />)
     expect(screen.getByText('하락 쪽이 강해요')).toBeTruthy()
     expect(screen.getByText('하락 우세 · 회복 조건부터 확인하세요')).toBeTruthy()
-    expect(within(screen.getByRole('tabpanel')).getByText(/지지 가격에 닿았다는 이유만으로 매수하지 않습니다/)).toBeTruthy()
-    expect(screen.getByText(/저항 기준 가격:/)).toBeTruthy()
+    expect(screen.getByRole('button', { name: '이 가격에 알림 받기' })).toBeTruthy()
     fireEvent.click(screen.getByRole('tab', { name: '자세히 보기' }))
+    expect(screen.getByText(/저항 기준 가격:/)).toBeTruthy()
     expect(screen.queryByText('시간대별 지표·계산 근거')).toBeNull()
     rerender(<CryptoDecisionPanel instrument={instrument} daily={candles('1D')} language="ko" expert />)
     fireEvent.click(screen.getByText('시간대별 지표·계산 근거'))
@@ -157,7 +157,7 @@ describe('CryptoDecisionPanel', () => {
   })
   it('separates bearish support, resistance and upside reassessment, preserving the holding downside threshold', () => {
     state.trend = -1
-    const props = { instrument, daily: candles('1D'), language: 'ko' as const }
+    const props = { instrument, daily: candles('1D'), language: 'ko' as const, expert: true }
     const view = render(<CryptoDecisionPanel {...props} />)
     const summary = within(screen.getByRole('tabpanel'))
     const support = within(summary.getByRole('article', { name: '지지 구간' }))
@@ -213,8 +213,8 @@ describe('CryptoDecisionPanel', () => {
     expect(screen.getByText('상승 쪽이 강해요')).toBeTruthy()
     expect(screen.getByText('분석 가능 · 나머지 자료 확인 중')).toBeTruthy()
     rerender(<CryptoDecisionPanel {...props} daily={candles('1D')} />)
-    expect(percent()).toBe('100')
-    expect(screen.getByText('분석 준비 완료')).toBeTruthy()
+    expect(screen.queryByRole('progressbar', { name: '분석 자료 준비율' })).toBeNull()
+    expect(screen.getByText(/3\/3개 시간대 확인/)).toBeTruthy()
     expect(screen.queryByText(/초 경과/)).toBeNull()
   })
 
@@ -231,7 +231,7 @@ describe('CryptoDecisionPanel', () => {
     expect(screen.getByRole('progressbar').getAttribute('value')).toBe('0')
     state.overrides = {}
     rerender(<CryptoDecisionPanel instrument={instrument} daily={candles('1D')} language="ko" />)
-    expect(screen.getByText('분석 준비 완료')).toBeTruthy()
+    expect(screen.getByText(/3\/3개 시간대 확인/)).toBeTruthy()
     expect(screen.queryByRole('button', { name: '페이지 새로고침' })).toBeNull()
     unmount()
     expect(vi.getTimerCount()).toBe(0)

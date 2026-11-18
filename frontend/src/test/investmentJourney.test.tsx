@@ -21,7 +21,7 @@ const venues: MarketInstrument[] = [opportunityCoin,
 it.each(venues)('carries $id prices through review, saved alert and result navigation without currency substitution', instrument => {
   renderWithProviders(<Routes><Route path="/" element={<SimpleDecisionBrief instrument={instrument} decision={opportunityDecision()} language="en" holding={false} onDetails={() => {}} />} /><Route path="/review-alerts" element={<ReviewAlertsPage />} /><Route path="/results" element={<h1>Forward record ledger</h1>} /></Routes>)
   expect(screen.getByRole('heading', { name: 'Conditions match · review the downside too' })).toBeTruthy()
-  fireEvent.click(screen.getByText('Set alerts and record these prices'))
+  fireEvent.click(screen.getByText('Save the zone, target and stop together'))
   fireEvent.click(screen.getByRole('button', { name: 'Review and save analysis prices' }))
   const input = screen.getByLabelText(`Target reference (${instrument.quoteCurrency})`) as HTMLInputElement
   const target = Number(input.value)
@@ -44,7 +44,7 @@ it('withholds actionable price plans when data is unavailable and leaves saved r
   const s = scenarioFixture(); writeScenarios({ version: 1, scenarios: [s], events: [] }, null)
   const before = readScenarios().raw
   renderWithProviders(<SimpleDecisionBrief instrument={opportunityCoin} decision={{ ...opportunityDecision(), direction: 'unavailable', price: null, plan: null, coverage: 0 }} language="en" holding={false} onDetails={() => {}} />)
-  expect(screen.queryByText('Set alerts and record these prices')).toBeNull()
+  expect(screen.queryByText('Save the zone, target and stop together')).toBeNull()
   expect(screen.getByRole('button', { name: 'Check data and connection' })).toBeTruthy()
   expect(readScenarios().raw).toBe(before)
 })
@@ -80,6 +80,6 @@ it('withholds saving when the edited cost assumption is outside the supported ra
   fireEvent.click(screen.getByText('Strategy conditions and costs'))
   fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '4' } })
   expect(screen.getByRole('alert').textContent).toContain('0 to 3%')
-  expect(screen.queryByText('Set alerts and record these prices')).toBeNull()
+  expect(screen.queryByText('Save the zone, target and stop together')).toBeNull()
   expect(readScenarios().scenarios).toHaveLength(0)
 })

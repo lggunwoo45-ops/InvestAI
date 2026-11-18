@@ -106,17 +106,37 @@ export function inspectInstrument(instrument: MarketInstrument, signal: AbortSig
 
 /** User-triggered, two instruments at a time, with release on completion/cancel/navigation. */
 export async function scanCandidates(instruments: readonly MarketInstrument[], {
-  signal, onResult, inspect = inspectInstrument,
-}: { signal: AbortSignal; onResult: (result: ScanResult, completed: number, total: number) => void; inspect?: typeof inspectInstrument }) {
+  signal, onResult, onRefresh, inspect = inspectInstrument, now = Date.now,
+}: { signal: AbortSignal; onResult: (result: ScanResult, completed: number, total: number) => void; onRefresh?: () => void; inspect?: typeof inspectInstrument; now?: () => number }) {
   const pool = instruments.slice(0, SCAN_LIMIT)
+  const received = new Map<string, ScanResult>()
   let cursor = 0, completed = 0
   const worker = async () => {
     while (!signal.aborted) {
       const instrument = pool[cursor++]
       if (!instrument) return
       const result = await inspect(instrument, signal)
-      if (result && !signal.aborted) onResult(result, ++completed, pool.length)
+      if (result && !signal.aborted) { received.set(instrument.id, result); onResult(result, ++completed, pool.length) }
     }
   }
   await Promise.all([worker(), worker()])
+  // One bounded retry, with real subscriptions and original receipt-based expiry.
+  // Never prolong an old quote merely because a batch took longer than 90 seconds.
+  const retry = pool.filter(i => {
+    const r = received.get(i.id)
+    return r && (r.expiresAt < now() || (r.decision.direction === 'unavailable'
+      && (r.timedOut || r.decision.frames.some(f => f.issue && ['loading', 'disconnected', 'stale'].includes(f.issue)))))
+  })
+  if (!retry.length || signal.aborted) return
+  onRefresh?.()
+  let retryCursor = 0
+  const refresh = async () => {
+    while (!signal.aborted) {
+      const instrument = retry[retryCursor++]
+      if (!instrument) return
+      const result = await inspect(instrument, signal)
+      if (result && !signal.aborted) onResult(result, completed, pool.length)
+    }
+  }
+  await Promise.all([refresh(), refresh()])
 }

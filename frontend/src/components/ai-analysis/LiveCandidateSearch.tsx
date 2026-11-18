@@ -36,6 +36,7 @@ function SearchSession({ marketDataMode }: { marketDataMode: 'live' | 'mock' }) 
   const [status, setStatus] = useState<'idle' | 'loading' | 'scanning' | 'done' | 'cancelled' | 'error'>('idle')
   const [progress, setProgress] = useState({ completed: 0, total: 0 })
   const [clock, setClock] = useState(Date.now)
+  const [refreshing, setRefreshing] = useState(false)
   const controller = useRef<AbortController | null>(null)
   useEffect(() => () => controller.current?.abort(), [])
   useEffect(() => {
@@ -52,18 +53,18 @@ function SearchSession({ marketDataMode }: { marketDataMode: 'live' | 'mock' }) 
     controller.current?.abort()
     const current = new AbortController()
     controller.current = current
-    setStatus('loading'); setResults([]); setVisibleCount(4); setProgress({ completed: 0, total: 0 }); setClock(Date.now())
+    setStatus('loading'); setRefreshing(false); setResults([]); setVisibleCount(4); setProgress({ completed: 0, total: 0 }); setClock(Date.now())
     try {
       const catalog = await marketDataService.getMarketCatalog(venue, 'live', true, current.signal)
       if (current.signal.aborted) return
       if (catalog.source !== 'live' || !Number.isFinite(catalog.fetchedAt) || Date.now() - catalog.fetchedAt > 60_000 || catalog.fetchedAt > Date.now() + 5000) throw new Error('catalog_unavailable')
       const pool = selectScanPool(catalog.instruments, venue, poolMode)
       setProgress({ completed: 0, total: pool.length }); setStatus('scanning')
-      await scanCandidates(pool, { signal: current.signal, onResult: (result, completed, total) => {
+      await scanCandidates(pool, { signal: current.signal, onRefresh: () => { if (!current.signal.aborted) setRefreshing(true) }, onResult: (result, completed, total) => {
         if (current.signal.aborted) return
-        setResults(previous => [...previous, result]); setProgress({ completed, total }); setClock(Date.now())
+        setResults(previous => [...previous.filter(row => row.instrument.id !== result.instrument.id), result]); setProgress({ completed, total }); setClock(Date.now())
       } })
-      if (!current.signal.aborted) setStatus('done')
+      if (!current.signal.aborted) { setStatus('done'); setRefreshing(false) }
     } catch { if (!current.signal.aborted) setStatus('error') }
   }
   const cancel = () => { controller.current?.abort(); setStatus('cancelled') }
@@ -73,7 +74,7 @@ function SearchSession({ marketDataMode }: { marketDataMode: 'live' | 'mock' }) 
   const excluded = results.filter(result => result.decision.direction === 'unavailable')
   const expired = results.filter(result => clock > result.expiresAt).length
   const format = (value: number) => formatAnalysisPrice(value, language)
-  if (simple) return <SimpleScanResults results={results} now={clock} venue={venue} onVenue={changeVenue} poolMode={poolMode} onPoolMode={changePool} status={status} progress={progress} disabled={marketDataMode !== 'live' || relayRequired} onStart={() => { void start() }} onCancel={cancel} />
+  if (simple) return <SimpleScanResults results={results} now={clock} venue={venue} onVenue={changeVenue} poolMode={poolMode} onPoolMode={changePool} status={status} progress={progress} disabled={marketDataMode !== 'live' || relayRequired} onStart={() => { void start() }} onCancel={cancel} refreshing={refreshing} />
   return <section className={styles.panel} aria-label={ko ? '실시간 조건 검색' : 'Live condition search'}>
     <header><div><h1>{ko ? '살펴볼 코인 찾기' : 'Find coins to review'}</h1><p>{ko ? `거래가 활발한 ${SCAN_LIMIT}개 코인의 흐름과 확인할 가격을 한 번에 살펴봐요.` : `Review the trends and price levels of ${SCAN_LIMIT} actively traded coins.`}</p></div><strong>{ko ? '실제 가격으로 계산해요' : 'Calculated from real prices'}</strong></header>
     <div className={styles.controls}>
@@ -94,7 +95,7 @@ function SearchSession({ marketDataMode }: { marketDataMode: 'live' | 'mock' }) 
       {status === 'idle' ? (ko ? '거래소를 고르고 ‘코인 찾기’를 눌러주세요.' : 'Choose a venue and start a scan.')
         : status === 'loading' ? (ko ? '최신 종목 목록을 가져오는 중…' : 'Loading the current catalog…')
           : status === 'error' ? (ko ? '목록을 가져오지 못했습니다. 다시 검색해주세요.' : 'Catalog unavailable. Try again.')
-            : `${ko ? status === 'scanning' ? '검사 중' : status === 'cancelled' ? '검색 중지됨' : '검사 완료' : status === 'scanning' ? 'Scanning' : status === 'cancelled' ? 'Stopped' : 'Complete'} ${progress.completed}/${progress.total} ${view === 'trend' ? ` · ${shown.length} ${ko ? '개 추세 필터 일치' : 'trend matches'}` : ''}`}
+            : `${ko ? status === 'scanning' ? '검사 중' : status === 'cancelled' ? '검색 중지됨' : '검사 완료' : status === 'scanning' ? 'Scanning' : status === 'cancelled' ? 'Stopped' : 'Complete'} ${progress.completed}/${progress.total} ${refreshing ? (ko ? '· 지연된 자료 재확인 중' : '· Rechecking delayed data') : ''} ${view === 'trend' ? ` · ${shown.length} ${ko ? '개 추세 필터 일치' : 'trend matches'}` : ''}`}
       {running && progress.total > 0 && <progress max={progress.total} value={progress.completed} />}
     </div>
     {view === 'opportunities' && results.length > 0 && <OpportunityBoard results={results} now={clock} language={language} canRecord={status === 'done'} />}

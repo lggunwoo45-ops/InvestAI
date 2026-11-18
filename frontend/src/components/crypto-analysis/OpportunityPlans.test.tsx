@@ -29,7 +29,7 @@ it('shows a qualifying rebound, recalculates with costs and removes expired pric
   fireEvent.click(screen.getByText('Adjust cost assumptions'))
   fireEvent.change(screen.getByRole('spinbutton',{name:'Total estimated buy/sell cost (%)'}),{target:{value:''}})
   expect(screen.getByRole('alert').textContent).toContain('Enter a cost')
-  expect(within(ready).queryByRole('link')).toBeNull()
+  expect(screen.queryByRole('region',{name:'Entry conditions met'})).toBeNull()
   fireEvent.change(screen.getByRole('spinbutton',{name:'Total estimated buy/sell cost (%)'}),{target:{value:'.2'}})
   view.rerender(<MemoryRouter><OpportunityBoard {...props} now={opportunityNow+90_001} /></MemoryRouter>)
   expect(screen.queryByRole('link',{name:/Review current plan/})).toBeNull()

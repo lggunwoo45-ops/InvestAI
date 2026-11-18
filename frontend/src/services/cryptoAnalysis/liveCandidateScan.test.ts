@@ -18,6 +18,23 @@ function state(frame: AnalysisFrame, receipt = at): RealtimeMarketState {
 afterEach(() => vi.useRealTimers())
 
 describe('manual candle scanner', () => {
+  it('rechecks expired early results once without resetting old quote expiry or counting duplicates', async () => {
+    let clock = at
+    const coins = Array.from({length:12},(_,i)=>({...coin,id:`asset-${i}`})), counts = new Map<string,number>(), updates: ScanResult[] = []
+    const inspect = vi.fn(async (instrument: MarketInstrument) => {
+      const pass = (counts.get(instrument.id) ?? 0) + 1; counts.set(instrument.id,pass)
+      const analyzedAt = clock; clock += 18000
+      return {instrument,analyzedAt,expiresAt:analyzedAt+90000,timedOut:false,decision:{direction:'neutral',frames:[],price:100,coverage:3,plan:null,action:'wait',extended:false,mixed:false}} as ScanResult
+    })
+    const onRefresh = vi.fn(), progress: number[] = []
+    await scanCandidates(coins,{signal:new AbortController().signal,now:()=>clock,inspect,onRefresh,onResult:(r,n)=>{updates.push(r);progress.push(n)}})
+    expect(onRefresh).toHaveBeenCalledOnce()
+    expect(counts.get('asset-0')).toBe(2)
+    expect(Math.max(...counts.values())).toBe(2)
+    expect(Math.max(...progress)).toBe(12)
+    expect(updates[0].expiresAt).toBe(at+90000)
+    expect(updates.filter(r=>r.instrument.id==='asset-0')[1].analyzedAt).toBeGreaterThan(at)
+  })
   it('can prioritize strength within a liquid pool, excluding stablecoins and keeping a BTC benchmark', () => {
     const rows = Array.from({length:50},(_,i)=>({...coin,id:`asset-${i}`,symbol:`C${i}/KRW`,volume24h:1000-i,change24hPercent:i}))
     const stable = {...coin,id:'usdt-krw',symbol:'USDT/KRW',volume24h:1e9,change24hPercent:100}
