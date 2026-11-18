@@ -6,6 +6,7 @@ import { marketDataService } from '@/services/market/marketDataService'
 import { WatchlistContext, type WatchlistValue } from '@/store/watchlistContext'
 import { MAX_CUSTOM_WATCHLISTS, reorderIds, WATCHLIST_SCHEMA_VERSION } from '@/utils/watchlists'
 import { loadStoredRecentlyViewed, RECENTLY_VIEWED_STORAGE_KEY, WATCHLIST_STORAGE_KEY } from '@/utils/watchlistStorage'
+import { productScope } from '@/app/productScope'
 
 function materialize(store:WatchlistBundle,at:string):WatchlistItem[]{
   const ids=[...new Set(store.watchlists.flatMap(list=>list.instrumentIds))],known=marketDataService.getKnownInstruments(ids)
@@ -16,7 +17,7 @@ export function WatchlistProvider({ children }: PropsWithChildren) {
   const [store,setStore]=useState(readWatchlistStore),storeRef=useRef(store)
   const [error,setError]=useState('')
   const [activeReview,setActiveReview]=useState<{instrumentId:string;snapshot:ReviewSnapshot}|null>(null)
-  const [selectedId,setActiveWatchlistId]=useState('crypto')
+  const [selectedId,setActiveWatchlistId]=useState<string>(productScope.defaultGroup)
   const [recentKey]=useState(()=>cloudSnapshot().user?`${RECENTLY_VIEWED_STORAGE_KEY}.${cloudSnapshot().user!.id}`:RECENTLY_VIEWED_STORAGE_KEY)
   const [recentlyViewedIds,setRecentlyViewedIds]=useState<readonly string[]>(()=>{
     if(!cloudSignedIn())return loadStoredRecentlyViewed()
@@ -57,13 +58,21 @@ export function WatchlistProvider({ children }: PropsWithChildren) {
   },[mutate])
   const deleteWatchlist=useCallback((id:string)=>{
     if(!storeRef.current.watchlists.some(list=>list.id===id&&!list.isDefault))return
-    mutate(current=>({...current,watchlists:current.watchlists.filter(list=>list.id!==id)}));setActiveWatchlistId(current=>current===id?'crypto':current)
+    mutate(current=>({...current,watchlists:current.watchlists.flatMap(list=>{
+      if(list.id!==id)return [list]
+      const hidden=list.instrumentIds.filter(value=>!productScope.allowsStoredInstrumentId(value))
+      return hidden.length?[{...list,instrumentIds:hidden}]:[]
+    })}));setActiveWatchlistId(current=>current===id?productScope.defaultGroup:current)
   },[mutate])
   const removeFromWatchlist=useCallback((listId:string,id?:string)=>{
     if(id!==undefined)updateItems(listId,ids=>ids.filter(v=>v!==id))
     else mutate(current=>({...current,items:current.items.filter(item=>item.instrumentId!==listId),watchlists:current.watchlists.map(list=>({...list,instrumentIds:list.instrumentIds.filter(v=>v!==listId)}))}))
   },[mutate,updateItems])
-  const reorderWatchlist=useCallback((id:string,from:number,to:number)=>updateItems(id,ids=>reorderIds(ids,from,to)),[updateItems])
+  const reorderWatchlist=useCallback((id:string,from:number,to:number)=>updateItems(id,ids=>{
+    const visible=reorderIds(ids.filter(productScope.allowsStoredInstrumentId),from,to)
+    let index=0
+    return ids.map(value=>productScope.allowsStoredInstrumentId(value)?visible[index++]:value)
+  }),[updateItems])
   const trackRecentlyViewed=useCallback((id:string)=>setRecentlyViewedIds(current=>[id,...current.filter(v=>v!==id)].slice(0,8)),[])
   const addToWatchlist=useCallback((item:WatchlistItem)=>{
     const valid=sanitizeItems([item])[0];if(!valid)return
@@ -81,11 +90,14 @@ export function WatchlistProvider({ children }: PropsWithChildren) {
     if(!storeRef.current.watchlists.some(list=>list.instrumentIds.includes(id)))return
     mutate(current=>({...current,items:updateReviewJournal(materialize(current,mountedAt),id,note,reason)}))
   },[mutate,mountedAt])
-  const watchlistItems=useMemo(()=>materialize(store,mountedAt),[store,mountedAt])
-  const favoriteIds=useMemo(()=>new Set(store.watchlists.flatMap(list=>list.instrumentIds)),[store.watchlists])
+  // Project the visible product without rewriting the stored bundle or removing hidden stock records.
+  const visibleWatchlists=useMemo(()=>store.watchlists.filter(list=>(!list.isDefault||list.id==='custom'||productScope.groups.some(group=>group===list.id))&&(!list.instrumentIds.length||list.instrumentIds.some(productScope.allowsStoredInstrumentId))).map(list=>({...list,instrumentIds:list.instrumentIds.filter(productScope.allowsStoredInstrumentId)})),[store.watchlists])
+  const visibleRecentlyViewedIds=useMemo(()=>recentlyViewedIds.filter(productScope.allowsStoredInstrumentId),[recentlyViewedIds])
+  const watchlistItems=useMemo(()=>materialize(store,mountedAt).filter(item=>productScope.allowsStoredInstrumentId(item.instrumentId)),[store,mountedAt])
+  const favoriteIds=useMemo(()=>new Set(visibleWatchlists.flatMap(list=>list.instrumentIds)),[visibleWatchlists])
   const isWatchlisted=useCallback((id:string)=>favoriteIds.has(id),[favoriteIds])
   const getWatchlistItem=useCallback((id:string)=>watchlistItems.find(item=>item.instrumentId===id),[watchlistItems])
-  const activeWatchlistId=store.watchlists.some(list=>list.id===selectedId)?selectedId:store.watchlists[0]?.id??'crypto'
-  const value=useMemo<WatchlistValue>(()=>({watchlistItems,isWatchlisted,addToWatchlist,toggleWatchlist,markReviewed,saveReviewJournal,getWatchlistItem,activeReview,setActiveReview,watchlists:store.watchlists,activeWatchlistId,favoriteIds,recentlyViewedIds,setActiveWatchlistId,createWatchlist,deleteWatchlist,toggleFavorite,toggleInWatchlist,removeFromWatchlist,reorderWatchlist,trackRecentlyViewed}),[watchlistItems,isWatchlisted,addToWatchlist,toggleWatchlist,markReviewed,saveReviewJournal,getWatchlistItem,activeReview,store.watchlists,activeWatchlistId,favoriteIds,recentlyViewedIds,createWatchlist,deleteWatchlist,toggleFavorite,toggleInWatchlist,removeFromWatchlist,reorderWatchlist,trackRecentlyViewed])
+  const activeWatchlistId=visibleWatchlists.some(list=>list.id===selectedId)?selectedId:visibleWatchlists[0]?.id??productScope.defaultGroup
+  const value=useMemo<WatchlistValue>(()=>({watchlistItems,isWatchlisted,addToWatchlist,toggleWatchlist,markReviewed,saveReviewJournal,getWatchlistItem,activeReview,setActiveReview,watchlists:visibleWatchlists,activeWatchlistId,favoriteIds,recentlyViewedIds:visibleRecentlyViewedIds,setActiveWatchlistId,createWatchlist,deleteWatchlist,toggleFavorite,toggleInWatchlist,removeFromWatchlist,reorderWatchlist,trackRecentlyViewed}),[watchlistItems,isWatchlisted,addToWatchlist,toggleWatchlist,markReviewed,saveReviewJournal,getWatchlistItem,activeReview,visibleWatchlists,activeWatchlistId,favoriteIds,visibleRecentlyViewedIds,createWatchlist,deleteWatchlist,toggleFavorite,toggleInWatchlist,removeFromWatchlist,reorderWatchlist,trackRecentlyViewed])
   return <WatchlistContext value={value}>{(error||store.error)&&<p role="alert">{error||'관심종목 기록을 읽지 못해 변경을 중지했습니다.'}<button onClick={()=>{load();setError('')}}>기록 다시 읽기</button></p>}{children}</WatchlistContext>
 }

@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest'
 
 import { mockBriefings } from './mockBriefingData'
 import { newsArticles } from '@/services/dashboard/mockDashboardData'
-import { marketDataService } from '@/services/market/marketDataService'
+import { MarketDataService } from '@/services/market/marketDataService'
+const marketDataService = new MarketDataService() // Shared fixtures support both separately scoped products.
 
 describe('market briefing fixtures', () => {
   it('covers four markets and resolves every interactive instrument and news reference', () => {

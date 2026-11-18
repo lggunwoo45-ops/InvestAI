@@ -33,9 +33,10 @@ describe('Market asset-mode persistence', () => {
     expect(window.localStorage.getItem(MARKET_ASSET_MODE_STORAGE_KEY)).toBeNull()
   })
 
-  it('round-trips a valid asset mode', () => {
+  it('preserves a stock preference but resolves the public workspace to crypto', () => {
     saveMarketAssetMode('korea')
-    expect(loadMarketAssetMode()).toBe('korea')
+    expect(loadMarketAssetMode()).toBe('crypto')
+    expect(window.localStorage.getItem(MARKET_ASSET_MODE_STORAGE_KEY)).toBe('korea')
   })
 
   it.each(['hello', '42', '{"schemaVersion":2}', '{"schemaVersion":1,"instrumentIds":{"crypto":42}}'])('recovers from invalid last-instrument storage: %s', (raw) => {

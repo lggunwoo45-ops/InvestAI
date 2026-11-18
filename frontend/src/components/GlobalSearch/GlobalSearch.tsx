@@ -10,6 +10,7 @@ import { uiText } from '@/i18n/translations'
 import { useLanguage } from '@/i18n/useLanguage'
 import type { MarketVenue } from '@/types/market'
 import styles from './GlobalSearch.module.css'
+import { productScope } from '@/app/productScope'
 
 const venues: [MarketVenue, string][] = [['upbit-krw', 'Upbit KRW'], ['upbit-btc', 'Upbit BTC'], ['upbit-usdt', 'Upbit USDT'], ['binance-spot', 'Binance Spot'], ['binance-futures', 'Binance Futures'], ['kospi', 'KOSPI · Demo'], ['kosdaq', 'KOSDAQ · Demo'], ['nasdaq', 'NASDAQ · Demo'], ['nyse', 'NYSE · Demo']]
 export function GlobalSearch({ compact = false }: { compact?: boolean }) {
@@ -22,7 +23,7 @@ export function GlobalSearch({ compact = false }: { compact?: boolean }) {
   const text = uiText[language]
   const [query, setQuery] = useState('')
   const [settled, setSettled] = useState('')
-  const [venue, setVenue] = useState<MarketVenue>('upbit-krw')
+  const [venue, setVenue] = useState<MarketVenue>(productScope.defaultVenue)
   const [retry, setRetry] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
   const normalized = query.trim().toLocaleLowerCase()
@@ -41,7 +42,7 @@ export function GlobalSearch({ compact = false }: { compact?: boolean }) {
   return <div className={styles.wrapper} data-compact={compact || undefined} onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setQuery('') }} onKeyDown={event => { if (event.key === 'Escape') setQuery('') }}>
     <label className={styles.search}><Icon name="search" size={17} /><input ref={inputRef} type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder={text.globalSearch} aria-label="Global search" /><kbd>Ctrl K</kbd></label>
     {!!normalized && <div className={styles.results}>
-      <label className={styles.label}>{ko ? '찾을 거래소·마켓' : 'Search venue'} <select aria-label="Global search venue" value={venue} onChange={event => { setVenue(event.target.value as MarketVenue); setRetry(0) }}>{venues.map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select></label>
+      <label className={styles.label}>{ko ? '찾을 거래소·마켓' : 'Search venue'} <select aria-label="Global search venue" value={venue} onChange={event => { setVenue(event.target.value as MarketVenue); setRetry(0) }}>{venues.filter(([id]) => productScope.allowsVenue(id)).map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select></label>
       <div className={styles.label}>{text.searchMarkets} · {catalog?.source === 'mock' ? (ko ? '예시 목록' : 'Demo catalog') : (ko ? '실제 거래소 목록' : 'Exchange catalog')}</div>
       {(!ready || loading) && <p role="status">{ko ? '거래소 목록에서 찾고 있어요…' : 'Searching the exchange catalog…'}</p>}
       {error && <div role="alert"><p>{ko ? '목록을 불러오지 못했어요. 잠시 후 다시 시도해주세요.' : 'Catalog unavailable. Please retry.'}</p><button type="button" onClick={() => setRetry(value => value + 1)}>{ko ? '다시 불러오기' : 'Retry'}</button></div>}

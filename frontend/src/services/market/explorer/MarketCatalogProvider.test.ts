@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { marketDataService } from '@/services/market/marketDataService'
+import { MarketDataService } from '@/services/market/marketDataService'
+const marketDataService = new MarketDataService() // Shared fixtures support both separately scoped products.
 import { queryMarketInstruments } from '@/pages/Market/marketExplorerQuery'
 import type { MarketInstrument } from '@/types/market'
 import { binanceCatalogProvider } from './BinanceCatalogProvider'

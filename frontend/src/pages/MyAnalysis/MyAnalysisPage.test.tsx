@@ -44,7 +44,18 @@ vi.mock('@/hooks/useTechnicalLevelData', () => ({
 }))
 
 describe('MyAnalysisPage', () => {
-  it('opens a tool scenario after searching, keeps the chosen side across venues and modes, and does not fabricate stock prices', async () => {
+  it('offers only crypto search filters and excludes stock search results', async () => {
+    render(<AppProviders><MemoryRouter initialEntries={['/my-analysis']}><AppRoutes /></MemoryRouter></AppProviders>)
+    const search = await screen.findByRole('searchbox', { name: 'Search instrument' })
+    fireEvent.change(search, { target: { value: 'Bitcoin' } })
+    expect(screen.getByRole('button', { name: /BTC\/KRW/ })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Korea' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'US' })).toBeNull()
+    fireEvent.change(search, { target: { value: 'Samsung' } })
+    expect(screen.queryByRole('button', { name: /005930/ })).toBeNull()
+  })
+
+  it('opens a tool scenario after searching, keeps the chosen side across venues and modes, within the crypto product', async () => {
     render(<AppProviders><MemoryRouter initialEntries={['/tools']}><AppRoutes /></MemoryRouter></AppProviders>)
     fireEvent.click(await screen.findByRole('link', { name: 'How far could it rise?' }))
     const search = await screen.findByRole('searchbox', { name: 'Search instrument' })
@@ -59,13 +70,7 @@ describe('MyAnalysisPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /BTCUSDT/ }))
     expect(screen.getByRole('tab', { name: 'How far could it fall?' }).getAttribute('aria-selected')).toBe('true')
     expect(screen.getByRole('region', { name: 'How far could it fall?' }).textContent).toContain('USDT')
-    fireEvent.click(screen.getByText('Change or search instrument'))
-    fireEvent.change(screen.getByRole('searchbox', { name: 'Search instrument' }), { target: { value: 'Apple' } })
-    fireEvent.click(screen.getByRole('button', { name: /AAPL/ }))
-    expect(screen.getByRole('button', { name: 'How far could it fall?' }).getAttribute('aria-pressed')).toBe('true')
-    const stock = screen.getByRole('region', { name: 'How far could it fall?' })
-    expect(stock.textContent).toContain('USD')
-    expect(within(stock).getByText('Price levels are not available yet')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /AAPL/ })).toBeNull()
   })
   it('preserves the asset, personal inputs and selected tab across global simple and expert mode changes', async () => {
     render(<AppProviders><MemoryRouter initialEntries={['/my-analysis?instrumentId=upbit-btc']}><AppRoutes /></MemoryRouter></AppProviders>)
@@ -143,9 +148,9 @@ describe('MyAnalysisPage', () => {
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Average price (optional)' }), { target: { value: '95' } })
     expect(readPortfolio().positions[0].averagePrice).toBe(80)
     fireEvent.click(screen.getByText('Change or search instrument'))
-    fireEvent.change(screen.getByRole('searchbox', { name: 'Search instrument' }), { target: { value: 'Apple' } })
-    fireEvent.click(screen.getByRole('button', { name: /AAPL/ }))
-    fireEvent.click(screen.getByRole('button', { name: 'My holding' }))
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search instrument' }), { target: { value: 'BTCUSDT' } })
+    fireEvent.click(screen.getByRole('button', { name: /BTCUSDT/ }))
+    fireEvent.click(screen.getByRole('tab', { name: 'My price criteria' }))
     expect((screen.getByRole('spinbutton', { name: 'Average price (optional)' }) as HTMLInputElement).value).toBe('')
     expect(screen.queryByRole('region', { name: 'My investment criteria' })).toBeNull()
   })
@@ -182,47 +187,9 @@ describe('MyAnalysisPage', () => {
 
   beforeEach(() => { window.localStorage.clear(); window.sessionStorage.clear(); catalogMockState.failedVenue = null; technicalMockState.isLoading = false })
 
-  it('offers a focused stock summary and preserves personal inputs in the full expert analysis', async () => {
-    render(<AppProviders><MemoryRouter initialEntries={['/my-analysis']}><AppRoutes /></MemoryRouter></AppProviders>)
-    expect(await screen.findByRole('heading', { name: 'Instrument Analysis' })).toBeTruthy()
-    fireEvent.change(screen.getByRole('searchbox', { name: 'Search instrument' }), { target: { value: 'Samsung' } })
-    fireEvent.click(screen.getByRole('button', { name: /005930/ }))
-    expect(screen.getByRole('heading', { name: '005930' })).toBeTruthy()
-    expect(screen.queryByRole('region', { name: 'Rule basis' })).toBeNull()
-    expect(screen.queryByRole('region', { name: 'Chart structure analysis' })).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: 'My holding' }))
-    fireEvent.change(screen.getByRole('textbox', { name: 'My note (optional)' }), { target: { value: 'Personal review note' } })
-    fireEvent.change(screen.getByRole('spinbutton', { name: 'Average price (optional)' }), { target: { value: '68000' } })
-    expect(screen.getByRole('region', { name: 'Position review' }).textContent).toContain('68,000 KRW')
-    fireEvent.click(screen.getByRole('button', { name: /Expert Mode/ }))
-    expect(screen.getByRole('region', { name: 'Review summary' })).toBeTruthy()
-    expect(screen.getByRole('region', { name: 'Rule basis' })).toBeTruthy()
-    expect(screen.getByRole('region', { name: 'Chart structure analysis' }).getAttribute('data-display-mode')).toBe('expert')
-    expect(screen.getByRole('region', { name: 'Chart overlays' })).toBeTruthy()
-    expect(screen.getByRole('region', { name: 'Your inputs' }).textContent).toContain('Personal review note')
-    fireEvent.click(screen.getByRole('button', { name: /Simple Mode/ }))
-    fireEvent.click(screen.getByRole('button', { name: 'My holding' }))
-    expect((screen.getByRole('spinbutton', { name: 'Average price (optional)' }) as HTMLInputElement).value).toBe('68000')
-  })
 
-  it('filters loaded search results by Crypto, Korea, and US without new provider calls', async () => {
-    render(<AppProviders><MemoryRouter initialEntries={['/my-analysis']}><AppRoutes /></MemoryRouter></AppProviders>)
-    const search = await screen.findByRole('searchbox', { name: 'Search instrument' })
-    fireEvent.change(search, { target: { value: 'Bitcoin' } })
-    expect(screen.getByRole('button', { name: /BTC\/KRW/ })).toBeTruthy()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Crypto' }))
-    expect(screen.getByRole('button', { name: /BTC\/KRW/ })).toBeTruthy()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Korea' }))
-    fireEvent.change(search, { target: { value: 'Samsung' } })
-    expect(screen.getByRole('button', { name: /005930/ })).toBeTruthy()
-
-    fireEvent.click(screen.getByRole('button', { name: 'US' }))
-    fireEvent.change(search, { target: { value: 'Apple' } })
-    expect(screen.getByRole('button', { name: /AAPL/ })).toBeTruthy()
-    expect(screen.queryByRole('button', { name: /BTC\/KRW/ })).toBeNull()
-  })
 
   it('supports direct crypto links, bilingual navigation and optional holding input without duplicate conclusions', async () => {
     render(<AppProviders><MemoryRouter initialEntries={['/my-analysis?instrumentId=upbit-btc']}><AppRoutes /></MemoryRouter></AppProviders>)
@@ -328,19 +295,14 @@ describe('MyAnalysisPage', () => {
     expect(baseline.textContent).toContain('100 KRW')
   })
 
-  it('does not show disclosure review for a US stock', async () => {
-    render(<AppProviders><MemoryRouter initialEntries={['/my-analysis?instrumentId=us-aapl']}><AppRoutes /></MemoryRouter></AppProviders>)
-    expect(await screen.findByRole('heading', { name: 'AAPL' })).toBeTruthy()
-    expect(screen.queryByRole('region', { name: 'Disclosure review' })).toBeNull()
-    expect(screen.queryByRole('region', { name: 'Recent DART disclosures' })).toBeNull()
-  })
+
 
   it('surfaces a venue failure while keeping loaded catalogs searchable', async () => {
     catalogMockState.failedVenue = 'binance-futures'
     render(<AppProviders><MemoryRouter initialEntries={['/my-analysis?instrumentId=missing-instrument']}><AppRoutes /></MemoryRouter></AppProviders>)
     expect((await screen.findByRole('status', { name: 'Catalog limitation' })).textContent).toContain('Some market catalogs could not be loaded. Search results may be incomplete.')
     expect(screen.getByRole('alert').textContent).toContain('The requested instrument is not available in the loaded catalogs.')
-    fireEvent.change(screen.getByRole('searchbox', { name: 'Search instrument' }), { target: { value: 'Samsung' } })
-    expect(screen.getByRole('button', { name: /005930/ })).toBeTruthy()
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search instrument' }), { target: { value: 'Bitcoin' } })
+    expect(screen.getByRole('button', { name: /BTC\/KRW/ })).toBeTruthy()
   })
 })

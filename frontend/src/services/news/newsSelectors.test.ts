@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
 import { newsArticles } from '@/services/dashboard/mockDashboardData'
-import { marketDataService } from '@/services/market/marketDataService'
+import { MarketDataService } from '@/services/market/marketDataService'
+const marketDataService = new MarketDataService() // Shared fixtures support both separately scoped products.
 import { newsProvider } from './MockNewsProvider'
 import { filterNews, newsForInstrument } from './newsSelectors'
 

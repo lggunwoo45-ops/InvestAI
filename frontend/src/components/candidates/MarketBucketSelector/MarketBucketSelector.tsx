@@ -3,6 +3,7 @@ import type { KeyboardEvent } from 'react'
 import type { Language } from '@/i18n/translations'
 import { getMarketBuckets, type MarketBucketId } from '@/types/marketBucket'
 import styles from './MarketBucketSelector.module.css'
+import { productScope } from '@/app/productScope'
 
 interface MarketBucketSelectorProps {
   selected: MarketBucketId
@@ -11,7 +12,7 @@ interface MarketBucketSelectorProps {
 }
 
 export function MarketBucketSelector({ selected, language, onChange }: MarketBucketSelectorProps) {
-  const buckets = getMarketBuckets(language)
+  const buckets = getMarketBuckets(language).filter(bucket => bucket.sourceMarketIds.some(productScope.allowsVenue))
   const moveSelection = (event: KeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
     let nextIndex: number | null = null
     if (event.key === 'ArrowRight') nextIndex = (currentIndex + 1) % buckets.length

@@ -3,6 +3,9 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 
 import { RouteLoadingFallback } from '@/components/RouteLoadingFallback/RouteLoadingFallback'
 import { AppShell } from '@/layouts/AppShell/AppShell'
+import { productScope } from './productScope'
+import { ProductRouteBoundary } from './ProductRouteBoundary'
+import { StockPreviewShell } from '@/layouts/StockPreviewShell/StockPreviewShell'
 
 const ToolsPage = lazy(() => import('@/pages/Tools/ToolsPage').then(module => ({ default: module.ToolsPage })))
 const ResultsPage = lazy(() => import('@/pages/Results/ResultsPage').then(module => ({ default: module.ResultsPage })))
@@ -26,7 +29,18 @@ export function AppRoutes() {
   return (
     <Suspense fallback={<RouteLoadingFallback />}>
       <Routes>
+        {productScope.kind === 'stocks' ? <Route element={<StockPreviewShell />}>
+          <Route element={<ProductRouteBoundary />}>
+            <Route index element={<Navigate to="/market" replace />} />
+            <Route path="market" element={<MarketPage />} />
+            <Route path="my-analysis" element={<MyAnalysisPage />} />
+            <Route path="ai-analysis" element={<AiAnalysisPage />} />
+            <Route path="news" element={<NewsPage />} />
+            <Route path="*" element={<Navigate to="/market" replace />} />
+          </Route>
+        </Route> :
         <Route element={<AppShell />}>
+          <Route element={<ProductRouteBoundary />}>
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="tools" element={<ToolsPage />} />
           <Route path="results" element={<ResultsPage />} />
@@ -49,7 +63,8 @@ export function AppRoutes() {
           <Route path="news" element={<NewsPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="*" element={<NotFoundPage />} />
-        </Route>
+          </Route>
+        </Route>}
       </Routes>
     </Suspense>
   )

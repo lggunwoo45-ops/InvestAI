@@ -58,3 +58,6 @@ jobs:
 
       - name: Run production build
         run: npm run build
+
+      - name: Verify separate stock preview still builds
+        run: npm run build:stocks

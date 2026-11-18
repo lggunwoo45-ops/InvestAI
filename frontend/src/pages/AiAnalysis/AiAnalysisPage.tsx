@@ -1,4 +1,5 @@
 import simpleStyles from '@/components/simple/SimpleWorkspace.module.css'
+import { productScope } from '@/app/productScope'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 
@@ -67,6 +68,7 @@ function savedSnapshotFilterInput(item: CandidateSnapshotItem, horizon: WatchCan
 
 export function AiAnalysisPage() {
   const { hash, search } = useLocation()
+  if (productScope.kind === 'stocks') return <DailyCandidatePage />
   if (hash === '#ai-usage-plans-title') return <Navigate to="/plans" replace />
   if (hash === '#opportunity-records') return <Navigate to={{ pathname: '/results', search }} replace />
   return <ExploreView key={hash} initialView={['#daily-records', '#daily'].includes(hash) ? 'daily' : 'live'} />
@@ -94,7 +96,7 @@ function DailyCandidatePage() {
   const { displayMode, setDisplayMode } = useDisplayMode()
   const { marketDataMode } = useMarketWorkspace()
   const { result: newsResult } = useNewsProviderMode()
-  const [bucketId, setBucketId] = useState<MarketBucketId>('upbit')
+  const [bucketId, setBucketId] = useState<MarketBucketId>(productScope.kind === 'stocks' ? 'kospi' : 'upbit')
   const [horizon, setHorizon] = useState<WatchCandidateHorizon>(DAILY_DEFAULT_HORIZON)
   const [previousSnapshots] = useState(loadCandidateSnapshots)
   const [snapshotRecords, setSnapshotRecords] = useState(loadDailyBucketSnapshots)

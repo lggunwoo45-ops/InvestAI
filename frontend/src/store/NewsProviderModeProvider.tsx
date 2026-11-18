@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState, type PropsWithChildren } fro
 import { newsService, type NewsLoadResult, type NewsProviderMode } from '@/services/news/newsService'
 import { NewsProviderModeContext } from './newsProviderModeContext'
 import { newsProviderModeStorageKey, readNewsProviderMode } from './newsProviderModeStorage'
+import { productScope } from '@/app/productScope'
 
 /** Shared feed for all pages. A refresh retains the previous source's original timestamp. */
 export function NewsProviderModeProvider({ children }: PropsWithChildren) {
@@ -27,7 +28,7 @@ export function NewsProviderModeProvider({ children }: PropsWithChildren) {
     updateMode(next)
     try { window.localStorage.setItem(newsProviderModeStorageKey, next) } catch { /* Storage failure must not break news. */ }
   }, [])
-  const currentResult = result?.requestedMode === mode ? result : null
+  const currentResult = useMemo(() => result?.requestedMode === mode ? { ...result, articles: result.articles.filter(productScope.allowsNews).map(article => ({ ...article, relatedInstrumentIds: Object.fromEntries(Object.entries(article.relatedInstrumentIds ?? {}).filter(([, id]) => productScope.allowsInstrumentId(id))) })) } : null, [result, mode])
   const value = useMemo(() => ({ mode, result: currentResult, setMode, refresh }), [currentResult, mode, setMode, refresh])
   return <NewsProviderModeContext value={value}>{children}</NewsProviderModeContext>
 }
