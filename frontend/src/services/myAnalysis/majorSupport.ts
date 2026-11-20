@@ -18,7 +18,7 @@ export interface MajorSupport {
 interface Pivot { price: number; at: number; weekly: boolean; rebound: number; volumeRatio: number }
 
 /** Only complete UTC Monday-Sunday weeks. Missing days are never forward-filled. */
-function weeklyBars(days: readonly Candle[]): Candle[] {
+export function weeklyBars(days: readonly Candle[]): Candle[] {
   const groups = new Map<number, Candle[]>()
   for (const c of days) {
     const key = Math.floor((c.timestamp - 4 * DAY) / WEEK) * WEEK + 4 * DAY

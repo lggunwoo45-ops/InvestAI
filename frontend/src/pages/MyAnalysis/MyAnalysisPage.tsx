@@ -236,7 +236,7 @@ function AnalysisWorkspace() {
   const choose = (instrument: MarketInstrument) => {
     if (instrument.id !== selectedId) { setAveragePrice(''); setIntent('watching'); setReviewMode('interest') }
     setSelectedId(instrument.id)
-    setParams({ instrumentId: instrument.id, ...(['upside', 'downside'].includes(analysisTab) ? { tab: analysisTab } : {}) }, { replace: true })
+    setParams({ instrumentId: instrument.id, ...(['upside', 'downside'].includes(analysisTab) ? { tab: analysisTab } : {}), ...(params.get('horizon') === 'position' ? { horizon: 'position' } : {}) }, { replace: true })
   }
   const openMarket = () => {
     if (selected) selectInstrument(selected)

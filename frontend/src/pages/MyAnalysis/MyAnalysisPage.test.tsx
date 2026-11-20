@@ -30,6 +30,7 @@ const candidateSnapshot = (expiresAt = '2099-09-26T00:00:00Z'): CandidateSnapsho
 vi.mock('@/hooks/useMarketCatalog', () => ({ useMarketCatalog: (venue: MarketVenue) => ({ catalog: catalogMockState.failedVenue === venue ? null : { venue, source: venue === 'upbit-krw' ? 'live' : 'mock', fetchedAt: 0, instruments: instruments.filter((item) => item.marketType === venue) }, loading: false, error: catalogMockState.failedVenue === venue ? 'Catalog failed' : null, loadingMilliseconds: 0 }) }))
 vi.mock('@/hooks/useDartDisclosures', () => ({ useDartDisclosures: (stockCode: string | null) => stockCode ? { status: 'mapping_unavailable', sourceMode: 'disabled', message: 'Mapping unavailable.', disclosures: [], fetchedAt: null } : { status: 'unavailable', sourceMode: 'disabled', message: 'Korean stocks only.', disclosures: [], fetchedAt: null } }))
 vi.mock('@/hooks/useDominance', () => ({ useDominance: () => ({ data: null, loading: false, error: true }) }))
+vi.mock('@/hooks/useMajorSupportHistory', () => ({ useMajorSupportHistory: () => ({ data: null, loading: false, failed: false, retry: vi.fn() }) }))
 vi.mock('@/hooks/useTechnicalLevelData', () => ({
   useTechnicalLevelData: (instrument: MarketInstrument | null) => ({
     candles: instrument ? Array.from({ length: 60 }, (_, index) => {
@@ -44,6 +45,20 @@ vi.mock('@/hooks/useTechnicalLevelData', () => ({
 }))
 
 describe('MyAnalysisPage', () => {
+  it('keeps the selected horizon when changing display mode and exchange through search', async () => {
+    render(<AppProviders><MemoryRouter initialEntries={['/my-analysis?instrumentId=upbit-btc']}><AppRoutes /></MemoryRouter></AppProviders>)
+    fireEvent.click(await screen.findByRole('button', { name: 'Medium / long term' }))
+    fireEvent.click(screen.getByRole('button', { name: /Expert Mode/ }))
+    expect(screen.getByRole('button', { name: 'Medium / long term' }).getAttribute('aria-pressed')).toBe('true')
+    fireEvent.click(screen.getByText('Change or search instrument'))
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search instrument' }), { target: { value: 'BTCUSDT' } })
+    fireEvent.click(screen.getByRole('button', { name: /BTCUSDT/ }))
+    expect(await screen.findByRole('heading', { name: 'BTCUSDT' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Medium / long term' }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByRole('region', { name: 'Rebound price path by horizon' }).textContent).toContain('Binance Spot · USDT')
+    fireEvent.click(screen.getByRole('button', { name: /Simple Mode/ }))
+    expect(screen.getByRole('button', { name: 'Medium / long term' }).getAttribute('aria-pressed')).toBe('true')
+  })
   it('offers only crypto search filters and excludes stock search results', async () => {
     render(<AppProviders><MemoryRouter initialEntries={['/my-analysis']}><AppRoutes /></MemoryRouter></AppProviders>)
     const search = await screen.findByRole('searchbox', { name: 'Search instrument' })

@@ -22,6 +22,7 @@ import { AnalysisPreparation } from './AnalysisPreparation'
 import { CryptoExpertOverview } from './CryptoExpertOverview'
 import { SimpleDecisionBrief } from './SimpleDecisionBrief'
 import { SimplePriceOverview } from './SimplePriceOverview'
+import { ReboundPathPanel } from '@/components/price-scenarios/ReboundPathPanel'
 
 interface Props { instrument: MarketInstrument; daily: AnalysisSeries; language: Language; averagePrice?: number | null; quantity?: number; expert?: boolean; onExpert?: () => void; holding?: boolean; onHoldingChange?: (holding: boolean) => void; positionId?: string; detailsContent?: ReactNode; investmentContent?: ReactNode; activeTab?: AnalysisTab; onTabChange?: (tab: AnalysisTab) => void }
 const tabs = analysisTabs
@@ -123,6 +124,8 @@ export function CryptoDecisionPanel({ instrument, daily, language, averagePrice,
       event.preventDefault(); setTab(tabs[next]); tabButtons.current[next]?.focus()
     }}>{t.tabs[value]}</button>)}</div></details>}
     <div className={styles.tabPanel} role="tabpanel" id={`${tabId}-summary-panel`} aria-labelledby={`${tabId}-summary`} hidden={tab !== 'summary'} tabIndex={0}>
+    {tab === 'summary' && <ReboundPathPanel instrument={instrument} series={series} now={now} language={language} expert={expert} />}
+    <details className={styles.disclosure} open={expert || holding || futures} key={`legacy:${expert}:${holding}:${futures}`}><summary>{ko ? '기존 전략·보유 검토 · 1시간·4시간·일봉 종합' : 'Existing strategy and holding review · combined hourly / four-hour / daily'}</summary>
     {onHoldingChange && <div className={styles.purpose} role="group" aria-label={ko ? '어떤 상황인가요?' : 'Your situation'}>
       <button type="button" aria-pressed={!holding} onClick={() => onHoldingChange(false)}>{ko ? '새로 살까 해요' : 'Considering a buy'}</button>
       <button type="button" aria-pressed={holding} onClick={() => onHoldingChange(true)}>{ko ? '이미 갖고 있어요' : 'Already holding'}</button>
@@ -168,6 +171,7 @@ export function CryptoDecisionPanel({ instrument, daily, language, averagePrice,
     </details> : decision.direction !== 'unavailable' ? <p className={styles.nextCheck}>{guide.next}</p> : null)}
     {expert && <CryptoExpertOverview decision={decision} language={language} quoteCurrency={instrument.quoteCurrency} />}
     {expert && <button className={styles.evidenceLink} type="button" onClick={() => setTab('details')}>{ko ? `3개 시간 흐름 중 ${decision.coverage}개 확인 · 이유 자세히 보기` : `${decision.coverage} of 3 timeframes checked · View the evidence`} →</button>}
+    </details>
     </div>
     <div className={styles.tabPanel} role="tabpanel" id={`${tabId}-details-panel`} aria-labelledby={`${tabId}-details`} hidden={tab !== 'details'} tabIndex={0}>
     {daily.dataQuality === 'mock' && <p>{t.demo}</p>}
