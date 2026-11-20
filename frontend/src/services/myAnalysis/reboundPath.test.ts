@@ -15,6 +15,7 @@ describe('horizon-specific rebound paths', () => {
     expect(m.upside).toBeCloseTo((m.target!.center / 100 - 1) * 100)
     expect(m.fromSupport).toBeCloseTo((m.target!.center / m.support!.center - 1) * 100)
     expect(m.fromSupport).toBeGreaterThan(m.upside!)
+    expect(m.intermediate.every(l => l.center > m.first!.center && l.center < m.target!.center)).toBe(true)
   })
   it('actually changes the evidence and support for a longer horizon, without borrowing short history', () => {
     const short = buildReboundPath(supportInstrument, pathSeries(), null, 'intraday', supportNow)
@@ -37,6 +38,16 @@ describe('horizon-specific rebound paths', () => {
     const one = pathSeries(); Object.values(one).forEach(s => { s.candles = s.candles.map(c => ({ ...c, high: 120 })) })
     const m = buildReboundPath(supportInstrument, one, null, 'intraday', supportNow)
     expect(m.first!.center).toBe(120); expect(m.first!.basis).toBe('range'); expect(m.target).toBeNull()
+  })
+  it('keeps intervening resistance visible for remote targets and requires a support basis', () => {
+    const series = pathSeries()
+    series['1H'].candles = series['1H'].candles.map((c, i) => [4, 20, 36, 52, 68, 84].includes(i) ? { ...c, high: 180 } : c)
+    const m = buildReboundPath(supportInstrument, series, null, 'intraday', supportNow)
+    expect(m.target!.center).toBe(180)
+    expect(m.intermediate.length).toBeGreaterThan(0)
+    expect(m.distantTarget).toBe(true)
+    const below = buildReboundPath(supportInstrument, pathSeries(50), null, 'intraday', supportNow)
+    expect(below.support).toBeNull(); expect(below.target).toBeNull(); expect(below.upside).toBeNull()
   })
   it('ignores forming bars and marks an actual rejection only from the last completed bar', () => {
     const series = pathSeries(), base = buildReboundPath(supportInstrument, series, null, 'intraday', supportNow)

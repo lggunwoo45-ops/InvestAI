@@ -15,6 +15,7 @@ export interface ReboundPath {
   upside: number | null; fromSupport: number | null; downside: number | null; asOf: number | null; receivedAt: number | null
   frame: '1H' | '1D'; bars: number; higherBars: number; atr: number | null; countertrend: boolean; nearFirst: boolean
   resistanceState: 'below' | 'rejected' | 'testing'; supportState: 'above' | 'testing'
+  intermediate: PathLevel[]; distantTarget: boolean
 }
 type Source = { rows: readonly Candle[]; frame: string; weight: number }
 type Point = { price: number; at: number; frame: string; weight: number }
@@ -57,7 +58,7 @@ const strength = (level: PathLevel) => Math.min(level.touches, 6) * 3 + level.fr
 export function buildReboundPath(instrument: MarketInstrument, series: Record<AnalysisFrame, AnalysisSeries>, history: DailyHistory | null, horizon: AnalysisHorizon, now: number): ReboundPath {
   const result: ReboundPath = { status: 'data', horizon, instrumentId: instrument.id, venue: instrument.marketId, currency: instrument.quoteCurrency,
     price: null, support: null, first: null, target: null, invalidation: null, upside: null, fromSupport: null, downside: null, asOf: null, receivedAt: null,
-    frame: horizon === 'intraday' ? '1H' : '1D', bars: 0, higherBars: 0, atr: null, countertrend: false, nearFirst: false, resistanceState: 'below', supportState: 'above' }
+    frame: horizon === 'intraday' ? '1H' : '1D', bars: 0, higherBars: 0, atr: null, countertrend: false, nearFirst: false, resistanceState: 'below', supportState: 'above', intermediate: [], distantTarget: false }
   if (!['upbit', 'binance-spot', 'binance-futures'].includes(instrument.marketId)) return result
   const fresh = (s: AnalysisSeries) => s.dataQuality === 'live' && s.connectionStatus === 'live' && positive(s.currentPrice) && positive(s.updatedAt) && now - s.updatedAt <= 90_000 && s.updatedAt <= now + 60_000
   const quote = [series['1H'], series['4H'], series['1D']].filter(fresh).sort((a, b) => b.updatedAt! - a.updatedAt!)[0]
@@ -92,7 +93,11 @@ export function buildReboundPath(instrument: MarketInstrument, series: Record<An
   const resistances = levels(sources, 'resistance', atr, horizon).filter(l => l.center > price && (!result.support || l.low > result.support.high)).sort((a, b) => a.center - b.center)
   result.first = resistances[0] ?? fallback('resistance')
   if (result.first) {
-    result.target = resistances.filter(l => l.low > result.first!.high + atr * .25).sort((a, b) => strength(b) - strength(a) || a.center - b.center)[0] ?? null
+    result.target = result.support ? resistances.filter(l => l.low > result.first!.high + atr * .25).sort((a, b) => strength(b) - strength(a) || a.center - b.center)[0] ?? null : null
+    if (result.target) {
+      result.intermediate = resistances.filter(l => l.center > result.first!.center && l.center < result.target!.center)
+      result.distantTarget = result.target.center - price > atr * (horizon === 'intraday' ? 6 : 12)
+    }
     const last = rows.at(-1)!
     result.resistanceState = last.high >= result.first.low && last.close < result.first.low ? 'rejected' : price >= result.first.low ? 'testing' : 'below'
     result.nearFirst = (result.first.center - price) / price * 100 < .5
