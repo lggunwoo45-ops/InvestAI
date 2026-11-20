@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
 import { OpportunityBoard, ScanPoolControl } from '@/components/crypto-analysis/OpportunityPlans'
+import { FuturesOpportunityBoard, ScanMarketMode } from '@/components/crypto-analysis/FuturesOpportunityBoard'
 import { SimpleScanResults } from '@/components/simple/SimpleScanResults'
 import { Link } from 'react-router-dom'
 import { useLanguage } from '@/i18n/useLanguage'
@@ -27,6 +28,7 @@ function SearchSession({ marketDataMode }: { marketDataMode: 'live' | 'mock' }) 
   const { language } = useLanguage()
   const ko = language === 'ko'
   const [venue, setVenue] = useState<MarketVenue>('upbit-krw')
+  const futures = venue === 'binance-futures'
   const [poolMode, setPoolMode] = useState<ScanPoolMode>('active')
   const [view, setView] = useState<'opportunities' | 'trend'>('opportunities')
   const [criteria, setCriteria] = useState(initialCriteria)
@@ -44,7 +46,7 @@ function SearchSession({ marketDataMode }: { marketDataMode: 'live' | 'mock' }) 
     return () => clearInterval(timer)
   }, [])
   const changeVenue = (next: MarketVenue) => {
-    controller.current?.abort(); setVenue(next); setStatus('idle'); setResults([]); setVisibleCount(4); setProgress({ completed: 0, total: 0 })
+    controller.current?.abort(); setVenue(next); if (next === 'binance-futures') setView('opportunities'); setStatus('idle'); setResults([]); setVisibleCount(4); setProgress({ completed: 0, total: 0 })
   }
   const changePool = (next: ScanPoolMode) => { controller.current?.abort(); setPoolMode(next); setStatus('idle'); setResults([]); setProgress({ completed: 0, total: 0 }) }
   const running = status === 'loading' || status === 'scanning'
@@ -77,10 +79,11 @@ function SearchSession({ marketDataMode }: { marketDataMode: 'live' | 'mock' }) 
   if (simple) return <SimpleScanResults results={results} now={clock} venue={venue} onVenue={changeVenue} poolMode={poolMode} onPoolMode={changePool} status={status} progress={progress} disabled={marketDataMode !== 'live' || relayRequired} onStart={() => { void start() }} onCancel={cancel} refreshing={refreshing} />
   return <section className={styles.panel} aria-label={ko ? '실시간 조건 검색' : 'Live condition search'}>
     <header><div><h1>{ko ? '살펴볼 코인 찾기' : 'Find coins to review'}</h1><p>{ko ? `거래가 활발한 ${SCAN_LIMIT}개 코인의 흐름과 확인할 가격을 한 번에 살펴봐요.` : `Review the trends and price levels of ${SCAN_LIMIT} actively traded coins.`}</p></div><strong>{ko ? '실제 가격으로 계산해요' : 'Calculated from real prices'}</strong></header>
+    <ScanMarketMode venue={venue} onChange={changeVenue} disabled={running} language={language} />
     <div className={styles.controls}>
       <label>{ko ? '거래소·마켓' : 'Venue'}<select value={venue} disabled={running} onChange={event => changeVenue(event.target.value as MarketVenue)}>{venues.map((value, index) => <option key={value} value={value}>{venueLabels[index]}</option>)}</select></label>
-      <ScanPoolControl value={poolMode} onChange={changePool} disabled={running} language={language} />
-      <label>{ko ? '결과 보기' : 'Result view'}<select value={view} onChange={e=>setView(e.target.value as typeof view)}><option value="opportunities">{ko ? '전략별 기회' : 'Strategy opportunities'}</option><option value="trend">{ko ? '기존 추세 기준' : 'Trend scan'}</option></select></label>
+      <ScanPoolControl value={poolMode} onChange={changePool} disabled={running} language={language} futures={futures} />
+      <label>{ko ? '결과 보기' : 'Result view'}<select value={view} onChange={e=>setView(e.target.value as typeof view)}><option value="opportunities">{futures ? ko ? '롱·숏 후보' : 'Long / short candidates' : ko ? '전략별 기회' : 'Strategy opportunities'}</option><option value="trend">{ko ? '기존 추세 기준' : 'Trend scan'}</option></select></label>
       {view === 'trend' && <label>{ko ? '어떤 흐름을 볼까요?' : 'Direction'}<select value={criteria.direction} onChange={event => updateCriteria({ ...criteria, direction: event.target.value as ScanCriteria['direction'] })}><option value="all">{ko ? '모두 보기' : 'All'}</option>{(['buy', 'sell', 'neutral'] as const).map(value => <option key={value} value={value}>{direction[value]}</option>)}</select></label>}
       {running ? <button type="button" onClick={cancel}>{ko ? '검색 중지' : 'Stop scan'}</button> : <button type="button" disabled={marketDataMode !== 'live' || relayRequired} onClick={() => { void start() }}>{ko ? '코인 찾기' : 'Scan live data'}</button>}
       {view === 'trend' && <details className={styles.moreFilters}><summary>{ko ? '조건 더 고르기' : 'More filters'}{(criteria.minimumVolumeRatio > 0 || criteria.minimumRewardRisk > 0 || criteria.excludeExtended) && <span>{ko ? ' · 적용 중' : ' · active'}</span>}</summary><div>
@@ -98,7 +101,7 @@ function SearchSession({ marketDataMode }: { marketDataMode: 'live' | 'mock' }) 
             : `${ko ? status === 'scanning' ? '검사 중' : status === 'cancelled' ? '검색 중지됨' : '검사 완료' : status === 'scanning' ? 'Scanning' : status === 'cancelled' ? 'Stopped' : 'Complete'} ${progress.completed}/${progress.total} ${refreshing ? (ko ? '· 지연된 자료 재확인 중' : '· Rechecking delayed data') : ''} ${view === 'trend' ? ` · ${shown.length} ${ko ? '개 추세 필터 일치' : 'trend matches'}` : ''}`}
       {running && progress.total > 0 && <progress max={progress.total} value={progress.completed} />}
     </div>
-    {view === 'opportunities' && results.length > 0 && <OpportunityBoard results={results} now={clock} language={language} active={poolMode === 'active'} canRecord={status === 'done'} />}
+    {view === 'opportunities' && results.length > 0 && (futures ? <FuturesOpportunityBoard results={results} now={clock} language={language} onRefresh={running ? undefined : () => { void start() }} /> : <OpportunityBoard results={results} now={clock} language={language} active={poolMode === 'active'} canRecord={status === 'done'} />)}
     {view === 'trend' && <>
     {expired > 0 && <p className={styles.notice}>{ko ? `${expired}개 결과의 시세 확인 시간이 지나 가격 표시에서 제외했습니다. 다시 검색해주세요.` : `${expired} results have expired. Rescan for current price criteria.`}</p>}
     {status === 'done' && shown.length === 0 && expired === 0 && <p>{ko ? '현재 조건에 맞는 종목이 없습니다. 필터를 완화하거나 제외 사유를 확인하세요.' : 'No assets match. Adjust the filters or review the excluded results.'}</p>}

@@ -18,9 +18,9 @@ const copy = {
   ko: { kinds:{pullback:'상승 추세 눌림',breakout:'가격 돌파',rebound:'하락 추세 속 반등'}, states:{ready:'진입 조건 충족',watch:'조건 도달 대기',avoid:'현재 조건 불리',unavailable:'평가 자료 부족'}, title:'장세별 기회 탐색', cost:'매수·매도 총 예상 비용 (%)', note:'한 번 사고팔 때의 수수료와 예상보다 불리하게 체결되는 가격 차이(슬리피지)를 모두 합친 비율입니다.', expired:'이전 결과는 유효 시간이 지나 현재 후보에서 제외했습니다. 최신 가격으로 다시 검색하세요.' },
   en: { kinds:{pullback:'Trend pullback',breakout:'Price breakout',rebound:'Countertrend rebound'}, states:{ready:'Entry conditions met',watch:'Waiting for conditions',avoid:'Unfavorable conditions',unavailable:'Insufficient evidence'}, title:'Opportunities by market regime', cost:'Total estimated buy/sell cost (%)', note:'The combined fees for buying and selling, plus an allowance for fills at worse prices than expected (slippage).', expired:'Expired results are excluded from current candidates. Scan fresh prices.' },
 } as const
-export function ScanPoolControl({ value, onChange, disabled, language }: { value:ScanPoolMode; onChange:(mode:ScanPoolMode)=>void; disabled:boolean; language:Language }) {
+export function ScanPoolControl({ value, onChange, disabled, language, futures = false }: { value:ScanPoolMode; onChange:(mode:ScanPoolMode)=>void; disabled:boolean; language:Language; futures?:boolean }) {
   const ko = language === 'ko'
-  return <label>{ko ? '탐색 방식' : 'Scan approach'}<select value={value} disabled={disabled} onChange={e=>onChange(e.target.value as ScanPoolMode)}><option value="active">{ko ? '적극 탐색 · 강세와 반등' : 'Active · strength and rebounds'}</option><option value="liquidity">{ko ? '거래대금 우선' : 'Liquidity first'}</option><option value="strength">{ko ? '상대 강세 우선' : 'Relative strength first'}</option></select></label>
+  return <label>{ko ? '탐색 방식' : 'Scan approach'}<select value={value} disabled={disabled} onChange={e=>onChange(e.target.value as ScanPoolMode)}><option value="active">{futures ? ko ? '적극 탐색 · 상승·하락 양방향' : 'Active · rising and falling' : ko ? '적극 탐색 · 강세와 반등' : 'Active · strength and rebounds'}</option><option value="liquidity">{ko ? '거래대금 우선' : 'Liquidity first'}</option><option value="strength">{ko ? '상대 강세 우선' : 'Relative strength first'}</option></select></label>
 }
 export function CostControl({ language, value, onChange }: { language:Language; value:string; onChange:(value:string)=>void }) {
   const id = useId(), ko = language === 'ko'

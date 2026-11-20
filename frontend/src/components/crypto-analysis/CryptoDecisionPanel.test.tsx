@@ -23,6 +23,17 @@ vi.mock('@/hooks/useMajorSupportHistory', () => ({ useMajorSupportHistory: () =>
 vi.mock('@/hooks/useDominance', () => ({ useDominance: () => ({ data: state.dominance, loading: false, error: !state.dominance }) }))
 
 describe('CryptoDecisionPanel', () => {
+  it.each([false, true])('keeps both futures directions in the asset analysis when expert=%s', expert => {
+    state.trend = -1
+    const futures = { ...instrument, id:'binance-btc', symbol:'BTCUSDT', marketId:'binance-futures' as const, quoteCurrency:'USDT' }
+    render(<CryptoDecisionPanel instrument={futures} daily={{ ...candles('1D'), updatedAt:now-120_000 }} language="en" expert={expert} />)
+    const board = screen.getByRole('region', {name:'Binance futures long / short analysis'})
+    expect(within(board).getByRole('region', {name:'short candidates'})).toBeTruthy()
+    expect(within(board).getByRole('region', {name:'long candidates'})).toBeTruthy()
+    expect(within(board).queryByText('1 unassessed assets')).toBeNull()
+    expect(screen.queryByRole('region', {name:'Strategy entry conditions'})).toBeNull()
+    expect(screen.queryByRole('region', {name:'Decision and next action'})).toBeNull()
+  })
   it('keeps upside levels and a separate long-term downside view across display modes', () => {
     const props = { instrument, daily: candles('1D'), language: 'en' as const }
     const { rerender } = render(<CryptoDecisionPanel {...props} />)

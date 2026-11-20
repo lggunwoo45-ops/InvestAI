@@ -5,6 +5,7 @@ import { marketDataService } from '@/services/market/marketDataService'
 import type { MarketInstrument } from '@/types/market'
 import { LiveCandidateSearch } from './LiveCandidateSearch'
 import { opportunityResult } from '@/test/opportunityFixtures'
+import { futuresResult } from '@/test/futuresFixtures'
 
 const mocks = vi.hoisted(() => ({ catalog: vi.fn(), scan: vi.fn(), mode: 'live' }))
 vi.mock('@/services/market/providers/upbitRelay', () => ({ upbitRelayBase: () => 'https://relay.test/api/upbit' }))
@@ -13,6 +14,25 @@ vi.mock('@/services/cryptoAnalysis/liveCandidateScan', async importOriginal => (
 
 const coin: MarketInstrument = { id: 'upbit-btc', symbol: 'BTC/KRW', marketId: 'upbit', name: 'Bitcoin', quoteCurrency: 'KRW', lastPrice: 100, volume24h: 1000, change24hPercent: 1 }
 beforeEach(() => { window.localStorage.setItem('market-copilot.displayMode.v1', 'expert'); vi.clearAllMocks(); vi.spyOn(marketDataService, 'getMarketCatalog').mockImplementation(mocks.catalog); mocks.mode = 'live'; window.localStorage.setItem('market-copilot.language', 'en') })
+
+it.each(['simple', 'expert'])('scans Binance futures only after explicit selection in %s mode', async mode => {
+  localStorage.setItem('market-copilot.displayMode.v1', mode)
+  const row = { ...futuresResult(), analyzedAt:Date.now(), expiresAt:Date.now()+90_000 }
+  mocks.catalog.mockResolvedValue({source:'live', fetchedAt:Date.now(), instruments:[row.instrument, coin]})
+  mocks.scan.mockImplementation(async (_pool, {onResult}) => onResult(row,1,1))
+  renderWithProviders(<LiveCandidateSearch />)
+  fireEvent.click(screen.getByRole('button', {name:'Binance long / short'}))
+  expect(mocks.catalog).not.toHaveBeenCalled()
+  expect(screen.getByRole('combobox',{name:mode === 'simple' ? 'Where do you trade?' : 'Venue'})).toHaveProperty('value', 'binance-futures')
+  fireEvent.click(screen.getByRole('button',{name:mode === 'simple' ? 'Find coins to review' : 'Scan live data'}))
+  expect(await screen.findByText('Entry conditions met')).toBeTruthy()
+  expect(mocks.catalog.mock.calls[0][0]).toBe('binance-futures')
+  expect(mocks.scan.mock.calls[0][0].map((r:MarketInstrument) => r.id)).toEqual([row.instrument.id])
+  fireEvent.click(screen.getByRole('button',{name:'Short · falling'}))
+  expect(mocks.scan).toHaveBeenCalledTimes(1)
+  fireEvent.click(screen.getByRole('button',{name:'Spot coins'}))
+  expect(screen.queryByRole('region',{name:'Binance futures long / short analysis'})).toBeNull()
+})
 
 it('uses strategy opportunities in simple mode and clears results when scan priority changes', async () => {
   localStorage.setItem('market-copilot.displayMode.v1','simple')
