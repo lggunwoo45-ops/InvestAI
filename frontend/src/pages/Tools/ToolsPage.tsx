@@ -11,6 +11,7 @@ import styles from '@/components/product/ProductPages.module.css'
 export function ToolsPage() {
   const { language } = useLanguage(), ko = language === 'ko'
   const expert = useDisplayMode().displayMode === 'expert'
+  const [expandedGroup, setExpandedGroup] = useState('')
   const [params, setParams] = useSearchParams()
   const urlQuery = params.get('q') ?? ''
   const [search, setSearch] = useState({ source: urlQuery, value: urlQuery })
@@ -24,6 +25,7 @@ export function ToolsPage() {
   const allMatches = findTools(query, '')
   const found = group ? allMatches.filter(tool => tool.group === group) : allMatches
   const shown = !expert && !query.trim() && !group ? found.filter(tool => tool.group === 'market') : found
+  const essential = { market: ['analysis', 'upside', 'downside'], plan: ['size', 'position', 'backtest'], record: ['alerts', 'journal', 'method'] }
   const title = productPageNames.tools[language]
   useDocumentTitle(title)
 
@@ -65,7 +67,7 @@ export function ToolsPage() {
       </div>
     </div>
     <div className={styles.resultBar}>
-      <p role="status">{ko ? `${shown.length}개 기능${query.trim() ? ` · “${query.trim()}” 검색 결과` : ''}` : `${shown.length} tools${query.trim() ? ` matching “${query.trim()}”` : ''}`}</p>
+      <p role="status">{!expert && !query.trim() ? (ko ? '자주 쓰는 핵심 도구부터 보여드려요. 전체 도구도 열 수 있어요.' : 'Start with the essentials, or open every tool in this category.') : ko ? `${shown.length}개 기능${query.trim() ? ` · “${query.trim()}” 검색 결과` : ''}` : `${shown.length} tools${query.trim() ? ` matching “${query.trim()}”` : ''}`}</p>
       {(query || group) && <button type="button" onClick={() => chooseQuery('')}>{ko ? '검색 초기화' : 'Clear filters'}</button>}
     </div>
     {expert && !query && !group && <nav className={styles.quickLinks} aria-label={ko ? '목적별 바로가기' : 'Start with a task'}>
@@ -75,14 +77,17 @@ export function ToolsPage() {
     </nav>}
     {toolGroups.map(g => {
       const tools = shown.filter(t => t.group === g.id)
+      const focused = !expert && !query.trim() && expandedGroup !== g.id
+      const visible = focused ? tools.filter(tool => essential[g.id].includes(tool.id)).sort((a, b) => essential[g.id].indexOf(a.id) - essential[g.id].indexOf(b.id)) : tools
       return tools.length > 0 && <section key={g.id} aria-labelledby={`tools-${g.id}`}>
         <header className={styles.groupHeading}><h2 id={`tools-${g.id}`}>{toolText(g.title, language)}</h2><p>{toolText(g.description, language)}</p></header>
-        <div className={styles.grid}>{tools.map(tool => <article key={tool.id} className={styles.card}>
+        <div className={styles.grid}>{visible.map(tool => <article key={tool.id} className={styles.card}>
           <span className={styles.scope}>{toolText(tool.scope, language)}</span>
           <h3><Link to={tool.href}>{toolText(tool.title, language)} <span aria-hidden="true">↗</span></Link></h3>
           {expert ? <dl className={styles.toolDetails}><div><dt>{ko ? '입력·선택' : 'Choose or enter'}</dt><dd>{toolText(tool.input, language)}</dd></div><div><dt>{ko ? '확인할 내용' : 'What you get'}</dt><dd>{toolText(tool.purpose, language)}</dd></div></dl> : <p className={styles.toolPurpose}>{toolText(tool.purpose, language)}</p>}
           <details key={`${tool.id}-${expert}`} open={expert}><summary>{ko ? '지원 범위와 주의점' : 'Coverage and limitations'}</summary><p>{toolText(tool.note, language)}</p></details>
         </article>)}</div>
+        {focused && tools.length > visible.length && <button className={styles.expandTools} type="button" onClick={() => setExpandedGroup(g.id)}>{ko ? `이 분류의 전체 도구 보기 (${tools.length}개)` : `All tools in this category (${tools.length})`}</button>}
       </section>
     })}
     <ModeGuide expert={{ ko: '전문가모드에서는 모든 도구의 입력 항목·지원 범위·주의점을 함께 비교할 수 있어요.', en: 'Expert mode shows all tools, inputs, coverage and limitations for comparison.' }} />

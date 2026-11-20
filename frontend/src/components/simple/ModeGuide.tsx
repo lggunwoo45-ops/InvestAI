@@ -9,6 +9,6 @@ export function ModeGuide({ expert }: { expert: { ko: string; en: string } }) {
   if (displayMode !== 'simple') return null
   return <aside className={styles.modeGuide}>
     <p>{expert[language]}</p>
-    <button type="button" onClick={() => setDisplayMode('expert')}>{language === 'ko' ? '전문가모드로 자세히 보기' : 'See more in Expert mode'} →</button>
+    <button type="button" onClick={() => setDisplayMode('expert')}>{language === 'ko' ? '전문가모드로 전환' : 'Switch to Expert Mode'} →</button>
   </aside>
 }

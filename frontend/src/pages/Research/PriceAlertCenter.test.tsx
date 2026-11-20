@@ -14,6 +14,23 @@ const futures: PriceAlert = { ...spot, id: 'futures', instrument: { venue: 'bina
 beforeEach(() => { state.user = { id: 'member-a' }; state.connected = false; state.read.mockReset().mockResolvedValue({ rules: [spot, futures] }); state.stop.mockReset(); state.notification.mockReset() })
 const panel = () => <MemoryRouter><PriceAlertCenter instrumentId="upbit-btc" /></MemoryRouter>
 
+it('puts crossings first in simple mode without losing alert identity or hiding delayed monitoring', async () => {
+  const view = render(<MemoryRouter><PriceAlertCenter instrumentId="upbit-btc" simple /></MemoryRouter>)
+  await screen.findByText('A price crossing was recorded')
+  expect(screen.getByText('Alert above 90,000,000 KRW')).toBeTruthy()
+  expect(screen.getByText('Monitoring status and last check').closest('details')?.open).toBe(false)
+  view.rerender(<MemoryRouter><PriceAlertCenter instrumentId="upbit-btc" simple={false} /></MemoryRouter>)
+  expect(screen.queryByText('A price crossing was recorded')).toBeNull()
+  expect(screen.getByText('Monitoring status and last check').closest('details')?.open).toBe(true)
+  state.read.mockResolvedValue({ rules: [{ ...spot, checkedAt: Date.now() - 120000 }] })
+  fireEvent.click(screen.getByRole('button', { name: 'Refresh' }))
+  await screen.findByText('Quote delayed')
+  view.rerender(<MemoryRouter><PriceAlertCenter instrumentId="upbit-btc" simple /></MemoryRouter>)
+  expect(screen.getByText('Monitoring status and last check').closest('details')?.open).toBe(true)
+  expect(screen.getByText('1 crossing observations')).toBeTruthy()
+  expect(state.stop).not.toHaveBeenCalled()
+})
+
 it('keeps exchange and quote identity, and preserves observations after ending an alert', async () => {
   state.stop.mockResolvedValue({ rules: [{ ...spot, active: false }, futures] })
   render(panel())

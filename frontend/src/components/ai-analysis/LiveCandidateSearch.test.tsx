@@ -23,7 +23,7 @@ it('uses strategy opportunities in simple mode and clears results when scan prio
   fireEvent.click(screen.getByRole('button',{name:'Find coins to review'}))
   expect(await screen.findByRole('link',{name:/Review current plan and loss budget/})).toBeTruthy()
   expect(screen.getByRole('heading',{name:'Countertrend rebound'})).toBeTruthy()
-  fireEvent.change(screen.getByRole('combobox',{name:'Scan priority'}),{target:{value:'strength'}})
+  fireEvent.change(screen.getByRole('combobox',{name:'Scan approach'}),{target:{value:'strength'}})
   expect(screen.queryByRole('link',{name:/Review current plan and loss budget/})).toBeNull()
   expect(screen.getByRole('button',{name:'Find coins to review'})).toBeTruthy()
 })

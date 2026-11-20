@@ -5,6 +5,16 @@ import { renderWithProviders } from '@/test/renderWithProviders'
 import { useDisplayMode } from '@/app/displayMode/useDisplayMode'
 import { ToolsPage } from './ToolsPage'
 function Controls() { const { setDisplayMode } = useDisplayMode(), location = useLocation(), navigate = useNavigate(); return <><button onClick={() => setDisplayMode('expert')}>Change view</button><button onClick={() => navigate('/?q=ETF&source=bookmark')}>Saved ETF search</button><button onClick={() => navigate(-1)}>Back</button><button onClick={() => navigate(1)}>Forward</button><output data-testid="location">{location.pathname + location.search}</output></> }
+it('starts with three essential tasks and reveals the complete scoped catalog on request', () => {
+  localStorage.clear()
+  renderWithProviders(<><ToolsPage /><Controls /></>)
+  expect(screen.getByRole('link', { name: 'Asset analysis' })).toBeTruthy()
+  expect(screen.queryByRole('link', { name: 'Market indicators' })).toBeNull()
+  fireEvent.click(screen.getByRole('button', { name: 'All tools in this category (6)' }))
+  expect(screen.getByRole('link', { name: 'Market indicators' })).toBeTruthy()
+  fireEvent.click(screen.getByRole('button', { name: 'Change view' }))
+  expect(screen.getByRole('link', { name: 'Fees and funding' })).toBeTruthy()
+})
 it('searches tool purposes, keeps filters on mode changes and opens the exact scoped destination', () => {
   localStorage.clear()
   renderWithProviders(<><ToolsPage /><Controls /></>)
