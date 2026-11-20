@@ -3,6 +3,7 @@ import { MajorSupportPanel } from '@/components/price-scenarios/MajorSupportPane
 import { scenarioTitles } from '@/components/price-scenarios/scenarioCopy'
 import { buildCryptoPriceScenarios } from '@/services/myAnalysis/priceScenarios'
 import { OpportunityReview } from './OpportunityPlans'
+import { FuturesOpportunityBoard } from './FuturesOpportunityBoard'
 import { CryptoAnalysisHelp } from './CryptoAnalysisHelp'
 import { withMarketContext, contextExplanation } from '@/services/cryptoAnalysis/marketContext'
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
@@ -81,6 +82,7 @@ export function CryptoDecisionPanel({ instrument, daily, language, averagePrice,
   const series = { '1H': hourly, '4H': fourHourly, '1D': daily }
   const decision = withMarketContext(buildCryptoDecision(series, now), series, instrument, dominance.data, now)
   const scenarios = buildCryptoPriceScenarios(instrument, decision)
+  const futures = instrument.marketId === 'binance-futures' && instrument.quoteCurrency === 'USDT'
   const { plan } = decision
   const holding = holdingInput ?? (averagePrice != null && Number.isFinite(averagePrice) && averagePrice > 0)
   const reviewAbove = decision.direction === 'sell' && !holding
@@ -126,9 +128,10 @@ export function CryptoDecisionPanel({ instrument, daily, language, averagePrice,
       <button type="button" aria-pressed={holding} onClick={() => onHoldingChange(true)}>{ko ? '이미 갖고 있어요' : 'Already holding'}</button>
     </div>}
     {(expert || decision.direction === 'unavailable') && <AnalysisPreparation key={`${instrument.id}:${daily.dataQuality === 'mock'}`} decision={decision} series={series} language={language} compactReady onDetails={() => setTab('details')} />}
-    {!expert && decision.direction !== 'unavailable' && <div className={styles.simpleOverview}><SimplePriceOverview decision={decision} instrument={instrument} language={language} /><SimpleDecisionBrief key={`brief:${instrument.id}`} instrument={instrument} decision={decision} language={language} holding={holding} positionId={positionId} onDetails={() => onExpert ? onExpert() : setTab('details')} /></div>}
+    {!expert && decision.direction !== 'unavailable' && (!futures || holding) && <div className={styles.simpleOverview}><SimplePriceOverview decision={decision} instrument={instrument} language={language} /><SimpleDecisionBrief key={`brief:${instrument.id}`} instrument={instrument} decision={decision} language={language} holding={holding} positionId={positionId} onDetails={() => onExpert ? onExpert() : setTab('details')} /></div>}
     {!expert && decision.direction !== 'unavailable' && decision.coverage < 3 && <AnalysisPreparation key={`ready:${instrument.id}`} decision={decision} series={series} language={language} compactReady onDetails={() => setTab('details')} />}
-    {expert && decision.direction !== 'unavailable' && !holding && <OpportunityReview key={`opportunities:${instrument.id}`} instrument={instrument} decision={decision} language={language} />}
+    {expert && !futures && decision.direction !== 'unavailable' && !holding && <OpportunityReview key={`opportunities:${instrument.id}`} instrument={instrument} decision={decision} language={language} />}
+    {futures && !holding && decision.direction !== 'unavailable' && <FuturesOpportunityBoard results={[{ instrument, decision, analyzedAt:now, expiresAt:Math.min(now + 90_000, ...decision.frames.filter(f => !f.issue).map(f => (series[f.frame].updatedAt ?? 0) + 90_000), decision.context?.validUntil ?? Infinity), timedOut:false }]} now={now} language={language} simple={!expert} /> }
     {expert && decision.direction !== 'unavailable' && <div className={styles.verdict}>
       {!holding && <small>{ko ? '큰 흐름 · 기존 추세 기준' : 'Broader view · original trend criteria'}</small>}
       <span className={styles.direction}>{easyDirection[language][decision.direction]}</span>
