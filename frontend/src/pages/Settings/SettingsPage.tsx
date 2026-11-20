@@ -73,7 +73,8 @@ export function SettingsPage() {
     finally { setNotificationBusy(false) }
   }
   const preferences = <section className={styles.card}><h2>{ko ? '내 화면' : 'My view'}</h2>
-        <label>{ko ? '설명 수준' : 'Detail'}<select value={displayMode} onChange={e => setDisplayMode(e.target.value as 'simple' | 'expert')}><option value="simple">{ko ? '쉽게 보기' : 'Simple'}</option><option value="expert">{ko ? '자세히 보기' : 'Expert'}</option></select></label>
+        <label>{ko ? '화면 모드' : 'Display mode'}<select value={displayMode} onChange={e => setDisplayMode(e.target.value as 'simple' | 'expert')}><option value="simple">{ko ? '간편모드' : 'Simple Mode'}</option><option value="expert">{ko ? '전문가모드' : 'Expert Mode'}</option></select></label>
+        <p>{ko ? '간편모드: 핵심 결과와 다음 할 일부터 봅니다. 전문가모드: 지표·계산 근거·상세 설정을 함께 봅니다. 분석 기준과 저장 기록은 같아요.' : 'Simple Mode puts the result and next action first. Expert Mode adds indicators, calculations and controls. Both use the same analysis and saved records.'}</p>
         <label>{ko ? '언어' : 'Language'}<select value={language} onChange={e => setLanguage(e.target.value as 'ko' | 'en')}><option value="ko">한국어</option><option value="en">English</option></select></label>
         <label>{ko ? '시세 모드' : 'Quote mode'}<select value={marketDataMode} onChange={e => setMarketDataMode(e.target.value as 'live' | 'mock')}><option value="live">{ko ? '실제 시세' : 'Live'}</option><option value="mock">{ko ? '예시 시세' : 'Demo'}</option></select></label>
         <p>{cloud.user ? (ko ? '보유·거래 기록과 관심종목을 현재 계정으로 동기화해요. 전송 대기나 충돌은 위의 계정 표시에서 확인하세요.' : 'Holdings, trades and watchlists sync to this account. Check pending changes or conflicts in the account bar.') : (ko ? '비회원 기록은 이 브라우저에 저장돼요. 로그인 후 계정 설정에서 기존 기록을 가져올 수 있어요.' : 'Guest records stay in this browser. Sign in and import them from account settings.')}</p><Link to="/portfolio">{ko ? '내 투자·백업 열기 →' : 'Holdings and backup →'}</Link>
@@ -102,9 +103,8 @@ export function SettingsPage() {
     <SimpleTasks label={ko ? '설정할 항목' : 'Settings task'} tasks={[
       { id: 'view', title: ko ? '화면·언어' : 'View and language', content: preferences },
       { id: 'alerts', title: ko ? '알림 허용' : 'Notifications', content: notifications },
-      { id: 'connection', title: ko ? '연결 확인' : 'Check connections', content: <>{connections}{aiSetup}</> },
+      { id: 'connection', title: ko ? '연결 확인' : 'Check connections', content: <>{connections}<details><summary>{ko ? 'AI 연결 안내' : 'AI connection details'}</summary>{aiSetup}</details></> },
     ]} />
-    {planning}
   </SimpleWorkspace>
   return <div className={styles.page}><h1>{ko ? '설정과 연결 상태' : 'Settings and connections'}</h1><p>{ko ? '화면을 내게 맞추고, 실제로 연결된 기능을 확인하세요.' : 'Choose your view and check which services are connected.'}</p><div className={styles.grid}>{preferences}{connections}{notifications}{aiSetup}</div>{planning}</div>
 }

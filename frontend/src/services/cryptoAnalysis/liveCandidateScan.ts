@@ -15,7 +15,7 @@ export interface ScanResult {
   expiresAt: number
   timedOut: boolean
 }
-export type ScanPoolMode = 'liquidity' | 'strength'
+export type ScanPoolMode = 'liquidity' | 'strength' | 'active'
 export interface ScanCriteria {
   direction: 'all' | 'buy' | 'sell' | 'neutral'
   minimumVolumeRatio: number
@@ -36,7 +36,15 @@ export function selectScanPool(instruments: readonly MarketInstrument[], venue: 
     if (matches && !['USDT','USDC','DAI','FDUSD','TUSD','USDE','PYUSD'].includes(baseAsset(instrument.symbol, instrument.quoteCurrency)) && positive(instrument.lastPrice) && positive(instrument.volume24h) && Number.isFinite(instrument.change24hPercent)) unique.set(instrument.id, instrument)
   }
   const liquid = [...unique.values()].sort((a, b) => b.volume24h - a.volume24h || a.id.localeCompare(b.id))
-  const shortlist = mode === 'strength' ? liquid.slice(0, 48).sort((a, b) => b.change24hPercent - a.change24hPercent || b.volume24h - a.volume24h || a.id.localeCompare(b.id)) : liquid
+  const movers = liquid.slice(0, 48).sort((a, b) => b.change24hPercent - a.change24hPercent || b.volume24h - a.volume24h || a.id.localeCompare(b.id))
+  // Broaden discovery without weakening entry rules: sample both relative strength
+  // and pullbacks among liquid assets. A 24h decline alone is never a rebound signal.
+  const active = new Map<string, MarketInstrument>()
+  const falling = [...movers].filter(row => row.change24hPercent < 0).sort((a, b) => a.change24hPercent - b.change24hPercent || b.volume24h - a.volume24h || a.id.localeCompare(b.id))
+  for (let i = 0; i < movers.length; i++) {
+    for (const row of [movers[i], falling[i]]) if (row && !active.has(row.id)) active.set(row.id, row)
+  }
+  const shortlist = mode === 'active' ? [...active.values()] : mode === 'strength' ? movers : liquid
   const pool = shortlist.slice(0, SCAN_LIMIT)
   const benchmark = liquid.find(row => baseAsset(row.symbol, row.quoteCurrency) === 'BTC')
   if (benchmark && !pool.some(row => row.id === benchmark.id)) pool.splice(Math.min(pool.length, SCAN_LIMIT - 1), 1, benchmark)

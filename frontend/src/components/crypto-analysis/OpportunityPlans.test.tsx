@@ -9,6 +9,20 @@ import {readOpportunityTrials} from '@/services/cryptoAnalysis/opportunityTrialS
 
 beforeEach(()=>{ localStorage.clear();vi.useFakeTimers();vi.setSystemTime(opportunityNow) })
 afterEach(()=>vi.useRealTimers())
+it('shows nearby pending candidates in active scans without confirming or recording them, and expires them', () => {
+  const result = opportunityResult()
+  result.decision.frames.find(frame => frame.frame === '1H')!.volumeRatio = 1
+  const props = { results: [result], now: opportunityNow, language: 'en' as const, active: true }
+  const view = render(<MemoryRouter><OpportunityBoard {...props} /></MemoryRouter>)
+  const early = screen.getByRole('region', { name: 'Early watches · entry not confirmed' })
+  expect(within(early).getByText('Entry unconfirmed')).toBeTruthy()
+  expect(within(early).getByText(/Inside the watch zone/)).toBeTruthy()
+  expect(screen.getAllByRole('link', { name: /Current analysis and price alerts/ })).toHaveLength(1)
+  expect(screen.getByRole('button', { name: 'Record all eligible spot setups (0)' }).hasAttribute('disabled')).toBe(true)
+  expect(readOpportunityTrials().trials).toHaveLength(0)
+  view.rerender(<MemoryRouter><OpportunityBoard {...props} now={opportunityNow + 90_001} /></MemoryRouter>)
+  expect(screen.queryByRole('region', { name: 'Early watches · entry not confirmed' })).toBeNull()
+})
 it('records all qualified candidates including hidden cards, but blocks incomplete scans',()=>{
   const result=opportunityResult(),results=Array.from({length:5},(_,i)=>({...result,instrument:{...result.instrument,id:`upbit-c${i}`,symbol:`C${i}/KRW`}}))
   const props={results,now:opportunityNow,language:'en' as const,simple:true}

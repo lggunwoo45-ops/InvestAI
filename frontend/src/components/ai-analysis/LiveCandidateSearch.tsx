@@ -27,7 +27,7 @@ function SearchSession({ marketDataMode }: { marketDataMode: 'live' | 'mock' }) 
   const { language } = useLanguage()
   const ko = language === 'ko'
   const [venue, setVenue] = useState<MarketVenue>('upbit-krw')
-  const [poolMode, setPoolMode] = useState<ScanPoolMode>('liquidity')
+  const [poolMode, setPoolMode] = useState<ScanPoolMode>('active')
   const [view, setView] = useState<'opportunities' | 'trend'>('opportunities')
   const [criteria, setCriteria] = useState(initialCriteria)
   const [visibleCount, setVisibleCount] = useState(4)
@@ -98,7 +98,7 @@ function SearchSession({ marketDataMode }: { marketDataMode: 'live' | 'mock' }) 
             : `${ko ? status === 'scanning' ? '검사 중' : status === 'cancelled' ? '검색 중지됨' : '검사 완료' : status === 'scanning' ? 'Scanning' : status === 'cancelled' ? 'Stopped' : 'Complete'} ${progress.completed}/${progress.total} ${refreshing ? (ko ? '· 지연된 자료 재확인 중' : '· Rechecking delayed data') : ''} ${view === 'trend' ? ` · ${shown.length} ${ko ? '개 추세 필터 일치' : 'trend matches'}` : ''}`}
       {running && progress.total > 0 && <progress max={progress.total} value={progress.completed} />}
     </div>
-    {view === 'opportunities' && results.length > 0 && <OpportunityBoard results={results} now={clock} language={language} canRecord={status === 'done'} />}
+    {view === 'opportunities' && results.length > 0 && <OpportunityBoard results={results} now={clock} language={language} active={poolMode === 'active'} canRecord={status === 'done'} />}
     {view === 'trend' && <>
     {expired > 0 && <p className={styles.notice}>{ko ? `${expired}개 결과의 시세 확인 시간이 지나 가격 표시에서 제외했습니다. 다시 검색해주세요.` : `${expired} results have expired. Rescan for current price criteria.`}</p>}
     {status === 'done' && shown.length === 0 && expired === 0 && <p>{ko ? '현재 조건에 맞는 종목이 없습니다. 필터를 완화하거나 제외 사유를 확인하세요.' : 'No assets match. Adjust the filters or review the excluded results.'}</p>}
@@ -126,6 +126,6 @@ function SearchSession({ marketDataMode }: { marketDataMode: 'live' | 'mock' }) 
     </li>)}</ul></details>}
     {excluded.length > 0 && <details className={styles.excluded}><summary>{ko ? '데이터 부족으로 제외' : 'Excluded for insufficient data'} {excluded.length}</summary><ul>{excluded.map(result => <li key={result.instrument.id}><strong>{result.instrument.symbol}</strong> · {result.decision.frames.filter(frame => frame.issue).map(frame => `${frame.frame}: ${issue[frame.issue!]}`).join(' / ')}{result.timedOut && (ko ? ' · 제한 시간 종료' : ' · timed out')}</li>)}</ul></details>}
     </>}
-    <details className={styles.note}><summary>{ko ? '검색 범위와 계산 방법' : 'Search scope and calculation'}</summary><p>{ko ? '거래대금 우선은 거래 금액이 큰 12개, 상대 강세 우선은 거래 금액 상위 48개 중 24시간 등락률이 높은 종목을 먼저 검사합니다. 가능하면 BTC 비교 표본을 포함해 최대 12개를 확인하며 스테이블코인은 제외합니다. 1시간·4시간·하루의 가격 기록으로 계산하며 수익을 보장하지 않아요. 기존 추세 기준의 손익비 필터는 구간 중간값을 쓰며 비용을 제외합니다. 전략별 기회는 별도의 비용 차감 계산을 사용합니다. 결과는 시세를 받은 뒤 90초 동안 유효해요.' : 'Liquidity scans the top 12 by turnover. Relative strength scans the top 24h movers among the 48 most liquid, including a BTC benchmark when available, up to 12 assets. Stablecoins are excluded. Direction is not a profit probability. Reward/risk filters use the buy-zone midpoint and exclude fees, taxes and slippage. Results expire 90 seconds after quote receipt.'}</p></details>
+    <details className={styles.note}><summary>{ko ? '검색 범위와 계산 방법' : 'Search scope and calculation'}</summary><p>{ko ? '적극 탐색은 거래대금 상위 48개에서 상대 강세와 하락 종목을 번갈아 최대 12개까지 검사하며, 하락 종목의 반등 여부는 이후 가격·거래량으로 확인합니다. 거래대금 우선은 거래 금액이 큰 12개, 상대 강세 우선은 거래 금액 상위 48개 중 24시간 등락률이 높은 종목을 먼저 검사합니다. 가능하면 BTC 비교 표본을 포함해 최대 12개를 확인하며 스테이블코인은 제외합니다. 1시간·4시간·하루의 가격 기록으로 계산하며 수익을 보장하지 않아요. 기존 추세 기준의 손익비 필터는 구간 중간값을 쓰며 비용을 제외합니다. 전략별 기회는 별도의 비용 차감 계산을 사용합니다. 결과는 시세를 받은 뒤 90초 동안 유효해요.' : 'Active discovery alternates stronger and falling assets among the 48 most liquid, up to 12. Rebounds still require price and volume evidence. Liquidity scans the top 12 by turnover. Relative strength scans the top 24h movers among the 48 most liquid, including a BTC benchmark when available, up to 12 assets. Stablecoins are excluded. Direction is not a profit probability. Reward/risk filters use the buy-zone midpoint and exclude fees, taxes and slippage. Results expire 90 seconds after quote receipt.'}</p></details>
   </section>
 }

@@ -18,6 +18,16 @@ function state(frame: AnalysisFrame, receipt = at): RealtimeMarketState {
 afterEach(() => vi.useRealTimers())
 
 describe('manual candle scanner', () => {
+  it('actively samples strength and declines within liquidity bounds without duplicate or cross-venue assets', () => {
+    const rows = Array.from({ length: 50 }, (_, i) => ({ ...coin, id: `asset-${i}`, symbol: `C${i}/KRW`, volume24h: 1000 - i, change24hPercent: i - 25 }))
+    const pool = selectScanPool([...rows, rows[0], { ...coin, volume24h: 1 }, { ...coin, id: 'foreign', marketId: 'binance-spot', quoteCurrency: 'USDT', volume24h: 1e9 }], 'upbit-krw', 'active')
+    expect(pool).toHaveLength(12)
+    expect(new Set(pool.map(row => row.id)).size).toBe(12)
+    expect(pool.slice(0, 4).map(row => row.id)).toEqual(['asset-47', 'asset-0', 'asset-46', 'asset-1'])
+    expect(pool.some(row => row.id === coin.id)).toBe(true)
+    expect(pool.every(row => row.marketId === 'upbit' && row.quoteCurrency === 'KRW' && row.id !== 'asset-49')).toBe(true)
+    expect(selectScanPool(rows.slice(0, 4), 'upbit-krw', 'active')).toHaveLength(4)
+  })
   it('rechecks expired early results once without resetting old quote expiry or counting duplicates', async () => {
     let clock = at
     const coins = Array.from({length:12},(_,i)=>({...coin,id:`asset-${i}`})), counts = new Map<string,number>(), updates: ScanResult[] = []
