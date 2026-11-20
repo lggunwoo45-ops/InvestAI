@@ -40,7 +40,8 @@ export function selectScanPool(instruments: readonly MarketInstrument[], venue: 
   // Broaden discovery without weakening entry rules: sample both relative strength
   // and pullbacks among liquid assets. A 24h decline alone is never a rebound signal.
   const active = new Map<string, MarketInstrument>()
-  const falling = [...movers].filter(row => row.change24hPercent < 0).sort((a, b) => a.change24hPercent - b.change24hPercent || b.volume24h - a.volume24h || a.id.localeCompare(b.id))
+  // Futures can review relative weakness even in a broadly rising market.
+  const falling = [...movers].filter(row => venue === 'binance-futures' || row.change24hPercent < 0).sort((a, b) => a.change24hPercent - b.change24hPercent || b.volume24h - a.volume24h || a.id.localeCompare(b.id))
   for (let i = 0; i < movers.length; i++) {
     for (const row of [movers[i], falling[i]]) if (row && !active.has(row.id)) active.set(row.id, row)
   }

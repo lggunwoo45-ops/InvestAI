@@ -5,4 +5,6 @@
 .columns{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:20px;align-items:start;min-width:0}
 .side{display:grid;gap:14px;min-width:0}.side>header{border-top:3px solid var(--color-positive);padding:12px 0}.side[data-side=short]>header{border-color:var(--color-negative)}
 .side h3{margin:0;font-size:18px}.cost{display:flex;flex-wrap:wrap;align-items:center;gap:12px}.cost input{width:100px}
+.rank{font-size:12px;font-weight:700;color:var(--color-accent)!important;letter-spacing:.03em}.reason{padding:12px;margin:12px 0;border-radius:10px;background:var(--color-surface-raised);line-height:1.6}.reason strong{font-size:13px}.reason small{display:block;font-variant-numeric:tabular-nums}.caution{border-left:3px solid var(--color-warning);padding-left:10px;font-size:12px}.reassess{display:grid;gap:6px;padding:14px;border:1px solid var(--color-border);border-radius:10px;margin:12px 0}.reassess span,.reassess small{font-size:12px;color:var(--color-text-muted)}.reassess strong{font-variant-numeric:tabular-nums}
+[data-phase=confirm-wait]{border-style:dashed}[data-phase=confirm-wait] header span{color:var(--color-text-muted)!important;background:var(--color-surface-raised)!important}
 @media(max-width:600px){.switcher button{flex:1 1 auto;padding:10px;font-size:13px}.columns{gap:28px}}
