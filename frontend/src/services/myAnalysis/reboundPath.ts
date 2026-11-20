@@ -93,7 +93,8 @@ export function buildReboundPath(instrument: MarketInstrument, series: Record<An
   const resistances = levels(sources, 'resistance', atr, horizon).filter(l => l.center > price && (!result.support || l.low > result.support.high)).sort((a, b) => a.center - b.center)
   result.first = resistances[0] ?? fallback('resistance')
   if (result.first) {
-    result.target = result.support ? resistances.filter(l => l.low > result.first!.high + atr * .25).sort((a, b) => strength(b) - strength(a) || a.center - b.center)[0] ?? null : null
+    // Rank the next few distinct barriers, not a distant historic high across the entire history.
+    result.target = result.support ? resistances.filter(l => l.low > result.first!.high + atr * .25).slice(0, horizon === 'intraday' ? 3 : 5).sort((a, b) => strength(b) - strength(a) || a.center - b.center)[0] ?? null : null
     if (result.target) {
       result.intermediate = resistances.filter(l => l.center > result.first!.center && l.center < result.target!.center)
       result.distantTarget = result.target.center - price > atr * (horizon === 'intraday' ? 6 : 12)
