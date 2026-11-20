@@ -12,6 +12,10 @@
 .filters { display: grid; gap: 16px; }
 .expandTools { margin-top: 16px; min-height: 44px; padding: 10px 18px; border: 1px solid var(--color-border); border-radius: 10px; background: var(--color-surface); color: var(--color-accent); font: inherit; cursor: pointer; }
 [data-tools-experience='simple'] .resultBar { margin: 0; }
+[data-tools-experience='simple'].page { gap: 18px; padding: 20px; }
+[data-tools-experience='simple'] .heading h1 { font-size: 30px; margin: 4px 0; }
+[data-tools-experience='simple'] .heading p { font-size: 14px; }
+[data-tools-experience='simple'] .filters { gap: 10px; }
 [data-tools-experience='simple'] .categories button { flex: 1; font-size: 15px; }
 [data-tools-experience='simple'] .categories button span { display: none; }
 .quickLinks { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }

@@ -25,7 +25,7 @@ export function ReviewAlertsPage() {
   useDocumentTitle(ko ? '알림' : 'Alerts')
   return <div className={styles.page}>
     <header><span className={styles.eyebrow}>MARKET COPILOT · FOLLOW THROUGH</span><h1>{ko ? simple ? '저장한 가격에 도착했나요?' : '알림' : simple ? 'Has the price reached your level?' : 'Alerts'}</h1><p>{ko ? '분석한 거래소와 통화를 그대로 유지해 가격 도달과 이후 기록을 확인합니다.' : 'Keep the original venue and quote currency when reviewing price arrivals and subsequent observations.'}</p>{!simple && <ReviewSteps language={language} current={2} />}</header>
-    <PriceAlertCenter instrumentId={instrumentId} />
+    <PriceAlertCenter instrumentId={instrumentId} simple={simple} />
     <details open={!simple || !!requested} className={styles.legacyAlerts}><summary>{ko ? '기존 가격 기준·시나리오 알림' : 'Saved price plans and scenario alerts'}</summary>
     <nav className={styles.actions} aria-label={ko ? '알림 종류' : 'Alert types'}><Link to="/review-alerts" aria-current="page">{ko ? '현물 가격 기준' : 'Spot price criteria'}</Link><Link to="/research?mode=alerts">{ko ? '선물 가격·신호 조건' : 'Futures prices and signals'} →</Link></nav>
     {selected && <section className={styles.tile} aria-label={ko ? '분석에서 이어온 가격 기준' : 'Price plan from analysis'}><span className={styles.tag}>{selected.instrument.marketId} · {selected.instrument.quoteCurrency}</span><h2>{selected.instrument.symbol}</h2><p>{ko ? '저장 기준' : 'Saved'} · {new Date(selected.updatedAt).toLocaleString(language)} · {ko ? '가격 조건은 자동으로 바뀌지 않습니다.' : 'The saved prices do not change automatically.'}</p><Link to={`/my-analysis?instrumentId=${encodeURIComponent(selected.instrument.id)}`}>{ko ? '같은 종목 다시 분석' : 'Recheck the same asset'} →</Link></section>}
