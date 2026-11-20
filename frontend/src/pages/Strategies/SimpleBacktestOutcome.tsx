@@ -8,7 +8,7 @@ export function SimpleBacktestOutcome({ result, currency, language }: { result: 
   const hold = result.starting * (1 + result.buyHoldPercent / 100)
   const difference = result.equity - hold
   return <section aria-label={ko ? '과거 시험 핵심 결과' : 'Historical test at a glance'}>
-    <p>{ko ? `${money(result.starting)}으로 시작했다면` : `Starting with ${money(result.starting)}`}</p>
+    <p>{ko ? `시작 금액 ${money(result.starting)}` : `Starting with ${money(result.starting)}`}</p>
     <div className={styles.result}>
       <span>{ko ? '이 규칙을 따랐을 때 남은 금액' : 'Ending balance with this rule'}</span><strong>{money(result.equity)}</strong>
       <span>{ko ? '같은 기간 계속 보유했다면' : 'Simply holding for the same period'}: {money(hold)}</span>
