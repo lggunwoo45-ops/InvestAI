@@ -18,6 +18,12 @@ function state(frame: AnalysisFrame, receipt = at): RealtimeMarketState {
 afterEach(() => vi.useRealTimers())
 
 describe('manual candle scanner', () => {
+  it('samples relative futures weakness even when all liquid assets rose, preserving spot selection', () => {
+    const rows = Array.from({length:48}, (_,i) => ({...coin,id:`futures-${i}`,symbol:`C${i}USDT`,quoteCurrency:'USDT',marketId:'binance-futures' as const,volume24h:1000-i,change24hPercent:i+1}))
+    expect(selectScanPool(rows,'binance-futures','active').slice(0,4).map(r=>r.id)).toEqual(['futures-47','futures-0','futures-46','futures-1'])
+    const spot = rows.map(r=>({...r,marketId:'binance-spot' as const}))
+    expect(selectScanPool(spot,'binance-spot','active').slice(0,4).map(r=>r.id)).toEqual(['futures-47','futures-46','futures-45','futures-44'])
+  })
   it('actively samples strength and declines within liquidity bounds without duplicate or cross-venue assets', () => {
     const rows = Array.from({ length: 50 }, (_, i) => ({ ...coin, id: `asset-${i}`, symbol: `C${i}/KRW`, volume24h: 1000 - i, change24hPercent: i - 25 }))
     const pool = selectScanPool([...rows, rows[0], { ...coin, volume24h: 1 }, { ...coin, id: 'foreign', marketId: 'binance-spot', quoteCurrency: 'USDT', volume24h: 1e9 }], 'upbit-krw', 'active')

@@ -6,6 +6,28 @@ import { opportunityNow as now } from '@/test/opportunityFixtures'
 import { FuturesOpportunityBoard } from './FuturesOpportunityBoard'
 
 beforeEach(() => localStorage.clear())
+it('shows three review candidates per direction with reasons and honest waiting states when none are ready', () => {
+  const rows = Array.from({length:12},(_,i)=>{
+    const row = futuresResult()
+    row.instrument.id = `binance-${i}`; row.instrument.symbol = `COIN${i}/USDT`
+    const hour = row.decision.frames.find(f=>f.frame==='1H')!
+    hour.volumeRatio = .4; hour.rsi = 20; hour.candles[25].low = 99
+    return row
+  })
+  renderWithProviders(<FuturesOpportunityBoard results={rows} now={now} language="en" simple />)
+  for (const side of ['long','short']) {
+    const region = screen.getByRole('region',{name:`${side} candidates`})
+    expect(within(region).getAllByRole('article')).toHaveLength(3)
+    expect(within(region).getAllByText('Why review this?')).toHaveLength(3)
+    expect(within(region).queryByText('Entry conditions met')).toBeNull()
+  }
+  const shorts = screen.getByRole('region',{name:'short candidates'})
+  expect(within(shorts).getAllByText('Price to reassess direction')).toHaveLength(3)
+  expect(within(shorts).queryByText('Stop reference')).toBeNull()
+  expect(within(shorts).queryByText('Reward/risk after costs')).toBeNull()
+  fireEvent.click(screen.getByRole('button',{name:'Show all candidates'}))
+  expect(within(shorts).getAllByRole('article')).toHaveLength(12)
+})
 it('shows a short, its prices and pending checks without turning it into a spot recommendation', () => {
   const row = futuresResult()
   const view = renderWithProviders(<FuturesOpportunityBoard results={[row]} now={now} language="en" simple />)
