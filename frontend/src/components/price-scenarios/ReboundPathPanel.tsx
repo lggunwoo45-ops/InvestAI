@@ -1,4 +1,5 @@
 import { useSearchParams } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 import { useMajorSupportHistory } from '@/hooks/useMajorSupportHistory'
 import { buildReboundPath, parseAnalysisHorizon, type AnalysisHorizon, type PathLevel } from '@/services/myAnalysis/reboundPath'
 import type { AnalysisFrame, AnalysisSeries } from '@/services/cryptoAnalysis/cryptoDecisionEngine'
@@ -10,10 +11,12 @@ import styles from './ReboundPathPanel.module.css'
 export function ReboundPathPanel({ instrument, series, now, language, expert }: {
   instrument: MarketInstrument; series: Record<AnalysisFrame, AnalysisSeries>; now: number; language: Language; expert: boolean
 }) {
-  const [params, setParams] = useSearchParams(), horizon = parseAnalysisHorizon(params.get('horizon')), ko = language === 'ko'
+  const [params, setParams] = useSearchParams(), requestedHorizon = parseAnalysisHorizon(params.get('horizon')), ko = language === 'ko'
+  const [horizon, setHorizon] = useState(requestedHorizon)
+  useEffect(() => setHorizon(requestedHorizon), [requestedHorizon])
   const history = useMajorSupportHistory(instrument, horizon === 'position' && Object.values(series).some(s => s.dataQuality === 'live'))
   const model = buildReboundPath(instrument, series, history.data, horizon, now), short = horizon === 'intraday'
-  const choose = (value: AnalysisHorizon) => { const next = new URLSearchParams(params); next.set('horizon', value); setParams(next, { replace: true }) }
+  const choose = (value: AnalysisHorizon) => { setHorizon(value); const next = new URLSearchParams(params); next.set('horizon', value); setParams(next, { replace: true }) }
   const price = (n: number) => `${formatAnalysisPrice(n, language)} ${instrument.quoteCurrency}`
   const band = (level: PathLevel) => `${formatAnalysisPrice(level.low, language)}–${price(level.high)}`
   const percent = (n: number) => `${n > 0 ? '+' : ''}${n.toFixed(2)}%`
