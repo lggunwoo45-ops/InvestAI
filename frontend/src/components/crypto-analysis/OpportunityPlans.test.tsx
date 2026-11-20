@@ -14,20 +14,20 @@ it('shows nearby pending candidates in active scans without confirming or record
   result.decision.frames.find(frame => frame.frame === '1H')!.volumeRatio = 1
   const props = { results: [result], now: opportunityNow, language: 'en' as const, active: true }
   const view = render(<MemoryRouter><OpportunityBoard {...props} /></MemoryRouter>)
-  const early = screen.getByRole('region', { name: 'Early watches · entry not confirmed' })
-  expect(within(early).getByText('Entry unconfirmed')).toBeTruthy()
-  expect(within(early).getByText(/Inside the watch zone/)).toBeTruthy()
+  const early = screen.getByRole('region', { name: 'Spot review shortlist' })
+  expect(within(early).getByText('Needs confirmation')).toBeTruthy()
+  expect(within(early).getByText('Why review this?')).toBeTruthy()
   expect(screen.getAllByRole('link', { name: /Current analysis and price alerts/ })).toHaveLength(1)
   expect(screen.getByRole('button', { name: 'Record all eligible spot setups (0)' }).hasAttribute('disabled')).toBe(true)
   expect(readOpportunityTrials().trials).toHaveLength(0)
   view.rerender(<MemoryRouter><OpportunityBoard {...props} now={opportunityNow + 90_001} /></MemoryRouter>)
-  expect(screen.queryByRole('region', { name: 'Early watches · entry not confirmed' })).toBeNull()
+  expect(screen.queryByRole('link', { name: /Current analysis and price alerts/ })).toBeNull()
 })
 it('records all qualified candidates including hidden cards, but blocks incomplete scans',()=>{
   const result=opportunityResult(),results=Array.from({length:5},(_,i)=>({...result,instrument:{...result.instrument,id:`upbit-c${i}`,symbol:`C${i}/KRW`}}))
-  const props={results,now:opportunityNow,language:'en' as const,simple:true}
+  const props={results,now:opportunityNow,language:'en' as const,simple:true,active:true}
   const view=render(<MemoryRouter><OpportunityBoard {...props} canRecord={false}/></MemoryRouter>)
-  expect(screen.getAllByRole('link',{name:/Review current plan/})).toHaveLength(3)
+  expect(screen.getAllByRole('link',{name:/Current analysis and price alerts/})).toHaveLength(3)
   expect(screen.getByRole('button',{name:'Record all eligible spot setups (5)'}).hasAttribute('disabled')).toBe(true)
   view.rerender(<MemoryRouter><OpportunityBoard {...props} canRecord/></MemoryRouter>)
   fireEvent.click(screen.getByRole('button',{name:'Record all eligible spot setups (5)'}))
@@ -65,4 +65,31 @@ it('sizes a plan within both budgets and explicitly records price-only monitorin
   fireEvent.submit(form)
   const saved = readScenarios()
   expect(saved.scenarios[0]).toMatchObject({entry:plan.entry,stop:plan.stop,target:plan.target,baseline:{direction:'sell',frame:'1H'}})
+})
+
+it('keeps active observations unrecordable, shows all assets on request, and hides unusable trade levels', () => {
+  const rows = Array.from({length:12}, (_, i) => {
+    const row = opportunityResult()
+    row.instrument.id = `upbit-${i}`
+    row.instrument.symbol = `C${i}/KRW`
+    row.decision.price = .01
+    return row
+  })
+  const refresh = vi.fn()
+  const props = { results:rows, now:opportunityNow, language:'en' as const, active:true, onRefresh:refresh }
+  const view = render(<MemoryRouter><OpportunityBoard {...props} /></MemoryRouter>)
+  const shortlist = screen.getByRole('region', {name:'Spot review shortlist'})
+  expect(within(shortlist).getAllByRole('article')).toHaveLength(3)
+  expect(within(shortlist).getAllByText('Short-term recovery reference')).toHaveLength(3)
+  expect(within(shortlist).queryByText('Conditional buy zone')).toBeNull()
+  expect(screen.getByRole('button', {name:'Record all eligible spot setups (0)'}).hasAttribute('disabled')).toBe(true)
+  fireEvent.click(screen.getByRole('button', {name:'Show all candidates (12)'}))
+  expect(within(shortlist).getAllByRole('article')).toHaveLength(12)
+  fireEvent.click(screen.getByRole('button', {name:'Show top three'}))
+  expect(within(shortlist).getAllByRole('article')).toHaveLength(3)
+  view.rerender(<MemoryRouter><OpportunityBoard {...props} now={opportunityNow+90_001} /></MemoryRouter>)
+  expect(within(shortlist).queryByRole('article')).toBeNull()
+  fireEvent.click(screen.getByRole('button', {name:'Refresh spot scan'}))
+  expect(refresh).toHaveBeenCalledTimes(1)
+  expect(readOpportunityTrials().trials).toHaveLength(0)
 })

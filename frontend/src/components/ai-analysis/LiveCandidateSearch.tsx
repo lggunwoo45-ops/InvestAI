@@ -101,7 +101,7 @@ function SearchSession({ marketDataMode }: { marketDataMode: 'live' | 'mock' }) 
             : `${ko ? status === 'scanning' ? '검사 중' : status === 'cancelled' ? '검색 중지됨' : '검사 완료' : status === 'scanning' ? 'Scanning' : status === 'cancelled' ? 'Stopped' : 'Complete'} ${progress.completed}/${progress.total} ${refreshing ? (ko ? '· 지연된 자료 재확인 중' : '· Rechecking delayed data') : ''} ${view === 'trend' ? ` · ${shown.length} ${ko ? '개 추세 필터 일치' : 'trend matches'}` : ''}`}
       {running && progress.total > 0 && <progress max={progress.total} value={progress.completed} />}
     </div>
-    {view === 'opportunities' && results.length > 0 && (futures ? <FuturesOpportunityBoard results={results} now={clock} language={language} onRefresh={running ? undefined : () => { void start() }} /> : <OpportunityBoard results={results} now={clock} language={language} active={poolMode === 'active'} canRecord={status === 'done'} />)}
+    {view === 'opportunities' && results.length > 0 && (futures ? <FuturesOpportunityBoard results={results} now={clock} language={language} onRefresh={running ? undefined : () => { void start() }} /> : <OpportunityBoard results={results} now={clock} language={language} active={poolMode === 'active'} canRecord={status === 'done'} onRefresh={running ? undefined : () => { void start() }} />)}
     {view === 'trend' && <>
     {expired > 0 && <p className={styles.notice}>{ko ? `${expired}개 결과의 시세 확인 시간이 지나 가격 표시에서 제외했습니다. 다시 검색해주세요.` : `${expired} results have expired. Rescan for current price criteria.`}</p>}
     {status === 'done' && shown.length === 0 && expired === 0 && <p>{ko ? '현재 조건에 맞는 종목이 없습니다. 필터를 완화하거나 제외 사유를 확인하세요.' : 'No assets match. Adjust the filters or review the excluded results.'}</p>}
