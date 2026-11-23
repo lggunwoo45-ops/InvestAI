@@ -29,6 +29,15 @@ test('rejects external links, credentials, future dates, XML entities and oversi
   assert.deepEqual(parseHeadlines(' '.repeat(1500001) + item(), sources[0], at), [])
 })
 
+test('excludes home-page fallback links while retaining actual article destinations', () => {
+  for (const source of sources) {
+    for (const url of [`https://${source.host}`, `https://www.${source.host}/?utm_source=rss#article`, `https://${source.host}//`]) {
+      assert.deepEqual(parseHeadlines(item(source, { url }), source, at), [])
+    }
+    assert.equal(parseHeadlines(item(source), source, at).length, 1)
+  }
+})
+
 test('shares concurrent source requests and caches each source for five minutes', async () => {
   let time = at, calls = 0
   const service = createNewsService({ now: () => time, fetchImpl: async url => {
