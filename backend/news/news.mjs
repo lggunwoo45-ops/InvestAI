@@ -48,6 +48,8 @@ export function parseHeadlines(xml, source, now = Date.now()) {
       url = new URL(tag(item, 'link'))
       if (url.protocol !== 'https:' || url.username || url.password || url.port
         || !(url.hostname === source.host || url.hostname.endsWith(`.${source.host}`))) continue
+      // A feed's home-page fallback is not an original article destination.
+      if (!url.pathname.replaceAll('/', '').trim()) continue
       url.hash = ''
       for (const key of [...url.searchParams.keys()]) if (key.startsWith('utm_')) url.searchParams.delete(key)
     } catch { continue }
