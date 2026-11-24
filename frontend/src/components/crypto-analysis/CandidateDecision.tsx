@@ -45,7 +45,8 @@ export function CandidateDecision({ candidate, language }: { candidate: Candidat
       break
     }
     case 'volume':
-      reason = ko ? `가격과 마감봉은 통과했습니다. 마지막 완료 봉 거래량은 이전 20봉 평균의 ${num(hour.volumeRatio)}배로, 기준 ${plan.volumeRequired}배에 못 미칩니다.` : `Price and close checks pass. Last closed-bar volume is ${num(hour.volumeRatio)}× its prior 20-bar average; ${plan.volumeRequired}× is required.`
+      reason = hour.volumeRatio === null ? ko ? '가격과 마감봉은 통과했지만 거래량 비교 기준을 계산할 수 없어 진입을 보류합니다.' : 'Price and close checks pass, but the volume baseline is unavailable, so entry remains on hold.'
+        : ko ? `가격과 마감봉은 통과했습니다. 마지막 완료 봉 거래량은 이전 20봉 평균의 ${num(hour.volumeRatio)}배로, 기준 ${plan.volumeRequired}배에 못 미칩니다.` : `Price and close checks pass. Last closed-bar volume is ${num(hour.volumeRatio)}× its prior 20-bar average; ${plan.volumeRequired}× is required.`
       next = ko ? `새로 완료되는 1시간봉의 거래량이 그 직전 20봉 평균의 ${plan.volumeRequired}배 이상이어야 합니다. 나머지 조건도 모두 유지되면 진입 검토로 바뀝니다.` : `A newly closed hourly bar needs volume ≥${plan.volumeRequired}× its preceding 20-bar average. All remaining conditions must also pass for entry review.`
       break
     case 'recovery':
@@ -61,14 +62,14 @@ export function CandidateDecision({ candidate, language }: { candidate: Candidat
         data:'판단에 필요한 최신 자료가 부족합니다.', risk:`현재가가 손절 기준 ${plan.stop ? price(plan.stop) : '—'}을 벗어났습니다.`,
         heat:`추격 진입을 제외합니다. 1시간 RSI ${num(hour.rsi)}, 현재가 ${price(decision.price!)}입니다.`,
         distance:`기존 진입 구간이 현재가에서 ${num(candidate.distancePercent)}% 떨어져 있어 이번 진입 계획으로 쓰지 않습니다.`,
-        structure:plan.target === null ? '실제로 확인한 목표 저항·지지가 없어 유효한 진입·손절·목표 조합을 만들 수 없습니다.' : '진입·손절·목표 가격의 순서가 맞지 않아 이번 진입을 제외합니다.',
+        structure:plan.target === null ? '실제로 확인한 목표 저항·지지가 없어 유효한 진입·손절·목표 조합을 만들 수 없습니다.' : '확인된 진입·손절·목표 가격이 부족하거나 순서가 맞지 않아 이번 진입을 제외합니다.',
         reward:`비용 반영 손익비 ${num(plan.netRewardRisk)}로 최소 기준 1.50에 못 미칩니다.`,
         regime:`큰 흐름은 ${trend}이며 선택한 ${short ? '숏' : '매수'} 전략의 추세 기준을 통과하지 못했습니다.`,
       } : {
         data:'Fresh evidence is insufficient.', risk:`The quote has crossed the stop reference ${plan.stop ? price(plan.stop) : '—'}.`,
         heat:`Chasing is excluded. Hourly RSI ${num(hour.rsi)}; quote ${price(decision.price!)}.`,
         distance:`The previous entry zone is ${num(candidate.distancePercent)}% away and is excluded from the current entry plan.`,
-        structure:plan.target === null ? 'No observed target supports a viable entry / stop / target plan.' : 'The entry / stop / target order is invalid.',
+        structure:plan.target === null ? 'No observed target supports a viable entry / stop / target plan.' : 'Observed entry / stop / target levels are incomplete or incorrectly ordered.',
         reward:`Reward/risk after costs is ${num(plan.netRewardRisk)}, below the required 1.50.`,
         regime:`The higher timeframe is ${trend}; this ${short ? 'short' : 'buy'} strategy fails its trend rule.`,
       }

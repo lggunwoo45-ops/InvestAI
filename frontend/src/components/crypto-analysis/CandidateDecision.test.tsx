@@ -4,6 +4,7 @@ import { futuresResult } from '@/test/futuresFixtures'
 import { opportunityNow as now, opportunityResult } from '@/test/opportunityFixtures'
 import { rankFuturesCandidates } from '@/services/cryptoAnalysis/futuresCandidates'
 import { rankSpotCandidates } from '@/services/cryptoAnalysis/spotCandidates'
+import { candidateAction } from '@/services/cryptoAnalysis/candidateAction'
 import { CandidateDecision } from './CandidateDecision'
 
 it('explains a completed breakout exclusion with measured heat instead of repeating an obsolete entry condition', () => {
@@ -45,4 +46,14 @@ it('does not claim volume alone will authorize entry when another condition also
   render(<CandidateDecision candidate={candidate} language="en" />)
   expect(screen.getByText(/Last closed-bar volume is 1.00×.*1.3× is required/)).toBeTruthy()
   expect(screen.getByText(/All remaining conditions must also pass/)).toBeTruthy()
+})
+
+it('does not report a stop crossing when the strategy could not calculate any stop', () => {
+  const candidate = rankSpotCandidates([opportunityResult()], now)[0]
+  candidate.plan = {...candidate.plan,status:'avoid',stop:null,checks:candidate.plan.checks.map(c => ['risk','structure'].includes(c.key) ? {...c,passed:false} : c)}
+  candidate.verdict = candidateAction(candidate.plan, false, false)
+  expect(candidate.verdict).toEqual({action:'excluded',exclusion:'structure'})
+  render(<CandidateDecision candidate={candidate} language="en" />)
+  expect(screen.queryByText(/crossed the stop/)).toBeNull()
+  expect(screen.getByText(/levels are incomplete or incorrectly ordered/)).toBeTruthy()
 })

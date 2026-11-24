@@ -3,14 +3,14 @@ import type { OpportunityPlan } from './opportunityEngine'
 export type CandidateAction = 'ready' | 'price' | 'close' | 'volume' | 'recovery' | 'context' | 'excluded'
 export type ExclusionReason = 'data' | 'risk' | 'heat' | 'distance' | 'structure' | 'reward' | 'regime'
 export interface CandidateVerdict { action: CandidateAction; exclusion: ExclusionReason | null }
-type Plan = Pick<OpportunityPlan, 'status' | 'issue' | 'checks'>
+type Plan = Pick<OpportunityPlan, 'status' | 'issue' | 'checks' | 'stop'>
 
 /** Readiness is decided by strategy evidence, never by a relative momentum score. */
 export function candidateAction(plan: Plan, hasPricePlan: boolean, distant: boolean): CandidateVerdict {
   const fail = (key: string) => plan.checks.some(c => c.key === key && !c.passed)
   const excluded = (exclusion: ExclusionReason): CandidateVerdict => ({ action:'excluded', exclusion })
   if (plan.issue || plan.status === 'unavailable' || !plan.checks.length) return excluded('data')
-  if (fail('risk')) return excluded('risk')
+  if (fail('risk') && plan.stop !== null && Number.isFinite(plan.stop) && plan.stop > 0) return excluded('risk')
   if (fail('heat')) return excluded('heat')
   if (distant) return excluded('distance')
   if (fail('structure')) return excluded('structure')
