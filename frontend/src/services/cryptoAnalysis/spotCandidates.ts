@@ -1,10 +1,12 @@
 import type { ScanResult } from './liveCandidateScan'
 import { baseAsset, bestOpportunity, buildOpportunityPlans, freshScanResult, relativeToBitcoin, type OpportunityPlan } from './opportunityEngine'
+import { actionPriority, candidateAction, candidatePhase, type CandidateVerdict } from './candidateAction'
 
 export interface SpotCandidate {
   result: ScanResult
   plan: OpportunityPlan
-  phase: 'ready' | 'price-wait' | 'confirm-wait'
+  phase: 'ready' | 'price-wait' | 'confirm-wait' | 'avoid'
+  verdict: CandidateVerdict
   reason: 'strength' | 'rebound' | 'momentum' | 'pullback' | 'relative' | 'turnaround'
   countertrend: boolean
   score: number
@@ -44,8 +46,7 @@ export function rankSpotCandidates(results: readonly ScanResult[], now: number, 
     const distanceAtr = distance / hour.atr, planDistant = Number.isFinite(distanceAtr) && distanceAtr > 3
     const hasPricePlan = !planDistant && ['structure', 'reward', 'risk'].every(key => plan.checks.some(c => c.key === key && c.passed))
       && !!plan.entry && positive(plan.stop) && positive(plan.target)
-    const phase: SpotCandidate['phase'] = plan.status === 'ready' ? 'ready'
-      : hasPricePlan && plan.status === 'watch' && !plan.checks.find(c => c.key === 'price')?.passed ? 'price-wait' : 'confirm-wait'
+    const verdict = candidateAction(plan, hasPricePlan, planDistant), phase = candidatePhase(verdict)
     const countertrend = higher.direction === 'sell'
     const reason: SpotCandidate['reason'] = higher.direction === 'buy' && hour.direction === 'buy' ? 'strength'
       : recovering ? countertrend ? 'rebound' : 'momentum' : momentum > .1 ? 'pullback'
@@ -58,9 +59,9 @@ export function rankSpotCandidates(results: readonly ScanResult[], now: number, 
       - (plan.checks.some(c => c.key === 'heat' && !c.passed) ? 2 : 0)
     const reassessPrice = Math.max(...bars.slice(-4, -1).map(b => b.high))
     if (!positive(reassessPrice)) return []
-    return [{ result, plan, phase, reason, countertrend, score, change3h, relativeBitcoin, volumeRatio: hour.volumeRatio,
+    return [{ result, plan, phase, verdict, reason, countertrend, score, change3h, relativeBitcoin, volumeRatio: hour.volumeRatio,
       hasPricePlan, planDistant, distancePercent: Number.isFinite(distance) ? distance / decision.price * 100 : null,
       reassessPrice, reassessConfirmed: last.close > reassessPrice }]
-  }).sort((a, b) => Number(b.phase === 'ready') - Number(a.phase === 'ready') || b.score - a.score
+  }).sort((a, b) => actionPriority(a.verdict.action) - actionPriority(b.verdict.action) || b.score - a.score
     || b.result.instrument.volume24h - a.result.instrument.volume24h || a.result.instrument.id.localeCompare(b.result.instrument.id))
 }

@@ -2,11 +2,13 @@ import type { Direction } from './cryptoDecisionEngine'
 import type { ScanResult } from './liveCandidateScan'
 import { baseAsset, relativeToBitcoin } from './opportunityEngine'
 import { entryDistance, futuresShortlist, type FuturesPlan, type FuturesSide } from './futuresOpportunities'
+import { actionPriority, candidateAction, candidatePhase, type CandidateVerdict } from './candidateAction'
 
 export interface FuturesCandidate {
   result: ScanResult
   plan: FuturesPlan
-  phase: 'ready' | 'price-wait' | 'confirm-wait'
+  phase: 'ready' | 'price-wait' | 'confirm-wait' | 'avoid'
+  verdict: CandidateVerdict
   /** Relative review priority, not a probability or an entry permission. */
   score: number
   reason: 'trend' | 'momentum' | 'relative' | 'turnaround'
@@ -49,8 +51,7 @@ export function rankFuturesCandidates(results: readonly ScanResult[], now: numbe
     const planDistant = Number.isFinite(distanceAtr) && distanceAtr > 3
     const hasPricePlan = !planDistant && ['structure', 'reward', 'risk'].every(key => plan.checks.some(c => c.key === key && c.passed))
       && !!plan.entry && positive(plan.stop) && positive(plan.target)
-    const phase: FuturesCandidate['phase'] = plan.status === 'ready' ? 'ready'
-      : hasPricePlan && plan.status === 'watch' && !plan.checks.find(c => c.key === 'price')?.passed ? 'price-wait' : 'confirm-wait'
+    const verdict = candidateAction(plan, hasPricePlan, planDistant), phase = candidatePhase(verdict)
     // Short-term movement gets more weight than the slower trend. Contrary direction stays explicit.
     const score = hourAlignment * 3 + higherAlignment * 2 + clamp(momentum, 2) * 2 + clamp(relative, 2)
       + (hasPricePlan ? Math.max(0, 2 - distanceAtr) : -1)
@@ -61,9 +62,9 @@ export function rankFuturesCandidates(results: readonly ScanResult[], now: numbe
     const prior = bars.slice(-4, -1)
     const reassessPrice = side === 'long' ? Math.max(...prior.map(b => b.high)) : Math.min(...prior.map(b => b.low))
     if (!positive(reassessPrice)) return []
-    return [{ result, plan, phase, score, reason, higherDirection:higher.direction, countertrend:higherAlignment < 0,
+    return [{ result, plan, phase, verdict, score, reason, higherDirection:higher.direction, countertrend:higherAlignment < 0,
       change3h, relativeBitcoin, volumeRatio:hour.volumeRatio, hasPricePlan, planDistant, reassessPrice,
       reassessConfirmed:sign * (last.close - reassessPrice) > 0, distancePercent:Number.isFinite(distance) ? distance : null }]
-  }).sort((a, b) => Number(b.phase === 'ready') - Number(a.phase === 'ready') || b.score - a.score
+  }).sort((a, b) => actionPriority(a.verdict.action) - actionPriority(b.verdict.action) || b.score - a.score
     || b.result.instrument.volume24h - a.result.instrument.volume24h || a.result.instrument.id.localeCompare(b.result.instrument.id))
 }

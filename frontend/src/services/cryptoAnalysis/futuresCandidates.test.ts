@@ -39,7 +39,7 @@ it('ranks actual upward and downward tapes differently instead of copying one li
 it('never upgrades oversold or missing-target observations into entry-ready candidates', () => {
   const row = unconfirmed(), hour = row.decision.frames.find(f => f.frame === '1H')!
   hour.rsi = 20
-  expect(rankFuturesCandidates([row], now, 'short')[0].phase).toBe('confirm-wait')
+  expect(rankFuturesCandidates([row], now, 'short')[0].phase).toBe('avoid')
   hour.candles[25].low = 99
   const candidate = rankFuturesCandidates([row], now, 'short')[0]
   expect(candidate.hasPricePlan).toBe(false)
@@ -51,16 +51,16 @@ it('marks countertrend observations explicitly and retains full confirmation req
   row.decision.frames.find(f => f.frame === '4H')!.direction = 'buy'
   const candidate = rankFuturesCandidates([row], now, 'short')[0]
   expect(candidate.countertrend).toBe(true)
-  expect(candidate.phase).toBe('confirm-wait')
+  expect(candidate.phase).toBe('avoid')
 })
-it('uses a nearer reassessment reference instead of presenting a remote entry zone as actionable', () => {
+it('excludes a remote entry zone even after its short-term reference was already crossed', () => {
   const row = unconfirmed(), hour = row.decision.frames.find(f=>f.frame==='1H')!
   const plan = futuresPlans(row,now).find(p=>p.kind==='breakdown')!
   row.decision.price = plan.entry![0] - hour.atr! * 4
   const candidate = rankFuturesCandidates([row],now,'short')[0]
   expect(candidate.planDistant).toBe(true)
   expect(candidate.hasPricePlan).toBe(false)
-  expect(candidate.phase).toBe('confirm-wait')
+  expect(candidate.phase).toBe('avoid')
   expect(candidate.reassessConfirmed).toBe(true)
 })
 it('excludes stale, insufficient and wrong-venue data even in active discovery', () => {
@@ -72,4 +72,13 @@ it('excludes stale, insufficient and wrong-venue data even in active discovery',
   expect(rankFuturesCandidates([{...row,instrument:{...row.instrument,quoteCurrency:'KRW'}}], now, 'short')).toEqual([])
   row.decision.frames.find(f=>f.frame==='1H')!.issue='gaps'
   expect(rankFuturesCandidates([row], now, 'short')).toEqual([])
+})
+
+ it('ranks a viable waiting short before a stronger but excluded short', () => {
+  const waiting = unconfirmed(), excluded = unconfirmed()
+  waiting.instrument.id = 'waiting'; excluded.instrument.id = 'excluded'
+  excluded.decision.frames.find(f => f.frame === '1H')!.rsi = 20
+  const ranked = rankFuturesCandidates([excluded, waiting], now, 'short')
+  expect(ranked[0]).toMatchObject({ result:{instrument:{id:'waiting'}}, verdict:{action:'volume'} })
+  expect(ranked[1]).toMatchObject({ result:{instrument:{id:'excluded'}}, verdict:{action:'excluded',exclusion:'heat'} })
 })

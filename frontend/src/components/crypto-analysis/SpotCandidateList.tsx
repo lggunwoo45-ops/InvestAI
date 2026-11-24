@@ -6,11 +6,14 @@ import { rankSpotCandidates, type SpotCandidate } from '@/services/cryptoAnalysi
 import { validOpportunityCost } from '@/services/cryptoAnalysis/opportunityEngine'
 import { formatAnalysisPrice } from '@/utils/formatAnalysisPrice'
 import { checkText } from './opportunityPresentation'
+import { CandidateDecision, CandidateScanSummary } from './CandidateDecision'
+import { decisionLabel } from './candidateDecisionCopy'
 import styles from './OpportunityPlans.module.css'
 import candidateStyles from './SpotCandidateList.module.css'
 
 function SpotCard({ candidate, rank, language, simple }: { candidate: SpotCandidate; rank: number; language: Language; simple: boolean }) {
-  const { result, plan, phase, hasPricePlan } = candidate, { instrument, decision } = result, ko = language === 'ko'
+  const { result, plan, phase } = candidate, { instrument, decision } = result, ko = language === 'ko'
+  const hasPricePlan = candidate.hasPricePlan && phase !== 'avoid'
   const price = (n: number) => `${formatAnalysisPrice(n, language)} ${instrument.quoteCurrency}`
   const signed = (n: number) => `${n > 0 ? '+' : ''}${n.toFixed(2)}`
   const order = ['risk', 'structure', 'reward', 'heat', 'context', 'regime', 'recovery', 'price', 'close', 'volume']
@@ -30,11 +33,12 @@ function SpotCard({ candidate, rank, language, simple }: { candidate: SpotCandid
     relative: ['Relative strength', 'Outperformed BTC in the same venue and quote. Both prices may still be falling.'],
     turnaround: ['Awaiting rebound evidence', 'No clear upward or rebound evidence yet. This is a relative priority for checking the next recovery.'],
   }
-  return <article className={styles.card} data-opportunity={phase === 'ready' ? 'ready' : 'watch'}>
-    <p className={candidateStyles.rank}>{ko ? `우선 후보 ${rank}` : `Review priority ${rank}`} · {reasons[candidate.reason][0]}</p>
-    <header><h3>{instrument.displaySymbol ?? instrument.symbol}</h3><strong className={styles.badge}>{ko ? phase === 'ready' ? '진입 조건 충족' : phase === 'price-wait' ? '가격 도달 대기' : '추가 확인 필요' : phase === 'ready' ? 'Entry conditions met' : phase === 'price-wait' ? 'Waiting for price' : 'Needs confirmation'}</strong></header>
+  return <article className={styles.card} data-opportunity={phase === 'avoid' ? 'avoid' : phase === 'ready' ? 'ready' : 'watch'} data-phase={phase}>
+    <p className={candidateStyles.rank}>{ko ? phase === 'avoid' ? '제외 결과' : `검토 순위 ${rank}` : phase === 'avoid' ? 'Excluded result' : `Review priority ${rank}`} · {reasons[candidate.reason][0]}</p>
+    <header><h3>{instrument.displaySymbol ?? instrument.symbol}</h3><strong className={styles.badge}>{decisionLabel(candidate.verdict, ko)}</strong></header>
     <small>{instrument.marketId === 'upbit' ? 'Upbit' : 'Binance Spot'} · {instrument.quoteCurrency} · {new Date(result.analyzedAt).toLocaleTimeString(language)}</small>
-    <div className={candidateStyles.reason}><strong>{ko ? '왜 살펴보나요?' : 'Why review this?'}</strong><p>{reasons[candidate.reason][1]}</p>
+    <CandidateDecision candidate={candidate} language={language} />
+    <div className={candidateStyles.reason}><strong>{ko ? '흐름 분석' : 'Market evidence'}</strong><p>{reasons[candidate.reason][1]}</p>
       <small>{ko ? '최근 3시간' : 'Last 3 closed hours'} {signed(candidate.change3h)}%{candidate.volumeRatio !== null && ` · ${ko ? '거래량' : 'Volume'} ${candidate.volumeRatio.toFixed(2)}×`}{candidate.relativeBitcoin !== null && ` · BTC ${ko ? '대비 6시간' : 'relative 6h'} ${signed(candidate.relativeBitcoin)}%p`}</small>
     </div>
     {candidate.countertrend && <p className={styles.caution}>{ko ? '큰 흐름은 아직 하락입니다. 반등을 먼저 살피는 역추세 후보이며 상승 전환이 확정된 것은 아니에요.' : 'The broader trend remains down. This is a countertrend observation, not a confirmed reversal.'}</p>}
@@ -43,15 +47,9 @@ function SpotCard({ candidate, rank, language, simple }: { candidate: SpotCandid
       <div><dt>{ko ? phase === 'ready' ? '진입 검토 구간' : '조건부 매수 구간' : phase === 'ready' ? 'Entry review zone' : 'Conditional buy zone'}</dt><dd>{plan.entry.map(n => formatAnalysisPrice(n, language)).join('–')} {instrument.quoteCurrency}</dd></div>
       <div><dt>{ko ? '손절 · 이 가격 아래로 내리면' : 'Stop reference'}</dt><dd>{price(plan.stop)}</dd></div>
       <div><dt>{ko ? '상승 목표 · 저항' : 'Observed resistance target'}</dt><dd>{price(plan.target)}</dd></div>
-    </dl> : <div className={candidateStyles.reference}><span>{ko ? '단기 회복 확인 가격' : 'Short-term recovery reference'}</span><strong>{price(candidate.reassessPrice)}</strong>
-      <p>{candidate.reassessConfirmed ? ko ? '최근 1시간봉은 이미 이 가격 위에서 마감했어요. 아래 남은 조건과 손절·목표 조합을 확인해야 해요.' : 'The latest hourly bar already closed above this reference. Remaining conditions and stop / target levels still need confirmation.' : ko ? '직전 3개 완료 봉의 고점입니다. 1시간봉이 이 가격 위에서 마감하면 반등·돌파 조건을 다시 확인해요.' : 'The high of the prior three closed bars. Reassess rebound / breakout conditions after an hourly close above it.'}</p>
-      <small>{candidate.planDistant ? ko ? '기존 매수 구간이 멀어 가까운 단기 확인선을 먼저 보여드려요.' : 'The earlier entry zone is remote; review this nearer short-term reference first.' : ko ? '유효한 매수·손절·목표 조합이 아직 없어 관찰 가격만 표시합니다.' : 'No viable buy / stop / target combination yet; this is an observation reference.'}</small>
-    </div>}
-    {phase === 'price-wait' && candidate.distancePercent !== null && <p>{ko ? `매수 구간까지 ${candidate.distancePercent.toFixed(2)}% 차이 · 가격 도달 뒤에도 남은 조건을 확인하세요.` : `${candidate.distancePercent.toFixed(2)}% from the buy zone; check remaining conditions when reached.`}</p>}
-    <p className={styles.next}>{phase === 'ready' ? ko ? '현재 계산상 진입 조건을 충족했어요. 주문 전 최신 가격과 손실 기준을 확인하세요.' : 'Entry conditions match this snapshot. Recheck price and planned loss before an order.'
-      : <><strong>{ko ? '아직 매수 신호가 아니에요. ' : 'Not a buy signal yet. '}</strong>{ko ? '미충족 조건: ' : 'Unmet conditions: '}{pending.slice(0, 2).map(c => checkText(plan, c.key, ko)).join(' · ')}{pending.length > 2 && (ko ? ` 외 ${pending.length - 2}개` : ` + ${pending.length - 2} more`)}</>}</p>
+    </dl> : null}
     {hasPricePlan && plan.netRewardRisk !== null && <div className={styles.payoff}><strong>{ko ? '비용 반영 손익비' : 'Reward/risk after costs'} {plan.netRewardRisk.toFixed(2)}</strong><small>{ko ? `목표 도달 시 +${plan.netUpsidePercent?.toFixed(2)}% · 손절 시 −${plan.plannedLossPercent?.toFixed(2)}%` : `At target +${plan.netUpsidePercent?.toFixed(2)}% · at stop −${plan.plannedLossPercent?.toFixed(2)}%`}</small><small>{ko ? `${plan.priceBasis === 'current' ? '현재 가격' : '조건부 구간 상단'} 기준 · 매수·매도 총 예상 비용 ${plan.costPercent}%` : `${plan.priceBasis === 'current' ? 'Current price' : 'Upper entry edge'} · total buy/sell cost ${plan.costPercent}%`}</small></div>}
-    <details open={!simple}><summary>{ko ? `분석 근거 · 남은 조건 ${pending.length}개` : `Evidence · ${pending.length} pending`}</summary><ul>{plan.checks.map(c => <li key={c.key}>{c.passed ? '✓' : '○'} {checkText(plan, c.key, ko)}</li>)}</ul></details>
+    <details open={!simple}><summary>{ko ? `분석 근거 · ${phase === 'avoid' ? '미충족' : '남은 조건'} ${pending.length}개` : `Evidence · ${pending.length} pending`}</summary><ul>{plan.checks.map(c => <li key={c.key}>{c.passed ? '✓' : '○'} {checkText(plan, c.key, ko)}</li>)}</ul></details>
     <Link to={`/my-analysis?instrumentId=${encodeURIComponent(instrument.id)}`}>{ko ? '현재 분석·가격 알림' : 'Current analysis and price alerts'} →</Link>
   </article>
 }
@@ -61,11 +59,12 @@ export function SpotCandidateList({ results, now, cost, language, simple }: { re
   const candidates = rankSpotCandidates(results, now, cost), shown = candidates.slice(0, expanded ? undefined : 3)
   if (!validOpportunityCost(cost)) return null
   return <section aria-label={ko ? '현물 우선 후보' : 'Spot review shortlist'}>
-    <h3 className={styles.groupTitle}>{ko ? `우선 후보 ${shown.length}개` : `Review shortlist · ${shown.length}`}</h3>
-    <p>{ko ? '완전한 상승 추세를 기다리지 않고 단기 회복·상대 강세까지 비교합니다. 매수 조건이 아직 맞지 않아도 살펴볼 후보를 먼저 보여드려요.' : 'Compare early recovery and relative strength before a full uptrend forms. Review candidates can appear before buy conditions are met.'}</p>
+    <h3 className={styles.groupTitle}>{ko ? '현물 진입 판단' : 'Spot entry decisions'}</h3>
+    <p>{ko ? '진입 계획이 유효한 종목부터 보여드립니다. 조건을 기다리는 종목과 이번 진입에서 제외한 종목을 명확히 구분해요.' : 'Viable entry plans rank first. Waiting setups and excluded entries are clearly separated.'}</p>
+    <CandidateScanSummary rows={candidates} language={language} />
     {shown.length ? <div className={styles.grid}>{shown.map((candidate, index) => <SpotCard key={candidate.result.instrument.id} candidate={candidate} rank={index + 1} language={language} simple={simple} />)}</div>
       : <p>{ko ? '후보를 비교할 최신 자료가 부족해요. 다시 검색하거나 아래 자료 상태를 확인하세요.' : 'Fresh data is insufficient to rank candidates. Rescan or review data status below.'}</p>}
-    {candidates.length > 3 && <button type="button" onClick={() => setExpanded(v => !v)}>{ko ? expanded ? '우선 3개만 보기' : `후보 전체 보기 (${candidates.length}개)` : expanded ? 'Show top three' : `Show all candidates (${candidates.length})`}</button>}
-    <details><summary>{ko ? '적극 탐색의 기준' : 'Active scan criteria'}</summary><p>{ko ? '완료된 1시간봉의 최근 3시간 움직임·회복, 같은 거래소와 통화의 BTC 대비 강약, 거래량, 진입 구간까지의 거리로 순위를 매깁니다. 모두 하락 중이면 아직 반등 근거가 약한 후보도 그렇게 표시해요. 가까운 매수 구간·손절·목표 조합이 없으면 직전 3개 봉 고점의 관찰 가격을 보여줍니다. 순위는 상승 확률이 아닙니다. 진입 조건 충족과 자동 검증 기록에는 기존 조건을 그대로 적용해요. 자료 부족·시세 만료 종목은 제외합니다. 현물 매수 방향의 분석이며 수신 후 최대 90초까지 유효합니다. 실제 주문은 실행하지 않습니다.' : 'Rank closed-hourly movement, recovery, same-venue and same-quote BTC relative strength, volume and entry distance. Weak rebound evidence stays explicit, even if every price is falling. Missing or remote price plans use an observed three-bar recovery reference. Ranks are not probabilities. Strict entry conditions and validation records are unchanged. Missing / expired data is excluded. These are spot buy-side observations, valid for up to 90 seconds after receipt. No orders are executed.'}</p></details>
+    {candidates.length > 3 && <button type="button" onClick={() => setExpanded(v => !v)}>{ko ? expanded ? '상위 3개만 보기' : `전체 판단 보기 (${candidates.length}개)` : expanded ? 'Show top three' : `Show all decisions (${candidates.length})`}</button>}
+    <details><summary>{ko ? '적극 탐색의 기준' : 'Active scan criteria'}</summary><p>{ko ? '완료된 1시간봉의 최근 3시간 움직임·회복, 같은 거래소와 통화의 BTC 대비 강약, 거래량, 진입 구간까지의 거리로 순위를 매깁니다. 진입 가능성과 대기 조건을 먼저 구분하고 같은 판단 안에서 단기 움직임으로 정렬합니다. 과열·추세 불일치·가격 구조나 손익비 미달 종목은 진입 제외로 표시합니다. 순위는 상승 확률이 아닙니다. 진입 조건 충족과 자동 검증 기록에는 기존 조건을 그대로 적용해요. 자료 부족·시세 만료 종목은 제외합니다. 현물 매수 방향의 분석이며 수신 후 최대 90초까지 유효합니다. 실제 주문은 실행하지 않습니다.' : 'Rank closed-hourly movement, recovery, same-venue and same-quote BTC relative strength, volume and entry distance. Entry eligibility ranks before momentum. Heat, failed trend gates, invalid or remote price plans and inadequate reward/risk are explicit exclusions. Ranks are not probabilities. Strict entry conditions and validation records are unchanged. Missing / expired data is excluded. These are spot buy-side observations, valid for up to 90 seconds after receipt. No orders are executed.'}</p></details>
   </section>
 }

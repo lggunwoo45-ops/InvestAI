@@ -19,7 +19,7 @@ it('keeps a healthy falling-market shortlist even when no strict entry or watch 
   expect(rows.flatMap(r => buildOpportunityPlans(r.decision)).every(p => p.status === 'avoid')).toBe(true)
   const ranked = rankSpotCandidates(rows, now)
   expect(ranked).toHaveLength(12)
-  expect(ranked.every(c => c.phase === 'confirm-wait' && c.countertrend)).toBe(true)
+  expect(ranked.every(c => c.phase === 'avoid' && c.countertrend)).toBe(true)
   expect(ranked.every(c => c.reason === 'turnaround' && Number.isFinite(c.score))).toBe(true)
 })
 
@@ -55,7 +55,7 @@ it('describes a rising three-hour move with a falling last bar as a pullback, no
 it('uses an observed recovery reference when costs invalidate a price plan, without inventing targets', () => {
   const row = fallingSpot(), candidate = rankSpotCandidates([row], now, 3)[0]
   expect(candidate.hasPricePlan).toBe(false)
-  expect(candidate.phase).toBe('confirm-wait')
+  expect(candidate.phase).toBe('avoid')
   const bars = row.decision.frames.find(f => f.frame === '1H')!.candles
   expect(candidate.reassessPrice).toBe(Math.max(...bars.slice(-4, -1).map(b => b.high)))
   expect(candidate.reassessConfirmed).toBe(bars.at(-1)!.close > candidate.reassessPrice)
@@ -82,4 +82,15 @@ it('excludes futures, unsupported venues, stale, missing data and invalid costs'
   expect(rankSpotCandidates([row], now, NaN)).toEqual([])
   row.decision.frames.find(f => f.frame === '1H')!.issue = 'gaps'
   expect(rankSpotCandidates([row], now)).toEqual([])
+})
+
+it('puts a viable pending rebound before a stronger overheated observation', () => {
+  const waiting = opportunityResult(), hot = opportunityResult()
+  waiting.instrument.id = 'waiting'; hot.instrument.id = 'hot'
+  waiting.decision.frames.find(f => f.frame === '1H')!.volumeRatio = 1
+  hot.decision.frames.find(f => f.frame === '1H')!.rsi = 80
+  const ranked = rankSpotCandidates([hot, waiting], now)
+  expect(ranked.map(c => c.result.instrument.id)).toEqual(['waiting','hot'])
+  expect(ranked[0].verdict.action).toBe('volume')
+  expect(ranked[1].verdict).toEqual({action:'excluded',exclusion:'heat'})
 })
