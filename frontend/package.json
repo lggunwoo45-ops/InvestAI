@@ -8,6 +8,7 @@
     "dev:stocks": "vite --mode stocks-preview --host 127.0.0.1 --port 4198 --strictPort",
     "build:stocks": "vite build --mode stocks-preview --outDir dist-stocks",
     "build": "vite build",
+    "build:cloudflare": "vite build --base=/ --outDir dist-cloudflare && node ../tools/prepare-cloudflare-pages.mjs dist-cloudflare",
     "lint": "oxlint",
     "typecheck": "tsc --build --force",
     "test": "vitest run",
