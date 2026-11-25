@@ -3,3 +3,4 @@ test-failure-summary.txt
 *.log
 .local-data/
 frontend/dist-stocks/
+frontend/dist-cloudflare/

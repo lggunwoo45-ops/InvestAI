@@ -45,7 +45,7 @@ jobs:
         run: node --test tools/prepare-pages.test.mjs
 
       - name: Verify public reading pages and navigation
-        run: node --test ../tools/public-pages.test.mjs
+        run: node --test ../tools/public-pages.test.mjs ../tools/cloudflare-pages.test.mjs
 
       - name: Run lint
         run: npm run lint
@@ -61,3 +61,6 @@ jobs:
 
       - name: Verify separate stock preview still builds
         run: npm run build:stocks
+
+      - name: Verify Cloudflare app and readable public documents
+        run: npm run build:cloudflare
